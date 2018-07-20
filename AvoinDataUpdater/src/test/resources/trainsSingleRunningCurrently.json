@@ -1,0 +1,930 @@
+[
+  {
+    "id": {
+      "junanumero": "10600",
+      "lahtopvm": "2014-12-10"
+    },
+    "version": 3464323335,
+    "aikataulu": {
+      "id": 724887,
+      "hyvaksymisaika": "2014-12-09T22:32:15.000Z",
+      "operaattori": {
+        "id": 1,
+        "uicKoodi": 10,
+        "lyhenne": "vr"
+      },
+      "junatyyppi": {
+        "id": 52,
+        "junalaji": {
+          "id": 2,
+          "nimi": "Lähiliikenne"
+        },
+        "nimi": "HV"
+      },
+      "lahiliikenteenLinjatunnus": {
+        "id": 22,
+        "nimi": "V"
+      },
+      "aikataulunJunanumero": {
+        "id": 294748,
+        "junanumero": 10600
+      }
+    },
+    "jupaTila": "VOIMASSAOLEVA",
+    "jupaTapahtumas": [
+      {
+        "suunniteltuAika": "2014-12-09T22:32:15.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906355
+        },
+        "toteutunutAika": "2014-12-09T22:31:38.405Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424069,
+          "lyhenne": "MÄK",
+          "maakoodi": "FI",
+          "uicKoodi": 693
+        },
+        "kaupallinenNro": "352"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:17:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906331
+        },
+        "automaattiennusteAika": "2014-12-09T22:17:51.000Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424213,
+          "lyhenne": "VKH",
+          "maakoodi": "FI",
+          "uicKoodi": 1300
+        },
+        "kaupallinenNro": "336"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:25:02.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906344
+        },
+        "toteutunutAika": "2014-12-09T22:24:59.261Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424405,
+          "lyhenne": "TRL",
+          "maakoodi": "FI",
+          "uicKoodi": 579
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:27:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906348
+        },
+        "toteutunutAika": "2014-12-09T22:27:08.165Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 423926,
+          "lyhenne": "KNI",
+          "maakoodi": "FI",
+          "uicKoodi": 67
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:28:16.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906349
+        },
+        "toteutunutAika": "2014-12-09T22:27:28.113Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424403,
+          "lyhenne": "KEA",
+          "maakoodi": "FI",
+          "uicKoodi": 621
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:25:46.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906345
+        },
+        "toteutunutAika": "2014-12-09T22:25:07.751Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 423869,
+          "lyhenne": "KVH",
+          "maakoodi": "FI",
+          "uicKoodi": 675
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:13:25.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906325
+        },
+        "toteutunutAika": "2014-12-09T22:13:39.904Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424263,
+          "lyhenne": "TOL",
+          "maakoodi": "FI",
+          "uicKoodi": 830
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:12:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906324
+        },
+        "toteutunutAika": "2014-12-09T22:11:33.163Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424232,
+          "lyhenne": "KKN",
+          "maakoodi": "FI",
+          "uicKoodi": 63
+        },
+        "kaupallinenNro": "1"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:19:22.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906335
+        },
+        "toteutunutAika": "2014-12-09T22:19:17.528Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424256,
+          "lyhenne": "LMA",
+          "maakoodi": "FI",
+          "uicKoodi": 71
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:36:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906365
+        },
+        "toteutunutAika": "2014-12-09T22:34:11.267Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424008,
+          "lyhenne": "ILA",
+          "maakoodi": "FI",
+          "uicKoodi": 9
+        },
+        "kaupallinenNro": "272"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:34:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906362
+        },
+        "toteutunutAika": "2014-12-09T22:33:26.047Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 423909,
+          "lyhenne": "HPL",
+          "maakoodi": "FI",
+          "uicKoodi": 72
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:25:02.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906343
+        },
+        "toteutunutAika": "2014-12-09T22:24:34.251Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424405,
+          "lyhenne": "TRL",
+          "maakoodi": "FI",
+          "uicKoodi": 579
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:33:27.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906359
+        },
+        "toteutunutAika": "2014-12-09T22:32:26.906Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424339,
+          "lyhenne": "VMO",
+          "maakoodi": "FI",
+          "uicKoodi": 847
+        },
+        "kaupallinenNro": "262"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:18:08.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906333
+        },
+        "toteutunutAika": "2014-12-09T22:18:15.667Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 423891,
+          "lyhenne": "MAS",
+          "maakoodi": "FI",
+          "uicKoodi": 64
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:31:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906353
+        },
+        "toteutunutAika": "2014-12-09T22:30:47.855Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424351,
+          "lyhenne": "LPV",
+          "maakoodi": "FI",
+          "uicKoodi": 68
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:35:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906364
+        },
+        "automaattiennusteAika": "2014-12-09T22:34:27.000Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424106,
+          "lyhenne": "KHK",
+          "maakoodi": "FI",
+          "uicKoodi": 1028
+        },
+        "kaupallinenNro": "202"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:18:08.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906334
+        },
+        "toteutunutAika": "2014-12-09T22:18:30.157Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 423891,
+          "lyhenne": "MAS",
+          "maakoodi": "FI",
+          "uicKoodi": 64
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:21:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906337
+        },
+        "toteutunutAika": "2014-12-09T22:20:36.478Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424208,
+          "lyhenne": "MNK",
+          "maakoodi": "FI",
+          "uicKoodi": 706
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:35:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906363
+        },
+        "automaattiennusteAika": "2014-12-09T22:34:27.000Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424106,
+          "lyhenne": "KHK",
+          "maakoodi": "FI",
+          "uicKoodi": 1028
+        },
+        "kaupallinenNro": "202"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:32:15.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906356
+        },
+        "toteutunutAika": "2014-12-09T22:31:58.166Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424069,
+          "lyhenne": "MÄK",
+          "maakoodi": "FI",
+          "uicKoodi": 693
+        },
+        "kaupallinenNro": "352"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:34:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906361
+        },
+        "toteutunutAika": "2014-12-09T22:33:11.507Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 423909,
+          "lyhenne": "HPL",
+          "maakoodi": "FI",
+          "uicKoodi": 72
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:22:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906340
+        },
+        "toteutunutAika": "2014-12-09T22:21:52.159Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424216,
+          "lyhenne": "KLH",
+          "maakoodi": "FI",
+          "uicKoodi": 65
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:33:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906357
+        },
+        "toteutunutAika": "2014-12-09T22:32:13.726Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424072,
+          "lyhenne": "PJM",
+          "maakoodi": "FI",
+          "uicKoodi": 69
+        },
+        "kaupallinenNro": "282"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:29:32.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906352
+        },
+        "toteutunutAika": "2014-12-09T22:30:00.125Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424264,
+          "lyhenne": "KIL",
+          "maakoodi": "FI",
+          "uicKoodi": 580
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:24:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906342
+        },
+        "toteutunutAika": "2014-12-09T22:24:11.151Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424316,
+          "lyhenne": "EPO",
+          "maakoodi": "FI",
+          "uicKoodi": 66
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:16:04.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906329
+        },
+        "toteutunutAika": "2014-12-09T22:15:56.096Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424025,
+          "lyhenne": "JRS",
+          "maakoodi": "FI",
+          "uicKoodi": 578
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:25:46.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906346
+        },
+        "toteutunutAika": "2014-12-09T22:25:53.152Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 423869,
+          "lyhenne": "KVH",
+          "maakoodi": "FI",
+          "uicKoodi": 675
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:29:32.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906351
+        },
+        "toteutunutAika": "2014-12-09T22:28:36.254Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424264,
+          "lyhenne": "KIL",
+          "maakoodi": "FI",
+          "uicKoodi": 580
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:13:25.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906326
+        },
+        "toteutunutAika": "2014-12-09T22:14:39.175Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424263,
+          "lyhenne": "TOL",
+          "maakoodi": "FI",
+          "uicKoodi": 830
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:17:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906332
+        },
+        "automaattiennusteAika": "2014-12-09T22:17:51.000Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424213,
+          "lyhenne": "VKH",
+          "maakoodi": "FI",
+          "uicKoodi": 1300
+        },
+        "kaupallinenNro": "336"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:27:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906347
+        },
+        "toteutunutAika": "2014-12-09T22:26:33.702Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 423926,
+          "lyhenne": "KNI",
+          "maakoodi": "FI",
+          "uicKoodi": 67
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:42:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906369
+        },
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424135,
+          "lyhenne": "HKI",
+          "maakoodi": "FI",
+          "uicKoodi": 1
+        },
+        "kaupallinenNro": "16"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:38:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906368
+        },
+        "toteutunutAika": "2014-12-09T22:35:43.178Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424345,
+          "lyhenne": "PSL",
+          "maakoodi": "FI",
+          "uicKoodi": 10
+        },
+        "kaupallinenNro": "7"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:33:27.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906360
+        },
+        "toteutunutAika": "2014-12-09T22:32:54.176Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424339,
+          "lyhenne": "VMO",
+          "maakoodi": "FI",
+          "uicKoodi": 847
+        },
+        "kaupallinenNro": "262"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:22:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906339
+        },
+        "toteutunutAika": "2014-12-09T22:21:28.519Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424216,
+          "lyhenne": "KLH",
+          "maakoodi": "FI",
+          "uicKoodi": 65
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:24:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906341
+        },
+        "toteutunutAika": "2014-12-09T22:23:44.751Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424316,
+          "lyhenne": "EPO",
+          "maakoodi": "FI",
+          "uicKoodi": 66
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:14:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906327
+        },
+        "automaattiennusteAika": "2014-12-09T22:15:14.000Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424407,
+          "lyhenne": "HEK",
+          "maakoodi": "FI",
+          "uicKoodi": 1023
+        },
+        "kaupallinenNro": "012"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:21:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906338
+        },
+        "toteutunutAika": "2014-12-09T22:20:54.179Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424208,
+          "lyhenne": "MNK",
+          "maakoodi": "FI",
+          "uicKoodi": 706
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:14:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906328
+        },
+        "automaattiennusteAika": "2014-12-09T22:15:14.000Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424407,
+          "lyhenne": "HEK",
+          "maakoodi": "FI",
+          "uicKoodi": 1023
+        },
+        "kaupallinenNro": "012"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:19:22.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906336
+        },
+        "toteutunutAika": "2014-12-09T22:19:47.168Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424256,
+          "lyhenne": "LMA",
+          "maakoodi": "FI",
+          "uicKoodi": 71
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:36:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906366
+        },
+        "toteutunutAika": "2014-12-09T22:34:27.177Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424008,
+          "lyhenne": "ILA",
+          "maakoodi": "FI",
+          "uicKoodi": 9
+        },
+        "kaupallinenNro": "272"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:38:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906367
+        },
+        "toteutunutAika": "2014-12-09T22:35:09.198Z",
+        "tyyppi": "SAAP",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "liikennepaikka": {
+          "id": 424345,
+          "lyhenne": "PSL",
+          "maakoodi": "FI",
+          "uicKoodi": 10
+        },
+        "kaupallinenNro": "7"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:28:16.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906350
+        },
+        "toteutunutAika": "2014-12-09T22:28:07.173Z",
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424403,
+          "lyhenne": "KEA",
+          "maakoodi": "FI",
+          "uicKoodi": 621
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:33:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906358
+        },
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424072,
+          "lyhenne": "PJM",
+          "maakoodi": "FI",
+          "uicKoodi": 69
+        },
+        "kaupallinenNro": "282"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:16:04.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906330
+        },
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424025,
+          "lyhenne": "JRS",
+          "maakoodi": "FI",
+          "uicKoodi": 578
+        },
+        "kaupallinenNro": "2"
+      },
+      {
+        "suunniteltuAika": "2014-12-09T22:31:00.000Z",
+        "id": {
+          "junanumero": "10600",
+          "lahtopvm": "2014-12-10",
+          "id": 20906354
+        },
+        "tyyppi": "LAHTO",
+        "version":1,
+        "jupaTila": "VOIMASSAOLEVA",
+        "kaupallinen": false,
+        "liikennepaikka": {
+          "id": 424351,
+          "lyhenne": "LPV",
+          "maakoodi": "FI",
+          "uicKoodi": 68
+        },
+        "kaupallinenNro": "2"
+      }
+    ]
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "suunniteltuAika": "2014-12-09T22:14:00.000Z",
+  "id": {
+    "junanumero": "10600",
+    "lahtopvm": "2014-12-10",
+    "id": 20906328
+  },
+  "automaattiennusteAika": "2014-12-09T22:15:14.000Z",
+  "tyyppi": "LAHTO",
+  "jupaTila": "VOIMASSAOLEVA",
+  "kaupallinen": true,
+  "version": 1,
+  "liikennepaikka": {
+    "id": 424407,
+    "lyhenne": "HEK",
+    "maakoodi": "FI",
+    "uicKoodi": 1023
+  },
+  "kaupallinenNro": "012"
+}

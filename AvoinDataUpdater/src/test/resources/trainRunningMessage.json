@@ -1,0 +1,27 @@
+[{
+  "version": 5322983063,
+  "id": 1269441928,
+  "raideosuus": "V002",
+  "liikennepaikka": "EPO",
+  "liikennepaikkaSeuraava": "KLH",
+  "liikennepaikkaEdellinen": "TRL",
+  "junanumero": "8593",
+  "tapahtumaPvm": "2015-09-24T21:00:56.048Z",
+  "lahtopvm": "2015-09-24",
+  "tapahtumaV": "2015-09-25",
+  "raideosuudenVarautuminen": "R"
+},
+  {
+    "version": 5322983063,
+    "id": 1269441929,
+    "raideosuusEdellinen": "V454cd",
+    "raideosuus": "418",
+    "liikennepaikka": "HKI",
+    "liikennepaikkaSeuraava": "END",
+    "liikennepaikkaEdellinen": "PSL",
+    "junanumero": "9176",
+    "tapahtumaPvm": "2015-09-24T21:00:56.148Z",
+    "lahtopvm": "2015-09-24",
+    "tapahtumaV": "2015-09-25",
+    "raideosuudenVarautuminen": "O"
+  }]

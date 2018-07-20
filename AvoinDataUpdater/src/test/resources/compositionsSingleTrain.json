@@ -1,0 +1,861 @@
+[{
+	"version": 3177409547,
+	"id": 1831795,
+	"lahtoPvm": "2014-12-10",
+	"kokonaispituus": 347,
+	"jarrupainonopeus": 120,
+	"jarrupainonopeus": 120,
+	"aikataulutapahtuma": {
+		"id": 22044443,
+		"tapahtumaAika": "1970-01-01T21:34:00.000",
+		"liikennepaikka": {
+			"id": 424166,
+			"lyhenne": "TPE",
+			"maakoodi": "FI",
+			"uicKoodi": 160
+		},
+		"version": 1,
+		"tyyppi": "LAHTO"
+	},
+	"viimeinenAikataulutapahtuma": {
+		"id": 22044592,
+		"tapahtumaAika": "1970-01-02T09:48:00.000",
+		"liikennepaikka": {
+			"id": 423969,
+			"lyhenne": "KLI",
+			"maakoodi": "FI",
+			"uicKoodi": 358
+		},
+		"version": 1,
+		"tyyppi": "SAAP"
+	},
+	"aikataulu": {
+		"id": 759537,
+		"operaattori": {
+			"id": 1,
+			"uicKoodi": 10,
+			"lyhenne": "vr"
+		},
+		"junatyyppi": {
+			"id": 45,
+			"junalaji": {
+				"id": 1,
+				"nimi": "KaukoliikenneAvoin"
+			},
+			"nimi": "PYOAvoin"
+		},
+		"aikataulunJunanumero": {
+			"id": 302067,
+			"junanumero": 263
+		}
+	},
+	"vaunus": [{
+		"id": 19181631,
+		"tunniste": "24053",
+		"myyntinumero": "45",
+		"sijainti": 1,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181633,
+		"tunniste": "24056",
+		"myyntinumero": "43",
+		"sijainti": 3,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181635,
+		"tunniste": "24079",
+		"myyntinumero": "41",
+		"sijainti": 5,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181638,
+		"tunniste": "23821",
+		"myyntinumero": "38",
+		"sijainti": 8,
+		"pituus": 2640,
+		"kahvio": true,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181641,
+		"tunniste": "65109876002-8",
+		"myyntinumero": "725",
+		"sijainti": 11,
+		"pituus": 3160,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181642,
+		"tunniste": "65109876009-3",
+		"myyntinumero": "732",
+		"sijainti": 12,
+		"pituus": 3160,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181634,
+		"tunniste": "24112",
+		"myyntinumero": "42",
+		"sijainti": 4,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181637,
+		"tunniste": "23551",
+		"myyntinumero": "39",
+		"sijainti": 7,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": true
+	},
+	{
+		"id": 19181640,
+		"tunniste": "31024",
+		"myyntinumero": "720",
+		"sijainti": 10,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181636,
+		"tunniste": "24052",
+		"myyntinumero": "40",
+		"sijainti": 6,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181632,
+		"tunniste": "24074",
+		"myyntinumero": "44",
+		"sijainti": 2,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181639,
+		"tunniste": "27373",
+		"myyntinumero": "37",
+		"sijainti": 9,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": true,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	}],
+	"veturis": [{
+		"id": 1794356,
+		"tunniste": "3103",
+		"sijainti": 1,
+		"version": 1,
+		"tyyppi": "Sr1",
+		"vetovoimalajilyhenne": "S"
+	}]
+},
+{
+	"version": 3177409547,
+	"id": 1831764,
+	"lahtoPvm": "2014-12-10",
+	"kokonaispituus": 315,
+	"jarrupainonopeus": 120,
+	"aikataulutapahtuma": {
+		"id": 22044353,
+		"tapahtumaAika": "1970-01-01T18:52:00.000",
+		"liikennepaikka": {
+			"id": 423987,
+			"lyhenne": "PSLT",
+			"maakoodi": "FI",
+			"uicKoodi": 1034
+		},
+		"version": 1,
+		"tyyppi": "LAHTO"
+	},
+	"viimeinenAikataulutapahtuma": {
+		"id": 22044592,
+		"tapahtumaAika": "1970-01-02T09:48:00.000",
+		"liikennepaikka": {
+			"id": 423969,
+			"lyhenne": "KLI",
+			"maakoodi": "FI",
+			"uicKoodi": 358
+		},
+		"version": 1,
+		"tyyppi": "SAAP"
+	},
+	"aikataulu": {
+		"id": 759537,
+		"operaattori": {
+			"id": 1,
+			"uicKoodi": 10,
+			"lyhenne": "vr"
+		},
+		"junatyyppi": {
+			"id": 45,
+			"junalaji": {
+				"id": 1,
+				"nimi": "KaukoliikenneAvoin"
+			},
+			"nimi": "PYOAvoin"
+		},
+		"aikataulunJunanumero": {
+			"id": 302067,
+			"junanumero": 263
+		}
+	},
+	"vaunus": [{
+		"id": 19181256,
+		"tunniste": "23551",
+		"myyntinumero": "39",
+		"sijainti": 7,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": true
+	},
+	{
+		"id": 19181255,
+		"tunniste": "24052",
+		"myyntinumero": "40",
+		"sijainti": 6,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181258,
+		"tunniste": "27373",
+		"myyntinumero": "37",
+		"sijainti": 9,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": true,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181251,
+		"tunniste": "24074",
+		"myyntinumero": "44",
+		"sijainti": 2,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181260,
+		"tunniste": "65109876002-8",
+		"myyntinumero": "725",
+		"sijainti": 11,
+		"pituus": 3160,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181254,
+		"tunniste": "24079",
+		"myyntinumero": "41",
+		"sijainti": 5,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181257,
+		"tunniste": "23821",
+		"myyntinumero": "38",
+		"sijainti": 8,
+		"pituus": 2640,
+		"kahvio": true,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181259,
+		"tunniste": "31024",
+		"myyntinumero": "720",
+		"sijainti": 10,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181252,
+		"tunniste": "24056",
+		"myyntinumero": "43",
+		"sijainti": 3,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181250,
+		"tunniste": "24053",
+		"myyntinumero": "45",
+		"sijainti": 1,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19181253,
+		"tunniste": "24112",
+		"myyntinumero": "42",
+		"sijainti": 4,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	}],
+	"veturis": [{
+		"id": 1794325,
+		"tunniste": "3103",
+		"sijainti": 1,
+		"version": 1,
+		"tyyppi": "Sr1",
+		"vetovoimalajilyhenne": "S"
+	}]
+},
+{
+	"version": 3177409547,
+	"id": 1831615,
+	"lahtoPvm": "2014-12-10",
+	"kokonaispituus": 257,
+	"jarrupainonopeus": 120,
+	"aikataulutapahtuma": {
+		"id": 22044347,
+		"tapahtumaAika": "1970-01-01T18:23:00.000",
+		"liikennepaikka": {
+			"id": 424135,
+			"lyhenne": "HKI",
+			"maakoodi": "FI",
+			"uicKoodi": 1
+		},
+		"version": 1,
+		"tyyppi": "LAHTO"
+	},
+	"viimeinenAikataulutapahtuma": {
+		"id": 22044592,
+		"tapahtumaAika": "1970-01-02T09:48:00.000",
+		"liikennepaikka": {
+			"id": 423969,
+			"lyhenne": "KLI",
+			"maakoodi": "FI",
+			"uicKoodi": 358
+		},
+		"version": 1,
+		"tyyppi": "SAAP"
+	},
+	"aikataulu": {
+		"id": 759537,
+		"operaattori": {
+			"id": 1,
+			"uicKoodi": 10,
+			"lyhenne": "vr"
+		},
+		"junatyyppi": {
+			"id": 45,
+			"junalaji": {
+				"id": 1,
+				"nimi": "KaukoliikenneAvoin"
+			},
+			"nimi": "PYOAvoin"
+		},
+		"aikataulunJunanumero": {
+			"id": 302067,
+			"junanumero": 263
+		}
+	},
+	"vaunus": [{
+		"id": 19179445,
+		"tunniste": "24053",
+		"myyntinumero": "45",
+		"sijainti": 1,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179449,
+		"tunniste": "24079",
+		"myyntinumero": "41",
+		"sijainti": 5,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179451,
+		"tunniste": "23551",
+		"myyntinumero": "39",
+		"sijainti": 7,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": true
+	},
+	{
+		"id": 19179453,
+		"tunniste": "27373",
+		"myyntinumero": "37",
+		"sijainti": 9,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": true,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179448,
+		"tunniste": "24112",
+		"myyntinumero": "42",
+		"sijainti": 4,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179450,
+		"tunniste": "24052",
+		"myyntinumero": "40",
+		"sijainti": 6,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179446,
+		"tunniste": "24074",
+		"myyntinumero": "44",
+		"sijainti": 2,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179447,
+		"tunniste": "24056",
+		"myyntinumero": "43",
+		"sijainti": 3,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19179452,
+		"tunniste": "23821",
+		"myyntinumero": "38",
+		"sijainti": 8,
+		"pituus": 2640,
+		"kahvio": true,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	}],
+	"veturis": [{
+		"id": 1794188,
+		"tunniste": "3103",
+		"sijainti": 1,
+		"version": 1,
+		"tyyppi": "Sr1",
+		"vetovoimalajilyhenne": "S"
+	}]
+},
+{
+	"version": 3177409547,
+	"id": 1832365,
+	"lahtoPvm": "2014-12-10",
+	"kokonaispituus": 363,
+	"jarrupainonopeus": 120,
+	"aikataulutapahtuma": {
+		"id": 22044557,
+		"tapahtumaAika": "1970-01-02T05:35:00.000",
+		"liikennepaikka": {
+			"id": 423950,
+			"lyhenne": "OL",
+			"maakoodi": "FI",
+			"uicKoodi": 370
+		},
+		"version": 1,
+		"tyyppi": "LAHTO"
+	},
+	"viimeinenAikataulutapahtuma": {
+		"id": 22044592,
+		"tapahtumaAika": "1970-01-02T09:48:00.000",
+		"liikennepaikka": {
+			"id": 423969,
+			"lyhenne": "KLI",
+			"maakoodi": "FI",
+			"uicKoodi": 358
+		},
+		"version": 1,
+		"tyyppi": "SAAP"
+	},
+	"aikataulu": {
+		"id": 759537,
+		"operaattori": {
+			"id": 1,
+			"uicKoodi": 10,
+			"lyhenne": "vr"
+		},
+		"junatyyppi": {
+			"id": 45,
+			"junalaji": {
+				"id": 1,
+				"nimi": "KaukoliikenneAvoin"
+			},
+			"nimi": "PYOAvoin"
+		},
+		"aikataulunJunanumero": {
+			"id": 302067,
+			"junanumero": 263
+		}
+	},
+	"vaunus": [{
+		"id": 19188623,
+		"tunniste": "24079",
+		"myyntinumero": "41",
+		"sijainti": 5,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188630,
+		"tunniste": "65109876009-3",
+		"myyntinumero": "732",
+		"sijainti": 12,
+		"pituus": 3160,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188625,
+		"tunniste": "23551",
+		"myyntinumero": "39",
+		"sijainti": 7,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": true
+	},
+	{
+		"id": 19188627,
+		"tunniste": "27373",
+		"myyntinumero": "37",
+		"sijainti": 9,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": true,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188628,
+		"tunniste": "31024",
+		"myyntinumero": "720",
+		"sijainti": 10,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188620,
+		"tunniste": "24074",
+		"myyntinumero": "44",
+		"sijainti": 2,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188629,
+		"tunniste": "65109876002-8",
+		"myyntinumero": "725",
+		"sijainti": 11,
+		"pituus": 3160,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188626,
+		"tunniste": "23821",
+		"myyntinumero": "38",
+		"sijainti": 8,
+		"pituus": 2640,
+		"kahvio": true,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188624,
+		"tunniste": "24052",
+		"myyntinumero": "40",
+		"sijainti": 6,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188621,
+		"tunniste": "24056",
+		"myyntinumero": "43",
+		"sijainti": 3,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188619,
+		"tunniste": "24053",
+		"myyntinumero": "45",
+		"sijainti": 1,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	},
+	{
+		"id": 19188622,
+		"tunniste": "24112",
+		"myyntinumero": "42",
+		"sijainti": 4,
+		"pituus": 2640,
+		"kahvio": false,
+		"leikkitila": false,
+		"tupakointi": false,
+		"video": false,
+		"lemmikkielainosasto": false,
+		"pyoratuolipaikka": false,
+		"tilaaMatkalaukuille": false
+	}],
+	"veturis": [{
+		"id": 1794851,
+		"tunniste": "2820",
+		"sijainti": 2,
+		"version": 1,
+		"tyyppi": "Dr16",
+		"vetovoimalajilyhenne": "D"
+	},
+	{
+		"id": 1794850,
+		"tunniste": "2805",
+		"sijainti": 1,
+		"version": 1,
+		"tyyppi": "Dr16",
+		"vetovoimalajilyhenne": "D"
+	}]
+}]

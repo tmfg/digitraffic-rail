@@ -1,0 +1,5152 @@
+[ {
+  "id" : 1279498,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 435095,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-02-13",
+  "loppupvm" : "2017-06-15",
+  "hyvaksymisaika" : "2017-01-20T14:51:57+02:00",
+  "aikataulurivis" : [ {
+    "id" : 19763459,
+    "lahto" : [ {
+      "id" : 37100398,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100397,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 19763460,
+    "lahto" : [ {
+      "id" : 37100400,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100399,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 19763464,
+    "lahto" : [ {
+      "id" : 37100408,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100407,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 19763448,
+    "lahto" : [ {
+      "id" : 37100376,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100375,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 19763457,
+    "lahto" : [ {
+      "id" : 37100394,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100393,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 19763454,
+    "lahto" : [ {
+      "id" : 37100388,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100387,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 19763456,
+    "lahto" : [ {
+      "id" : 37100392,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100391,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 19763463,
+    "lahto" : [ {
+      "id" : 37100406,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100405,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 19763466,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 37100411,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 19763445,
+    "lahto" : [ {
+      "id" : 37100370,
+      "tapahtumaAika" : "1970-01-01T18:06:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 19763447,
+    "lahto" : [ {
+      "id" : 37100374,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100373,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 19763449,
+    "lahto" : [ {
+      "id" : 37100378,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100377,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 19763450,
+    "lahto" : [ {
+      "id" : 37100380,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100379,
+      "tapahtumaAika" : "1970-01-01T18:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 19763462,
+    "lahto" : [ {
+      "id" : 37100404,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100403,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 19763453,
+    "lahto" : [ {
+      "id" : 37100386,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100385,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 19763461,
+    "lahto" : [ {
+      "id" : 37100402,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100401,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 19763446,
+    "lahto" : [ {
+      "id" : 37100372,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100371,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 19763451,
+    "lahto" : [ {
+      "id" : 37100382,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100381,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 19763455,
+    "lahto" : [ {
+      "id" : 37100390,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37100389,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  } ],
+  "peruminens" : [ {
+    "id" : 598769,
+    "alkuPvm" : "2017-02-23",
+    "loppuPvm" : "2017-02-23",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599617,
+    "alkuPvm" : "2017-03-16",
+    "loppuPvm" : "2017-03-16",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599618,
+    "alkuPvm" : "2017-03-20",
+    "loppuPvm" : "2017-03-20",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599623,
+    "alkuPvm" : "2017-03-13",
+    "loppuPvm" : "2017-03-13",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 596533,
+    "alkuPvm" : "2017-02-16",
+    "loppuPvm" : "2017-02-16",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599616,
+    "alkuPvm" : "2017-03-08",
+    "loppuPvm" : "2017-03-08",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599624,
+    "alkuPvm" : "2017-03-22",
+    "loppuPvm" : "2017-03-22",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599615,
+    "alkuPvm" : "2017-03-06",
+    "loppuPvm" : "2017-03-06",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599619,
+    "alkuPvm" : "2017-03-23",
+    "loppuPvm" : "2017-03-23",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 600760,
+    "alkuPvm" : "2017-03-02",
+    "loppuPvm" : "2017-03-02",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 599243,
+    "alkuPvm" : "2017-02-27",
+    "loppuPvm" : "2017-02-27",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  } ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : true,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 201500580468,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-02-13",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "M",
+  "kapasiteettiId" : "VR.V.70588"
+}, {
+  "id" : 1183726,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 411936,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2016-12-13",
+  "loppupvm" : "2017-06-17",
+  "hyvaksymisaika" : "2016-08-19T13:26:17+03:00",
+  "aikataulurivis" : [ {
+    "id" : 18355520,
+    "lahto" : [ {
+      "id" : 34475976,
+      "tapahtumaAika" : "1970-01-01T22:11:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475975,
+      "tapahtumaAika" : "1970-01-01T22:11:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 18355528,
+    "lahto" : [ {
+      "id" : 34475992,
+      "tapahtumaAika" : "1970-01-01T23:15:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475991,
+      "tapahtumaAika" : "1970-01-01T23:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 18355530,
+    "lahto" : [ {
+      "id" : 34475996,
+      "tapahtumaAika" : "1970-01-01T23:52:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475995,
+      "tapahtumaAika" : "1970-01-01T23:52:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 18355522,
+    "lahto" : [ {
+      "id" : 34475980,
+      "tapahtumaAika" : "1970-01-01T22:25:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475979,
+      "tapahtumaAika" : "1970-01-01T22:25:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 18355524,
+    "lahto" : [ {
+      "id" : 34475984,
+      "tapahtumaAika" : "1970-01-01T22:39:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475983,
+      "tapahtumaAika" : "1970-01-01T22:39:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 18355514,
+    "lahto" : [ {
+      "id" : 34475964,
+      "tapahtumaAika" : "1970-01-01T21:28:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 18355518,
+    "lahto" : [ {
+      "id" : 34475972,
+      "tapahtumaAika" : "1970-01-01T21:43:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475971,
+      "tapahtumaAika" : "1970-01-01T21:43:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 18355519,
+    "lahto" : [ {
+      "id" : 34475974,
+      "tapahtumaAika" : "1970-01-01T21:54:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475973,
+      "tapahtumaAika" : "1970-01-01T21:54:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 18355532,
+    "lahto" : [ {
+      "id" : 34476000,
+      "tapahtumaAika" : "1970-01-02T00:12:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475999,
+      "tapahtumaAika" : "1970-01-02T00:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 18355533,
+    "lahto" : [ {
+      "id" : 34476002,
+      "tapahtumaAika" : "1970-01-02T00:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34476001,
+      "tapahtumaAika" : "1970-01-02T00:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 18355535,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 34476005,
+      "tapahtumaAika" : "1970-01-02T00:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 18355529,
+    "lahto" : [ {
+      "id" : 34475994,
+      "tapahtumaAika" : "1970-01-01T23:40:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475993,
+      "tapahtumaAika" : "1970-01-01T23:26:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 18355525,
+    "lahto" : [ {
+      "id" : 34475986,
+      "tapahtumaAika" : "1970-01-01T22:49:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475985,
+      "tapahtumaAika" : "1970-01-01T22:48:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 18355526,
+    "lahto" : [ {
+      "id" : 34475988,
+      "tapahtumaAika" : "1970-01-01T22:52:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475987,
+      "tapahtumaAika" : "1970-01-01T22:52:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 18355515,
+    "lahto" : [ {
+      "id" : 34475966,
+      "tapahtumaAika" : "1970-01-01T21:30:04",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475965,
+      "tapahtumaAika" : "1970-01-01T21:30:04",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 18355516,
+    "lahto" : [ {
+      "id" : 34475968,
+      "tapahtumaAika" : "1970-01-01T21:33:55",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475967,
+      "tapahtumaAika" : "1970-01-01T21:33:55",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 18355517,
+    "lahto" : [ {
+      "id" : 34475970,
+      "tapahtumaAika" : "1970-01-01T21:37:32",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475969,
+      "tapahtumaAika" : "1970-01-01T21:37:32",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 18355523,
+    "lahto" : [ {
+      "id" : 34475982,
+      "tapahtumaAika" : "1970-01-01T22:34:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475981,
+      "tapahtumaAika" : "1970-01-01T22:34:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 18355531,
+    "lahto" : [ {
+      "id" : 34475998,
+      "tapahtumaAika" : "1970-01-02T00:03:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34475997,
+      "tapahtumaAika" : "1970-01-02T00:03:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : false,
+  "kulkuTi" : true,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : true,
+  "kulkuSu" : false,
+  "version" : 111945097654,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2016-12-11",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.70588"
+}, {
+  "id" : 1184490,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 411936,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-06-20",
+  "loppupvm" : "2017-12-09",
+  "hyvaksymisaika" : "2016-08-19T13:26:17+03:00",
+  "aikataulurivis" : [ {
+    "id" : 18375825,
+    "lahto" : [ {
+      "id" : 34515058,
+      "tapahtumaAika" : "1970-01-01T21:30:04",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515057,
+      "tapahtumaAika" : "1970-01-01T21:30:04",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 18375827,
+    "lahto" : [ {
+      "id" : 34515062,
+      "tapahtumaAika" : "1970-01-01T21:37:32",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515061,
+      "tapahtumaAika" : "1970-01-01T21:37:32",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 18375830,
+    "lahto" : [ {
+      "id" : 34515068,
+      "tapahtumaAika" : "1970-01-01T22:11:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515067,
+      "tapahtumaAika" : "1970-01-01T22:11:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 18375843,
+    "lahto" : [ {
+      "id" : 34515094,
+      "tapahtumaAika" : "1970-01-02T00:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515093,
+      "tapahtumaAika" : "1970-01-02T00:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 18375839,
+    "lahto" : [ {
+      "id" : 34515086,
+      "tapahtumaAika" : "1970-01-01T23:40:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515085,
+      "tapahtumaAika" : "1970-01-01T23:26:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 18375829,
+    "lahto" : [ {
+      "id" : 34515066,
+      "tapahtumaAika" : "1970-01-01T21:54:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515065,
+      "tapahtumaAika" : "1970-01-01T21:54:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 18375836,
+    "lahto" : [ {
+      "id" : 34515080,
+      "tapahtumaAika" : "1970-01-01T22:52:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515079,
+      "tapahtumaAika" : "1970-01-01T22:52:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 18375838,
+    "lahto" : [ {
+      "id" : 34515084,
+      "tapahtumaAika" : "1970-01-01T23:15:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515083,
+      "tapahtumaAika" : "1970-01-01T23:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 18375824,
+    "lahto" : [ {
+      "id" : 34515056,
+      "tapahtumaAika" : "1970-01-01T21:28:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 18375840,
+    "lahto" : [ {
+      "id" : 34515088,
+      "tapahtumaAika" : "1970-01-01T23:52:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515087,
+      "tapahtumaAika" : "1970-01-01T23:52:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 18375826,
+    "lahto" : [ {
+      "id" : 34515060,
+      "tapahtumaAika" : "1970-01-01T21:33:55",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515059,
+      "tapahtumaAika" : "1970-01-01T21:33:55",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 18375832,
+    "lahto" : [ {
+      "id" : 34515072,
+      "tapahtumaAika" : "1970-01-01T22:25:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515071,
+      "tapahtumaAika" : "1970-01-01T22:25:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 18375833,
+    "lahto" : [ {
+      "id" : 34515074,
+      "tapahtumaAika" : "1970-01-01T22:34:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515073,
+      "tapahtumaAika" : "1970-01-01T22:34:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 18375835,
+    "lahto" : [ {
+      "id" : 34515078,
+      "tapahtumaAika" : "1970-01-01T22:49:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515077,
+      "tapahtumaAika" : "1970-01-01T22:48:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 18375828,
+    "lahto" : [ {
+      "id" : 34515064,
+      "tapahtumaAika" : "1970-01-01T21:43:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515063,
+      "tapahtumaAika" : "1970-01-01T21:43:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 18375834,
+    "lahto" : [ {
+      "id" : 34515076,
+      "tapahtumaAika" : "1970-01-01T22:39:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515075,
+      "tapahtumaAika" : "1970-01-01T22:39:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 18375845,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 34515097,
+      "tapahtumaAika" : "1970-01-02T00:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 18375841,
+    "lahto" : [ {
+      "id" : 34515090,
+      "tapahtumaAika" : "1970-01-02T00:03:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515089,
+      "tapahtumaAika" : "1970-01-02T00:03:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 18375842,
+    "lahto" : [ {
+      "id" : 34515092,
+      "tapahtumaAika" : "1970-01-02T00:12:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 34515091,
+      "tapahtumaAika" : "1970-01-02T00:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : false,
+  "kulkuTi" : true,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : true,
+  "kulkuSu" : false,
+  "version" : 111945097654,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2016-12-11",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.71352"
+}, {
+  "id" : 1308476,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 440396,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-03-27",
+  "loppupvm" : "2017-06-15",
+  "hyvaksymisaika" : "2017-03-03T14:14:29+02:00",
+  "aikataulurivis" : [ {
+    "id" : 20157999,
+    "lahto" : [ {
+      "id" : 37831318,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831317,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 20158011,
+    "lahto" : [ {
+      "id" : 37831342,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831341,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 20157998,
+    "lahto" : [ {
+      "id" : 37831316,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831315,
+      "tapahtumaAika" : "1970-01-01T18:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 20158002,
+    "lahto" : [ {
+      "id" : 37831324,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831323,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 20158005,
+    "lahto" : [ {
+      "id" : 37831330,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831329,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 20158008,
+    "lahto" : [ {
+      "id" : 37831336,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831335,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 20157994,
+    "lahto" : [ {
+      "id" : 37831308,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831307,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 20157997,
+    "lahto" : [ {
+      "id" : 37831314,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831313,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 20158009,
+    "lahto" : [ {
+      "id" : 37831338,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831337,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 20158010,
+    "lahto" : [ {
+      "id" : 37831340,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831339,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 20158012,
+    "lahto" : [ {
+      "id" : 37831344,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831343,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 20157996,
+    "lahto" : [ {
+      "id" : 37831312,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831311,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 20158001,
+    "lahto" : [ {
+      "id" : 37831322,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831321,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 20158003,
+    "lahto" : [ {
+      "id" : 37831326,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831325,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 20158004,
+    "lahto" : [ {
+      "id" : 37831328,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831327,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 20158007,
+    "lahto" : [ {
+      "id" : 37831334,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831333,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 20157995,
+    "lahto" : [ {
+      "id" : 37831310,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37831309,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 20158014,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 37831347,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 20157993,
+    "lahto" : [ {
+      "id" : 37831306,
+      "tapahtumaAika" : "1970-01-01T18:06:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  } ],
+  "peruminens" : [ {
+    "id" : 619989,
+    "alkuPvm" : "2017-06-01",
+    "loppuPvm" : "2017-06-01",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 606418,
+    "alkuPvm" : "2017-04-27",
+    "loppuPvm" : "2017-04-27",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 617065,
+    "alkuPvm" : "2017-05-22",
+    "loppuPvm" : "2017-05-22",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 616455,
+    "alkuPvm" : "2017-05-01",
+    "loppuPvm" : "2017-05-01",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 619992,
+    "alkuPvm" : "2017-06-15",
+    "loppuPvm" : "2017-06-15",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 619991,
+    "alkuPvm" : "2017-06-12",
+    "loppuPvm" : "2017-06-12",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 619990,
+    "alkuPvm" : "2017-06-05",
+    "loppuPvm" : "2017-06-05",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 606419,
+    "alkuPvm" : "2017-05-04",
+    "loppuPvm" : "2017-05-04",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 617063,
+    "alkuPvm" : "2017-05-11",
+    "loppuPvm" : "2017-05-11",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 604706,
+    "alkuPvm" : "2017-03-27",
+    "loppuPvm" : "2017-03-27",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 604707,
+    "alkuPvm" : "2017-04-06",
+    "loppuPvm" : "2017-04-06",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 604709,
+    "alkuPvm" : "2017-04-13",
+    "loppuPvm" : "2017-04-13",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 617066,
+    "alkuPvm" : "2017-05-25",
+    "loppuPvm" : "2017-05-25",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 604708,
+    "alkuPvm" : "2017-04-10",
+    "loppuPvm" : "2017-04-10",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 607339,
+    "alkuPvm" : "2017-04-17",
+    "loppuPvm" : "2017-04-17",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 614456,
+    "alkuPvm" : "2017-05-18",
+    "loppuPvm" : "2017-05-18",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 606417,
+    "alkuPvm" : "2017-04-20",
+    "loppuPvm" : "2017-04-20",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 617062,
+    "alkuPvm" : "2017-05-08",
+    "loppuPvm" : "2017-05-08",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 617064,
+    "alkuPvm" : "2017-05-15",
+    "loppuPvm" : "2017-05-15",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  } ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 227557023634,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-03-26",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.73325"
+}, {
+  "id" : 1308032,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 440396,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-02-13",
+  "loppupvm" : "2017-06-15",
+  "hyvaksymisaika" : "2017-03-03T14:14:29+02:00",
+  "aikataulurivis" : [ {
+    "id" : 20147964,
+    "lahto" : [ {
+      "id" : 37812136,
+      "tapahtumaAika" : "1970-01-01T18:06:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 20147969,
+    "lahto" : [ {
+      "id" : 37812146,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812145,
+      "tapahtumaAika" : "1970-01-01T18:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 20147980,
+    "lahto" : [ {
+      "id" : 37812168,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812167,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 20147981,
+    "lahto" : [ {
+      "id" : 37812170,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812169,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 20147983,
+    "lahto" : [ {
+      "id" : 37812174,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812173,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 20147968,
+    "lahto" : [ {
+      "id" : 37812144,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812143,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 20147982,
+    "lahto" : [ {
+      "id" : 37812172,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812171,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 20147985,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 37812177,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 20147967,
+    "lahto" : [ {
+      "id" : 37812142,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812141,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 20147974,
+    "lahto" : [ {
+      "id" : 37812156,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812155,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 20147978,
+    "lahto" : [ {
+      "id" : 37812164,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812163,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 20147972,
+    "lahto" : [ {
+      "id" : 37812152,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812151,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 20147975,
+    "lahto" : [ {
+      "id" : 37812158,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812157,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 20147979,
+    "lahto" : [ {
+      "id" : 37812166,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812165,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 20147965,
+    "lahto" : [ {
+      "id" : 37812138,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812137,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 20147970,
+    "lahto" : [ {
+      "id" : 37812148,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812147,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 20147973,
+    "lahto" : [ {
+      "id" : 37812154,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812153,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 20147966,
+    "lahto" : [ {
+      "id" : 37812140,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812139,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 20147976,
+    "lahto" : [ {
+      "id" : 37812160,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 37812159,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : true,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 227557023634,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-03-26",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "P",
+  "kapasiteettiId" : "VR.V.70588"
+}, {
+  "id" : 1229175,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 426426,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2016-12-12",
+  "loppupvm" : "2017-06-14",
+  "hyvaksymisaika" : "2016-11-11T13:45:52+02:00",
+  "aikataulurivis" : [ {
+    "id" : 19074461,
+    "lahto" : [ {
+      "id" : 35822907,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822906,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 19074464,
+    "lahto" : [ {
+      "id" : 35822913,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822912,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 19074459,
+    "lahto" : [ {
+      "id" : 35822903,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822902,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 19074463,
+    "lahto" : [ {
+      "id" : 35822911,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822910,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 19074450,
+    "lahto" : [ {
+      "id" : 35822885,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822884,
+      "tapahtumaAika" : "1970-01-01T18:16:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 19074452,
+    "lahto" : [ {
+      "id" : 35822889,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822888,
+      "tapahtumaAika" : "1970-01-01T18:35:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 19074465,
+    "lahto" : [ {
+      "id" : 35822915,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822914,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 19074468,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 35822920,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 19074447,
+    "lahto" : [ {
+      "id" : 35822879,
+      "tapahtumaAika" : "1970-01-01T18:06:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 19074448,
+    "lahto" : [ {
+      "id" : 35822881,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822880,
+      "tapahtumaAika" : "1970-01-01T18:08:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 19074451,
+    "lahto" : [ {
+      "id" : 35822887,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822886,
+      "tapahtumaAika" : "1970-01-01T18:22:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 19074453,
+    "lahto" : [ {
+      "id" : 35822891,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822890,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 19074457,
+    "lahto" : [ {
+      "id" : 35822899,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822898,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 19074458,
+    "lahto" : [ {
+      "id" : 35822901,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822900,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 19074462,
+    "lahto" : [ {
+      "id" : 35822909,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822908,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 19074455,
+    "lahto" : [ {
+      "id" : 35822895,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822894,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 19074466,
+    "lahto" : [ {
+      "id" : 35822917,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822916,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 19074449,
+    "lahto" : [ {
+      "id" : 35822883,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822882,
+      "tapahtumaAika" : "1970-01-01T18:12:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 19074456,
+    "lahto" : [ {
+      "id" : 35822897,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 35822896,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  } ],
+  "peruminens" : [ {
+    "id" : 589014,
+    "alkuPvm" : "2017-01-09",
+    "loppuPvm" : "2017-01-09",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 590165,
+    "alkuPvm" : "2017-01-18",
+    "loppuPvm" : "2017-01-18",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 584403,
+    "alkuPvm" : "2016-12-21",
+    "loppuPvm" : "2016-12-21",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 594266,
+    "alkuPvm" : "2017-02-01",
+    "loppuPvm" : "2017-02-01",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 587182,
+    "alkuPvm" : "2016-12-28",
+    "loppuPvm" : "2016-12-28",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 592551,
+    "alkuPvm" : "2017-01-23",
+    "loppuPvm" : "2017-01-23",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 583366,
+    "alkuPvm" : "2016-12-14",
+    "loppuPvm" : "2016-12-14",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 588139,
+    "alkuPvm" : "2017-01-02",
+    "loppuPvm" : "2017-01-02",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 590164,
+    "alkuPvm" : "2017-01-16",
+    "loppuPvm" : "2017-01-16",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 588140,
+    "alkuPvm" : "2017-01-04",
+    "loppuPvm" : "2017-01-04",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 584475,
+    "alkuPvm" : "2016-12-26",
+    "loppuPvm" : "2016-12-26",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 594987,
+    "alkuPvm" : "2017-02-08",
+    "loppuPvm" : "2017-02-08",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  } ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : true,
+  "kulkuTo" : false,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 157073366959,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2016-12-11",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "M",
+  "kapasiteettiId" : "VR.V.70588"
+}, {
+  "id" : 1475919,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 491833,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-12-11",
+  "loppupvm" : "2018-06-14",
+  "hyvaksymisaika" : "2017-08-17T08:50:32+03:00",
+  "aikataulurivis" : [ {
+    "id" : 22792464,
+    "lahto" : [ {
+      "id" : 42765964,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765963,
+      "tapahtumaAika" : "1970-01-01T19:02:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431002,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 22792477,
+    "lahto" : [ {
+      "id" : 42765990,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765989,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430981,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 22792459,
+    "lahto" : [ {
+      "id" : 42765954,
+      "tapahtumaAika" : "1970-01-01T18:14:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765953,
+      "tapahtumaAika" : "1970-01-01T18:14:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431316,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 22792470,
+    "lahto" : [ {
+      "id" : 42765976,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765975,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431194,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 22792475,
+    "lahto" : [ {
+      "id" : 42765986,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765985,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431200,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 22792476,
+    "lahto" : [ {
+      "id" : 42765988,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765987,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430997,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 22792461,
+    "lahto" : [ {
+      "id" : 42765958,
+      "tapahtumaAika" : "1970-01-01T18:22:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765957,
+      "tapahtumaAika" : "1970-01-01T18:22:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431021,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 22792468,
+    "lahto" : [ {
+      "id" : 42765972,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765971,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431001,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 22792469,
+    "lahto" : [ {
+      "id" : 42765974,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765973,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431374,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 22792462,
+    "lahto" : [ {
+      "id" : 42765960,
+      "tapahtumaAika" : "1970-01-01T18:28:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765959,
+      "tapahtumaAika" : "1970-01-01T18:28:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431131,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 22792463,
+    "lahto" : [ {
+      "id" : 42765962,
+      "tapahtumaAika" : "1970-01-01T18:41:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765961,
+      "tapahtumaAika" : "1970-01-01T18:41:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431136,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 22792466,
+    "lahto" : [ {
+      "id" : 42765968,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765967,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431357,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 22792467,
+    "lahto" : [ {
+      "id" : 42765970,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765969,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431490,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 22792472,
+    "lahto" : [ {
+      "id" : 42765980,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765979,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431017,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 22792473,
+    "lahto" : [ {
+      "id" : 42765982,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765981,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431029,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 22792474,
+    "lahto" : [ {
+      "id" : 42765984,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765983,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431186,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 22792458,
+    "lahto" : [ {
+      "id" : 42765952,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 431242,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 22792460,
+    "lahto" : [ {
+      "id" : 42765956,
+      "tapahtumaAika" : "1970-01-01T18:18:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42765955,
+      "tapahtumaAika" : "1970-01-01T18:18:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431198,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 22792479,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 42765993,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431090,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 229613474141,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-12-10",
+  "aikataulupaatos" : "Hyväksytty muutoksin",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.81138"
+}, {
+  "id" : 1476543,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 491833,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2018-06-18",
+  "loppupvm" : "2018-12-06",
+  "hyvaksymisaika" : "2017-08-17T08:50:32+03:00",
+  "aikataulurivis" : [ {
+    "id" : 22804771,
+    "lahto" : [ {
+      "id" : 42789330,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789329,
+      "tapahtumaAika" : "1970-01-01T19:02:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431002,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 22804773,
+    "lahto" : [ {
+      "id" : 42789334,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789333,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431357,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 22804775,
+    "lahto" : [ {
+      "id" : 42789338,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789337,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431001,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 22804779,
+    "lahto" : [ {
+      "id" : 42789346,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789345,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431017,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 22804780,
+    "lahto" : [ {
+      "id" : 42789348,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789347,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431029,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 22804777,
+    "lahto" : [ {
+      "id" : 42789342,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789341,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431194,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 22804783,
+    "lahto" : [ {
+      "id" : 42789354,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789353,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430997,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 22804769,
+    "lahto" : [ {
+      "id" : 42789326,
+      "tapahtumaAika" : "1970-01-01T18:28:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789325,
+      "tapahtumaAika" : "1970-01-01T18:28:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431131,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 22804765,
+    "lahto" : [ {
+      "id" : 42789318,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 431242,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 22804766,
+    "lahto" : [ {
+      "id" : 42789320,
+      "tapahtumaAika" : "1970-01-01T18:14:12",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789319,
+      "tapahtumaAika" : "1970-01-01T18:14:12",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431316,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 22804782,
+    "lahto" : [ {
+      "id" : 42789352,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789351,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431200,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 22804774,
+    "lahto" : [ {
+      "id" : 42789336,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789335,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431490,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 22804784,
+    "lahto" : [ {
+      "id" : 42789356,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789355,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430981,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 22804768,
+    "lahto" : [ {
+      "id" : 42789324,
+      "tapahtumaAika" : "1970-01-01T18:22:09",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789323,
+      "tapahtumaAika" : "1970-01-01T18:22:09",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431021,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 22804770,
+    "lahto" : [ {
+      "id" : 42789328,
+      "tapahtumaAika" : "1970-01-01T18:41:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789327,
+      "tapahtumaAika" : "1970-01-01T18:41:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431136,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 22804767,
+    "lahto" : [ {
+      "id" : 42789322,
+      "tapahtumaAika" : "1970-01-01T18:18:18",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789321,
+      "tapahtumaAika" : "1970-01-01T18:18:18",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431198,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 22804776,
+    "lahto" : [ {
+      "id" : 42789340,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789339,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431374,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 22804781,
+    "lahto" : [ {
+      "id" : 42789350,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42789349,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431186,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 22804786,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 42789359,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 431090,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : false,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 229613497926,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-12-10",
+  "aikataulupaatos" : "Hyväksytty muutoksin",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.81761"
+}, {
+  "id" : 1453787,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 486987,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-06-19",
+  "loppupvm" : "2017-12-09",
+  "hyvaksymisaika" : "2017-07-21T14:27:05+03:00",
+  "aikataulurivis" : [ {
+    "id" : 22477238,
+    "lahto" : [ {
+      "id" : 42178223,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178222,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 22477251,
+    "lahto" : [ {
+      "id" : 42178249,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178248,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 22477255,
+    "lahto" : [ {
+      "id" : 42178257,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178256,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 22477239,
+    "lahto" : [ {
+      "id" : 42178225,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178224,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 22477245,
+    "lahto" : [ {
+      "id" : 42178237,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178236,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 22477253,
+    "lahto" : [ {
+      "id" : 42178253,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178252,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 22477237,
+    "lahto" : [ {
+      "id" : 42178221,
+      "tapahtumaAika" : "1970-01-01T17:55:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 22477241,
+    "lahto" : [ {
+      "id" : 42178229,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178228,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 22477243,
+    "lahto" : [ {
+      "id" : 42178233,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178232,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 22477247,
+    "lahto" : [ {
+      "id" : 42178241,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178240,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 22477252,
+    "lahto" : [ {
+      "id" : 42178251,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178250,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 22477258,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 42178262,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 22477242,
+    "lahto" : [ {
+      "id" : 42178231,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178230,
+      "tapahtumaAika" : "1970-01-01T18:25:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 22477249,
+    "lahto" : [ {
+      "id" : 42178245,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178244,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 22477254,
+    "lahto" : [ {
+      "id" : 42178255,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178254,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 22477256,
+    "lahto" : [ {
+      "id" : 42178259,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178258,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 22477240,
+    "lahto" : [ {
+      "id" : 42178227,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178226,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 22477246,
+    "lahto" : [ {
+      "id" : 42178239,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178238,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 22477248,
+    "lahto" : [ {
+      "id" : 42178243,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42178242,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  } ],
+  "peruminens" : [ ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : true,
+  "kulkuKe" : true,
+  "kulkuTo" : true,
+  "kulkuPe" : true,
+  "kulkuLa" : true,
+  "kulkuSu" : false,
+  "version" : 229298819943,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-08-14",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "P",
+  "kapasiteettiId" : "VR.V.71352"
+}, {
+  "id" : 1456325,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 486987,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-08-14",
+  "loppupvm" : "2017-12-07",
+  "hyvaksymisaika" : "2017-07-21T14:27:05+03:00",
+  "aikataulurivis" : [ {
+    "id" : 22529115,
+    "lahto" : [ {
+      "id" : 42276901,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276900,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 22529103,
+    "lahto" : [ {
+      "id" : 42276877,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276876,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 22529106,
+    "lahto" : [ {
+      "id" : 42276883,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276882,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 22529107,
+    "lahto" : [ {
+      "id" : 42276885,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276884,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 22529109,
+    "lahto" : [ {
+      "id" : 42276889,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276888,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 22529111,
+    "lahto" : [ {
+      "id" : 42276893,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276892,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 22529116,
+    "lahto" : [ {
+      "id" : 42276903,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276902,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 22529097,
+    "lahto" : [ {
+      "id" : 42276865,
+      "tapahtumaAika" : "1970-01-01T17:55:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 22529101,
+    "lahto" : [ {
+      "id" : 42276873,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276872,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 22529102,
+    "lahto" : [ {
+      "id" : 42276875,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276874,
+      "tapahtumaAika" : "1970-01-01T18:25:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 22529113,
+    "lahto" : [ {
+      "id" : 42276897,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276896,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 22529098,
+    "lahto" : [ {
+      "id" : 42276867,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276866,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 22529114,
+    "lahto" : [ {
+      "id" : 42276899,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276898,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 22529118,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 42276906,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  }, {
+    "id" : 22529099,
+    "lahto" : [ {
+      "id" : 42276869,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276868,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 22529108,
+    "lahto" : [ {
+      "id" : 42276887,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276886,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 22529100,
+    "lahto" : [ {
+      "id" : 42276871,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276870,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 22529105,
+    "lahto" : [ {
+      "id" : 42276881,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276880,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 22529112,
+    "lahto" : [ {
+      "id" : 42276895,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 42276894,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  } ],
+  "peruminens" : [ {
+    "id" : 649495,
+    "alkuPvm" : "2017-08-22",
+    "loppuPvm" : "2017-08-22",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650019,
+    "alkuPvm" : "2017-10-24",
+    "loppuPvm" : "2017-10-24",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 649497,
+    "alkuPvm" : "2017-08-29",
+    "loppuPvm" : "2017-08-29",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 649494,
+    "alkuPvm" : "2017-08-21",
+    "loppuPvm" : "2017-08-21",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 657563,
+    "alkuPvm" : "2017-09-11",
+    "loppuPvm" : "2017-09-11",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 657566,
+    "alkuPvm" : "2017-09-25",
+    "loppuPvm" : "2017-09-25",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650017,
+    "alkuPvm" : "2017-10-10",
+    "loppuPvm" : "2017-10-10",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 651383,
+    "alkuPvm" : "2017-08-15",
+    "loppuPvm" : "2017-08-15",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650015,
+    "alkuPvm" : "2017-09-26",
+    "loppuPvm" : "2017-09-26",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 648246,
+    "alkuPvm" : "2017-08-14",
+    "loppuPvm" : "2017-08-14",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 657565,
+    "alkuPvm" : "2017-09-18",
+    "loppuPvm" : "2017-09-18",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 649496,
+    "alkuPvm" : "2017-08-28",
+    "loppuPvm" : "2017-08-28",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 647046,
+    "alkuPvm" : "2017-08-17",
+    "loppuPvm" : "2017-08-17",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 657564,
+    "alkuPvm" : "2017-09-14",
+    "loppuPvm" : "2017-09-14",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650013,
+    "alkuPvm" : "2017-09-12",
+    "loppuPvm" : "2017-09-12",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650014,
+    "alkuPvm" : "2017-09-19",
+    "loppuPvm" : "2017-09-19",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650016,
+    "alkuPvm" : "2017-10-03",
+    "loppuPvm" : "2017-10-03",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 650018,
+    "alkuPvm" : "2017-10-17",
+    "loppuPvm" : "2017-10-17",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  } ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : true,
+  "kulkuKe" : false,
+  "kulkuTo" : true,
+  "kulkuPe" : false,
+  "kulkuLa" : false,
+  "kulkuSu" : false,
+  "version" : 229298819943,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-08-14",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "L",
+  "kapasiteettiId" : "VR.V.76306"
+}, {
+  "id" : 1400282,
+  "operaattori" : {
+    "uicKoodi" : 10,
+    "lyhenne" : "vr"
+  },
+  "junatyyppi" : {
+    "id" : 50,
+    "junalaji" : {
+      "id" : 3,
+      "nimi" : "Cargo"
+    },
+    "nimi" : "T",
+    "kaupallinenJunatyyppi": true
+  },
+  "aikataulunJunanumero" : {
+    "id" : 472680,
+    "junanumero" : 4110
+  },
+  "alkupvm" : "2017-06-19",
+  "loppupvm" : "2017-12-09",
+  "hyvaksymisaika" : "2017-05-26T18:37:01+03:00",
+  "aikataulurivis" : [ {
+    "id" : 21658802,
+    "lahto" : [ {
+      "id" : 40649202,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649201,
+      "tapahtumaAika" : "1970-01-01T18:01:41",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429939,
+      "lyhenne" : "PMI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 882
+    }
+  }, {
+    "id" : 21658819,
+    "lahto" : [ {
+      "id" : 40649236,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649235,
+      "tapahtumaAika" : "1970-01-01T20:58:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429721,
+      "lyhenne" : "HPS",
+      "maakoodi" : "FI",
+      "uicKoodi" : 402
+    }
+  }, {
+    "id" : 21658810,
+    "lahto" : [ {
+      "id" : 40649218,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649217,
+      "tapahtumaAika" : "1970-01-01T19:37:33",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429742,
+      "lyhenne" : "SOR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 870
+    }
+  }, {
+    "id" : 21658815,
+    "lahto" : [ {
+      "id" : 40649228,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649227,
+      "tapahtumaAika" : "1970-01-01T20:21:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429770,
+      "lyhenne" : "ARL",
+      "maakoodi" : "FI",
+      "uicKoodi" : 869
+    }
+  }, {
+    "id" : 21658809,
+    "lahto" : [ {
+      "id" : 40649216,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649215,
+      "tapahtumaAika" : "1970-01-01T19:32:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430234,
+      "lyhenne" : "TOI",
+      "maakoodi" : "FI",
+      "uicKoodi" : 412
+    }
+  }, {
+    "id" : 21658812,
+    "lahto" : [ {
+      "id" : 40649222,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649221,
+      "tapahtumaAika" : "1970-01-01T19:50:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429935,
+      "lyhenne" : "KUO",
+      "maakoodi" : "FI",
+      "uicKoodi" : 408
+    }
+  }, {
+    "id" : 21658806,
+    "lahto" : [ {
+      "id" : 40649210,
+      "tapahtumaAika" : "1970-01-01T19:06:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649209,
+      "tapahtumaAika" : "1970-01-01T19:00:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429743,
+      "lyhenne" : "APT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 415
+    }
+  }, {
+    "id" : 21658803,
+    "lahto" : [ {
+      "id" : 40649204,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649203,
+      "tapahtumaAika" : "1970-01-01T18:05:47",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429762,
+      "lyhenne" : "OHM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1190
+    }
+  }, {
+    "id" : 21658804,
+    "lahto" : [ {
+      "id" : 40649206,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649205,
+      "tapahtumaAika" : "1970-01-01T18:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429872,
+      "lyhenne" : "TE",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1268
+    }
+  }, {
+    "id" : 21658811,
+    "lahto" : [ {
+      "id" : 40649220,
+      "tapahtumaAika" : "1970-01-01T19:47:00",
+      "pysahdystyyppi" : {
+        "id" : 2
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649219,
+      "tapahtumaAika" : "1970-01-01T19:46:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430117,
+      "lyhenne" : "KUOT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1139
+    }
+  }, {
+    "id" : 21658816,
+    "lahto" : [ {
+      "id" : 40649230,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649229,
+      "tapahtumaAika" : "1970-01-01T20:30:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429927,
+      "lyhenne" : "SLN",
+      "maakoodi" : "FI",
+      "uicKoodi" : 405
+    }
+  }, {
+    "id" : 21658817,
+    "lahto" : [ {
+      "id" : 40649232,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649231,
+      "tapahtumaAika" : "1970-01-01T20:40:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429941,
+      "lyhenne" : "SNJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 404
+    }
+  }, {
+    "id" : 21658800,
+    "lahto" : [ {
+      "id" : 40649198,
+      "tapahtumaAika" : "1970-01-01T17:55:00",
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ ],
+    "liikennepaikka" : {
+      "id" : 429983,
+      "lyhenne" : "ILM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 420
+    }
+  }, {
+    "id" : 21658801,
+    "lahto" : [ {
+      "id" : 40649200,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649199,
+      "tapahtumaAika" : "1970-01-01T17:57:20",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430058,
+      "lyhenne" : "ITR",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1049
+    }
+  }, {
+    "id" : 21658805,
+    "lahto" : [ {
+      "id" : 40649208,
+      "tapahtumaAika" : "1970-01-01T18:39:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649207,
+      "tapahtumaAika" : "1970-01-01T18:25:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429877,
+      "lyhenne" : "LNA",
+      "maakoodi" : "FI",
+      "uicKoodi" : 416
+    }
+  }, {
+    "id" : 21658808,
+    "lahto" : [ {
+      "id" : 40649214,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649213,
+      "tapahtumaAika" : "1970-01-01T19:23:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 430099,
+      "lyhenne" : "SIJ",
+      "maakoodi" : "FI",
+      "uicKoodi" : 413
+    }
+  }, {
+    "id" : 21658814,
+    "lahto" : [ {
+      "id" : 40649226,
+      "tapahtumaAika" : "1970-01-01T20:12:00",
+      "pysahdystyyppi" : {
+        "id" : 3
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649225,
+      "tapahtumaAika" : "1970-01-01T20:09:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429758,
+      "lyhenne" : "KRM",
+      "maakoodi" : "FI",
+      "uicKoodi" : 406
+    }
+  }, {
+    "id" : 21658818,
+    "lahto" : [ {
+      "id" : 40649234,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "pysahdystyyppi" : {
+        "id" : 1
+      },
+      "tyyppi" : "LAHTO"
+    } ],
+    "saapuminen" : [ {
+      "id" : 40649233,
+      "tapahtumaAika" : "1970-01-01T20:49:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429738,
+      "lyhenne" : "MRK",
+      "maakoodi" : "FI",
+      "uicKoodi" : 896
+    }
+  }, {
+    "id" : 21658821,
+    "lahto" : [ ],
+    "saapuminen" : [ {
+      "id" : 40649239,
+      "tapahtumaAika" : "1970-01-01T21:12:00",
+      "tyyppi" : "SAAP"
+    } ],
+    "liikennepaikka" : {
+      "id" : 429831,
+      "lyhenne" : "PMT",
+      "maakoodi" : "FI",
+      "uicKoodi" : 1211
+    }
+  } ],
+  "peruminens" : [ {
+    "id" : 630766,
+    "alkuPvm" : "2017-06-29",
+    "loppuPvm" : "2017-06-29",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635085,
+    "alkuPvm" : "2017-07-27",
+    "loppuPvm" : "2017-07-27",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 642230,
+    "alkuPvm" : "2017-08-07",
+    "loppuPvm" : "2017-08-07",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 642232,
+    "alkuPvm" : "2017-08-10",
+    "loppuPvm" : "2017-08-10",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635082,
+    "alkuPvm" : "2017-07-17",
+    "loppuPvm" : "2017-07-17",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 638473,
+    "alkuPvm" : "2017-08-05",
+    "loppuPvm" : "2017-08-05",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 630763,
+    "alkuPvm" : "2017-06-22",
+    "loppuPvm" : "2017-06-22",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635083,
+    "alkuPvm" : "2017-07-20",
+    "loppuPvm" : "2017-07-20",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 642228,
+    "alkuPvm" : "2017-07-31",
+    "loppuPvm" : "2017-07-31",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 638471,
+    "alkuPvm" : "2017-08-02",
+    "loppuPvm" : "2017-08-02",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635080,
+    "alkuPvm" : "2017-07-10",
+    "loppuPvm" : "2017-07-10",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635017,
+    "alkuPvm" : "2017-08-12",
+    "loppuPvm" : "2017-08-12",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 630765,
+    "alkuPvm" : "2017-06-28",
+    "loppuPvm" : "2017-06-28",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635084,
+    "alkuPvm" : "2017-07-24",
+    "loppuPvm" : "2017-07-24",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 630764,
+    "alkuPvm" : "2017-06-26",
+    "loppuPvm" : "2017-06-26",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 642231,
+    "alkuPvm" : "2017-08-08",
+    "loppuPvm" : "2017-08-08",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 630762,
+    "alkuPvm" : "2017-06-19",
+    "loppuPvm" : "2017-06-19",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635016,
+    "alkuPvm" : "2017-08-11",
+    "loppuPvm" : "2017-08-11",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 630767,
+    "alkuPvm" : "2017-07-06",
+    "loppuPvm" : "2017-07-06",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635015,
+    "alkuPvm" : "2017-08-09",
+    "loppuPvm" : "2017-08-09",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 642229,
+    "alkuPvm" : "2017-08-03",
+    "loppuPvm" : "2017-08-03",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 635081,
+    "alkuPvm" : "2017-07-13",
+    "loppuPvm" : "2017-07-13",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  }, {
+    "id" : 638472,
+    "alkuPvm" : "2017-08-04",
+    "loppuPvm" : "2017-08-04",
+    "peruType" : "KOPE",
+    "aikataulurivis" : [ ]
+  } ],
+  "poikkeuspaivas" : [ ],
+  "kulkuMa" : true,
+  "kulkuTi" : true,
+  "kulkuKe" : true,
+  "kulkuTo" : true,
+  "kulkuPe" : true,
+  "kulkuLa" : true,
+  "kulkuSu" : false,
+  "version" : 228748202190,
+  "tyyppi" : "K",
+  "voimaanastumishetki" : "2017-06-19",
+  "aikataulupaatos" : "Hyväksytty",
+  "muutos" : "M",
+  "kapasiteettiId" : "VR.V.71352"
+} ]
