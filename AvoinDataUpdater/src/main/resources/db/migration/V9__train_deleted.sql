@@ -1,0 +1,1 @@
+ALTER TABLE `train` ADD COLUMN `deleted` BIT(1) NULL DEFAULT NULL;
