@@ -6,7 +6,7 @@ Sisältää lähdekoodin palvelulle [rata.digitraffic.fi](https://rata.digitraff
 rata.digitraffic.fi koostuu neljästä komponentista:
 
 * AvoinDataServer
-    * Tarjoilee jsonia ulospäin
+    * Tarjoaa tietoja ulospäin
 * AvoindataUpdater
     * Hakee tietoja lähdejärjestelmistä ja pitää tietokantaa siistinä
 * LiikeInterface
