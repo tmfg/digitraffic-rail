@@ -21,7 +21,7 @@ public class ForecastMergingService {
     public static final int OLD_FORECAST_MINUTE_LIMIT = 3;
     private Logger log = LoggerFactory.getLogger(ForecastMergingService.class);
 
-    private Set<String> allowedSources = Sets.newHashSet("COMBOCALC");
+    private Set<String> allowedSources = Sets.newHashSet("COMBOCALC", "MIKUUSER");
 
     @Autowired
     private TrainPersistService trainPersistService;
@@ -52,15 +52,15 @@ public class ForecastMergingService {
                     // Do not use if later actual time is found
                 } else if (lastActualTimetableRowIndex != -1 && forecast.forecastTime.isBefore(
                         train.timeTableRows.get(lastActualTimetableRowIndex).actualTime)) {
-                    log.debug("Not using {} on {} because later actual time found: {}", forecast, timeTableRow,
-                            train.timeTableRows.get(lastActualTimetableRowIndex).actualTime);
+//                    log.debug("Not using {} on {} because later actual time found: {}", forecast, timeTableRow,
+//                            train.timeTableRows.get(lastActualTimetableRowIndex).actualTime);
                     continue;
                     // Old (impossible) forecasts are not used
-                } else if (forecast.forecastTime.isBefore(nowAndSome)) {
-                    log.debug("Not using {} on {} because it is old.", forecast, timeTableRow);
+                } else if (forecast.forecastTime != null && forecast.forecastTime.isBefore(nowAndSome)) {
+//                    log.debug("Not using {} on {} because it is old.", forecast, timeTableRow);
                     continue;
                 } else {
-                    createExternalForecast(train, newMaxVersion, i, timeTableRow, forecast);
+                    createExternalForecast(train, newMaxVersion, timeTableRow, forecast);
                 }
             }
 
@@ -86,16 +86,16 @@ public class ForecastMergingService {
         return forecastsFilteredById;
     }
 
-    private void createExternalForecast(Train train, long newMaxVersion, int i, TimeTableRow timeTableRow, Forecast forecast) {
-//        log.debug("External estimate from {} ({}) {} ({}) -> {} ({}). Train: {}, Version: {} -> {}, Type: {}",
-//                timeTableRow.station.stationShortCode, timeTableRow.type, timeTableRow.liveEstimateTime,
-//                timeTableRow.estimateSource, forecast.forecastTime, TimeTableRow.EstimateSourceEnum.MIKU_USER, train,
-//                train.version, newMaxVersion, forecast.source);
+    private void createExternalForecast(Train train, long newMaxVersion, TimeTableRow timeTableRow, Forecast forecast) {
+        if (forecast.forecastTime == null) {
+            log.info("Merged unknownDelay forecast for timeTableRow {}", timeTableRow);
+            timeTableRow.unknownDelay = true;
+        } else {
+            final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
+            timeTableRow.differenceInMinutes = duration.toMinutes();
 
-        final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
-        timeTableRow.differenceInMinutes = duration.toMinutes();
-
-        timeTableRow.liveEstimateTime = forecast.forecastTime;
+            timeTableRow.liveEstimateTime = forecast.forecastTime;
+        }
         timeTableRow.estimateSource = convertForecastSource(forecast.source);
 
         train.version = newMaxVersion;
