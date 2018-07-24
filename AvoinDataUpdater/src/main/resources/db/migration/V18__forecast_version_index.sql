@@ -1,0 +1,1 @@
+ALTER TABLE `forecast` ADD INDEX `version_index` (`version` DESC);
