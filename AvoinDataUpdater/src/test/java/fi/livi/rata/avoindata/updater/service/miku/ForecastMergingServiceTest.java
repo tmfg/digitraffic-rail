@@ -124,7 +124,7 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         final TimeTableRow last = Iterables.getLast(updatedTrain.timeTableRows);
-        Assert.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC,last.estimateSource);
+        Assert.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC, last.estimateSource);
         assertTimeTableRow(last, null, 5);
     }
 
@@ -198,7 +198,7 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
 
-        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast,earlyForecast));
+        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast, earlyForecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
         assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, null);
@@ -307,6 +307,32 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 11);
+    }
+
+    @Test
+    @Transactional
+    public void unknownDelayShouldWork() {
+        Train train = trainFactory.createBaseTrain();
+
+        clearActualTimesAndEstimates(train);
+
+
+        for (final TimeTableRow timeTableRow : train.timeTableRows) {
+            timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
+            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.COMBOCALC;
+        }
+
+        Forecast forecast = forecastFactory.create(train.timeTableRows.get(0), 11);
+        forecast.forecastTime = null;
+        forecast.difference = null;
+
+        train = trainRepository.save(train);
+        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
+
+        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+
+        assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
+        Assert.assertEquals(updatedTrain.timeTableRows.get(0).unknownDelay,true);
     }
 
     private void clearActualTimesAndEstimates(final Train train) {

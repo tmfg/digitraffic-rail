@@ -11,11 +11,13 @@ import java.util.List;
 @Repository
 public interface JupaennusteRepository extends CrudRepository<JupaEnnuste, Long> {
     @Query("select u from JupaEnnuste u where " +
-            " u.jupaTapahtumaId.lahtopvm = ?1 ")
+            " u.jupaTapahtumaId.lahtopvm = ?1 and" +
+            " u.lahde in ('MIKUUSER','COMBOCALC','LIIKEUSER') ")
     List<JupaEnnuste> findByLahtoPvm(LocalDate start);
 
     @Query("select u from JupaEnnuste u where " +
             " u.version > ?1 and" +
-            " u.jupaTapahtumaId.lahtopvm >= ?2 ")
+            " u.jupaTapahtumaId.lahtopvm >= ?2 and" +
+            " u.lahde in ('MIKUUSER','COMBOCALC','LIIKEUSER') ")
     List<JupaEnnuste> findByVersion(Long version, LocalDate startDate);
 }

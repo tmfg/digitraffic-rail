@@ -21,7 +21,7 @@ public class ForecastMergingService {
     public static final int OLD_FORECAST_MINUTE_LIMIT = 3;
     private Logger log = LoggerFactory.getLogger(ForecastMergingService.class);
 
-    private Set<String> allowedSources = Sets.newHashSet("COMBOCALC", "MIKUUSER");
+    private Set<String> allowedSources = Sets.newHashSet("COMBOCALC", "MIKUUSER", "LIIKEUSER");
 
     @Autowired
     private TrainPersistService trainPersistService;
@@ -50,7 +50,7 @@ public class ForecastMergingService {
                 if (forecast == null) {
                     continue;
                     // Do not use if later actual time is found
-                } else if (lastActualTimetableRowIndex != -1 && forecast.forecastTime.isBefore(
+                } else if (forecast.forecastTime != null && lastActualTimetableRowIndex != -1 && forecast.forecastTime.isBefore(
                         train.timeTableRows.get(lastActualTimetableRowIndex).actualTime)) {
 //                    log.debug("Not using {} on {} because later actual time found: {}", forecast, timeTableRow,
 //                            train.timeTableRows.get(lastActualTimetableRowIndex).actualTime);
@@ -88,8 +88,9 @@ public class ForecastMergingService {
 
     private void createExternalForecast(Train train, long newMaxVersion, TimeTableRow timeTableRow, Forecast forecast) {
         if (forecast.forecastTime == null) {
-            log.info("Merged unknownDelay forecast for timeTableRow {}", timeTableRow);
+            log.info("Merged unknownDelay forecast {}", forecast);
             timeTableRow.unknownDelay = true;
+            timeTableRow.liveEstimateTime = null;
         } else {
             final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
             timeTableRow.differenceInMinutes = duration.toMinutes();
@@ -97,12 +98,13 @@ public class ForecastMergingService {
             timeTableRow.liveEstimateTime = forecast.forecastTime;
         }
         timeTableRow.estimateSource = convertForecastSource(forecast.source);
-
-        train.version = newMaxVersion;
+        if (train.version < newMaxVersion) {
+            train.version = newMaxVersion;
+        }
     }
 
     private TimeTableRow.EstimateSourceEnum convertForecastSource(String source) {
-        if (source.equals("LIIKE_USER")) {
+        if (source.equals("LIIKEUSER")) {
             return TimeTableRow.EstimateSourceEnum.LIIKE_USER;
         } else if (source.equals("MIKUUSER")) {
             return TimeTableRow.EstimateSourceEnum.MIKU_USER;
