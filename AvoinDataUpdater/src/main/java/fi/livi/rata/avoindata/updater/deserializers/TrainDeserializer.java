@@ -3,7 +3,11 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -26,6 +30,14 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
     @Autowired
     private DateProvider dp;
+
+    @Autowired
+    private TrainCategoryRepository trainCategoryRepository;
+
+    @Autowired
+    private TrainTypeRepository trainTypeRepository;
+
+
 
     @Override
     public Train deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
@@ -70,6 +82,11 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
         initializeIsTrainStoppingInformation(sortedTimeTableRows);
 
         train.timeTableRows = sortedTimeTableRows;
+
+        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findById(trainCategoryId);
+        Optional<TrainType> trainTypeOptional = trainTypeRepository.findById(trainTypeId);
+        train.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "Unknown";
+        train.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "Unknown";
 
         return train;
     }

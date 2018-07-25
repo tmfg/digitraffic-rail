@@ -1,15 +1,26 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import fi.livi.rata.avoindata.common.dao.composition.*;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import fi.livi.rata.avoindata.common.dao.localization.PowerTypeRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.domain.composition.*;
+import fi.livi.rata.avoindata.common.domain.localization.PowerType;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
+import fi.livi.rata.avoindata.common.dao.composition.CompositionTimeTableRowRepository;
+import fi.livi.rata.avoindata.common.dao.composition.JourneySectionRepository;
+import fi.livi.rata.avoindata.common.dao.composition.LocomotiveRepository;
+import fi.livi.rata.avoindata.common.dao.composition.WagonRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 @Service
 @Transactional
@@ -29,6 +40,15 @@ public class CompositionService extends VersionedService<JourneyComposition> {
 
     @Autowired
     private LocomotiveRepository locomotiveRepository;
+
+    @Autowired
+    private TrainCategoryRepository trainCategoryRepository;
+
+    @Autowired
+    private PowerTypeRepository powerTypeRepository;
+
+    @Autowired
+    private TrainTypeRepository trainTypeRepository;
 
     public List<Composition> findCompositions() {
         return compositionRepository.findAll();
@@ -53,7 +73,7 @@ public class CompositionService extends VersionedService<JourneyComposition> {
         final Map<TrainId, List<JourneyComposition>> journeyCompositionsByTrain = journeyCompositions.stream().collect(
                 Collectors.groupingBy(TrainId::new));
         final List<Composition> compositions = journeyCompositionsByTrain.values().stream().map(
-                CompositionService::createCompositionFromJourneys).collect(Collectors.toList());
+                this::createCompositionFromJourneys).collect(Collectors.toList());
 
         saveCompositions(compositions);
 
@@ -77,14 +97,14 @@ public class CompositionService extends VersionedService<JourneyComposition> {
         wagonRepository.persist(journeySections.stream().map(x -> x.wagons).flatMap(Collection::stream).collect(Collectors.toList()));
     }
 
-    public static Composition createCompositionFromJourneys(final List<JourneyComposition> journeyCompositions) {
+    private Composition createCompositionFromJourneys(final List<JourneyComposition> journeyCompositions) {
         final Composition composition = createCompositionFromJourneyCompositions(journeyCompositions);
         composition.journeySections = createSortedJourneySectionsFromJourneyCompositions(journeyCompositions, composition);
         return composition;
     }
 
 
-    private static Composition createCompositionFromJourneyCompositions(final List<JourneyComposition> journeyCompositions) {
+    private Composition createCompositionFromJourneyCompositions(final List<JourneyComposition> journeyCompositions) {
         final JourneyComposition journeyComposition = journeyCompositions.get(0);
 
         Long maxVersion = Long.MIN_VALUE;
@@ -94,19 +114,29 @@ public class CompositionService extends VersionedService<JourneyComposition> {
             }
         }
 
-        return new Composition(journeyComposition.operator, journeyComposition.trainNumber, journeyComposition.departureDate,
+
+        Composition composition = new Composition(journeyComposition.operator, journeyComposition.trainNumber, journeyComposition.departureDate,
                 journeyComposition.trainCategoryId, journeyComposition.trainTypeId, maxVersion);
+
+        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findById(journeyComposition.trainCategoryId);
+        Optional<TrainType> trainTypeOptional = trainTypeRepository.findById(journeyComposition.trainTypeId);
+        composition.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "";
+        composition.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "";
+
+        return composition;
     }
 
-    private static LinkedHashSet<JourneySection> createSortedJourneySectionsFromJourneyCompositions(
+    private LinkedHashSet<JourneySection> createSortedJourneySectionsFromJourneyCompositions(
             final List<JourneyComposition> journeyCompositions, final Composition composition) {
         return new LinkedHashSet<>(journeyCompositions.stream().map(x -> createJourneySection(x, composition)).sorted(
                 Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime)).collect(Collectors.toList()));
     }
 
-    private static JourneySection createJourneySection(final JourneyComposition journeyComposition, final Composition composition) {
+    private JourneySection createJourneySection(final JourneyComposition journeyComposition, final Composition composition) {
         final CompositionTimeTableRow beginTimeTableRow = new CompositionTimeTableRow(journeyComposition.startStation, composition);
 
+        //TODO 9.3.2015 jesseko After endTimeTableRows are populated for all compositions, this null check should log failures and maybe
+        //launch a smoke detector
         CompositionTimeTableRow endTimeTableRow = null;
         if (journeyComposition.endStation != null) {
             endTimeTableRow = new CompositionTimeTableRow(journeyComposition.endStation, composition);
@@ -117,8 +147,14 @@ public class CompositionService extends VersionedService<JourneyComposition> {
         journeySection.locomotives = new LinkedHashSet<>(journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection))
                 .collect(Collectors.toList()));
 
+        journeyComposition.journeySection = journeySection;
         journeyComposition.wagons.forEach(x -> x.journeysection = journeySection);
         journeySection.wagons = new LinkedHashSet<>(journeyComposition.wagons);
+
+        for (Locomotive locomotive : journeySection.locomotives) {
+            PowerType powerType = powerTypeRepository.findByAbbreviation(locomotive.powerTypeAbbreviation);
+            locomotive.powerType = powerType != null ? powerType.name : "Unknown";
+        }
 
         return journeySection;
     }

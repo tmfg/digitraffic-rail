@@ -1,5 +1,26 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -13,25 +34,6 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.integration.mqtt.support.MqttHeaders;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.Message;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.io.IOException;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 public class TrainLocationUpdater {
@@ -47,9 +49,6 @@ public class TrainLocationUpdater {
     private DateProvider dateProvider;
 
     @Autowired
-    private MQTTConfig.TrainLocationGateway trainLocationGateway;
-
-    @Autowired
     private TrainLocationNearTrackFilterService trainLocationNearTrackFilterService;
 
     @Autowired
@@ -62,7 +61,7 @@ public class TrainLocationUpdater {
     private boolean isKuplaEnabled;
 
     @Autowired
-    private Environment environment;
+    private MQTTPublishService mqttPublishService;
 
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION = new DecimalFormat("#.000000");
 
@@ -77,8 +76,8 @@ public class TrainLocationUpdater {
 
             final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
-
-            publishToMQTT(filteredTrainLocations);
+            mqttPublishService.publish(s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate,
+                    s.trainLocationId.trainNumber), filteredTrainLocations, null);
 
             trainLocationRepository.persist(filteredTrainLocations);
 
@@ -108,23 +107,5 @@ public class TrainLocationUpdater {
 
         final ArrayList<TrainLocation> result = Lists.newArrayList(filterLocationsOutsideTracks);
         return result;
-    }
-
-    private void publishToMQTT(final List<TrainLocation> trainLocations) throws JsonProcessingException {
-        for (final TrainLocation trainLocation : trainLocations) {
-            String locationAsString = objectMapper.writeValueAsString(trainLocation);
-            final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(locationAsString);
-
-            String prefix = "";
-            if (!Sets.newHashSet(environment.getActiveProfiles()).contains("prd")) {
-                prefix = Joiner.on(",").join(environment.getActiveProfiles());
-            }
-
-            final String topic = String.format("%strain-locations/%s/%s", prefix, trainLocation.trainLocationId.departureDate,
-                    trainLocation.trainLocationId.trainNumber);
-
-            final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topic).build();
-            trainLocationGateway.sendToMqtt(message);
-        }
     }
 }
