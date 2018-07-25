@@ -21,7 +21,7 @@ import java.util.*;
 
 @Controller
 public class LiveTrainWebsocketService {
-    public static final int NUMBER_OF_TRAINS_TO_ANNOUNCE = 25;
+    public static final int NUMBER_OF_TRAINS_TO_ANNOUNCE = 100;
     private Long lastFetchedVersion = 0L;
     private static final String CONTEXT_PATH = "/live-trains/";
 
@@ -32,9 +32,6 @@ public class LiveTrainWebsocketService {
 
     @Autowired
     private LocalizationControllerAdvice localizationControllerAdvice;
-
-    @Autowired
-    private BatchExecutionService bes;
 
     @Autowired
     private AnnouncingService announcingService;
@@ -49,19 +46,19 @@ public class LiveTrainWebsocketService {
     private void updateWebsockets() {
         final List<TrainId> trainIds = getChangedTrains();
         if (!trainIds.isEmpty()) {
-            List<Train> trainList = bes.transform(trainIds, ids -> trainRepository.findTrains(new HashSet<>(ids)));
+            for (List<TrainId> trainIdPartition : Lists.partition(trainIds, NUMBER_OF_TRAINS_TO_ANNOUNCE)) {
+                List<Train> trainList = trainRepository.findTrains(new HashSet<>(trainIdPartition));
 
-            for (List<Train> trainPartition : Lists.partition(trainList, NUMBER_OF_TRAINS_TO_ANNOUNCE)) {
-                for (final Train train : trainPartition) {
+                for (final Train train : trainList) {
                     localizationControllerAdvice.localizeTrain(train);
                 }
 
-                announceAll(trainPartition);
-                announceSpecificTrains(trainPartition);
-                announceStations(trainPartition);
-                updateLastFetchedVersion(trainPartition);
+                announceAll(trainList);
+                announceSpecificTrains(trainList);
+                announceStations(trainList);
+                updateLastFetchedVersion(trainList);
 
-                log.trace("Published {} new trains trough websocket", trainPartition.size());
+                log.trace("Published {} new trains trough websocket", trainList.size());
             }
         }
     }
