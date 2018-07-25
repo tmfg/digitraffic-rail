@@ -30,7 +30,7 @@ public class MQTTPublishServiceTest extends BaseTest {
 
     @Transactional
     @Test
-    public void datetimeShouldBeInCorrectFormat() {
+    public void jsonViewsAndDateTimeFormatsShouldBeHonored() {
         Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2000, 1, 1)));
 
         causeFactory.create(train.timeTableRows.get(0));
