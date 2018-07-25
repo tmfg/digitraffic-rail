@@ -1,34 +1,23 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.google.common.collect.*;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.updater.config.MQTTConfig;
-import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.integration.mqtt.support.MqttHeaders;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.Message;
-import org.springframework.stereotype.Service;
-
 import fi.livi.rata.avoindata.common.dao.train.ForecastRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
+import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.miku.ForecastMergingService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class TrainInitializerService extends AbstractDatabaseInitializer<Train> {
@@ -73,7 +62,10 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         return trainLockExecutor.executeInLock(() -> {
             List<Train> updatedTrains = super.doUpdate();
             try {
-                mqttPublishService.publish(s -> String.format("trains/%s/%s", s.id.departureDate, s.id.trainNumber), updatedTrains, TrainJsonView.LiveTrains.class);
+                mqttPublishService.publish(s -> String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType, s.operator.operatorShortCode, s.commuterLineID, s.runningCurrently, s.timetableType), updatedTrains, TrainJsonView.LiveTrains.class);
+                for (Train updatedTrain : updatedTrains) {
+                    mqttPublishService.publish(s -> String.format("trains-by-timetablerow/%s/%s/%s/%s", s.station.stationShortCode, s.commercialTrack, s.type, (s.trainReadies.isEmpty() ? "" : s.trainReadies.iterator().next().accepted)), updatedTrain.timeTableRows, TrainJsonView.LiveTrains.class);
+                }
             } catch (Exception e) {
                 log.error("Error publishing trains to MQTT", e);
             }
