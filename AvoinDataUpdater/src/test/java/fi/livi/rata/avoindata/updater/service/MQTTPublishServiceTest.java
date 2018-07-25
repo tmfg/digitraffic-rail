@@ -45,8 +45,12 @@ public class MQTTPublishServiceTest extends BaseTest {
         Assert.assertEquals("1 koodi", json.read("$['timeTableRows'][0]['causes'][0]['categoryCode']"));
         Assert.assertEquals("3", json.read("$['timeTableRows'][0]['causes'][0]['thirdCategoryCodeId']").toString());
 
+        assertPathNotPresent(json, "$['timeTableRows'][0]['causes'][0]['detailedCategoryName']");
+    }
+
+    private void assertPathNotPresent(DocumentContext json, String path) {
         try {
-            json.read("$['timeTableRows'][0]['causes'][0]['detailedCategoryName']");
+            json.read(path);
             Assert.fail();
         } catch (PathNotFoundException e) {
 
