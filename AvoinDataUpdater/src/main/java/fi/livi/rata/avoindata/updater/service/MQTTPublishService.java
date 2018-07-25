@@ -1,11 +1,9 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.common.domain.composition.Composition;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,24 +30,19 @@ public class MQTTPublishService {
     @Autowired
     private Environment environment;
 
+    public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities) {
+        this.publish(topicProvider, entities, null);
+    }
+
     public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities, Class viewClass) {
         for (final E entity : entities) {
             publishEntity(topicProvider.apply(entity), entity, viewClass);
         }
     }
 
-    public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities) {
-        this.publish(topicProvider, entities, null);
-    }
-
-    private <E> void publishEntity(String topic, E entity, Class viewClass) {
+    public synchronized void publishString(String topic, String entity) {
         try {
-            String entityAsString;
-            if (viewClass != null) {
-                entityAsString = objectMapper.writerWithView(viewClass).writeValueAsString(entity);
-            } else {
-                entityAsString = objectMapper.writeValueAsString(entity);
-            }
+            String entityAsString = entity;
 
             final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
 
@@ -60,6 +53,26 @@ public class MQTTPublishService {
         } catch (Exception e) {
             log.error("Error publishing {} to {}", topic, entity);
         }
+    }
+
+    private <E> void publishEntity(String topic, E entity, Class viewClass) {
+        try {
+            String entityAsString = getEntityAsString(entity, viewClass);
+
+            publishString(topic, entityAsString);
+        } catch (Exception e) {
+            log.error("Error publishing {} to {}", topic, entity);
+        }
+    }
+
+    private <E> String getEntityAsString(E entity, Class viewClass) throws JsonProcessingException {
+        String entityAsString;
+        if (viewClass != null) {
+            entityAsString = objectMapper.writerWithView(viewClass).writeValueAsString(entity);
+        } else {
+            entityAsString = objectMapper.writeValueAsString(entity);
+        }
+        return entityAsString;
     }
 
     private String getFullTopic(String topic) {

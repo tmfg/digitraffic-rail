@@ -1,10 +1,14 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.*;
 import fi.livi.rata.avoindata.common.dao.train.ForecastRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
+import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
@@ -41,6 +45,9 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     @Autowired
     private MQTTPublishService mqttPublishService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
     public String getPrefix() {
         return "trains";
@@ -62,9 +69,14 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         return trainLockExecutor.executeInLock(() -> {
             List<Train> updatedTrains = super.doUpdate();
             try {
-                mqttPublishService.publish(s -> String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType, s.operator.operatorShortCode, s.commuterLineID, s.runningCurrently, s.timetableType), updatedTrains, TrainJsonView.LiveTrains.class);
-                for (Train updatedTrain : updatedTrains) {
-                    mqttPublishService.publish(s -> String.format("trains-by-station/%s/%s/%s/%s", s.station.stationShortCode, s.type, (s.trainReadies.isEmpty() ? "" : s.trainReadies.iterator().next().accepted), s.commercialTrack), updatedTrain.timeTableRows, TrainJsonView.LiveTrains.class);
+                for (Train train : updatedTrains) {
+                    String trainAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(train);
+
+                    mqttPublishService.publishString(String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", train.id.departureDate, train.id.trainNumber, train.trainCategory, train.trainType, train.operator.operatorShortCode, train.commuterLineID, train.runningCurrently, train.timetableType), trainAsString);
+
+                    for (TimeTableRow timeTableRow : train.timeTableRows) {
+                        mqttPublishService.publishString(String.format("trains-by-station/%s/%s/%s/%s", timeTableRow.station.stationShortCode, timeTableRow.type, timeTableRow.commercialTrack, (timeTableRow.trainReadies.isEmpty() ? "" : timeTableRow.trainReadies.iterator().next().accepted)), trainAsString);
+                    }
                 }
             } catch (Exception e) {
                 log.error("Error publishing trains to MQTT", e);
