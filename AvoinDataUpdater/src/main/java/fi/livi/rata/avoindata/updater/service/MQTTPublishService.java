@@ -46,7 +46,7 @@ public class MQTTPublishService {
         try {
             String entityAsString;
             if (viewClass != null) {
-                entityAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(entity);
+                entityAsString = objectMapper.writerWithView(viewClass).writeValueAsString(entity);
             } else {
                 entityAsString = objectMapper.writeValueAsString(entity);
             }
@@ -68,7 +68,7 @@ public class MQTTPublishService {
             prefix = Joiner.on(",").join(environment.getActiveProfiles());
         }
 
-        return String.format("%s%s", prefix, topic);
+        return String.format("%s/%s", prefix, topic);
     }
 
 
