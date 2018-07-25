@@ -64,7 +64,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
             try {
                 mqttPublishService.publish(s -> String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType, s.operator.operatorShortCode, s.commuterLineID, s.runningCurrently, s.timetableType), updatedTrains, TrainJsonView.LiveTrains.class);
                 for (Train updatedTrain : updatedTrains) {
-                    mqttPublishService.publish(s -> String.format("trains-by-timetablerow/%s/%s/%s/%s", s.station.stationShortCode, s.commercialTrack, s.type, (s.trainReadies.isEmpty() ? "" : s.trainReadies.iterator().next().accepted)), updatedTrain.timeTableRows, TrainJsonView.LiveTrains.class);
+                    mqttPublishService.publish(s -> String.format("trains-by-station/%s/%s/%s/%s", s.station.stationShortCode, s.type, (s.trainReadies.isEmpty() ? "" : s.trainReadies.iterator().next().accepted), s.commercialTrack), updatedTrain.timeTableRows, TrainJsonView.LiveTrains.class);
                 }
             } catch (Exception e) {
                 log.error("Error publishing trains to MQTT", e);
