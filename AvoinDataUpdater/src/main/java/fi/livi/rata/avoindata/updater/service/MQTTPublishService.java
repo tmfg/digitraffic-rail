@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class MQTTPublishService {
         }
     }
 
-    public synchronized void publishString(String topic, String entity) {
+    public synchronized Message<String> publishString(String topic, String entity) {
         try {
             String entityAsString = entity;
 
@@ -50,19 +51,23 @@ public class MQTTPublishService {
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
             MQTTGateway.sendToMqtt(message);
+
+            return message;
         } catch (Exception e) {
             log.error("Error publishing {} to {}", topic, entity);
+            return null;
         }
     }
 
-    private <E> void publishEntity(String topic, E entity, Class viewClass) {
+    public synchronized <E> Message<String> publishEntity(String topic, E entity, Class viewClass) {
         try {
             String entityAsString = getEntityAsString(entity, viewClass);
 
-            publishString(topic, entityAsString);
+            return publishString(topic, entityAsString);
         } catch (Exception e) {
             log.error("Error publishing {} to {}", topic, entity);
         }
+        return null;
     }
 
     private <E> String getEntityAsString(E entity, Class viewClass) throws JsonProcessingException {
@@ -81,7 +86,13 @@ public class MQTTPublishService {
             prefix = Joiner.on(",").join(environment.getActiveProfiles());
         }
 
-        return String.format("%s/%s", prefix, topic);
+        if (Strings.isNullOrEmpty(prefix)) {
+            return topic;
+        } else {
+            return String.format("%s/%s", prefix, topic);
+        }
+
+
     }
 
 

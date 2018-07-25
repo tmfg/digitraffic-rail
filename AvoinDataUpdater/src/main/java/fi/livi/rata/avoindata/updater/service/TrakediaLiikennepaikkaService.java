@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,10 @@ public class TrakediaLiikennepaikkaService {
     @Cacheable("trakediaLiikennepaikka")
     public Map<String, Double[]> getTrakediaLiikennepaikkas() {
         Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
+
+        if (Strings.isNullOrEmpty(baseUrl)) {
+            return liikennepaikkaMap;
+        }
 
         try {
             String now = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
