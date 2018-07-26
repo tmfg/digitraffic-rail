@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Esimerkki: kaikkien junien seuraaminen</title>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.0.3/sockjs.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script type="text/javascript">
+        var stompClient = null;
+
+        function trackTrains() {
+            var socket = new SockJS('/api/v1/websockets/');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/live-trains/', function (messages) {
+                    showMessages(messages.body);
+                });
+            });
+        }
+
+        function showMessages(messages) {
+            var response = document.getElementById('response');
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.appendChild(document.createTextNode(messages));
+            response.appendChild(p);
+        }
+    </script>
+</head>
+<div class="container">
+    <h1>Kaikkien junien seuraaminen</h1>
+
+    <p>Paina "Aloita". JSON:a pitäisi ilmestyä alapuolelle.</p>
+
+    <form role="form">
+        <button type="submit" class="btn btn-primary" onclick="trackTrains(); return false;">Aloita</button>
+    </form>
+
+    <br><br>
+
+    <p>Vastaus:</p>
+
+    <pre id="response"></pre>
+</div>
+</body>
+</html>
