@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ennusteiden lähteet</title>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.0.3/sockjs.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link href="http://www.liikennevirasto.fi/livi-theme/images/favicon.ico" rel="Shortcut Icon"/>
+</head>
+<body>
+<div class="container">
+    <h1>Ennusteiden lähteet</h1>
+
+    <p>Suomessa käytetään kahta eri järjestelmää ennusteiden tuottamiseen: MIKU:a ja LIIKE:ttä. rata.digitraffic.fi:ssä
+        näiden kahden järjestelmän ennusteita pyritään
+        yhdistämään yhteen JSON-kenttään <b>liveEstimateTime</b>.
+    </p>
+
+    <p>Järjestelmien välillä on eroja:</p>
+
+    <ul>
+        <li>MIKU toimii pääasiassa Etelä-Suomessa ja
+            Liike muualla. MIKU-ennusteet ovat arvokkaita erityisesti Etelä-Suomen junien häiriötilanteissa.
+        </li>
+        <li>MIKU-ennusteet ovat liikennepaikkojen laiturinäytöillä käytettyjä ennusteita, LIIKE-ennusteet ovat
+            pääasiassa
+            liikenteenohjaajien tuottamia ennusteita.
+        </li>
+        <li>rata.digitraffic.fi:ssä MIKU-järjestelmästä hyödynnetään vain käsin tehtyjä ennusteita. LIIKE-järjestelmästä
+            hyödynnetään myös
+            toteumien pohjalta lasketut automaattiennusteet.
+        </li>
+    </ul>
+
+    <p><b>estimateSource</b>-kenttä kertoo mistä ennuste on peräisin. Kentän arvot voivat olla</p>
+
+    <ul>
+        <li><i>MIKU_USER</i></li>
+        <li><i>LIIKE_USER</i></li>
+        <li><i>LIIKE_AUTOMATIC</i></li>
+        <li><i>DIGITRAFFIC_AUTOMATIC</i></li>
+    </ul>
+    <br>
+
+    <h4>MIKU_USER</h4>
+    <p>MIKU-järjestelmässä tehty käsiennuste (eli ihmisen tekemä ennuste).</p>
+
+    <h4>LIIKE_USER</h4>
+    <p>LIIKE-järjestelmässä tehty käsiennuste.</p>
+
+    <h4>LIIKE_AUTOMATIC</h4>
+    <p>LIIKE-järjestelmän tekemä automaattiennuste, joka on laskettu edeltävän liikennepaikan ennusteen tai toteuman
+        pohjalta. Liikkeen
+        automaattiennusteet olettavat useimmiten junan kirivän aikatauluansa kiinni.</p>
+
+    <h4>DIGITRAFFIC_AUTOMATIC</h4>
+    <p>rata.digitraffic.fi:n laskema automaattiennuste. Automaattiennusteita lasketaan vain MIKU:ssa tehtyjen
+        käsiennusteiden perään.
+        Käsiennustetta käytetään automaattiennusteen pohjana. Jos juna on käsiennusteen mukaan myöhässä esimerkiksi
+        viisi minuuttia,
+        myös perään laskettavat automaaattiennusteet ovat myöhässä viisi minuuttia.</p>
+</div>
+</body>
+</html>
