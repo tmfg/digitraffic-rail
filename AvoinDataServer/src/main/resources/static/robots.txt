@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# sallitaan apiversioiden juuret (swagger-ui)
+Allow: /infra-api/*/$
+Allow: /jeti-api/*/$
+Allow: /infra-api/latest/$
+Allow: /jeti-api/latest/$
+Allow: /infra-api/*/swagger-ui.html
+Allow: /jeti-api/*/swagger-ui.html
+
+# jos robotti tukee wildcardeja (google?), nämä ehkä estävät apisisällön koska matchaavat vain versionumeroon jossa aina piste mukana 
+Disallow: /infra-api/*/
+Disallow: /jeti-api/*/
+
+# jos robotti ei tue wildcardeja (muut?), niin koitetaan estää latest-avainsana sekä apiversionumeron prefixin perusteella, josko toimisi.
+Disallow: /infra-api/latest/
+Disallow: /infra-api/0
+Disallow: /infra-api/1
+Disallow: /infra-api/2
+Disallow: /infra-api/3
+Disallow: /infra-api/4
+Disallow: /jeti-api/latest/
+Disallow: /jeti-api/0
+Disallow: /jeti-api/1
+Disallow: /jeti-api/2
+Disallow: /jeti-api/3
+Disallow: /jeti-api/4
