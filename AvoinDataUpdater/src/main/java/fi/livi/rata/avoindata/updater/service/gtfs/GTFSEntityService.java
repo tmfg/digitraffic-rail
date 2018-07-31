@@ -241,10 +241,6 @@ public class GTFSEntityService {
     }
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix) {
-        log.info("Processing {} ({}). {} -> {}, {}/{}/{}/{}/{}/{}/{}", schedule.id, schedule.trainNumber, schedule.startDate,
-                schedule.endDate, schedule.runOnMonday, schedule.runOnTuesday, schedule.runOnWednesday, schedule.runOnThursday,
-                schedule.runOnFriday, schedule.runOnSaturday, schedule.runOnSunday);
-
         final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate, endDate, scheduleSuffix);
         final String serviceId = tripId;
 
