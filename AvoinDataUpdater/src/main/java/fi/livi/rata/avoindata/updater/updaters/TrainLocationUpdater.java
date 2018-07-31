@@ -25,7 +25,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
@@ -68,24 +67,28 @@ public class TrainLocationUpdater {
 
     @Scheduled(fixedDelay = 1000)
     @Transactional
-    public synchronized void trainLocation() throws IOException {
-        if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
-            final ZonedDateTime start = dateProvider.nowInHelsinki();
+    public synchronized void trainLocation() {
+        try {
+            if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
+                final ZonedDateTime start = dateProvider.nowInHelsinki();
 
-            List<TrainLocation> trainLocations = Arrays.asList(
-                    objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class));
+                List<TrainLocation> trainLocations = Arrays.asList(
+                        objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class));
 
-            final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
+                final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
 
-            publishToMQTT(filteredTrainLocations);
+                publishToMQTT(filteredTrainLocations);
 
-            trainLocationRepository.persist(filteredTrainLocations);
+                trainLocationRepository.persist(filteredTrainLocations);
 
-            final ZonedDateTime end = dateProvider.nowInHelsinki();
+                final ZonedDateTime end = dateProvider.nowInHelsinki();
 
-            log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
-                    trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+                log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
+                        trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+            }
+        } catch (Exception e) {
+            log.error("Error publishing train locations", e);
         }
     }
 
