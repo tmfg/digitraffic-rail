@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,7 +18,18 @@ public class TrainLockExecutor {
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public <T> T executeInLock(Callable<T> callable) {
-        final Future<T> future = executorService.submit(callable);
+        ZonedDateTime submittedAt = ZonedDateTime.now();
+
+        Callable<T> wrappedCallable = () -> {
+            ZonedDateTime executionStartedAt = ZonedDateTime.now();
+            T returnValue = callable.call();
+            if (Duration.between(submittedAt,executionStartedAt).toMillis() > 10000) {
+                log.info("Waited: {}, Executed: {}", Duration.between(submittedAt,executionStartedAt),Duration.between(executionStartedAt,ZonedDateTime.now()));
+            }
+            return returnValue;
+        };
+
+        final Future<T> future = executorService.submit(wrappedCallable);
 
         try {
             return future.get();

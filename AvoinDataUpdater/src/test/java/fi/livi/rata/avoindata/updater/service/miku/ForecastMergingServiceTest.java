@@ -11,7 +11,6 @@ import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.ForecastFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +35,7 @@ public class ForecastMergingServiceTest extends BaseTest {
     private TimeTableRowRepository timeTableRowRepository;
     @Autowired
     private DateProvider dp;
+
     @Test
     @Transactional
     public void emptyVsForecastShouldEqualForecast() {
@@ -59,31 +59,10 @@ public class ForecastMergingServiceTest extends BaseTest {
         assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, 5);
     }
 
-    @Test
-    @Transactional
-    public void emptyVsForecastShouldEqualForecastAndUpdateForecasts() {
-        final Train train = trainFactory.createBaseTrain();
-
-        clearActualTimesAndEstimates(train);
-
-        Forecast forecast = forecastFactory.create(train.timeTableRows.get(0), 5);
-
-        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
-
-        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
-
-        assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(2), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(3), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(4), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(5), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, 5);
-    }
 
     @Test
     @Transactional
-    public void emptyVsTwoForecastShouldEqualForecastAndUpdateForecasts() {
+    public void emptyVsTwoForecastShouldEqualForecast() {
         final Train train = trainFactory.createBaseTrain();
 
         clearActualTimesAndEstimates(train);
@@ -97,12 +76,12 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast, forecast2));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(2), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(3), null, 5);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(2), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(3), null, null);
         assertTimeTableRow(updatedTrain.timeTableRows.get(4), null, 10);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(5), null, 10);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, 10);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(5), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, null);
     }
 
     @Test
@@ -125,27 +104,6 @@ public class ForecastMergingServiceTest extends BaseTest {
         assertTimeTableRow(Iterables.getLast(updatedTrain.timeTableRows), null, 10);
     }
 
-    @Ignore("How should this really be?")
-    @Test
-    @Transactional
-    public void mikuManualVsMikuAutomaticShouldProduceNull() {
-        final Train train = trainFactory.createBaseTrain();
-
-        clearActualTimesAndEstimates(train);
-
-        final TimeTableRow firstTimeTableRow = Iterables.getFirst(train.timeTableRows,null);
-        firstTimeTableRow.liveEstimateTime = firstTimeTableRow.scheduledTime.plusMinutes(5);
-        firstTimeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.MIKU_USER;
-
-        Forecast forecast = forecastFactory.create(firstTimeTableRow, 10);
-        forecast.source="MIKUCALC";
-
-        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
-
-        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
-
-        assertTimeTableRow(Iterables.getFirst(updatedTrain.timeTableRows,null), null, null);
-    }
 
     @Test
     @Transactional
@@ -166,7 +124,7 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         final TimeTableRow last = Iterables.getLast(updatedTrain.timeTableRows);
-        Assert.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC,last.estimateSource);
+        Assert.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC, last.estimateSource);
         assertTimeTableRow(last, null, 5);
     }
 
@@ -213,11 +171,11 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), 3, null);
         assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(2), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(3), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(4), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(5), null, 5);
-        assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, 5);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(2), null, 4);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(3), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(4), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(5), null, null);
+        assertTimeTableRow(updatedTrain.timeTableRows.get(7), null, null);
     }
 
     @Test
@@ -226,7 +184,6 @@ public class ForecastMergingServiceTest extends BaseTest {
         final Train train = trainFactory.createBaseTrain();
 
         clearActualTimesAndEstimates(train);
-
 
         train.timeTableRows.get(5).actualTime = train.timeTableRows.get(5).scheduledTime.plusMinutes(3);
 
@@ -237,10 +194,11 @@ public class ForecastMergingServiceTest extends BaseTest {
         train.timeTableRows.get(7).liveEstimateTime = train.timeTableRows.get(7).scheduledTime.plusMinutes(4);
 
         Forecast forecast = forecastFactory.create(train.timeTableRows.get(1), 5);
+        Forecast earlyForecast = forecastFactory.create(train.timeTableRows.get(4), 5);
 
         train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
 
-        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast, earlyForecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
         assertTimeTableRow(updatedTrain.timeTableRows.get(1), null, null);
@@ -254,31 +212,6 @@ public class ForecastMergingServiceTest extends BaseTest {
 
     @Test
     @Transactional
-    public void manualVsManulShouldProduceLatestManual() {
-        Train train = trainFactory.createBaseTrain();
-
-        clearActualTimesAndEstimates(train);
-
-
-        for (final TimeTableRow timeTableRow : train.timeTableRows) {
-            timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
-            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC;
-        }
-        train.timeTableRows.get(0).estimateSource = TimeTableRow.EstimateSourceEnum.LIIKE_USER;
-
-        Forecast forecast = forecastFactory.create(train.timeTableRows.get(0), 11);
-
-        train.version = 2L;
-        train = trainRepository.save(train);
-        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
-
-        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
-
-        assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 1);
-    }
-
-    @Test
-    @Transactional
     public void earlyManualMikuVsLaterManualLiikeEstimateShouldNotClearLiike() {
         Train train = trainFactory.createBaseTrain();
 
@@ -287,7 +220,7 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
             timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
-            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC;
+            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC;
         }
         train.timeTableRows.get(0).estimateSource = TimeTableRow.EstimateSourceEnum.MIKU_USER;
 
@@ -305,10 +238,10 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         final List<TimeTableRow> updatedRows = updatedTrain.timeTableRows;
         Assert.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
-        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
         Assert.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
         Assert.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
         Assert.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
@@ -342,10 +275,10 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         final List<TimeTableRow> updatedRows = updatedTrain.timeTableRows;
         Assert.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
-        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
         Assert.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
         Assert.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
         Assert.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
@@ -374,6 +307,32 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 11);
+    }
+
+    @Test
+    @Transactional
+    public void unknownDelayShouldWork() {
+        Train train = trainFactory.createBaseTrain();
+
+        clearActualTimesAndEstimates(train);
+
+
+        for (final TimeTableRow timeTableRow : train.timeTableRows) {
+            timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
+            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.COMBOCALC;
+        }
+
+        Forecast forecast = forecastFactory.create(train.timeTableRows.get(0), 11);
+        forecast.forecastTime = null;
+        forecast.difference = null;
+
+        train = trainRepository.save(train);
+        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
+
+        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+
+        assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
+        Assert.assertEquals(updatedTrain.timeTableRows.get(0).unknownDelay,true);
     }
 
     private void clearActualTimesAndEstimates(final Train train) {

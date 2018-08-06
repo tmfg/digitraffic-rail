@@ -26,7 +26,12 @@ public class RecentlySeenForecastFilter extends AbstractRecentlySeenEntityFilter
 
     @Override
     public boolean isTooOld(final ZonedDateTime timestamp) {
-        return timestamp.isBefore(dp.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_TRESHOLD_MINUTES));
+        if (timestamp == null) {
+            return false;
+        }
+        else {
+            return timestamp.isBefore(dp.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_TRESHOLD_MINUTES));
+        }
     }
 
 

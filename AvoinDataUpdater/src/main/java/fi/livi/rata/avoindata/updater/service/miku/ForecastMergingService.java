@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.miku;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
@@ -15,21 +14,24 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ForecastMergingService {
     public static final int OLD_FORECAST_MINUTE_LIMIT = 3;
     private Logger log = LoggerFactory.getLogger(ForecastMergingService.class);
 
+    private Set<String> allowedSources = Sets.newHashSet("COMBOCALC", "MIKUUSER", "LIIKEUSER");
+
     @Autowired
     private TrainPersistService trainPersistService;
     @Autowired
     private DateProvider dp;
+
     public Train mergeEstimates(final Train train, final List<Forecast> forecasts) {
-        Map<TimeTableRowId, Forecast> forecastMap = Maps.uniqueIndex(Iterables.filter(forecasts, f -> f.source.equals("MIKUUSER")),
-                f -> f.timeTableRow.id);
+        List<Forecast> forecastsFilteredById = filterOutDoubleForecasts(forecasts);
+
+        Map<TimeTableRowId, Forecast> forecastMap = Maps.uniqueIndex(Iterables.filter(forecastsFilteredById, f -> allowedSources.contains(f.source)), f -> f.timeTableRow.id);
 
         final ZonedDateTime nowAndSome = dp.nowInHelsinki().minusMinutes(OLD_FORECAST_MINUTE_LIMIT);
         int lastActualTimetableRowIndex = getIndexOfLastTimeTableRowWithActualTime(train);
@@ -48,23 +50,17 @@ public class ForecastMergingService {
                 if (forecast == null) {
                     continue;
                     // Do not use if later actual time is found
-                } else if (lastActualTimetableRowIndex != -1 && forecast.forecastTime.isBefore(
+                } else if (forecast.forecastTime != null && lastActualTimetableRowIndex != -1 && forecast.forecastTime.isBefore(
                         train.timeTableRows.get(lastActualTimetableRowIndex).actualTime)) {
-                    log.debug("Not using {} on {} because later actual time found: {}", forecast, timeTableRow,
-                            train.timeTableRows.get(lastActualTimetableRowIndex).actualTime);
+//                    log.debug("Not using {} on {} because later actual time found: {}", forecast, timeTableRow,
+//                            train.timeTableRows.get(lastActualTimetableRowIndex).actualTime);
                     continue;
                     // Old (impossible) forecasts are not used
-                } else if (forecast.forecastTime.isBefore(nowAndSome)) {
-                    log.debug("Not using {} on {} because it is old.", forecast, timeTableRow);
+                } else if (forecast.forecastTime != null && forecast.forecastTime.isBefore(nowAndSome)) {
+//                    log.debug("Not using {} on {} because it is old.", forecast, timeTableRow);
                     continue;
-                    //Liike vs Miku manual Forecast conflict. Newer forecast should win (this if-clause defines Liike win condition)
-                } else if (isLiikeManualEstimate(timeTableRow) && train.version > forecast.version) {
-                    log.debug("Both manual estimates exist. Choosing liike since it is later. TTR: {}, Forecast: {}, Versions: {} vs {}",
-                            timeTableRow, forecast, train.version, forecast.version);
-                    continue;
-                    //Free to forecast using Miku
                 } else {
-                    createMikuForecast(train, newMaxVersion, i, timeTableRow, forecast);
+                    createExternalForecast(train, newMaxVersion, timeTableRow, forecast);
                 }
             }
 
@@ -73,22 +69,53 @@ public class ForecastMergingService {
         return train;
     }
 
-    private void createMikuForecast(Train train, long newMaxVersion, int i, TimeTableRow timeTableRow, Forecast forecast) {
-        log.debug("Manual estimate from {} ({}) {} ({}) -> {} ({}). Train: {}, Version: {} -> {}",
-                timeTableRow.station.stationShortCode, timeTableRow.type, timeTableRow.liveEstimateTime,
-                timeTableRow.estimateSource, forecast.forecastTime, TimeTableRow.EstimateSourceEnum.MIKU_USER, train,
-                train.version, newMaxVersion);
+    private List<Forecast> filterOutDoubleForecasts(List<Forecast> forecasts) {
+        Ordering<Forecast> ordering = Ordering.from((Comparator<Forecast>) (o1, o2) -> o1.id.compareTo(o2.id));
 
-        final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
-        timeTableRow.differenceInMinutes = duration.toMinutes();
+        ImmutableListMultimap<TimeTableRowId, Forecast> forecastsById = Multimaps.index(forecasts, f -> f.timeTableRow.id);
 
-        timeTableRow.liveEstimateTime = forecast.forecastTime;
-        timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.MIKU_USER;
+        List<Forecast> forecastsFilteredById = new ArrayList<>();
+        for (TimeTableRowId id : forecastsById.keySet()) {
+            ImmutableList<Forecast> forecastList = forecastsById.get(id);
+            if (forecastList.size() == 1) {
+                forecastsFilteredById.add(forecastList.get(0));
+            } else {
+                forecastsFilteredById.add(ordering.sortedCopy(forecastList).get(0));
+            }
+        }
+        return forecastsFilteredById;
+    }
 
-        //Do automatic forecasts for every row thereafter
-        createAutomaticForecasts(i, train);
+    private void createExternalForecast(Train train, long newMaxVersion, TimeTableRow timeTableRow, Forecast forecast) {
+        if (forecast.forecastTime == null) {
+            log.info("Merged unknownDelay forecast {}", forecast);
+            timeTableRow.unknownDelay = true;
+            timeTableRow.liveEstimateTime = null;
+        } else {
+            final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
+            timeTableRow.differenceInMinutes = duration.toMinutes();
 
-        train.version = newMaxVersion;
+            timeTableRow.liveEstimateTime = forecast.forecastTime;
+        }
+        timeTableRow.estimateSource = convertForecastSource(forecast.source);
+        if (train.version < newMaxVersion) {
+            train.version = newMaxVersion;
+        }
+    }
+
+    private TimeTableRow.EstimateSourceEnum convertForecastSource(String source) {
+        if (source.equals("LIIKEUSER")) {
+            return TimeTableRow.EstimateSourceEnum.LIIKE_USER;
+        } else if (source.equals("MIKUUSER")) {
+            return TimeTableRow.EstimateSourceEnum.MIKU_USER;
+        } else if (source.equals("COMBOCALC")) {
+            return TimeTableRow.EstimateSourceEnum.COMBOCALC;
+        } else if (source.equals("LIIKE_AUTOMATIC")) {
+            return TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC;
+        } else {
+            log.error("Could not parse Enum for forecast source " + source);
+            return TimeTableRow.EstimateSourceEnum.UNKNOWN;
+        }
     }
 
     private int getIndexOfLastTimeTableRowWithActualTime(final Train train) {
@@ -100,25 +127,5 @@ public class ForecastMergingService {
             }
         }
         return lastActualTimetableRowIndex;
-    }
-
-    private boolean isLiikeManualEstimate(final TimeTableRow timeTableRow) {
-        return timeTableRow.liveEstimateTime != null && timeTableRow.estimateSource == TimeTableRow.EstimateSourceEnum.LIIKE_USER;
-    }
-
-    private void createAutomaticForecasts(final int startIndex, final Train train) {
-        final TimeTableRow timeTableRow = train.timeTableRows.get(startIndex);
-        final Duration difference = Duration.between(timeTableRow.scheduledTime, timeTableRow.liveEstimateTime);
-
-        for (int i = startIndex + 1; i < train.timeTableRows.size(); i++) {
-            final TimeTableRow row = train.timeTableRows.get(i);
-            if (row.estimateSource == TimeTableRow.EstimateSourceEnum.LIIKE_USER || row.actualTime != null) {
-                break;
-            }
-            row.liveEstimateTime = row.scheduledTime.plus(difference);
-            row.estimateSource = TimeTableRow.EstimateSourceEnum.DIGITRAFFIC_AUTOMATIC;
-            row.differenceInMinutes = difference.toMinutes();
-            //            log.info("Wrote AUTOMATIC estimate {} for {}, Train: {}", row.liveEstimateTime, row, train);
-        }
     }
 }

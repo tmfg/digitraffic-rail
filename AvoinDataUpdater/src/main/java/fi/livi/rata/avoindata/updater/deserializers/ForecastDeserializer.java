@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
@@ -18,6 +20,8 @@ public class ForecastDeserializer extends AEntityDeserializer<Forecast> {
     @PersistenceContext
     private EntityManager entityManager;
 
+    private Logger log = LoggerFactory.getLogger(ForecastDeserializer.class);
+
     @Override
     public Forecast deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
@@ -25,8 +29,6 @@ public class ForecastDeserializer extends AEntityDeserializer<Forecast> {
         Forecast forecast = new Forecast();
         forecast.id = node.get("id").asLong();
         forecast.source = getNullableString(node, "lahde");
-        forecast.forecastTime = getNodeAsDateTime(node.get("ennusteaika"));
-        forecast.difference = node.get("poikkeama").asInt();
         forecast.version = node.get("version").asLong();
 
         final long attapId = node.get("jp_id").asLong();
@@ -34,7 +36,14 @@ public class ForecastDeserializer extends AEntityDeserializer<Forecast> {
         final long trainNumber = node.get("jp_junanumero").asLong();
         final TimeTableRowId timeTableRowId = new TimeTableRowId(attapId, departureDate, trainNumber);
 
-        forecast.timeTableRow = entityManager.getReference(TimeTableRow.class,timeTableRowId);
+        if (node.get("ennusteaika") != null) {
+            forecast.forecastTime = getNodeAsDateTime(node.get("ennusteaika"));
+            forecast.difference = node.get("poikkeama").asInt();
+        } else {
+            log.info("Received unknownDelay for timeTableRow {}", timeTableRowId);
+        }
+
+        forecast.timeTableRow = entityManager.getReference(TimeTableRow.class, timeTableRowId);
 
         return forecast;
     }
