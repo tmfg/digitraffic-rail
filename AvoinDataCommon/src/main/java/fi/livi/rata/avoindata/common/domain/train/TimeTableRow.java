@@ -60,13 +60,6 @@ public class TimeTableRow {
     @ApiModelProperty("Is the stop 'commercial' ie. loading/unloading of passengers or cargo")
     public Boolean commercialStop;
 
-    @JsonView({LiveTrains.class, ScheduleTrains.class})
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Nullable
-    // Should be null when trainStopping == false
-    @ApiModelProperty("Set if the train is delayed, but it is impossible to estimate for how long")
-    public Boolean unknownDelay;
-
     @Column
     @JsonView({LiveTrains.class, ScheduleTrains.class})
     @ApiModelProperty(value = "Track where the train stops",example = "1")
@@ -92,6 +85,13 @@ public class TimeTableRow {
     @JsonView(LiveTrains.class)
     @ApiModelProperty(value = "Source for the estimate",example = "LIIKE_USER")
     public EstimateSourceEnum estimateSource;
+
+    @JsonView({LiveTrains.class, ScheduleTrains.class})
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Nullable
+    // Should be null when trainStopping == false
+    @ApiModelProperty("Set if the train is delayed, but it is impossible to estimate for how long")
+    public Boolean unknownDelay;
 
     @Nullable
     @Column
