@@ -19,14 +19,11 @@
 
 
     <dependencies>
-
         <dependency>
             <groupId>p6spy</groupId>
             <artifactId>p6spy</artifactId>
             <version>3.6.0</version>
         </dependency>
-
-
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>AvoinDataCommon</artifactId>
