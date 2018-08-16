@@ -1,5 +1,13 @@
 package fi.livi.rata.avoindata.updater.service.miku;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.google.common.collect.Iterables;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -10,13 +18,6 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.ForecastFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ForecastMergingServiceTest extends BaseTest {
     @Autowired
@@ -307,6 +308,42 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, 11);
+    }
+
+    @Test
+    @Transactional
+    public void unknownDelayAndThenExternalShouldResultInExternal() {
+        Train train = trainFactory.createBaseTrain();
+
+        clearActualTimesAndEstimates(train);
+
+
+        for (final TimeTableRow timeTableRow : train.timeTableRows) {
+            timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
+            timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.COMBOCALC;
+        }
+
+        Forecast forecast = forecastFactory.create(train.timeTableRows.get(0), 11);
+        forecast.forecastTime = null;
+        forecast.difference = null;
+
+        train = trainRepository.save(train);
+        train.timeTableRows = timeTableRowRepository.saveAll(train.timeTableRows);
+
+        Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+
+        assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
+        Assert.assertTrue(updatedTrain.timeTableRows.get(0).unknownDelay);
+
+        Forecast forecastLater = forecastFactory.create(train.timeTableRows.get(0), 11);
+        forecast.forecastTime = train.timeTableRows.get(0).scheduledTime.plusMinutes(1);
+        forecast.difference = 1;
+
+        Train updatedTrainLater = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+
+        assertTimeTableRow(updatedTrainLater.timeTableRows.get(0), null, 1);
+        Assert.assertNull(updatedTrainLater.timeTableRows.get(0).unknownDelay);
+
     }
 
     @Test
