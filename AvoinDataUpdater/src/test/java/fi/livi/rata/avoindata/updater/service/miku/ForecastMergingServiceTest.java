@@ -317,7 +317,6 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         clearActualTimesAndEstimates(train);
 
-
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
             timeTableRow.liveEstimateTime = timeTableRow.scheduledTime.plusMinutes(1);
             timeTableRow.estimateSource = TimeTableRow.EstimateSourceEnum.COMBOCALC;
@@ -335,11 +334,9 @@ public class ForecastMergingServiceTest extends BaseTest {
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
         Assert.assertTrue(updatedTrain.timeTableRows.get(0).unknownDelay);
 
-        Forecast forecastLater = forecastFactory.create(train.timeTableRows.get(0), 11);
-        forecast.forecastTime = train.timeTableRows.get(0).scheduledTime.plusMinutes(1);
-        forecast.difference = 1;
+        Forecast forecastLater = forecastFactory.create(updatedTrain.timeTableRows.get(0), 1);
 
-        Train updatedTrainLater = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
+        Train updatedTrainLater = forecastMergingService.mergeEstimates(updatedTrain, Arrays.asList(forecastLater));
 
         assertTimeTableRow(updatedTrainLater.timeTableRows.get(0), null, 1);
         Assert.assertNull(updatedTrainLater.timeTableRows.get(0).unknownDelay);
