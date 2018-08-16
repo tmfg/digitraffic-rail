@@ -1,20 +1,31 @@
 package fi.livi.rata.avoindata.updater.service.miku;
 
-import com.google.common.collect.*;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.*;
 
 @Service
 public class ForecastMergingService {
@@ -95,6 +106,7 @@ public class ForecastMergingService {
             final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
             timeTableRow.differenceInMinutes = duration.toMinutes();
 
+            timeTableRow.unknownDelay = null;
             timeTableRow.liveEstimateTime = forecast.forecastTime;
         }
         timeTableRow.estimateSource = convertForecastSource(forecast.source);
