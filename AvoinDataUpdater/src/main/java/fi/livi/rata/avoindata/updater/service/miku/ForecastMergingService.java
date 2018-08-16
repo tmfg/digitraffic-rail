@@ -103,7 +103,6 @@ public class ForecastMergingService {
             timeTableRow.unknownDelay = true;
             timeTableRow.liveEstimateTime = null;
         } else {
-            log.info("Creating external forecast from {}. Timetablerow: {}", forecast, timeTableRow);
             final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
             timeTableRow.differenceInMinutes = duration.toMinutes();
 
