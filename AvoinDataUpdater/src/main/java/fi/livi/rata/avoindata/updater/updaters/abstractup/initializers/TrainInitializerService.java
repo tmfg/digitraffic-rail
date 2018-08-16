@@ -1,13 +1,23 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import fi.livi.rata.avoindata.common.dao.train.ForecastRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
-import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
@@ -16,12 +26,6 @@ import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.miku.ForecastMergingService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class TrainInitializerService extends AbstractDatabaseInitializer<Train> {
@@ -65,7 +69,6 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @Override
     protected List<Train> doUpdate() {
-
         return trainLockExecutor.executeInLock(() -> {
             List<Train> updatedTrains = super.doUpdate();
             try {

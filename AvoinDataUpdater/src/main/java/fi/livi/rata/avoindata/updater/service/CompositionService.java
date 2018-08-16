@@ -1,16 +1,14 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import fi.livi.rata.avoindata.common.dao.localization.PowerTypeRepository;
-import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
-import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
-import fi.livi.rata.avoindata.common.domain.composition.*;
-import fi.livi.rata.avoindata.common.domain.localization.PowerType;
-import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
-import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +18,18 @@ import fi.livi.rata.avoindata.common.dao.composition.CompositionTimeTableRowRepo
 import fi.livi.rata.avoindata.common.dao.composition.JourneySectionRepository;
 import fi.livi.rata.avoindata.common.dao.composition.LocomotiveRepository;
 import fi.livi.rata.avoindata.common.dao.composition.WagonRepository;
+import fi.livi.rata.avoindata.common.dao.localization.PowerTypeRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
+import fi.livi.rata.avoindata.common.domain.composition.CompositionTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
+import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
+import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
+import fi.livi.rata.avoindata.common.utils.OptionalUtil;
 
 @Service
 @Transactional
@@ -65,15 +74,15 @@ public class CompositionService extends VersionedService<JourneyComposition> {
     }
 
     private void removeOldCompositions(final List<JourneyComposition> journeyCompositions) {
-        journeyCompositions.stream().map(TrainId::new).distinct().forEach(x -> compositionRepository.deleteWithId(x.departureDate,
-                x.trainNumber));
+        journeyCompositions.stream().map(TrainId::new).distinct().forEach(
+                x -> compositionRepository.deleteWithId(x.departureDate, x.trainNumber));
     }
 
     public void addCompositions(final List<JourneyComposition> journeyCompositions) {
         final Map<TrainId, List<JourneyComposition>> journeyCompositionsByTrain = journeyCompositions.stream().collect(
                 Collectors.groupingBy(TrainId::new));
-        final List<Composition> compositions = journeyCompositionsByTrain.values().stream().map(
-                this::createCompositionFromJourneys).collect(Collectors.toList());
+        final List<Composition> compositions = journeyCompositionsByTrain.values().stream().map(this::createCompositionFromJourneys)
+                .collect(Collectors.toList());
 
         saveCompositions(compositions);
 
@@ -92,8 +101,8 @@ public class CompositionService extends VersionedService<JourneyComposition> {
                 journeySections.stream().map(x -> x.endTimeTableRow)).collect(Collectors.toList());
         compositionTimeTableRowRepository.persist(compositionTimeTableRows);
         journeySectionRepository.persist(journeySections);
-        locomotiveRepository.persist(journeySections.stream().map(x -> x.locomotives).flatMap(Collection::stream).collect(
-                Collectors.toList()));
+        locomotiveRepository.persist(journeySections.stream().map(x -> x.locomotives).flatMap(Collection::stream)
+                .collect(Collectors.toList()));
         wagonRepository.persist(journeySections.stream().map(x -> x.wagons).flatMap(Collection::stream).collect(Collectors.toList()));
     }
 
@@ -115,11 +124,11 @@ public class CompositionService extends VersionedService<JourneyComposition> {
         }
 
 
-        Composition composition = new Composition(journeyComposition.operator, journeyComposition.trainNumber, journeyComposition.departureDate,
-                journeyComposition.trainCategoryId, journeyComposition.trainTypeId, maxVersion);
+        Composition composition = new Composition(journeyComposition.operator, journeyComposition.trainNumber,
+                journeyComposition.departureDate, journeyComposition.trainCategoryId, journeyComposition.trainTypeId, maxVersion);
 
-        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findById(journeyComposition.trainCategoryId);
-        Optional<TrainType> trainTypeOptional = trainTypeRepository.findById(journeyComposition.trainTypeId);
+        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(journeyComposition.trainCategoryId);
+        Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(journeyComposition.trainTypeId);
         composition.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "";
         composition.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "";
 
@@ -128,8 +137,8 @@ public class CompositionService extends VersionedService<JourneyComposition> {
 
     private LinkedHashSet<JourneySection> createSortedJourneySectionsFromJourneyCompositions(
             final List<JourneyComposition> journeyCompositions, final Composition composition) {
-        return new LinkedHashSet<>(journeyCompositions.stream().map(x -> createJourneySection(x, composition)).sorted(
-                Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime)).collect(Collectors.toList()));
+        return new LinkedHashSet<>(journeyCompositions.stream().map(x -> createJourneySection(x, composition))
+                .sorted(Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime)).collect(Collectors.toList()));
     }
 
     private JourneySection createJourneySection(final JourneyComposition journeyComposition, final Composition composition) {
@@ -142,18 +151,17 @@ public class CompositionService extends VersionedService<JourneyComposition> {
             endTimeTableRow = new CompositionTimeTableRow(journeyComposition.endStation, composition);
         }
 
-        final JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition, journeyComposition
-                .maximumSpeed, journeyComposition.totalLength);
-        journeySection.locomotives = new LinkedHashSet<>(journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection))
-                .collect(Collectors.toList()));
+        final JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition,
+                journeyComposition.maximumSpeed, journeyComposition.totalLength);
+        journeySection.locomotives = new LinkedHashSet<>(
+                journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection)).collect(Collectors.toList()));
 
         journeyComposition.journeySection = journeySection;
         journeyComposition.wagons.forEach(x -> x.journeysection = journeySection);
         journeySection.wagons = new LinkedHashSet<>(journeyComposition.wagons);
 
         for (Locomotive locomotive : journeySection.locomotives) {
-            PowerType powerType = powerTypeRepository.findByAbbreviation(locomotive.powerTypeAbbreviation);
-            locomotive.powerType = powerType != null ? powerType.name : "Unknown";
+            locomotive.powerType = OptionalUtil.getName(powerTypeRepository.findByAbbreviationCached(locomotive.powerTypeAbbreviation));
         }
 
         return journeySection;

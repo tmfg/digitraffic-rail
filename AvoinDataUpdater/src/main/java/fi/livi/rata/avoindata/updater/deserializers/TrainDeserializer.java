@@ -1,5 +1,18 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,18 +24,6 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class TrainDeserializer extends AEntityDeserializer<Train> {
@@ -83,8 +84,8 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
         train.timeTableRows = sortedTimeTableRows;
 
-        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findById(trainCategoryId);
-        Optional<TrainType> trainTypeOptional = trainTypeRepository.findById(trainTypeId);
+        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(trainCategoryId);
+        Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(trainTypeId);
         train.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "Unknown";
         train.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "Unknown";
 
