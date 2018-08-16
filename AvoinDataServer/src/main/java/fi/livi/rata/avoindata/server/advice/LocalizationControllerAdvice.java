@@ -1,12 +1,5 @@
 package fi.livi.rata.avoindata.server.advice;
 
-import fi.livi.rata.avoindata.common.domain.composition.Composition;
-import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
-import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.server.localization.PowerTypeCache;
-import fi.livi.rata.avoindata.server.localization.TrainCategoryCache;
-import fi.livi.rata.avoindata.server.localization.TrainTypeCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -16,17 +9,25 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
+import fi.livi.rata.avoindata.common.dao.localization.PowerTypeRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
+import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
+import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.OptionalUtil;
+
 @ControllerAdvice
 public class LocalizationControllerAdvice implements ResponseBodyAdvice<Object> {
+    @Autowired
+    private TrainTypeRepository trainTypeRepository;
 
     @Autowired
-    private TrainCategoryCache trainCategoryCache;
+    private PowerTypeRepository powerTypeRepository;
 
     @Autowired
-    private TrainTypeCache trainTypeCache;
-
-    @Autowired
-    private PowerTypeCache powerTypeCache;
+    private TrainCategoryRepository trainCategoryRepository;
 
     @Override
     public boolean supports(final MethodParameter methodParameter, final Class<? extends HttpMessageConverter<?>> aClass) {
@@ -54,21 +55,18 @@ public class LocalizationControllerAdvice implements ResponseBodyAdvice<Object> 
     }
 
     public void localizeTrain(final Train train) {
-        train.trainCategory = trainCategoryCache.get(train.trainCategoryId).name;
-        train.trainType = trainTypeCache.get(train.trainTypeId).name;
+        train.trainCategory = OptionalUtil.getName(trainCategoryRepository.findByIdCached(train.trainCategoryId));
+        train.trainType = OptionalUtil.getName(trainTypeRepository.findByIdCached(train.trainTypeId));
     }
 
     private void localizeComposition(final Composition composition) {
-        composition.trainCategory = trainCategoryCache.get(composition.trainCategoryId).name;
-        composition.trainType = trainTypeCache.get(composition.trainTypeId).name;
-        composition.journeySections.forEach(this::localizeJourneySection);
-    }
+        composition.trainCategory = OptionalUtil.getName(trainCategoryRepository.findByIdCached(composition.trainCategoryId));
+        composition.trainType = OptionalUtil.getName(trainTypeRepository.findByIdCached(composition.trainTypeId));
 
-    private void localizeJourneySection(final JourneySection journeySection) {
-        journeySection.locomotives.forEach(this::localizeLocomotive);
-    }
-
-    private void localizeLocomotive(final Locomotive locomotive) {
-        locomotive.powerType = powerTypeCache.get(locomotive.powerTypeAbbreviation).name;
+        for (final JourneySection journeySection : composition.journeySections) {
+            for (final Locomotive locomotive : journeySection.locomotives) {
+                locomotive.powerType = OptionalUtil.getName(powerTypeRepository.findByAbbreviationCached(locomotive.powerTypeAbbreviation));
+            }
+        }
     }
 }

@@ -57,9 +57,7 @@ public class MQTTConfig {
     }
 
     @MessagingGateway(defaultRequestChannel = "mqttOutboundChannel")
-    public interface TrainLocationGateway {
-
+    public interface MQTTGateway {
         void sendToMqtt(Message data);
-
     }
 }

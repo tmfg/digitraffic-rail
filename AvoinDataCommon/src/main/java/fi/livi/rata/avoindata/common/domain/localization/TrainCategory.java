@@ -5,10 +5,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import fi.livi.rata.avoindata.common.domain.common.NamedEntity;
 import io.swagger.annotations.ApiModelProperty;
 
 @Entity
-public class TrainCategory {
+public class TrainCategory implements NamedEntity {
 
     @Id
     @JsonIgnore
@@ -38,5 +39,10 @@ public class TrainCategory {
         else {
             return false;
         }
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }
