@@ -77,8 +77,11 @@ public class TrainLocationUpdater {
 
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
-
-                publishToMQTT(filteredTrainLocations);
+                try {
+                    publishToMQTT(filteredTrainLocations);
+                } catch (Exception e) {
+                    log.error("MQTT updated failed. Still trying to update database.", e);
+                }
 
                 trainLocationRepository.persist(filteredTrainLocations);
 
