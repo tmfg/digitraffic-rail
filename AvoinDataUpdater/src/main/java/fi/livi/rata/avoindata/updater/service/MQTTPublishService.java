@@ -1,11 +1,10 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.updater.config.MQTTConfig;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +14,12 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.function.Function;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
+import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
 public class MQTTPublishService {
@@ -30,6 +33,8 @@ public class MQTTPublishService {
 
     @Autowired
     private Environment environment;
+
+    private ExecutorService mqttPublishExecutor = Executors.newFixedThreadPool(3);
 
     public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities) {
         this.publish(topicProvider, entities, null);
@@ -50,7 +55,13 @@ public class MQTTPublishService {
             final String fullTopic = getFullTopic(topic);
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
-            MQTTGateway.sendToMqtt(message);
+            mqttPublishExecutor.execute(() -> {
+                try {
+                    MQTTGateway.sendToMqtt(message);
+                } catch (Exception e) {
+                    log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity);
+                }
+            });
 
             return message;
         } catch (Exception e) {
