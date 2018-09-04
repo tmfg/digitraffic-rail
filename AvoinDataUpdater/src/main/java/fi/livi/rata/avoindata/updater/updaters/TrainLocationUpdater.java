@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,8 @@ public class TrainLocationUpdater {
     @Autowired
     private MQTTPublishService mqttPublishService;
 
+    private ExecutorService mqttPublishExecutor = Executors.newFixedThreadPool(3);
+
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION = new DecimalFormat("#.000000");
 
     @Scheduled(fixedDelay = 1000)
@@ -68,9 +72,11 @@ public class TrainLocationUpdater {
 
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
-                mqttPublishService.publish(
-                        s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
-                        filteredTrainLocations, null);
+                mqttPublishExecutor.execute(() -> {
+                    mqttPublishService.publish(
+                            s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
+                            filteredTrainLocations, null);
+                });
 
                 trainLocationRepository.persist(filteredTrainLocations);
 
@@ -80,7 +86,7 @@ public class TrainLocationUpdater {
                         trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
             }
         } catch (Exception e) {
-            log.error("Error publishing train locations", e);
+            log.error("Error updating train locations", e);
         }
     }
 
