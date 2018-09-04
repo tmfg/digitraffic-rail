@@ -18,7 +18,6 @@ public class Forecast {
 
     public String source;
     public Integer difference;
-    public boolean isLate;
     public Long version;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
@@ -38,7 +37,6 @@ public class Forecast {
                 ", source='" + source + '\'' +
                 ", forecastTime=" + forecastTime +
                 ", version=" + version +
-                ", isLate=" + isLate +
                 ", id=" + id +
                 ", difference=" + difference +
                 '}';
