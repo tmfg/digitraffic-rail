@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.utils;
 
-import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.Collection;
+import javax.servlet.http.HttpServletResponse;
 
 public class CacheControl {
 
@@ -23,6 +23,10 @@ public class CacheControl {
 
     public static void setCacheMaxAgeSeconds(HttpServletResponse response, int maxAge) {
         response.setHeader("Cache-Control", String.format("max-age=%d, public", maxAge));
+    }
+
+    public static void clearCacheMaxAgeSeconds(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "");
     }
 
     public void setCacheParameter(HttpServletResponse response, Collection<?> items) {

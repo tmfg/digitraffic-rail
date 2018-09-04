@@ -1,10 +1,9 @@
 package fi.livi.rata.avoindata.server.controller;
 
-import com.mysql.jdbc.exceptions.MySQLTimeoutException;
-import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
-import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
+import java.io.IOException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +20,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import com.mysql.jdbc.exceptions.MySQLTimeoutException;
+import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
 
 @ControllerAdvice
 @ResponseBody
@@ -41,8 +43,9 @@ public class DefaultExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ExceptionMessage handleHttpMediaTypeNotAcceptableException(HttpMediaTypeNotAcceptableException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
-        log.warn(String.format("HttpMediaTypeNotAcceptableException: {}", HttpUtils.getFullURL(request)), e);
+            HttpServletRequest request) {
+        CacheControl.clearCacheMaxAgeSeconds(response);
+
         return createAndLogReturn(request, response, "HttpMediaTypeNotAcceptableException", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
@@ -88,6 +91,7 @@ public class DefaultExceptionHandler {
             return handleRuntimeException(e, response, request);
         }
     }
+
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
