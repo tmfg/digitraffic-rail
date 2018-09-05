@@ -1,8 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -34,8 +32,6 @@ public class MQTTPublishService {
     @Autowired
     private Environment environment;
 
-    private ExecutorService mqttPublishExecutor = Executors.newFixedThreadPool(3);
-
     public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities) {
         this.publish(topicProvider, entities, null);
     }
@@ -55,13 +51,11 @@ public class MQTTPublishService {
             final String fullTopic = getFullTopic(topic);
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
-            mqttPublishExecutor.execute(() -> {
-                try {
-                    MQTTGateway.sendToMqtt(message);
-                } catch (Exception e) {
-                    log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity);
-                }
-            });
+            try {
+                MQTTGateway.sendToMqtt(message);
+            } catch (Exception e) {
+                log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity);
+            }
 
             return message;
         } catch (Exception e) {
