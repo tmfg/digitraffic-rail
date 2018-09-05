@@ -1,18 +1,10 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -24,6 +16,23 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 
 @Service
 public class GTFSWritingService {
@@ -67,8 +76,9 @@ public class GTFSWritingService {
                         agency -> String.format("%s,%s,%s,%s,,fi", agency.id, agency.name, agency.url, agency.timezone)));
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
-                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign",
-                stop -> String.format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name, stop.latitude, stop.longitude, stop.source.name)));
+                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign", stop -> String
+                        .format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
+                                stop.longitude, stop.source != null ? stop.source.name : stop.stopCode)));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
                 route -> String.format("%s,%s,%s,%s,,%s", route.routeId, route.agencyId, route.shortName, route.longName, route.type)));
@@ -106,8 +116,8 @@ public class GTFSWritingService {
 
         files.add(write(getPath("feed_info.txt"), Lists.newArrayList(1),
                 "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
-                        .format("%s,%s,%s,%s,%s,", "Finnish Transport Agency", "http://www.liikennevirasto.fi", "fi",
-                                format(minStartDate), format(maxEndDate))));
+                        .format("%s,%s,%s,%s,%s,", "Finnish Transport Agency", "http://www.liikennevirasto.fi", "fi", format(minStartDate),
+                                format(maxEndDate))));
 
 
         return files;
