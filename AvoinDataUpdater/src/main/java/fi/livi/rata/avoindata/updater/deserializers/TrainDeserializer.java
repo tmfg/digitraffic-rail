@@ -1,17 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.common.domain.cause.Cause;
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -20,12 +8,37 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
+import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+
 @Component
 public class TrainDeserializer extends AEntityDeserializer<Train> {
     private Logger logger = LoggerFactory.getLogger(TrainDeserializer.class);
 
     @Autowired
     private DateProvider dp;
+
+    @Autowired
+    private TrainCategoryRepository trainCategoryRepository;
+
+    @Autowired
+    private TrainTypeRepository trainTypeRepository;
+
+
 
     @Override
     public Train deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
@@ -70,6 +83,11 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
         initializeIsTrainStoppingInformation(sortedTimeTableRows);
 
         train.timeTableRows = sortedTimeTableRows;
+
+        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(trainCategoryId);
+        Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(trainTypeId);
+        train.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "Unknown";
+        train.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "Unknown";
 
         return train;
     }

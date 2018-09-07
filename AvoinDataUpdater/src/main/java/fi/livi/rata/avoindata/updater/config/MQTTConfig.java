@@ -38,6 +38,7 @@ public class MQTTConfig {
         options.setServerURIs(new String[]{mqttServerUrl});
         options.setUserName(mqtt_username);
         options.setPassword(mqtt_password.toCharArray());
+        options.setConnectionTimeout(10);
 
         factory.setConnectionOptions(options);
 
@@ -57,9 +58,7 @@ public class MQTTConfig {
     }
 
     @MessagingGateway(defaultRequestChannel = "mqttOutboundChannel")
-    public interface TrainLocationGateway {
-
+    public interface MQTTGateway {
         void sendToMqtt(Message data);
-
     }
 }

@@ -27,6 +27,7 @@ public class JourneyComposition {
     public long version;
     public final Collection<Wagon> wagons;
     public final Collection<Locomotive> locomotives;
+    public JourneySection journeySection;
 
     public JourneyComposition(final Operator operator, final Long trainNumber, final LocalDate departureDate,
                               final long trainCategoryId, final long trainTypeId, final int totalLength, final int maximumSpeed, final long version,

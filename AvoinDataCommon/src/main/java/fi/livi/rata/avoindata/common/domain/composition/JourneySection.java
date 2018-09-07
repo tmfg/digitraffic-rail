@@ -38,7 +38,7 @@ public class JourneySection {
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false),
             @JoinColumn(name = "trainNumber", referencedColumnName = "trainNumber", nullable = false)})
     @JsonIgnore
-    private Composition composition;
+    public Composition composition;
 
     public int totalLength;
     public int maximumSpeed;
@@ -47,7 +47,7 @@ public class JourneySection {
     }
 
     public JourneySection(final CompositionTimeTableRow beginTimeTableRow, final CompositionTimeTableRow endTimeTableRow,
-            final Composition composition, final int maximumSpeed, final int totalLength) {
+                          final Composition composition, final int maximumSpeed, final int totalLength) {
         this.beginTimeTableRow = beginTimeTableRow;
         this.endTimeTableRow = endTimeTableRow;
         this.composition = composition;

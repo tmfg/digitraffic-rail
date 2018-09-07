@@ -37,7 +37,6 @@ public class CompositionPersistService extends AbstractPersistService<JourneyCom
         compositionService.addCompositions(entities);
     }
 
-
     @Override
     public void clearEntities() {
         compositionRepository.deleteAllInBatch();
