@@ -54,12 +54,12 @@ public class MQTTPublishService {
             try {
                 MQTTGateway.sendToMqtt(message);
             } catch (Exception e) {
-                log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity);
+                log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
             }
 
             return message;
         } catch (Exception e) {
-            log.error("Error publishing {} to {}", topic, entity);
+            log.error("Error publishing {} to {}", topic, entity, e);
             return null;
         }
     }
