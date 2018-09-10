@@ -1,7 +1,9 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,10 +77,18 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
                 for (Train train : updatedTrains) {
                     String trainAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(train);
 
-                    mqttPublishService.publishString(String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", train.id.departureDate, train.id.trainNumber, train.trainCategory, train.trainType, train.operator.operatorShortCode, train.commuterLineID, train.runningCurrently, train.timetableType), trainAsString);
+                    mqttPublishService.publishString(
+                            String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", train.id.departureDate, train.id.trainNumber,
+                                    train.trainCategory, train.trainType, train.operator.operatorShortCode, train.commuterLineID,
+                                    train.runningCurrently, train.timetableType), trainAsString);
 
+                    Set<String> announcedStations = new HashSet<>();
                     for (TimeTableRow timeTableRow : train.timeTableRows) {
-                        mqttPublishService.publishString(String.format("trains-by-station/%s/%s/%s/%s", timeTableRow.station.stationShortCode, timeTableRow.type, timeTableRow.commercialTrack, (timeTableRow.trainReadies.isEmpty() ? "" : timeTableRow.trainReadies.iterator().next().accepted)), trainAsString);
+                        String stationShortCode = timeTableRow.station.stationShortCode;
+                        if (!announcedStations.contains(stationShortCode)) {
+                            announcedStations.add(stationShortCode);
+                            mqttPublishService.publishString(String.format("trains-by-station/%s", stationShortCode), trainAsString);
+                        }
                     }
                 }
             } catch (Exception e) {
