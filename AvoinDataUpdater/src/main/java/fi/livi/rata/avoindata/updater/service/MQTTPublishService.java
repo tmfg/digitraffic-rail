@@ -48,7 +48,7 @@ public class MQTTPublishService {
 
             final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
 
-            final String fullTopic = getFullTopic(topic);
+            final String fullTopic = getFullTopic(topic).replace("+", "").replace("#", "");
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
             try {
