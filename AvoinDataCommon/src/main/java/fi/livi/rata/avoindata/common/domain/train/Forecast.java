@@ -6,6 +6,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinColumns;
 import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Type;
 
@@ -19,6 +20,9 @@ public class Forecast {
     public String source;
     public Integer difference;
     public Long version;
+
+    @Transient
+    public ZonedDateTime lastModified;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime forecastTime;

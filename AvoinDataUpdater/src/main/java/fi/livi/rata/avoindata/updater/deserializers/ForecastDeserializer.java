@@ -1,19 +1,20 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.io.IOException;
-import java.time.LocalDate;
 
 @Component
 public class ForecastDeserializer extends AEntityDeserializer<Forecast> {
@@ -42,6 +43,8 @@ public class ForecastDeserializer extends AEntityDeserializer<Forecast> {
         } else {
             log.info("Received unknownDelay for timeTableRow {}", timeTableRowId);
         }
+
+        forecast.lastModified = getNodeAsDateTime(node.get("muokkauspvm"));
 
         forecast.timeTableRow = entityManager.getReference(TimeTableRow.class, timeTableRowId);
 
