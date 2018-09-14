@@ -1,5 +1,14 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import java.time.LocalDate;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
@@ -9,14 +18,6 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.CauseFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.mqtt.support.MqttHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
 
 public class MQTTPublishServiceTest extends BaseTest {
     @Autowired
@@ -46,6 +47,14 @@ public class MQTTPublishServiceTest extends BaseTest {
         Assert.assertEquals("3", json.read("$['timeTableRows'][0]['causes'][0]['thirdCategoryCodeId']").toString());
 
         assertPathNotPresent(json, "$['timeTableRows'][0]['causes'][0]['detailedCategoryName']");
+    }
+
+    @Transactional
+    @Test
+    public void specialCharactersShouldBeRemovedFromTopic() {
+        Message<String> message = mqttPublishService.publishString("testing/test+topic+#/123", "content");
+
+        Assert.assertEquals("testing/testtopic/123", message.getHeaders().get(MqttHeaders.TOPIC));
     }
 
     private void assertPathNotPresent(DocumentContext json, String path) {

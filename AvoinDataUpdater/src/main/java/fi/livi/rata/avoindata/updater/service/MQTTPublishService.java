@@ -48,18 +48,18 @@ public class MQTTPublishService {
 
             final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
 
-            final String fullTopic = getFullTopic(topic);
+            final String fullTopic = getFullTopic(topic).replace("+", "").replace("#", "");
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
             try {
                 MQTTGateway.sendToMqtt(message);
             } catch (Exception e) {
-                log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity);
+                log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
             }
 
             return message;
         } catch (Exception e) {
-            log.error("Error publishing {} to {}", topic, entity);
+            log.error("Error publishing {} to {}", topic, entity, e);
             return null;
         }
     }
