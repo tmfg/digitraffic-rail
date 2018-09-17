@@ -1,10 +1,14 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities;
 
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import javax.persistence.*;
 
 @Entity
 public class Junatyyppi {
@@ -13,6 +17,7 @@ public class Junatyyppi {
     @Id
     @Column(name = KEY_NAME)
     public Long id;
+
     public boolean kaupallinenJunatyyppi;
 
     @JsonIgnore
