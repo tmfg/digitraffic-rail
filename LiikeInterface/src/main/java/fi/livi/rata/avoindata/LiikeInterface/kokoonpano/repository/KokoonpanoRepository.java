@@ -57,12 +57,14 @@ public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
             "   and kp.version > ?1) " +
             "and (" +
             "   exists (" +
-                "   select p.id from JupaTapahtuma p" +
-                "   where p.kokoonpano = u " +
-                "   and p.jupaTila = 'VOIMASSAOLEVA' " +
-                "   and p.junapaiva.jupaTila = 'VOIMASSAOLEVA')" +
-            "    or " +
-            "       (not exists (select p.id from JupaTapahtuma p where p.kokoonpano = u))" +
+            "   select p.jupaTila from JupaTapahtuma p" +
+            "   where p.kokoonpano = u" +
+            "       and p.jupaTila = 'VOIMASSAOLEVA' " +
+            "       and p.junapaiva.jupaTila = 'VOIMASSAOLEVA'" +
+            "    )" +
+            "    or (" +
+            "       not exists (select p.jupaTila from Junapaiva p where p.aikataulu = aikataulu)" +
+            "    )" +
             ") " +
             "and u.lahtoPvm > ?2 " +
             "and junatyyppi.avoinData = 1 " +
