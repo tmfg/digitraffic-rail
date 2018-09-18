@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +62,9 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
 
 
         try {
-            mqttPublishService.publish(s -> String.format("compositions/%s/%s", s.id.departureDate, s.id.trainNumber), compositions);
+            mqttPublishService.publish(s -> String
+                    .format("compositions/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType,
+                            s.operator.operatorShortCode), compositions);
         } catch (Exception e) {
             log.error("Error publishing trains to MQTT", e);
         }

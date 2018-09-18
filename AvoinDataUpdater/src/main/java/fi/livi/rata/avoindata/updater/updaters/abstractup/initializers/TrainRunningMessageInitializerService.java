@@ -42,7 +42,8 @@ public class TrainRunningMessageInitializerService extends AbstractDatabaseIniti
         List<TrainRunningMessage> updatedTrainRunningMessages = super.doUpdate();
 
         try {
-            mqttPublishService.publish(s -> String.format("train-tracking/%s/%s", s.trainId.departureDate, s.trainId.trainNumber),
+            mqttPublishService.publish(s -> String.format("train-tracking/%s/%s/%s/%s/%s/%s/%s/%s/%s", s.trainId.departureDate, s.trainId.trainNumber,s.type,s
+                            .station,s.trackSection,s.previousStation,s.nextStation,s.previousTrackSection,s.nextTrackSection),
                     updatedTrainRunningMessages);
         } catch (Exception e) {
             log.error("Error publishing trains to MQTT", e);
