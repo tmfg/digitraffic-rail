@@ -1,5 +1,24 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.addSchedulesCacheParametersForDailyResult;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
@@ -10,20 +29,6 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.addSchedulesCacheParametersForDailyResult;
 
 @Api(tags = "compositions", description = "Returns compositions of trains")
 @RestController
@@ -82,14 +87,14 @@ public class CompositionController extends ADataController {
             @ApiParam(defaultValue = "2017-08-01") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                     LocalDate departure_date,
             @ApiParam(defaultValue = "1") @PathVariable("train_number") Long train_number, HttpServletResponse response) {
-        Composition one = compositionRepository.findById(new TrainId(train_number, departure_date)).orElse(null);
+        List<Composition> compositions = compositionRepository.findByIds(Lists.newArrayList(new TrainId(train_number, departure_date)));
 
-        if (one == null) {
+        if (compositions == null || compositions.isEmpty()) {
             throw new CompositionNotFoundException(train_number, departure_date);
         }
 
-        CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, Arrays.asList(one));
+        CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions);
 
-        return one;
+        return compositions.get(0);
     }
 }
