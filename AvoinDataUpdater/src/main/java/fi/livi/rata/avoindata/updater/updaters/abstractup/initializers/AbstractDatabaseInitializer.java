@@ -1,22 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -25,10 +9,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
 
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> {
-    public static final LocalDate MIN_DATE_TO_INIT = LocalDate.parse("2014-07-31");
     private static final Logger log = LoggerFactory.getLogger(AbstractDatabaseInitializer.class);
 
     @Value("${updater.http.initTimeoutMillis:300000}")
@@ -40,12 +40,16 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     @Autowired
     private Environment environment;
 
+    @Autowired
+    private RestTemplateBuilder restTemplateBuilder;
+
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
     protected String prefix;
     private InitializationPeriod trainInitializationPeriod;
     private AbstractPersistService<EntityType> persistService;
+    private RestTemplate restTemplate;
 
     public abstract String getPrefix();
 
@@ -55,9 +59,6 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return entities;
     }
 
-    @Autowired
-    private RestTemplate restTemplate;
-
     @PostConstruct
     private void setup() {
         if (Strings.isNullOrEmpty(liikeInterfaceUrl)) {
@@ -65,9 +66,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
             return;
         }
 
-        final SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
-        requestFactory.setReadTimeout(INIT_TIMEOUT);
-        requestFactory.setConnectTimeout(INIT_TIMEOUT);
+        restTemplate = restTemplateBuilder.setConnectTimeout(INIT_TIMEOUT).setConnectTimeout(INIT_TIMEOUT).build();
 
         retryTemplate.setLogger(log);
 
