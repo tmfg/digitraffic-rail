@@ -1,12 +1,13 @@
 package fi.livi.rata.avoindata.LiikeInterface.kokoonpano.repository;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Kokoonpano;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Kokoonpano;
 
 @Repository
 public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
@@ -55,7 +56,7 @@ public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
             "   and kp.lahtoPvm = u.lahtoPvm" +
             "   and kp.version > ?1) " +
             "and exists (" +
-            "   select p.id from JupaTapahtuma p" +
+            "   select p.jupaTila from JupaTapahtuma p" +
             "   where p.kokoonpano = u " +
             "   and p.jupaTila = 'VOIMASSAOLEVA' " +
             "   and p.junapaiva.jupaTila = 'VOIMASSAOLEVA') " +
