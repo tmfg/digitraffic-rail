@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.config;
 
+import java.util.Random;
+
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -48,7 +50,8 @@ public class MQTTConfig {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound(MqttPahoClientFactory mqttPahoClientFactory) {
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(mqttClientId, mqttPahoClientFactory);
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(mqttClientId+new Random().nextInt(1000),
+                mqttPahoClientFactory);
         return messageHandler;
     }
 
