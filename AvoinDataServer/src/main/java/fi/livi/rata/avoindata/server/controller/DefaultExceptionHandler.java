@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.server.controller;
 
-import java.io.IOException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.mysql.cj.jdbc.exceptions.MySQLTimeoutException;
+import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +22,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import com.mysql.jdbc.exceptions.MySQLTimeoutException;
-import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
-import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @ControllerAdvice
 @ResponseBody
