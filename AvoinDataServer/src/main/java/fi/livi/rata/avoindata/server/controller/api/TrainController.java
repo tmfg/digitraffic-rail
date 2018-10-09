@@ -1,17 +1,15 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.dao.train.TrainStreamRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import fi.livi.rata.avoindata.server.controller.api.exception.TrainNotFoundException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -28,6 +26,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
@@ -40,6 +39,8 @@ public class TrainController {
     private AllTrainsRepository allTrainsRepository;
     @Autowired
     private BatchExecutionService bes;
+    @Autowired
+    private TrainStreamRepository trainStreamRepository;
 
     private Logger log = LoggerFactory.getLogger(TrainController.class);
 
@@ -100,13 +101,11 @@ public class TrainController {
     @ApiOperation(value = "Returns trains run on {departure_date}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
-    public Collection<Train> getTrainsByDepartureDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, HttpServletResponse response) {
-        final Collection<Train> trains = getTrainsHistory(departure_date, null);
-
+    public Stream<Train> getTrainsByDepartureDate(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, HttpServletResponse response) {//
         CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
 
-        return trains;
+        return trainStreamRepository.getTrainsByDepartureDate(departure_date);
     }
 
     private List<Train> getTrainWithoutDepartureDate(long train_number, long version) {
@@ -126,19 +125,5 @@ public class TrainController {
             BigInteger trainNumber = (BigInteger) tuple[2];
             return new TrainId(trainNumber.longValue(), departureDate);
         }).collect(Collectors.toList());
-    }
-
-    private Collection<Train> getTrainsHistory(@NonNull final LocalDate date, @Nullable final Long train_number) {
-        final List<Train> list = trainRepository.findByDepartureAndTrainNumber(date, train_number);
-
-        if (list.isEmpty()) {
-            if (train_number == null) {
-                throw new TrainNotFoundException(date);
-            } else {
-                throw new TrainNotFoundException(train_number, date);
-            }
-        }
-
-        return list;
     }
 }
