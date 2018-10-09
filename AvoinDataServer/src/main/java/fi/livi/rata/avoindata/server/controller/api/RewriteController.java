@@ -88,7 +88,7 @@ public class RewriteController {
 
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = "station", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public List<Train> getStationsTrainsLimitByNumber(@RequestParam String station,
+    public Stream<Train> getStationsTrainsLimitByNumber(@RequestParam String station,
             @RequestParam(required = false, defaultValue = "0") long version,
             @RequestParam(required = false, defaultValue = "5") int arrived_trains,
             @RequestParam(required = false, defaultValue = "5") int arriving_trains,
@@ -102,7 +102,7 @@ public class RewriteController {
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = {"station", "minutes_before_departure", "minutes_after_departure",
             "minutes_before_arrival", "minutes_after_arrival"}, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public List<Train> getStationsTrainsLimitByTime(@RequestParam(required = true) String station,
+    public Stream<Train> getStationsTrainsLimitByTime(@RequestParam(required = true) String station,
             @RequestParam(defaultValue = "0") long version, @RequestParam int minutes_before_departure,
             @RequestParam int minutes_after_departure, @RequestParam int minutes_before_arrival, @RequestParam int minutes_after_arrival,
             @RequestParam(defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
