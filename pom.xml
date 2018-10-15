@@ -16,6 +16,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>2.1.0.M4</spring.boot.version>
         <com.google.guava.version>18.0</com.google.guava.version>
+        <mysql.connector.version>5.1.47</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
     </properties>
 
