@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleToTrainConverter;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -16,13 +15,11 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 public class ScheduleDeserializerTest extends BaseTest {
     @Autowired
     private HttpInputObjectMapper httpInputObjectMapper;
-
-    @Autowired
-    private ScheduleToTrainConverter scheduleToTrainConverter;
 
     @Test
     public void testDeserializer() throws Exception {
@@ -31,12 +28,12 @@ public class ScheduleDeserializerTest extends BaseTest {
         assertSchedule(schedule);
 
         final ArrayList<ScheduleRow> scheduleRows = new ArrayList<>(schedule.scheduleRows);
-        Collections.sort(scheduleRows, (o1, o2) -> Long.compare(o1.id, o2.id));
+        Collections.sort(scheduleRows, Comparator.comparingLong(o2 -> o2.id));
 
         assertScheduleRows(scheduleRows);
 
         final ArrayList<ScheduleCancellation> scheduleCancellations = new ArrayList<>(schedule.scheduleCancellations);
-        Collections.sort(scheduleCancellations, (o1, o2) -> Long.compare(o1.id, o2.id));
+        Collections.sort(scheduleCancellations, Comparator.comparingLong(o -> o.id));
 
         assertWholeDayCancellation(scheduleCancellations.get(0));
         assertPartialCancellation(scheduleCancellations.get(2));
@@ -107,7 +104,7 @@ public class ScheduleDeserializerTest extends BaseTest {
 
     private void assertPartialCancellation(final ScheduleCancellation partialDayCancellation) {
         final ArrayList<ScheduleRowPart> scheduleRowParts = new ArrayList<>(partialDayCancellation.cancelledRows);
-        Collections.sort(scheduleRowParts, (o1, o2) -> Long.compare(o1.id, o2.id));
+        Collections.sort(scheduleRowParts, Comparator.comparingLong(o -> o.id));
 
         Assert.assertEquals("SUL", scheduleRowParts.get(0).scheduleRow.station.stationShortCode);
         Assert.assertEquals("PLT", scheduleRowParts.get(1).scheduleRow.station.stationShortCode);
