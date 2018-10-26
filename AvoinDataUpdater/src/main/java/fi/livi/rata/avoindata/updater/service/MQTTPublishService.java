@@ -69,6 +69,7 @@ public class MQTTPublishService {
                         .replace("+", "")
                         .replace("#", "")
                         .replaceAll("/null/", "//")
+                        .replaceAll("/null/", "//")
                         .replaceFirst("/null$", "/");
     }
 
