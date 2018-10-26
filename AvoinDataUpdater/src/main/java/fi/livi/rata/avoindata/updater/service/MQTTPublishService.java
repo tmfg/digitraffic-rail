@@ -1,8 +1,11 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import java.util.List;
-import java.util.function.Function;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
+import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +15,8 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.updater.config.MQTTConfig;
+import java.util.List;
+import java.util.function.Function;
 
 @Service
 public class MQTTPublishService {
@@ -48,9 +47,9 @@ public class MQTTPublishService {
 
             final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
 
-            final String fullTopic = getFullTopic(topic).replace("+", "").replace("#", "");
+            final String topicToPublishTo = getReplacedTopic(getFullTopic(topic));
 
-            final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, fullTopic).build();
+            final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
             try {
                 MQTTGateway.sendToMqtt(message);
             } catch (Exception e) {
@@ -62,6 +61,15 @@ public class MQTTPublishService {
             log.error("Error publishing {} to {}", topic, entity, e);
             return null;
         }
+    }
+
+    private String getReplacedTopic(String topic) {
+        return
+                topic
+                        .replace("+", "")
+                        .replace("#", "")
+                        .replaceAll("/null/", "//")
+                        .replaceFirst("/null$", "/");
     }
 
     public synchronized <E> Message<String> publishEntity(String topic, E entity, Class viewClass) {
