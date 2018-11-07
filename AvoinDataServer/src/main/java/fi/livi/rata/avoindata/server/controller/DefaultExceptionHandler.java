@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.controller;
 
-import com.mysql.cj.jdbc.exceptions.MySQLTimeoutException;
+import com.mysql.jdbc.exceptions.MySQLTimeoutException;
 import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
