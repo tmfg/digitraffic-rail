@@ -24,12 +24,12 @@ import java.util.concurrent.Future;
 public class StatusCodeTest {
     private Logger logger = LoggerFactory.getLogger(StatusCodeTest.class);
     private AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-//         private static String BASE_URL = "https://rata-beta.digitraffic.fi/";
-//         private static String BASE_URL = "http://localhost:5000/";
+    //         private static String BASE_URL = "https://rata-beta.digitraffic.fi/";
+    private static String BASE_URL = "http://localhost:5000/";
 //    private static String BASE_URL = "http://front-prd.integraatiot.eu/";
-    private static String BASE_URL = "http://finnishtransportagency.github.io/digitraffic/rautatieliikenne/";
+//    private static String BASE_URL = "http://finnishtransportagency.github.io/digitraffic/rautatieliikenne/";
 
-    private static String DOCUMENTATION_URL = "http://finnishtransportagency.github.io/digitraffic/rautatieliikenne/";
+    private static String DOCUMENTATION_URL = "http://rata.digitraffic.fi";
     private static String INFRA_DOCUMENTATION_URL = BASE_URL + "infra-api/";
     private static String JETI_DOCUMENTATION_URL = BASE_URL + "jeti-api/";
     private static Set<Integer> ALLOWED_CODES = Sets.newHashSet(200, 301, 303, 307);
@@ -74,8 +74,8 @@ public class StatusCodeTest {
         final Future<Response> prd1Future = responseFutures.get(prd1Url);
         final Future<Response> prd2Future = responseFutures.get(prd2Url);
 
-        Assert.assertTrue( prd1Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
-        Assert.assertTrue( prd2Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
+        Assert.assertTrue(prd1Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
+        Assert.assertTrue(prd2Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
     }
 
     @Test
@@ -114,9 +114,14 @@ public class StatusCodeTest {
     public void urlsWorkInDocumentation() throws IOException, ExecutionException, InterruptedException {
         Set<String> urls = getUrlsFromDocumentation(DOCUMENTATION_URL, Sets.newHashSet("https://www.digitraffic.fi"));
 
-        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url -> url.contains("digitraffic.fi"));
+        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url -> url.contains("digitraffic.fi") && !url.contains("graphql"));
 
-        assertUrls(digitrafficUrls);
+        List<String> targetUrls = new ArrayList<>();
+        for (String digitrafficUrl : digitrafficUrls) {
+            targetUrls.add(digitrafficUrl.replace("https://rata.digitraffic.fi/", BASE_URL));
+        }
+
+        assertUrls(targetUrls);
     }
 
     @Test
@@ -217,7 +222,7 @@ public class StatusCodeTest {
         return responses;
     }
 
-    private Map<String, Future<Response>> getResponseFutures(final Set<String> urls)  {
+    private Map<String, Future<Response>> getResponseFutures(final Set<String> urls) {
         Map<String, Future<Response>> responses = new HashMap<>(urls.size());
         for (final String url : urls) {
             logger.info("Testing: {}", url);
