@@ -25,6 +25,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
+import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriodChangeDate;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackRange;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
@@ -137,6 +138,9 @@ public class HttpInputObjectMapper extends ObjectMapper {
     @Autowired
     private TimeTablePeriodDeserializer timetablePeriodDeserializer;
 
+    @Autowired
+    private TimeTablePeriodChangeDateDeserializer timeTablePeriodChangeDateDeserializer;
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
@@ -175,11 +179,12 @@ public class HttpInputObjectMapper extends ObjectMapper {
         module.addDeserializer(ScheduleCancellation.class, scheduleCancellationDeserializer);
         module.addDeserializer(ScheduleRow.class, scheduleRowDeserializer);
         module.addDeserializer(ScheduleRowPart.class, scheduleRowPartDeserializer);
-        module.addDeserializer(ScheduleException.class,scheduleExceptionDeserializer);
+        module.addDeserializer(ScheduleException.class, scheduleExceptionDeserializer);
 
         module.addDeserializer(TrainLocation.class, trainLocationDeserializer);
 
         module.addDeserializer(TimeTablePeriod.class, timetablePeriodDeserializer);
+        module.addDeserializer(TimeTablePeriodChangeDate.class, timeTablePeriodChangeDateDeserializer);
 
         registerModule(module);
     }
