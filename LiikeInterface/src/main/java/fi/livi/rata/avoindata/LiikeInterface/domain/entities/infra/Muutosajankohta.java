@@ -13,7 +13,7 @@ public class Muutosajankohta extends BaseEntity {
 
     @Id
     @Column(name = KEY_NAME)
-    private Long id;
+    public Long id;
 
     @Type(type = "org.hibernate.type.LocalDateType")
     @Column(name = "HAKU_LOPPU_PVM")

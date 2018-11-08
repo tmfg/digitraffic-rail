@@ -14,7 +14,7 @@ public class Aikataulukausi extends BaseEntity {
 
     @Id
     @Column(name = KEY_NAME)
-    private Long id;
+    public Long id;
 
     @Type(type="org.hibernate.type.LocalDateType")
     public LocalDate voimassaAlkuPvm;
