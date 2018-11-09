@@ -1,11 +1,7 @@
 package fi.livi.rata.avoindata.updater.controllers;
 
-import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
-import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.CompositionInitializerService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainInitializerService;
+import java.time.LocalDate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +11,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.AsyncRestTemplate;
 
-import java.time.LocalDate;
+import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.CompositionInitializerService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainInitializerService;
 
 @Controller
 public class ManualUpdateController {
@@ -32,8 +32,7 @@ public class ManualUpdateController {
 
     @Autowired
     private ScheduleService scheduleService;
-    @Autowired
-    protected AsyncRestTemplate restTemplate;
+
     @Autowired
     private TrainLockExecutor trainLockExecutor;
 

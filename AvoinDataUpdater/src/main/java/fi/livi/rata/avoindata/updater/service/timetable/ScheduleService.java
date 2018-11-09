@@ -1,20 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.AsyncRestTemplate;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
 public class ScheduleService {
@@ -31,9 +31,6 @@ public class ScheduleService {
 
     @Value("${updater.trains.numberOfFutureDaysToInitialize}")
     protected Integer numberOfFutureDaysToInitialize;
-
-    @Autowired
-    protected AsyncRestTemplate restTemplate;
 
     @Autowired
     private TrainLockExecutor trainLockExecutor;

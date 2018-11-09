@@ -1,32 +1,25 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.AsyncRestTemplate;
-import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+
 @Component
 public class ScheduleProviderService {
     @Autowired
     private RestTemplate restTemplate;
-
-    @Autowired
-    private AsyncRestTemplate asyncRestTemplate;
-
-    @Autowired
-    private BatchExecutionService bes;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
