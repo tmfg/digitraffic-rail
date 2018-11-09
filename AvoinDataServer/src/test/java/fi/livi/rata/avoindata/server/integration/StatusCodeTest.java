@@ -24,8 +24,8 @@ import java.util.concurrent.Future;
 public class StatusCodeTest {
     private Logger logger = LoggerFactory.getLogger(StatusCodeTest.class);
     private AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-    //         private static String BASE_URL = "https://rata-beta.digitraffic.fi/";
-    private static String BASE_URL = "http://localhost:5000/";
+    private static String BASE_URL = "https://rata-beta.digitraffic.fi/";
+//    private static String BASE_URL = "http://localhost:5000/";
 //    private static String BASE_URL = "http://front-prd.integraatiot.eu/";
 //    private static String BASE_URL = "http://finnishtransportagency.github.io/digitraffic/rautatieliikenne/";
 
@@ -114,7 +114,7 @@ public class StatusCodeTest {
     public void urlsWorkInDocumentation() throws IOException, ExecutionException, InterruptedException {
         Set<String> urls = getUrlsFromDocumentation(DOCUMENTATION_URL, Sets.newHashSet("https://www.digitraffic.fi"));
 
-        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url -> url.contains("digitraffic.fi") && !url.contains("graphql"));
+        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url -> url.contains("digitraffic.fi") && !url.contains("graphql") && !url.contains("list.html"));
 
         List<String> targetUrls = new ArrayList<>();
         for (String digitrafficUrl : digitrafficUrls) {
