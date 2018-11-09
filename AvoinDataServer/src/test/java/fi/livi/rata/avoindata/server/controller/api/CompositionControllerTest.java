@@ -15,7 +15,7 @@ public class CompositionControllerTest extends MockMvcBaseTest {
     public void versionSearchShouldWork() throws Exception {
         compositionFactory.create();
 
-        assertLength("/compositions?version=0",1);
+        assertLength("/metadatacompositions?version=0", 1);
         assertLength("/compositions?version=1",0);
         assertLength("/compositions?version=2",0);
     }
