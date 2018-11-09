@@ -1,29 +1,35 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.DateUtils;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateUtils;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+
 @Service
 public class ScheduleToTrainConverter {
     private Logger log = LoggerFactory.getLogger(ScheduleToTrainConverter.class);
 
-    @Autowired
-    protected RestTemplate restTemplate;
     @Autowired
     private DateUtils du;
     @Value("${updater.liikeinterface-url}")

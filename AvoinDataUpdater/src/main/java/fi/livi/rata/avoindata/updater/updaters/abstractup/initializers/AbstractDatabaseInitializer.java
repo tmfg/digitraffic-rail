@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -31,9 +30,6 @@ import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
 public abstract class AbstractDatabaseInitializer<EntityType> {
     private static final Logger log = LoggerFactory.getLogger(AbstractDatabaseInitializer.class);
 
-    @Value("${updater.http.initTimeoutMillis:300000}")
-    private int INIT_TIMEOUT;
-
     @Autowired
     private InitializerRetryTemplate retryTemplate;
 
@@ -41,7 +37,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     private Environment environment;
 
     @Autowired
-    private RestTemplateBuilder restTemplateBuilder;
+    private RestTemplate restTemplate;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
@@ -49,7 +45,6 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     protected String prefix;
     private InitializationPeriod trainInitializationPeriod;
     private AbstractPersistService<EntityType> persistService;
-    private RestTemplate restTemplate;
 
     public abstract String getPrefix();
 
@@ -65,8 +60,6 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
             log.info("updater.liikeinterface-url is null. Skipping initilization.");
             return;
         }
-
-        restTemplate = restTemplateBuilder.setConnectTimeout(INIT_TIMEOUT).setConnectTimeout(INIT_TIMEOUT).build();
 
         retryTemplate.setLogger(log);
 

@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.config;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -14,10 +16,18 @@ class RestTemplateFactory {
     @Autowired
     private MappingJackson2HttpMessageConverter messageConverter;
 
+    @Value("${updater.http.initTimeoutMillis:300000}")
+    private int INIT_TIMEOUT;
+
+    @Value("${updater.http.connectionTimoutMillis:30000}")
+    private int CONNECTION_TIMEOUT;
+
     @Bean
-    public RestTemplate createRestTemplate() {
-        final RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
-        return restTemplate;
+    public RestTemplate createRestTemplate(RestTemplateBuilder restTemplateBuilder) {
+        restTemplateBuilder.messageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
+        restTemplateBuilder.setConnectTimeout(CONNECTION_TIMEOUT);
+        restTemplateBuilder.setReadTimeout(INIT_TIMEOUT);
+
+        return restTemplateBuilder.build();
     }
 }
