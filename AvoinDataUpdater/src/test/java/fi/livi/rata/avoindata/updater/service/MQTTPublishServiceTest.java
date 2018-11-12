@@ -1,5 +1,14 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import java.time.LocalDate;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
@@ -9,14 +18,6 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.CauseFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.mqtt.support.MqttHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
 
 public class MQTTPublishServiceTest extends BaseTest {
     @Autowired
@@ -57,6 +58,7 @@ public class MQTTPublishServiceTest extends BaseTest {
     @Transactional
     @Test
     public void nullShouldBeEmpty() {
+        assertTopic("train-tracking/2018-11-12/43/RELEASE/VIA/155/null/null/null/null", "train-tracking/2018-11-12/43/RELEASE/VIA/155////");
         assertTopic("testing/null/nullify/nullable/null", "testing//nullify/nullable/");
         assertTopic("testing/null/nullify/nullable/nullable", "testing//nullify/nullable/nullable");
         assertTopic("testing/null/nullify/abcnull/abcnull", "testing//nullify/abcnull/abcnull");
