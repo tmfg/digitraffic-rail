@@ -17,7 +17,7 @@ class RestTemplateFactory {
     private MappingJackson2HttpMessageConverter messageConverter;
 
     @Value("${updater.http.initTimeoutMillis:300000}")
-    private int INIT_TIMEOUT;
+    private int READ_TIMEOUT;
 
     @Value("${updater.http.connectionTimoutMillis:30000}")
     private int CONNECTION_TIMEOUT;
@@ -26,7 +26,7 @@ class RestTemplateFactory {
     public RestTemplate createRestTemplate(RestTemplateBuilder restTemplateBuilder) {
         restTemplateBuilder.messageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
         restTemplateBuilder.setConnectTimeout(CONNECTION_TIMEOUT);
-        restTemplateBuilder.setReadTimeout(INIT_TIMEOUT);
+        restTemplateBuilder.setReadTimeout(READ_TIMEOUT);
 
         return restTemplateBuilder.build();
     }
