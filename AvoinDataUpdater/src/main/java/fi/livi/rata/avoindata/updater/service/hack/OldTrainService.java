@@ -56,11 +56,9 @@ public class OldTrainService {
         for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
             log.info("Checking for updated old trains. Date: {}", date);
 
+            final List<Train> trainResponse = getChangedTrains(date);
 
-            final LocalDate finalDate = date;
             trainLockExecutor.executeInLock(() -> {
-
-                final List<Train> trainResponse = getChangedTrains(finalDate);
 
                 if (!trainResponse.isEmpty()) {
                     log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
