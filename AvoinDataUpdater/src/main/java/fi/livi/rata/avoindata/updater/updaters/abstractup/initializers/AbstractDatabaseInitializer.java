@@ -105,11 +105,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return updatedEntities;
     }
 
-    protected void logUpdate(final long latestVersion, final ZonedDateTime start, final long length, final long newVersion,
-            final String name, final ZonedDateTime middle, final List<EntityType> objects) {
-        log.info("Updated data for {} {} in {} ms total (json retrieve {} ms) (old version {}, new version {}, diff versions {})", length,
-                name, Duration.between(start, ZonedDateTime.now()).toMillis(), Duration.between(start, middle).toMillis(), latestVersion,
-                newVersion, (newVersion - latestVersion));
+    protected void logUpdate(final long latestVersion, final ZonedDateTime start, final long length, final long newVersion, final String name, final ZonedDateTime middle, final List<EntityType> objects) {
+        log.info("Updated data for {} {} in {} ms total (json retrieve {} ms) (old version {}, new version {}, diff versions {})", length, name, Duration.between(start, ZonedDateTime.now()).toMillis(), Duration.between(start, middle).toMillis(), latestVersion, newVersion, (newVersion - latestVersion));
     }
 
     public void clearEntities() {
@@ -127,7 +124,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
         log.info("Adding initialization tasks from {} to {}", startDate, endDate);
 
-        for (LocalDate i = startDate; i.isAfter(endDate); i= i.minusDays(1)) {
+        for (LocalDate i = startDate; i.isAfter(endDate); i = i.minusDays(1)) {
             final LocalDate currentDate = i;
             executorService.execute(() -> getAndSaveForADate(currentDate));
         }
@@ -139,14 +136,12 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         final ZonedDateTime now = ZonedDateTime.now();
         final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
         this.persistService.addEntities(entities);
-        log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix,
-                Duration.between(now, ZonedDateTime.now()).toMillis()));
+        log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix, Duration.between(now, ZonedDateTime.now()).toMillis()));
     }
 
     protected abstract <A> Class<A> getEntityCollectionClass();
 
-    protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType,
-            final long latestVersion) {
+    protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
         final String targetUrl = String.format("%s/%s?version=%d", liikeInterfaceUrl, path, latestVersion);
         return Lists.newArrayList(restTemplate.getForObject(targetUrl, responseType));
     }
