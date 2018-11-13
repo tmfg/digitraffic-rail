@@ -127,7 +127,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
         log.info("Adding initialization tasks from {} to {}", startDate, endDate);
 
-        for (LocalDate i = startDate; i.isAfter(endDate); i = i.minusDays(1)) {
+        for (LocalDate i = startDate; i.isAfter(endDate); i= i.minusDays(1)) {
             final LocalDate currentDate = i;
             executorService.execute(() -> getAndSaveForADate(currentDate));
         }
