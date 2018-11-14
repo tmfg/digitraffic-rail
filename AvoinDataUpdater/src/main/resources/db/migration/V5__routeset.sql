@@ -6,11 +6,27 @@ create table `routeset` (
   `departure_date` date default null,
   `client_system` varchar(16) default null,
   `version` bigint(20) not null,
-  `virtual_departure_date` date generated always as (if(isnull(`departure_date`),cast(convert_tz(`message_time`,'utc','europe/helsinki') as date),`departure_date`)) virtual not null,
+  `virtual_departure_date` date,
   primary key (`id`),
   key `virtualDepartureDate_trainnumber` (`virtual_departure_date`,`train_number`),
   key `version` (`version`)
 );
+
+
+DELIMITER //
+
+CREATE TRIGGER routeset_before_insert
+BEFORE INSERT
+   ON routeset
+FOR EACH ROW BEGIN
+  IF(NEW.departure_date IS NULL) THEN
+    SET NEW.virtual_departure_date = cast(convert_tz(NEW.message_time,'UTC','Europe/Helsinki') as date);
+  ELSE
+    SET NEW.virtual_departure_date = new.departure_date;
+  END IF;
+END; //
+
+DELIMITER ;
 
 create table `routesection` (
   `id` bigint(20) not null,

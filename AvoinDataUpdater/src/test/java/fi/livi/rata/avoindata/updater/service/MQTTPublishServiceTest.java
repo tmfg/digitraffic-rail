@@ -52,9 +52,29 @@ public class MQTTPublishServiceTest extends BaseTest {
     @Transactional
     @Test
     public void specialCharactersShouldBeRemovedFromTopic() {
-        Message<String> message = mqttPublishService.publishString("testing/test+topic+#/123", "content");
+        assertTopic("testing/test+topic+#/123", "testing/testtopic/123");
+    }
 
-        Assert.assertEquals("testing/testtopic/123", message.getHeaders().get(MqttHeaders.TOPIC));
+    @Transactional
+    @Test
+    public void nullShouldBeEmpty() {
+        assertTopic("train-tracking/2018-11-12/43/RELEASE/VIA/155/null/null/null/null", "train-tracking/2018-11-12/43/RELEASE/VIA/155////");
+        assertTopic("testing/null/nullify/nullable/null", "testing//nullify/nullable/");
+        assertTopic("testing/null/nullify/nullable/nullable", "testing//nullify/nullable/nullable");
+        assertTopic("testing/null/nullify/abcnull/abcnull", "testing//nullify/abcnull/abcnull");
+        assertTopic("aws,beta/train-tracking/2018-10-26/F6418/OCCUPY/TPE/TPE_097/null/null/TPE_O097/TPE_T097", "aws,beta/train-tracking/2018-10-26/F6418/OCCUPY/TPE/TPE_097///TPE_O097/TPE_T097");
+    }
+
+    private void assertTopic(String inputTopic, String publishedTopic) {
+        Message<String> message = mqttPublishService.publishString(inputTopic, "content");
+
+        Assert.assertEquals(publishedTopic, message.getHeaders().get(MqttHeaders.TOPIC));
+    }
+
+    @Transactional
+    @Test
+    public void endingNullableShouldNotBeEmpty() {
+
     }
 
     private void assertPathNotPresent(DocumentContext json, String path) {

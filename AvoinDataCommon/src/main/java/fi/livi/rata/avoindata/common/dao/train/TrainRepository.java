@@ -31,7 +31,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     String BASE_TRAIN_ORDER = " order by train.id.departureDate, train.id.trainNumber, timeTableRow.scheduledTime, timeTableRow.type";
     String IS_NOT_DELETED = "(train.deleted is null or train.deleted = false)";
 
-    @Query(value = "(SELECT " +
+    @Query(value = "select * from ((SELECT " +
             "    '1', t.departure_date, t.train_number, t.version" +
             " FROM" +
             "    live_time_table_train t" +
@@ -71,7 +71,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "        AND t.type = '0'" +
             "        AND t.actual_time IS NULL" +
             " ORDER BY t.predict_time ASC" +
-            " LIMIT ?5)", nativeQuery = true)
+            " LIMIT ?5)) unionedTable", nativeQuery = true)
     List<Object[]> findLiveTrains(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,
             Integer arrivingTrains, Boolean excludeNonstopping);
 

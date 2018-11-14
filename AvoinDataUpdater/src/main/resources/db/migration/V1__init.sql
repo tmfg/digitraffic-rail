@@ -424,13 +424,28 @@ CREATE TABLE `train_running_message` (
   `next_station` varchar(8) COLLATE utf8_swedish_ci DEFAULT NULL,
   `previous_station` varchar(8) COLLATE utf8_swedish_ci DEFAULT NULL,
   `version` bigint(20) NOT NULL,
-  `virtual_departure_date` date GENERATED ALWAYS AS (if(isnull(`departure_date`),cast(convert_tz(`timestamp`,'UTC','Europe/Helsinki') as date),`departure_date`)) VIRTUAL NOT NULL,
+  `virtual_departure_date` date ,
   PRIMARY KEY (`id`),
   KEY `tr20_version` (`version`),
   KEY `tr20_virtualDepartureDate_trainNumber` (`virtual_departure_date`,`train_number`),
   KEY `tr20_station_trackSection_virtualDepartureDate` (`station`,`track_section`,`virtual_departure_date`),
   KEY `tr20_station_virtualDepartureDate` (`station`,`virtual_departure_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_swedish_ci;
+
+
+DELIMITER //
+
+CREATE TRIGGER train_running_message_before_insert
+BEFORE INSERT ON train_running_message
+FOR EACH ROW BEGIN
+  IF(NEW.departure_date IS NULL) THEN
+    SET NEW.virtual_departure_date = cast(convert_tz(NEW.timestamp,'UTC','Europe/Helsinki') as date);
+  ELSE
+    SET NEW.virtual_departure_date = new.departure_date;
+  END IF;
+END; //
+
+DELIMITER ;
 
 
 -- -----------------------------------------------------

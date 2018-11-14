@@ -36,16 +36,16 @@ public class CauseDeserializer extends AEntityDeserializer<Cause> {
         }
 
         if (!isNodeNull(syyluokka)) {
-            CategoryCode categoryCode = entityManager.getReference(CategoryCode.class, syyluokka.get("id").asLong());
+            CategoryCode categoryCode = entityManager.find(CategoryCode.class, syyluokka.get("id").asLong());
             cause.categoryCode = categoryCode;
 
             if (!isNodeNull(syykoodi)) {
-                DetailedCategoryCode detailedCategoryCode = entityManager.getReference(DetailedCategoryCode.class, syykoodi.get("id").asLong());
+                DetailedCategoryCode detailedCategoryCode = entityManager.find(DetailedCategoryCode.class, syykoodi.get("id").asLong());
                 cause.detailedCategoryCode = detailedCategoryCode;
             }
 
             if (!isNodeNull(tarkentavaSyykoodi)) {
-                ThirdCategoryCode thirdCategoryCode = entityManager.getReference(ThirdCategoryCode.class, tarkentavaSyykoodi.get("id").asLong());
+                ThirdCategoryCode thirdCategoryCode = entityManager.find(ThirdCategoryCode.class, tarkentavaSyykoodi.get("id").asLong());
                 cause.thirdCategoryCode = thirdCategoryCode;
             }
         }

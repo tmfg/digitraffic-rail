@@ -1,14 +1,13 @@
 package fi.livi.rata.avoindata.updater.service.hack;
 
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +16,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
-import java.util.*;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
 public class OldTrainService {
@@ -56,11 +61,9 @@ public class OldTrainService {
         for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
             log.info("Checking for updated old trains. Date: {}", date);
 
+            final List<Train> trainResponse = getChangedTrains(date);
 
-            final LocalDate finalDate = date;
             trainLockExecutor.executeInLock(() -> {
-
-                final List<Train> trainResponse = getChangedTrains(finalDate);
 
                 if (!trainResponse.isEmpty()) {
                     log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));

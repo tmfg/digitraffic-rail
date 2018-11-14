@@ -51,6 +51,12 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-spatial</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>postgresql</artifactId>
+                    <groupId>org.postgresql</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
