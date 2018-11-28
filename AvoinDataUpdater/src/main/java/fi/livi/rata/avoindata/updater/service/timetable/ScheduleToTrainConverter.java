@@ -115,10 +115,10 @@ public class ScheduleToTrainConverter {
                 ZoneId.of("Europe/Helsinki"));
         Duration fromStart = scheduleRowPart.timestamp.minus(firstDeparture.timestamp);
 
-        ZonedDateTime localTimeStamp = departureTime.plus(fromStart);
+        ZonedDateTime timestamp = departureTime.plus(fromStart);
 
         TimeTableRow timeTableRow = new TimeTableRow(scheduleRow.station.stationShortCode, scheduleRow.station.stationUICCode,
-                scheduleRow.station.countryCode, timeTableRowType, null, isCancelled, localTimeStamp, null, null, null, scheduleRowPart.id,
+                scheduleRow.station.countryCode, timeTableRowType, null, isCancelled, timestamp, null, null, null, scheduleRowPart.id,
                 schedule.trainNumber, extractedDate, scheduleRowPart.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL, 0L,
                 new HashSet<>(), null);
 
