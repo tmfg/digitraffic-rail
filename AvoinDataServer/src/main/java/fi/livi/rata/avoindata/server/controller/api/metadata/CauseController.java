@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@XRayEnabled
 public class CauseController extends AMetadataController {
     private Logger log = LoggerFactory.getLogger(CauseController.class);
 

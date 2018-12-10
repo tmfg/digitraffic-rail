@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
 @RestController
+@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)
 public class LiveTrainController extends ADataController {
