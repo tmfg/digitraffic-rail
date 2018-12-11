@@ -18,7 +18,7 @@
         <com.google.guava.version>18.0</com.google.guava.version>
         <mysql.connector.version>5.1.47</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
-        <awx_xray.version>2.0.1</awx_xray.version>
+        <awx_xray.version>2.1.0</awx_xray.version>
     </properties>
 
     <profiles>
