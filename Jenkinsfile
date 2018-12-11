@@ -18,7 +18,7 @@ node {
 		],
 		submoduleCfg: [],
 		userRemoteConfigs: [
-			[credentialsId: '${credid}', url: '${jenkinsurl}']
+			[credentialsId: '${credid}', url: '${git_url}']
 		]
 	]
 
