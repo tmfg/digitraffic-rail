@@ -18,7 +18,7 @@ node {
 		],
 		submoduleCfg: [],
 		userRemoteConfigs: [
-			[credentialsId: '4f56668f-6410-48d2-aba9-be65952674a0', url: 'https://deus.solita.fi/Solita/projects/liike/repositories/git/liike_ci']
+			[credentialsId: '${credid}', url: '${jenkinsurl}']
 		]
 	]
 
