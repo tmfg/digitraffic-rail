@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
+@XRayEnabled
 public class ScheduleService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 

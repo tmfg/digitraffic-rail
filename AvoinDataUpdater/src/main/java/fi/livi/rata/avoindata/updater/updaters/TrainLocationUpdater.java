@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLoca
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
 
 @Service
+@XRayEnabled
 public class TrainLocationUpdater {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 

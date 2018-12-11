@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.trainlocation;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.rtree.RTree;
@@ -24,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Service
+@XRayEnabled
 public class TrackBoundingBoxesService {
     public static final int DISTANCE_FROM_LINE = 500;
     private Logger log = LoggerFactory.getLogger(this.getClass());
