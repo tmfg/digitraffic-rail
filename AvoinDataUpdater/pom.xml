@@ -17,6 +17,18 @@
         <start-class>fi.livi.rata.avoindata.updater.DatabaseUpdaterApplication</start-class>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-xray-recorder-sdk-bom</artifactId>
+                <type>pom</type>
+                <version>2.1.0</version>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>com.amazonaws</groupId>
