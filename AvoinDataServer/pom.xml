@@ -29,10 +29,6 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-xray-recorder-sdk-apache-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
             <artifactId>aws-xray-recorder-sdk-aws-sdk</artifactId>
         </dependency>
         <dependency>
@@ -41,12 +37,9 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-xray-recorder-sdk-sql-postgres</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
             <artifactId>aws-xray-recorder-sdk-sql-mysql</artifactId>
         </dependency>
+
         <dependency>
             <groupId>p6spy</groupId>
             <artifactId>p6spy</artifactId>
