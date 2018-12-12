@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
+@XRayEnabled
 public class ScheduleService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -44,20 +46,24 @@ public class ScheduleService {
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public void extractSchedules() {
-        try {
-            final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
-            final LocalDate end = start.plusDays(numberOfDaysToExtract);
+        AWSXRay.createSegment("generateGTFS", (subsegment) -> {
+            try {
+                final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
+                final LocalDate end = start.plusDays(numberOfDaysToExtract);
 
-            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
-            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
+                final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
+                final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
-            for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                extractForDate(adhocSchedules, regularSchedules, date);
+                for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+                    extractForDate(adhocSchedules, regularSchedules, date);
 
+                }
+            } catch (Exception e) {
+                log.error("Error extracting schedules", e);
+                AWSXRay.getCurrentSegment().addException(e);
             }
-        } catch (Exception e) {
-            log.error("Error extracting schedules", e);
-        }
+        });
+
     }
 
     private void extractForDate(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,

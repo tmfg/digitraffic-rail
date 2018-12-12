@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater;
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Segment;
 import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
@@ -135,21 +137,25 @@ public class DatabaseUpdaterApplication  {
 
 
         @Override
-        public void run(final String... args) throws RestClientException, SQLException, IOException, InterruptedException {
+        public void run(final String... args) throws RestClientException {
             if (Strings.isNullOrEmpty(liikeInterfaceUrl)) {
                 log.info("updater.liikeinterface-url is null. Skipping initilization.");
                 return;
             }
 
-            if (isInitiliazationNeeded()) {
-                log.info("Database needs to be initiliazed!");
 
-                clearDatabase();
-
-                initializeInLockMode();
-
-                startLazyUpdate();
-            }
+            AWSXRay.createSegment("initiliazing", (subsegment) -> {
+                try {
+                    if (isInitiliazationNeeded()) {
+                        log.info("Database needs to be initiliazed!");
+                        clearDatabase();
+                        initializeInLockMode();
+                        startLazyUpdate();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             startScheduleUpdates();
 
@@ -176,7 +182,7 @@ public class DatabaseUpdaterApplication  {
             forecastInitializerService.startUpdating(10000);
         }
 
-        private void startLazyUpdate() throws InterruptedException {
+        private void startLazyUpdate() {
             trainInitializerService.initializeInLazyMode();
             compositionInitializerService.initializeInLazyMode();
             trainRunningMessageInitializerService.initializeInLazyMode();
