@@ -143,7 +143,14 @@ public class DatabaseUpdaterApplication  {
                 return;
             }
 
+            startInitPhaseIfNeeded();
 
+            startScheduleUpdates();
+
+            startUpdating();
+        }
+
+        private void startInitPhaseIfNeeded() {
             AWSXRay.createSegment("initiliazing", (subsegment) -> {
                 try {
                     if (isInitiliazationNeeded()) {
@@ -156,10 +163,6 @@ public class DatabaseUpdaterApplication  {
                     throw new RuntimeException(e);
                 }
             });
-
-            startScheduleUpdates();
-
-            startUpdating();
         }
 
         private void startScheduleUpdates() {
