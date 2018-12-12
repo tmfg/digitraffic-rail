@@ -43,7 +43,7 @@ public abstract class AEntityUpdater<T> implements XRayTraced {
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
         AWSXRay.createSegment("avoindataupdater", (subsegment) -> {
-            AWSXRay.createSubsegment(this.getClass().getSimpleName(), (subsegment2) -> {
+            AWSXRay.createSubsegment(path, (subsegment2) -> {
 
                 if (StringUtils.isEmpty(liikeInterfaceUrl)) {
                     return;

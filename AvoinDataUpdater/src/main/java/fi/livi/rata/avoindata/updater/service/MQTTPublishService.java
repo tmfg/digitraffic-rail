@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import com.amazonaws.xray.AWSXRay;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -36,9 +37,11 @@ public class MQTTPublishService {
     }
 
     public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities, Class viewClass) {
-        for (final E entity : entities) {
-            publishEntity(topicProvider.apply(entity), entity, viewClass);
-        }
+        AWSXRay.createSubsegment("mqttpublish", (subsegment) -> {
+            for (final E entity : entities) {
+                publishEntity(topicProvider.apply(entity), entity, viewClass);
+            }
+        });
     }
 
     public synchronized Message<String> publishString(String topic, String entity) {

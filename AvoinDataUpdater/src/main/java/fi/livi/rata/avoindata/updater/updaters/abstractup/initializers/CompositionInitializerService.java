@@ -61,14 +61,12 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
             compositions.add(journeySection.composition);
         }
 
-        AWSXRay.createSubsegment("mqttpublish", (subsegment) -> {
-            try {
-                mqttPublishService.publish(s -> String
-                        .format("compositions/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType,
-                                s.operator.operatorShortCode), compositions);
-            } catch (Exception e) {
-                log.error("Error publishing trains to MQTT", e);
-            }
-        });
+        try {
+            mqttPublishService.publish(s -> String
+                    .format("compositions/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType,
+                            s.operator.operatorShortCode), compositions);
+        } catch (Exception e) {
+            log.error("Error publishing trains to MQTT", e);
+        }
     }
 }
