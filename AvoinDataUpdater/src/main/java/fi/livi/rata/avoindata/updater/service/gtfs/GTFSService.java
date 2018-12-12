@@ -41,7 +41,7 @@ public class GTFSService {
             try {
                 final LocalDate start = dp.dateInHelsinki().minusDays(7);
                 this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
-            } catch (Exception e) {
+            } catch (ExecutionException | InterruptedException | IOException e) {
                 throw new RuntimeException(e);
             }
         });
