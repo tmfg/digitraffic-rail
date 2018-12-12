@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
+@XRayEnabled
 @Api(tags = "live-trains", description = "Returns trains")
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)

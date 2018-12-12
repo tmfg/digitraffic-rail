@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
+@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController {
     public static final int MAX_ANNOUNCED_TRAINS = 2500;

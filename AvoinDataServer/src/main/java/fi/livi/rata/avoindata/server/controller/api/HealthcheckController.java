@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 
 @Controller
+@XRayEnabled
 public class HealthcheckController {
     @RequestMapping(method = RequestMethod.GET, path = "api")
     @ResponseBody

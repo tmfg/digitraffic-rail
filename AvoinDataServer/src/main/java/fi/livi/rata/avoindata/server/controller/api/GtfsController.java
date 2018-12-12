@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import io.swagger.annotations.Api;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
+@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
 

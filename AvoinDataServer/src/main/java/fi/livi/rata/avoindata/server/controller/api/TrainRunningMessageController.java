@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.trainrunningmessage.TrainRunningMessageRepository;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @Api(tags = "train-tracking", description = "Returns detailed information about train's location")
 @RestController
+@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-tracking")
 @Transactional(timeout = 30, readOnly = true)
 public class TrainRunningMessageController extends ADataController {

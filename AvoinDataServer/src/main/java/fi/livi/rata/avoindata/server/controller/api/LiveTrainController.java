@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
 @RestController
-@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)
 public class LiveTrainController extends ADataController {

@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Point;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
 @RestController
+@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
 public class TrainLocationController {
     public static final int CACHE_MAX_AGE = 1;
