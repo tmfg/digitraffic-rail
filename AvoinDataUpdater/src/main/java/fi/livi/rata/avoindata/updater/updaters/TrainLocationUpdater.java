@@ -1,12 +1,15 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,33 +64,46 @@ public class TrainLocationUpdater {
     @Scheduled(fixedDelay = 1000)
     @Transactional
     public synchronized void trainLocation() {
-        try {
-            if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
-                final ZonedDateTime start = dateProvider.nowInHelsinki();
+        AWSXRay.createSubsegment("TrainLocationUpdater", (subsegment) -> {
+            try {
 
-                List<TrainLocation> trainLocations = Arrays.asList(
-                        objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class));
+                if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
+                    final ZonedDateTime start = dateProvider.nowInHelsinki();
 
-                final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
+                    final AtomicReference<List<TrainLocation>> trainLocations = new AtomicReference<>();
 
-                try {
-                    mqttPublishService.publish(
-                            s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
-                            filteredTrainLocations, null);
-                } catch (Exception e) {
-                    log.error("MQTT updated failed. Still trying to update database.", e);
+                    AWSXRay.createSubsegment("liikeinteface", (subsegment3) -> {
+                        try {
+                            trainLocations.set(Arrays.asList(
+                                    objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class)));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                    final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations.get());
+
+                    AWSXRay.createSubsegment("mqtt", (subsegment2) -> {
+                        try {
+                        mqttPublishService.publish(
+                                s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
+                                filteredTrainLocations, null);
+                        } catch (Exception e) {
+                            log.error("MQTT updated failed. Still trying to update database.", e);
+                        }
+                    });
+
+                    trainLocationRepository.persist(filteredTrainLocations);
+
+                    final ZonedDateTime end = dateProvider.nowInHelsinki();
+
+                    log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
+                            trainLocations.get().size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
                 }
-
-                trainLocationRepository.persist(filteredTrainLocations);
-
-                final ZonedDateTime end = dateProvider.nowInHelsinki();
-
-                log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
-                        trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+            } catch (Exception e) {
+                log.error("Error updating train locations", e);
             }
-        } catch (Exception e) {
-            log.error("Error updating train locations", e);
-        }
+        });
     }
 
     private List<TrainLocation> filterTrains(final List<TrainLocation> trainLocations) {
