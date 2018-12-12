@@ -37,11 +37,9 @@ public class MQTTPublishService {
     }
 
     public synchronized <E> void publish(Function<E, String> topicProvider, List<E> entities, Class viewClass) {
-        AWSXRay.createSubsegment("mqttpublish", (subsegment) -> {
-            for (final E entity : entities) {
-                publishEntity(topicProvider.apply(entity), entity, viewClass);
-            }
-        });
+        for (final E entity : entities) {
+            publishEntity(topicProvider.apply(entity), entity, viewClass);
+        }
     }
 
     public synchronized Message<String> publishString(String topic, String entity) {
@@ -54,7 +52,9 @@ public class MQTTPublishService {
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
             try {
-                MQTTGateway.sendToMqtt(message);
+                AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
+                    MQTTGateway.sendToMqtt(message);
+                });
             } catch (Exception e) {
                 log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
             }
@@ -109,8 +109,5 @@ public class MQTTPublishService {
             return String.format("%s/%s", prefix, topic);
         }
 
-
     }
-
-
 }

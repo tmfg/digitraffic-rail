@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.trainlocation;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
@@ -13,7 +12,6 @@ import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
 @Service
-
 public class TrainLocationNearTrackFilterService {
     @Autowired
     private TrackBoundingBoxesService trackBoundingBoxesService;

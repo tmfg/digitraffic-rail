@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 
 @RestController
-@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH)
 @ApiIgnore
 public class RewriteController {
