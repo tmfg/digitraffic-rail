@@ -5,12 +5,14 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import com.amazonaws.xray.javax.servlet.AWSXRayServletFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -18,6 +20,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
+
+import javax.servlet.Filter;
+
 //1
 @Configuration
 @EnableAutoConfiguration
@@ -58,4 +63,10 @@ public class ServerApplication {
             return "unknown";
         }
     }
+
+    @Bean
+    public Filter TracingFilter() {
+        return new AWSXRayServletFilter("avoindataserver");
+    }
+
 }
