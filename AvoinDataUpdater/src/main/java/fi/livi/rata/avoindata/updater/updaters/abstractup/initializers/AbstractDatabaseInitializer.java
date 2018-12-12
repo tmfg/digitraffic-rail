@@ -80,7 +80,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
 
     public void startUpdating(int delay) {
-        scheduleAtFixedRate(() -> doUpdate(), delay);
+        scheduleAtFixedRate(() -> startUpdate(), delay);
     }
 
 
@@ -89,9 +89,14 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         scheduledExecutorService.scheduleAtFixedRate(new ExceptionLoggingRunnable(runnable), 1000, updateRate, TimeUnit.MILLISECONDS);
     }
 
-    protected List<EntityType> doUpdate() {
-        return AWSXRay.createSubsegment(this.getClass().getName() + "_super", (subsegment) -> {
+    protected void startUpdate() {
+        AWSXRay.createSegment(this.getClass().getName(), (subsegment) -> {
+            doUpdate();
+        });
+    }
 
+    protected List<EntityType> doUpdate() {
+        return AWSXRay.createSubsegment("abstract_doUpdate", (subsegment) -> {
             final Long latestVersion = persistService.getMaxVersion();
             final ZonedDateTime start = ZonedDateTime.now();
 

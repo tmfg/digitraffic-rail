@@ -15,6 +15,4 @@ public abstract class AbstractPersistService<EntityType> implements XRayTraced {
     public abstract void addEntities(List<EntityType> entities);
     public abstract List<EntityType> updateEntities(List<EntityType> entities);
     public abstract Long getMaxVersion();
-
-
 }
