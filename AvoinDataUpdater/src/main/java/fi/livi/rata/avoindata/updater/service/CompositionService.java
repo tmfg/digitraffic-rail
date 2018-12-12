@@ -33,7 +33,7 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.utils.OptionalUtil;
 
 @Service
-@XRayEnabled
+
 @Transactional
 public class CompositionService extends VersionedService<JourneyComposition> {
 

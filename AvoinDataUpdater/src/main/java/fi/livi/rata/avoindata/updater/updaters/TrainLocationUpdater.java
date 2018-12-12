@@ -31,7 +31,6 @@ import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLoca
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
 
 @Service
-@XRayEnabled
 public class TrainLocationUpdater {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -64,9 +63,7 @@ public class TrainLocationUpdater {
     @Scheduled(fixedDelay = 1000)
     @Transactional
     public synchronized void trainLocation() {
-        AWSXRay.createSubsegment("TrainLocationUpdater", (subsegment) -> {
             try {
-
                 if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                     final ZonedDateTime start = dateProvider.nowInHelsinki();
 
@@ -103,7 +100,6 @@ public class TrainLocationUpdater {
             } catch (Exception e) {
                 log.error("Error updating train locations", e);
             }
-        });
     }
 
     private List<TrainLocation> filterTrains(final List<TrainLocation> trainLocations) {

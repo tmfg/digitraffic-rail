@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.spring.aop.XRayTraced;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.util.function.Consumer;
 
-public abstract class AEntityUpdater<T> {
+public abstract class AEntityUpdater<T> implements XRayTraced {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
 
     @Value("${updater.liikeinterface-url}")
@@ -40,13 +42,16 @@ public abstract class AEntityUpdater<T> {
     protected abstract void update();
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
-        if (StringUtils.isEmpty(liikeInterfaceUrl)) {
-            return;
-        }
+        AWSXRay.createSubsegment(this.getClass().getName(), (subsegment) -> {
 
-        final String targetUrl = String.format("%s/%s", liikeInterfaceUrl, path);
-        final T results = getForObjectWithRetry(targetUrl, responseType);
-        updater.accept(results);
-        log.info(String.format("Updated %s", path));
+            if (StringUtils.isEmpty(liikeInterfaceUrl)) {
+                return;
+            }
+
+            final String targetUrl = String.format("%s/%s", liikeInterfaceUrl, path);
+            final T results = getForObjectWithRetry(targetUrl, responseType);
+            updater.accept(results);
+            log.info(String.format("Updated %s", path));
+        });
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
-@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
 

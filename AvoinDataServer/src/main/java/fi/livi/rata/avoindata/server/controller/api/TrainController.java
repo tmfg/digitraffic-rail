@@ -32,9 +32,8 @@ import java.util.stream.Collectors;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
-@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
-public class TrainController {
+public class TrainController extends ADataController {
     public static final int MAX_ANNOUNCED_TRAINS = 2500;
     @Autowired
     private TrainRepository trainRepository;

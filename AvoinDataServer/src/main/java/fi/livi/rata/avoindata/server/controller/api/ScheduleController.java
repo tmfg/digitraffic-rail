@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-@XRayEnabled
 @Api(tags = "live-trains", description = "Returns trains")
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)

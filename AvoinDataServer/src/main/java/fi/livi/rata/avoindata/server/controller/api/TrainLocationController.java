@@ -25,9 +25,8 @@ import java.util.List;
 
 @Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
 @RestController
-@XRayEnabled
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
-public class TrainLocationController {
+public class TrainLocationController extends ADataController {
     public static final int CACHE_MAX_AGE = 1;
     public static final int CACHE_MAX_AGE_HISTORY = 15;
 

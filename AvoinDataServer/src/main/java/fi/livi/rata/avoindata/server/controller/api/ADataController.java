@@ -1,8 +1,9 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
 import com.amazonaws.xray.spring.aop.XRayEnabled;
+import com.amazonaws.xray.spring.aop.XRayTraced;
 import io.swagger.annotations.Api;
 
 @Api(tags = "data",description = "")
-public class ADataController {
+public class ADataController implements XRayTraced {
 }

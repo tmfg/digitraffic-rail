@@ -13,7 +13,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
 @Service
-@XRayEnabled
+
 public class TrainLocationNearTrackFilterService {
     @Autowired
     private TrackBoundingBoxesService trackBoundingBoxesService;

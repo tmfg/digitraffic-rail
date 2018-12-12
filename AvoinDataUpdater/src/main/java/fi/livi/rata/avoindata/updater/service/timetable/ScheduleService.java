@@ -18,7 +18,6 @@ import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
-@XRayEnabled
 public class ScheduleService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 

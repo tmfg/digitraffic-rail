@@ -24,7 +24,7 @@ import java.util.List;
 
 @Api(tags = "train-tracking", description = "Returns detailed information about train's location")
 @RestController
-@XRayEnabled
+
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-tracking")
 @Transactional(timeout = 30, readOnly = true)
 public class TrainRunningMessageController extends ADataController {

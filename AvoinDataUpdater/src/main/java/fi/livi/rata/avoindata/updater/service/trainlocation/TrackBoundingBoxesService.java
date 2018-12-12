@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Service
-@XRayEnabled
+
 public class TrackBoundingBoxesService {
     public static final int DISTANCE_FROM_LINE = 500;
     private Logger log = LoggerFactory.getLogger(this.getClass());

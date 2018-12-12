@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
-@XRayEnabled
 public class CauseController extends AMetadataController {
     private Logger log = LoggerFactory.getLogger(CauseController.class);
 

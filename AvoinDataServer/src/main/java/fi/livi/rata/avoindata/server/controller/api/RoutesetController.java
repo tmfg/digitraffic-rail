@@ -25,7 +25,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "routeset")
-@XRayEnabled
 @Transactional(timeout = 30, readOnly = true)
 public class RoutesetController extends ADataController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());

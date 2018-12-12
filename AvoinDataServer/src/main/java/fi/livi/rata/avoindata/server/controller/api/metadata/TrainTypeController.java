@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@XRayEnabled
 public class TrainTypeController extends AMetadataController {
     @Autowired
     private TrainTypeRepository trainTypeRepository;

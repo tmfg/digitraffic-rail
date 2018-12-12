@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
-@XRayEnabled
 public class TrackSectionUpdater extends AEntityUpdater<TrackSection[]> {
     @Autowired
     private TrackSectionService trackSectionService;

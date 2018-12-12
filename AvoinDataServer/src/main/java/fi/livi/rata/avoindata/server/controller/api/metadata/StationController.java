@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @RestController
-@XRayEnabled
 public class StationController extends AMetadataController {
     @Autowired
     private StationRepository stationRepository;

@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 
+import com.amazonaws.xray.AWSXRay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,20 +90,23 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected List<EntityType> doUpdate() {
-        final Long latestVersion = persistService.getMaxVersion();
-        final ZonedDateTime start = ZonedDateTime.now();
+        return AWSXRay.createSubsegment(this.getClass().getName(), (subsegment) -> {
 
-        List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
+            final Long latestVersion = persistService.getMaxVersion();
+            final ZonedDateTime start = ZonedDateTime.now();
 
-        final ZonedDateTime middle = ZonedDateTime.now();
+            List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
 
-        objects = modifyEntitiesBeforePersist(objects);
+            final ZonedDateTime middle = ZonedDateTime.now();
 
-        final List<EntityType> updatedEntities = persistService.updateEntities(objects);
+            objects = modifyEntitiesBeforePersist(objects);
 
-        logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+            final List<EntityType> updatedEntities = persistService.updateEntities(objects);
 
-        return updatedEntities;
+            logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+
+            return updatedEntities;
+        });
     }
 
     protected void logUpdate(final long latestVersion, final ZonedDateTime start, final long length, final long newVersion, final String name, final ZonedDateTime middle, final List<EntityType> objects) {

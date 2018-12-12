@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 
 @RestController
-@XRayEnabled
 public class TimeTablePeriodController extends AMetadataController {
     @Autowired
     private TimeTablePeriodRepository timeTablePeriodRepository;

@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @RestController
-@XRayEnabled
 public class TrainRunningMessageRuleController extends AMetadataController {
     @Autowired
     private TrainRunningMessageRuleRepository timeTableRowActivationRepository;
