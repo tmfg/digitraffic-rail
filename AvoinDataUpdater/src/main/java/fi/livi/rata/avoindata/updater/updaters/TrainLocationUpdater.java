@@ -80,7 +80,7 @@ public class TrainLocationUpdater {
 
                     final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations.get());
 
-                    AWSXRay.createSubsegment("mqtt", (subsegment2) -> {
+                    AWSXRay.createSubsegment("mqttpublish", (subsegment2) -> {
                         try {
                         mqttPublishService.publish(
                                 s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),

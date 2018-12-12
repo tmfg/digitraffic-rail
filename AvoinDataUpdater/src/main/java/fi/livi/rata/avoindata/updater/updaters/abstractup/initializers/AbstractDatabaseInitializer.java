@@ -70,11 +70,11 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
 
-    public ExecutorService initializeInLockMode() throws InterruptedException {
+    public ExecutorService initializeInLockMode() {
         return addDataInitializeTasks(trainInitializationPeriod.lastDateInLockMode, trainInitializationPeriod.firstDateInLockMode);
     }
 
-    public ExecutorService initializeInLazyMode() throws InterruptedException {
+    public ExecutorService initializeInLazyMode() {
         return addDataInitializeTasks(trainInitializationPeriod.firstDateInLockMode, trainInitializationPeriod.endNonLockDate);
     }
 
@@ -90,7 +90,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected List<EntityType> doUpdate() {
-        return AWSXRay.createSubsegment(this.getClass().getName(), (subsegment) -> {
+        return AWSXRay.createSubsegment(this.getClass().getName() + "_super", (subsegment) -> {
 
             final Long latestVersion = persistService.getMaxVersion();
             final ZonedDateTime start = ZonedDateTime.now();

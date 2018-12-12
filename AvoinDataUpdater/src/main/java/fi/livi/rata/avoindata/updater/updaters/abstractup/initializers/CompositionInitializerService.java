@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
+import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
@@ -60,13 +61,14 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
             compositions.add(journeySection.composition);
         }
 
-
-        try {
-            mqttPublishService.publish(s -> String
-                    .format("compositions/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType,
-                            s.operator.operatorShortCode), compositions);
-        } catch (Exception e) {
-            log.error("Error publishing trains to MQTT", e);
-        }
+        AWSXRay.createSubsegment("mqttpublish", (subsegment) -> {
+            try {
+                mqttPublishService.publish(s -> String
+                        .format("compositions/%s/%s/%s/%s/%s", s.id.departureDate, s.id.trainNumber, s.trainCategory, s.trainType,
+                                s.operator.operatorShortCode), compositions);
+            } catch (Exception e) {
+                log.error("Error publishing trains to MQTT", e);
+            }
+        });
     }
 }
