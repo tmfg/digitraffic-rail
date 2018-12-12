@@ -90,10 +90,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected void startUpdate() {
-        AWSXRay.createSegment("avoindataupdater", (subsegment) -> {
-            AWSXRay.createSubsegment(this.getClass().getSimpleName(), (subsegment2) -> {
-                doUpdate();
-            });
+        AWSXRay.createSegment("AU_" + this.getClass().getSimpleName(), (subsegment2) -> {
+            doUpdate();
         });
     }
 
