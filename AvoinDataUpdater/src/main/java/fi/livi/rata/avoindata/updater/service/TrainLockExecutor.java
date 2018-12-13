@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import javafx.util.Pair;
+import com.sun.tools.javac.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,14 +18,14 @@ public class TrainLockExecutor {
 
         try {
             Pair<ZonedDateTime,T> returnPair = limitCall(callable);
-            ZonedDateTime executionStartedAt = returnPair.getKey();
+            ZonedDateTime executionStartedAt = returnPair.fst;
 
             if (Duration.between(submittedAt,executionStartedAt).toMillis() > 10000) {
                 log.info("Waited: {}, Executed: {}",
                         Duration.between(submittedAt, executionStartedAt),
                         Duration.between(executionStartedAt, ZonedDateTime.now()));
             }
-            return returnPair.getValue();
+            return returnPair.snd;
         } catch (Exception e) {
             log.error("Error executing callable in TrainLockExecutor", e);
             return null;
