@@ -16,8 +16,12 @@ public class XRayInspector extends AbstractXRayInterceptor {
     protected Map<String, Map<String, Object>> generateMetadata(ProceedingJoinPoint proceedingJoinPoint, Subsegment subsegment) {
         return super.generateMetadata(proceedingJoinPoint, subsegment);
     }
-
     @Override
-    @Pointcut("@within(org.springframework.stereotype.*) && within(fi.livi.*)")
+    @Pointcut("( @within(org.springframework.stereotype.Service) " +
+            "|| @within(org.springframework.stereotype.Component) " +
+            "|| @within(org.springframework.stereotype.Controller) " +
+            "|| @within(org.springframework.stereotype.Indexed) " +
+            "|| @within(org.springframework.stereotype.Repository)) " +
+            "&& within(fi.livi.*)")
     public void xrayEnabledClasses() {}
 }
