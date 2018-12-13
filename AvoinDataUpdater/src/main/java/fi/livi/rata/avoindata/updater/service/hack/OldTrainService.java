@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.amazonaws.xray.AWSXRay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,32 +54,35 @@ public class OldTrainService {
 
     @Scheduled(cron = "${updater.oldtrainupdater-check-cron}", zone = "Europe/Helsinki")
     public void updateOldTrains() {
-        LocalDate end = LocalDate.now().minusDays(2);
-        LocalDate start = LocalDate.now().minusDays(numberOfDaysToInitialize);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
 
-        log.info("Starting to check for updated old trains from {} to {}", start, end);
+            LocalDate end = LocalDate.now().minusDays(2);
+            LocalDate start = LocalDate.now().minusDays(numberOfDaysToInitialize);
 
-        for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-            log.info("Checking for updated old trains. Date: {}", date);
+            log.info("Starting to check for updated old trains from {} to {}", start, end);
 
-            final List<Train> trainResponse = getChangedTrains(date);
+            for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+                log.info("Checking for updated old trains. Date: {}", date);
 
-            trainLockExecutor.executeInLock(() -> {
+                final List<Train> trainResponse = getChangedTrains(date);
 
-                if (!trainResponse.isEmpty()) {
-                    log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
+                trainLockExecutor.executeInLock(() -> {
 
-                    final long maxVersion = trainRepository.getMaxVersion();
-                    for (final Train train : trainResponse) {
-                        train.version = maxVersion + 1;
+                    if (!trainResponse.isEmpty()) {
+                        log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
+
+                        final long maxVersion = trainRepository.getMaxVersion();
+                        for (final Train train : trainResponse) {
+                            train.version = maxVersion + 1;
+                        }
+
+                        trainPersistService.updateEntities(trainResponse);
                     }
 
-                    trainPersistService.updateEntities(trainResponse);
-                }
-
-                return trainResponse;
-            });
-        }
+                    return trainResponse;
+                });
+            }
+        });
     }
 
     private List<Train> getChangedTrains(final LocalDate date) {

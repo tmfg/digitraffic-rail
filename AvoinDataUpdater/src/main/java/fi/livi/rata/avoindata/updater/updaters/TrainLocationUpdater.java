@@ -63,7 +63,7 @@ public class TrainLocationUpdater {
     @Scheduled(fixedDelay = 1000)
     @Transactional
     public synchronized void trainLocation() {
-        AWSXRay.createSegment("trainLocation", (subsegment) -> {
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
             try {
                 if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                     final ZonedDateTime start = dateProvider.nowInHelsinki();

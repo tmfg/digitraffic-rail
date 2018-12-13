@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.StationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ public class StationUpdater extends AEntityUpdater<Station[]> {
     @Override
     @Scheduled(cron = "0 1 3 * * ?")
     protected void update() {
-        doUpdate("stations", stationService::update, Station[].class);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            doUpdate("stations", stationService::update, Station[].class);
+        });
     }
 }

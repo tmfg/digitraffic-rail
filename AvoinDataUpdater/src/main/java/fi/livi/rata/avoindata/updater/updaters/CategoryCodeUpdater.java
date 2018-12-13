@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
-        doUpdate("category-codes", CategoryCodeService::update, CategoryCode[].class);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            doUpdate("category-codes", CategoryCodeService::update, CategoryCode[].class);
+        });
     }
 }

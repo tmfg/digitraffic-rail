@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
 import fi.livi.rata.avoindata.updater.service.TrackSectionService;
@@ -16,6 +17,8 @@ public class TrackSectionUpdater extends AEntityUpdater<TrackSection[]> {
     @Override
     @Scheduled(cron = "0 1 1 * * ?")
     protected void update() {
-        doUpdate("tracksections", trackSectionService::updateTrackSections, TrackSection[].class);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            doUpdate("tracksections", trackSectionService::updateTrackSections, TrackSection[].class);
+        });
     }
 }

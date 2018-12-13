@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.localization.Localizations;
 import fi.livi.rata.avoindata.updater.service.LocalizationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ public class LocalizationUpdater extends AEntityUpdater<Localizations> {
     @Override
     @Scheduled(fixedDelay = 1000 * 60 * 30L)
     protected void update() {
-        this.doUpdate("localizations", localizationService::updateLocalizations, Localizations.class);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            this.doUpdate("localizations", localizationService::updateLocalizations, Localizations.class);
+        });
     }
 }

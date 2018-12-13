@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.websocket;
 
+import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
@@ -35,12 +36,14 @@ public class TrainRunningMessageWebsocketService {
 
     @Scheduled(fixedDelay = 2000L)
     private void updateWebsockets() {
-        final List<TrainRunningMessage> trainRunningMessages = getChangedTrains();
-        if (!trainRunningMessages.isEmpty()) {
-            announceAll(trainRunningMessages);
-            announceSpecificTrains(trainRunningMessages);
-            updateLastFetchedVersion(trainRunningMessages);
-        }
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            final List<TrainRunningMessage> trainRunningMessages = getChangedTrains();
+            if (!trainRunningMessages.isEmpty()) {
+                announceAll(trainRunningMessages);
+                announceSpecificTrains(trainRunningMessages);
+                updateLastFetchedVersion(trainRunningMessages);
+            }
+        });
     }
 
     private List<TrainRunningMessage> getChangedTrains() {

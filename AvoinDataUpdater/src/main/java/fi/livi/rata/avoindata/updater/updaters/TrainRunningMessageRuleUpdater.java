@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,9 @@ public class TrainRunningMessageRuleUpdater extends AEntityUpdater<TrainRunningM
     @Override
     @Scheduled(cron = "0 2 2 * * ?")
     protected void update() {
-        doUpdate("train-running-message-rules", timeTableRowActivationService::update, TrainRunningMessageRule[]
-                .class);
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            doUpdate("train-running-message-rules", timeTableRowActivationService::update, TrainRunningMessageRule[]
+                    .class);
+        });
     }
 }
