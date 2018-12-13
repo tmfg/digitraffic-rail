@@ -1,7 +1,6 @@
 def buildPipelineScript
 
 node {
-
 	String branch = getCIBranch()
 
 	checkout changelog: false, poll: false, scm: [
