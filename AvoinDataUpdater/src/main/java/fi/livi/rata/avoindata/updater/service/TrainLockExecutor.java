@@ -35,6 +35,6 @@ public class TrainLockExecutor {
     private synchronized <T> Pair<ZonedDateTime, T> limitCall(Callable<T> callable) throws Exception {
         ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-        return new Pair(executionStartedAt,callable.call());
+        return Pair.of(executionStartedAt,callable.call());
     }
 }
