@@ -24,7 +24,6 @@ import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 
 import javax.servlet.Filter;
 
-//1
 @Configuration
 @EnableAutoConfiguration
 @EnableAspectJAutoProxy(proxyTargetClass = true)
