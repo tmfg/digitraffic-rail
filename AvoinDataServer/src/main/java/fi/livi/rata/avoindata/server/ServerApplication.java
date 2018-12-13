@@ -43,9 +43,7 @@ public class ServerApplication {
 
         SpringApplication application = createApplication();
 
-        AWSXRay.createSegment("avoindataserver_start", (subsegment) -> {
-            application.run(args);
-        });
+        application.run(args);
     }
 
     private static SpringApplication createApplication() {

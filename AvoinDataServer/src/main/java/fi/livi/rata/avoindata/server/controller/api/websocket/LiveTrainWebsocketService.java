@@ -38,9 +38,11 @@ public class LiveTrainWebsocketService {
     private AnnouncingService announcingService;
 
     @PostConstruct
-    @Transactional
     private void init() {
-        lastFetchedVersion = trainRepository.getMaxVersion();
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+
+            lastFetchedVersion = trainRepository.getMaxVersion();
+        });
     }
 
     @Scheduled(fixedDelay = 10000L)

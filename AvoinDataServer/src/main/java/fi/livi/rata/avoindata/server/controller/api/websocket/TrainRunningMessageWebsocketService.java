@@ -31,13 +31,15 @@ public class TrainRunningMessageWebsocketService {
 
     @PostConstruct
     private void init() {
-
-        lastFetchedVersion = trainRunningMessageRepository.getMaxVersion();
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            lastFetchedVersion = trainRunningMessageRepository.getMaxVersion();
+        });
     }
 
     @Scheduled(fixedDelay = 2000L)
     private void updateWebsockets() {
         AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+
             final List<TrainRunningMessage> trainRunningMessages = getChangedTrains();
             if (!trainRunningMessages.isEmpty()) {
                 announceAll(trainRunningMessages);
