@@ -5,6 +5,7 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.javax.servlet.AWSXRayServletFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,9 @@ public class ServerApplication {
 
         SpringApplication application = createApplication();
 
-        application.run(args);
+        AWSXRay.createSegment("avoindataserver_start", (subsegment) -> {
+            application.run(args);
+        });
     }
 
     private static SpringApplication createApplication() {

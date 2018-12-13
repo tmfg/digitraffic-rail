@@ -31,6 +31,7 @@ public class TrainRunningMessageWebsocketService {
 
     @PostConstruct
     private void init() {
+
         lastFetchedVersion = trainRunningMessageRepository.getMaxVersion();
     }
 
