@@ -63,33 +63,35 @@ public class TrainLocationUpdater {
     @Scheduled(fixedDelay = 1000)
     @Transactional
     public synchronized void trainLocation() {
-        try {
-            if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
-                final ZonedDateTime start = dateProvider.nowInHelsinki();
+        AWSXRay.createSegment("trainLocation", (subsegment) -> {
+            try {
+                if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
+                    final ZonedDateTime start = dateProvider.nowInHelsinki();
 
-                List<TrainLocation> trainLocations = Arrays.asList(
-                        objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class));
+                    List<TrainLocation> trainLocations = Arrays.asList(
+                            objectMapper.readValue(new URL(liikeinterfaceUrl + "/kuplas"), TrainLocation[].class));
 
-                final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
+                    final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
-                try {
-                    mqttPublishService.publish(
-                            s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
-                            filteredTrainLocations, null);
-                } catch (Exception e) {
-                    log.error("MQTT updated failed. Still trying to update database.", e);
+                    try {
+                        mqttPublishService.publish(
+                                s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
+                                filteredTrainLocations, null);
+                    } catch (Exception e) {
+                        log.error("MQTT updated failed. Still trying to update database.", e);
+                    }
+
+                    trainLocationRepository.persist(filteredTrainLocations);
+
+                    final ZonedDateTime end = dateProvider.nowInHelsinki();
+
+                    log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
+                            trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
                 }
-
-                trainLocationRepository.persist(filteredTrainLocations);
-
-                final ZonedDateTime end = dateProvider.nowInHelsinki();
-
-                log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
-                        trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+            } catch (Exception e) {
+                log.error("Error updating train locations", e);
             }
-        } catch (Exception e) {
-            log.error("Error updating train locations", e);
-        }
+        });
     }
 
     private List<TrainLocation> filterTrains(final List<TrainLocation> trainLocations) {
