@@ -48,7 +48,7 @@ public abstract class AEntityUpdater<T> {
     protected abstract void update();
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
-        AWSXRay.createSubsegment(getClass().getSimpleName(), (subsegment2) -> {
+        AWSXRay.createSegment(getClass().getSimpleName(), (subsegment2) -> {
 
             if (StringUtils.isEmpty(liikeInterfaceUrl)) {
                 return;
