@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.util.function.Consumer;
 
-public abstract class AEntityUpdater<T> implements XRayTraced {
+public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
 
     @Value("${updater.liikeinterface-url}")
