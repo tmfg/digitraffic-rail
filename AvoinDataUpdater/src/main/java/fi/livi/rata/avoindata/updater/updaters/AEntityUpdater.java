@@ -29,7 +29,7 @@ public abstract class AEntityUpdater<T> {
     @PostConstruct
     private void init() {
         retryTemplate.setLogger(log);
-        new SimpleAsyncTaskExecutor().execute(this::update);
+        new SimpleAsyncTaskExecutor().execute(this::wrapUpdate);
     }
 
     protected T getForObjectWithRetry(final String targetUrl, final Class<T> responseType) {
@@ -39,10 +39,16 @@ public abstract class AEntityUpdater<T> {
         });
     }
 
+    private void wrapUpdate() {
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+            update();
+        });
+    }
+
     protected abstract void update();
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
-        AWSXRay.createSegment(path, (subsegment2) -> {
+        AWSXRay.createSubsegment(getClass().getSimpleName(), (subsegment2) -> {
 
             if (StringUtils.isEmpty(liikeInterfaceUrl)) {
                 return;

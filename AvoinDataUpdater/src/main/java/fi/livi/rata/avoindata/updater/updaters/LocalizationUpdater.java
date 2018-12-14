@@ -15,8 +15,6 @@ public class LocalizationUpdater extends AEntityUpdater<Localizations> {
     @Override
     @Scheduled(fixedDelay = 1000 * 60 * 30L)
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            this.doUpdate("localizations", localizationService::updateLocalizations, Localizations.class);
-        });
+        this.doUpdate("localizations", localizationService::updateLocalizations, Localizations.class);
     }
 }

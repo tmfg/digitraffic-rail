@@ -16,8 +16,6 @@ public class OperatorUpdater extends AEntityUpdater<Operator[]> {
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("operators", operatorService::update, Operator[].class);
-        });
+        doUpdate("operators", operatorService::update, Operator[].class);
     }
 }

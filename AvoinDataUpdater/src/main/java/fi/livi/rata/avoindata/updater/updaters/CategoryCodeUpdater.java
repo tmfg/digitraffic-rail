@@ -16,8 +16,6 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("category-codes", CategoryCodeService::update, CategoryCode[].class);
-        });
+        doUpdate("category-codes", CategoryCodeService::update, CategoryCode[].class);
     }
 }

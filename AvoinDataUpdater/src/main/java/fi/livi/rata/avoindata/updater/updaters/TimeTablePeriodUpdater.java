@@ -17,8 +17,6 @@ public class TimeTablePeriodUpdater extends AEntityUpdater<TimeTablePeriod[]> {
     @Override
     @Scheduled(cron = "0 1 1 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("timetableperiods", timeTablePeriodService::update, TimeTablePeriod[].class);
-        });
+        doUpdate("timetableperiods", timeTablePeriodService::update, TimeTablePeriod[].class);
     }
 }

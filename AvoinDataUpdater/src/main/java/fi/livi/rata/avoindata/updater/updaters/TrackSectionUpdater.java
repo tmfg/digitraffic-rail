@@ -17,8 +17,6 @@ public class TrackSectionUpdater extends AEntityUpdater<TrackSection[]> {
     @Override
     @Scheduled(cron = "0 1 1 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("tracksections", trackSectionService::updateTrackSections, TrackSection[].class);
-        });
+        doUpdate("tracksections", trackSectionService::updateTrackSections, TrackSection[].class);
     }
 }

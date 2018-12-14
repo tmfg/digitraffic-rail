@@ -16,8 +16,6 @@ public class StationUpdater extends AEntityUpdater<Station[]> {
     @Override
     @Scheduled(cron = "0 1 3 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("stations", stationService::update, Station[].class);
-        });
+        doUpdate("stations", stationService::update, Station[].class);
     }
 }

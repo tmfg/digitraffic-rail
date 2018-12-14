@@ -16,9 +16,6 @@ public class TrainRunningMessageRuleUpdater extends AEntityUpdater<TrainRunningM
     @Override
     @Scheduled(cron = "0 2 2 * * ?")
     protected void update() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            doUpdate("train-running-message-rules", timeTableRowActivationService::update, TrainRunningMessageRule[]
-                    .class);
-        });
+        doUpdate("train-running-message-rules", timeTableRowActivationService::update, TrainRunningMessageRule[].class);
     }
 }
