@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 
@@ -80,7 +81,8 @@ public class MQTTPublishService {
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
-            executor.submit(() -> {
+            log.info("Submitting task to mqtt");
+          Future future = executor.submit(() -> {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
@@ -93,6 +95,7 @@ public class MQTTPublishService {
                     LoggerFactory.getLogger("MQTT-update").error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
                 }
             });
+            log.info("Submitted task to mqtt");
 
             return topic;
         } catch (Exception e) {
