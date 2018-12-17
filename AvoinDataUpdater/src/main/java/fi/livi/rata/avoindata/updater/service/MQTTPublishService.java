@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
@@ -23,8 +25,8 @@ import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
 public class MQTTPublishService {
-    private static final int QUEUE_SIZE = 5000;
-    public static final int NUMBER_OF_THREADS = 2;
+    private static final int QUEUE_SIZE = 150;
+    public static final int NUMBER_OF_THREADS = 1;
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -77,9 +79,13 @@ public class MQTTPublishService {
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
 
+            ZonedDateTime submittedAt = ZonedDateTime.now();
             executor.execute(() -> {
                 try {
+                    ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
+                    Thread.sleep(5000);
+                    log.info("Waited: {}, Executed: {}", Duration.between(submittedAt,executionStartedAt),Duration.between(executionStartedAt,ZonedDateTime.now()));
                 } catch (Exception e) {
                     log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
                 }
