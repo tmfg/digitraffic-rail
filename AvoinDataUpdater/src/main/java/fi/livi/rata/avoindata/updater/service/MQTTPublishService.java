@@ -86,11 +86,11 @@ public class MQTTPublishService {
                     MQTTGateway.sendToMqtt(message);
                     Thread.sleep(5000);
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                        log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
+                 LoggerFactory.getLogger("MQTT-update").info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                 } catch (Exception e) {
-                    log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
+                    LoggerFactory.getLogger("MQTT-update").error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
                 }
             });
 
