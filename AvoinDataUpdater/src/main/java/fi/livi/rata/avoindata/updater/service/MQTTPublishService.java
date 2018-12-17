@@ -58,7 +58,7 @@ public class MQTTPublishService {
         }
     }
 
-    public <E> Message<String> publishEntity(String topic, E entity, Class viewClass) {
+    public <E> String publishEntity(String topic, E entity, Class viewClass) {
         try {
             String entityAsString = getEntityAsString(entity, viewClass);
 
@@ -69,7 +69,7 @@ public class MQTTPublishService {
         return null;
     }
 
-    public Message<String> publishString(String topic, String entity) {
+    public String publishString(String topic, String entity) {
         try {
             String entityAsString = entity;
 
@@ -85,13 +85,16 @@ public class MQTTPublishService {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
                     Thread.sleep(5000);
-                    log.info("Waited: {}, Executed: {}", Duration.between(submittedAt,executionStartedAt),Duration.between(executionStartedAt,ZonedDateTime.now()));
+                    if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
+                        log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
+                                Duration.between(executionStartedAt, ZonedDateTime.now()));
+                    }
                 } catch (Exception e) {
                     log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
                 }
             });
 
-            return message;
+            return topic;
         } catch (Exception e) {
             log.error("Error publishing {} to {}", topic, entity, e);
             return null;
