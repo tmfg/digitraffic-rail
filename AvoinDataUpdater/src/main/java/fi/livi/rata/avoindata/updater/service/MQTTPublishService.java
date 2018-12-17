@@ -80,7 +80,7 @@ public class MQTTPublishService {
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
-            executor.execute(() -> {
+            executor.submit(() -> {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
