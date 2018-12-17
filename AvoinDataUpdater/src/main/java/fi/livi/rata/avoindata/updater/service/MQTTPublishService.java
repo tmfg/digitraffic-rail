@@ -82,18 +82,23 @@ public class MQTTPublishService {
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
             log.info("Submitting task to mqtt");
-          Future future = executor.submit(() -> {
+            Future future = executor.submit(() -> {
+                Logger logger = LoggerFactory.getLogger("MQTT-update");
                 try {
+                    logger.info("Starting mqtt task");
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
+                    logger.info("Send Mqtt");
                     Thread.sleep(5000);
+                    logger.info("Slept for 5000");
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                 LoggerFactory.getLogger("MQTT-update").info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
+                        logger.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                 } catch (Exception e) {
-                    LoggerFactory.getLogger("MQTT-update").error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
+                    logger.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
                 }
+                logger.info("Mqtt sending done");
             });
             log.info("Submitted task to mqtt");
 
