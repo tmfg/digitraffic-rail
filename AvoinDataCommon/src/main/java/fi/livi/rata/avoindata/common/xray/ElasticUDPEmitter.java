@@ -68,7 +68,7 @@ public class ElasticUDPEmitter extends Emitter {
     private boolean sendData(byte[] data) {
         URI uri = null;
         try {
-            uri = new URI(config.getUDPAddress());
+            uri = new URI("any://" + config.getUDPAddress());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
