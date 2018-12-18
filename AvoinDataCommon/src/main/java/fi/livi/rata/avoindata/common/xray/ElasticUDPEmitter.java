@@ -21,6 +21,8 @@ public class ElasticUDPEmitter extends Emitter {
     private DaemonConfiguration config;
     private byte[] sendBuffer = new byte[DAEMON_BUF_RECEIVE_SIZE];
 
+    private String prevAddress = null;
+
     /**
      * Constructs a UDPEmitter. Sets the daemon address to the value of the {@code AWS_XRAY_DAEMON_ADDRESS} environment variable or {@code com.amazonaws.xray.emitters.daemonAddress} system property, if either are set
      * to a non-empty value. Otherwise, points to {@code InetAddress.getLoopbackAddress()} at port {@code 2000}.
@@ -79,6 +81,12 @@ public class ElasticUDPEmitter extends Emitter {
             socketAddress = config.getAddressForEmitter();
         } else {
             socketAddress =  InetSocketAddress.createUnresolved(host, port);
+        }
+
+        String hostAddress = socketAddress.getAddress().getHostAddress();
+        if(!hostAddress.equals(prevAddress)) {
+            prevAddress = hostAddress;
+            log.info("Xray address changed: " + prevAddress);
         }
 
         // To force resolving ip address via Java TTL time.
