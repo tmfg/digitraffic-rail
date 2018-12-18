@@ -86,6 +86,7 @@ public class ElasticUDPEmitter extends Emitter {
         String hostAddress = socketAddress.getAddress().getHostAddress();
         if(!hostAddress.equals(prevAddress)) {
             prevAddress = hostAddress;
+            log.info("URI is " + config.getUDPAddress());
             log.info("Xray address changed: " + prevAddress);
         }
 
