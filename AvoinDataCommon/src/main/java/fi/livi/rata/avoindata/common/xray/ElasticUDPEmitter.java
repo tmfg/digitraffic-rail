@@ -73,12 +73,17 @@ public class ElasticUDPEmitter extends Emitter {
             throw new RuntimeException(e);
         }
 
+        log.debug(config.getUDPAddress());
+
         final String host = uri.getHost();
         final int port = uri.getPort();
 
         InetSocketAddress socketAddress = config.getAddressForEmitter();
 
+        log.debug("Host " + host + " port " + port);
+
         if (port > 0 && host != null) {
+            log.debug("Resolve hostname...");
             try {
                 final String resolvedAddress = InetAddress.getByName(host).getHostAddress();
                 socketAddress =  new InetSocketAddress(resolvedAddress, port);
@@ -95,7 +100,6 @@ public class ElasticUDPEmitter extends Emitter {
 
         // To force resolving ip address via Java TTL time.
         DatagramPacket packet = new DatagramPacket(sendBuffer, DAEMON_BUF_RECEIVE_SIZE, socketAddress);
-
         packet.setData(data);
         try {
             log.trace("Sending UDP packet.");
