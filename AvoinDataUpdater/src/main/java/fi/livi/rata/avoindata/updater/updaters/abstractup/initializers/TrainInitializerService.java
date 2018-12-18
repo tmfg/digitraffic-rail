@@ -73,7 +73,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     protected List<Train> doUpdate() {
         return trainLockExecutor.executeInLock(() -> {
             List<Train> updatedTrains = super.doUpdate();
-            log.info("Train base update complete. Starting mqtt sending");
+            log.info("Train base update complete. Starting mqtt sending for {} trains", updatedTrains.size());
             try {
                 for (Train train : updatedTrains) {
                     log.info("Pushing train to mqtt {}", train);

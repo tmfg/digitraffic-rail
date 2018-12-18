@@ -85,11 +85,12 @@ public class MQTTPublishService {
             Future future = executor.submit(() -> {
                 Logger logger = LoggerFactory.getLogger("MQTT-update");
                 try {
+                    Thread.sleep(1000);
                     logger.info("Starting mqtt task");
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
                     logger.info("Send Mqtt");
-                    Thread.sleep(5000);
+                    Thread.sleep(4000);
                     logger.info("Slept for 5000");
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         logger.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
@@ -104,7 +105,7 @@ public class MQTTPublishService {
 
             return topic;
         } catch (Exception e) {
-            log.error("Error publishing {} to {}", topic, entity, e);
+//            log.error("Error publishing {} to {}", topic, entity, e);
             return null;
         }
     }
