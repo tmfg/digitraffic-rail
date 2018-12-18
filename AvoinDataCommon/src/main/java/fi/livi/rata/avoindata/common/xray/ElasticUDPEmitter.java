@@ -48,7 +48,7 @@ public class ElasticUDPEmitter extends Emitter {
      */
     public boolean sendSegment(Segment segment) {
         if (log.isDebugEnabled()) {
-            log.debug(segment.prettySerialize());
+            log.trace(segment.prettySerialize());
         }
         return sendData((PROTOCOL_HEADER + PROTOCOL_DELIMITER + segment.serialize()).getBytes());
     }
@@ -60,7 +60,7 @@ public class ElasticUDPEmitter extends Emitter {
      */
     public boolean sendSubsegment(Subsegment subsegment) {
         if (log.isDebugEnabled()) {
-            log.debug(subsegment.prettyStreamSerialize());
+            log.trace(subsegment.prettyStreamSerialize());
         }
         return sendData((PROTOCOL_HEADER + PROTOCOL_DELIMITER + subsegment.streamSerialize()).getBytes());
     }
@@ -94,7 +94,7 @@ public class ElasticUDPEmitter extends Emitter {
 
         packet.setData(data);
         try {
-            log.debug("Sending UDP packet.");
+            log.trace("Sending UDP packet.");
             daemonSocket.send(packet);
         } catch (IOException e) {
             log.error("Exception while sending segment over UDP.", e);
