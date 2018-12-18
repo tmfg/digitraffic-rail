@@ -76,18 +76,21 @@ public class ElasticUDPEmitter extends Emitter {
         final String host = uri.getHost();
         final int port = uri.getPort();
 
-        InetSocketAddress socketAddress;
-        if (port == -1 || host == null) {
-            socketAddress = config.getAddressForEmitter();
-        } else {
-            socketAddress =  InetSocketAddress.createUnresolved(host, port);
-        }
+        InetSocketAddress socketAddress = config.getAddressForEmitter();
 
-        String hostAddress = socketAddress.getAddress().getHostAddress();
-        if(!hostAddress.equals(prevAddress)) {
-            prevAddress = hostAddress;
-            log.info("URI is " + config.getUDPAddress());
-            log.info("Xray address changed: " + prevAddress);
+        if (port > 0 && host == null) {
+            try {
+                final String resolvedAddress = InetAddress.getByName(host).getHostAddress();
+                socketAddress =  new InetSocketAddress(resolvedAddress, port);
+
+                if(!resolvedAddress.equals(prevAddress)) {
+                    prevAddress = resolvedAddress;
+                    log.info("URI is " + config.getUDPAddress());
+                    log.info("Xray address changed: " + prevAddress);
+                }
+            } catch (UnknownHostException e) {
+                log.warn("Error resolving host " + host, e);
+            }
         }
 
         // To force resolving ip address via Java TTL time.
