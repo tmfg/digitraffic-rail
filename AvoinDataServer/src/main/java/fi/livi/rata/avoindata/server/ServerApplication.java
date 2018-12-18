@@ -75,5 +75,4 @@ public class ServerApplication {
     public void setEmitter() {
         AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
     }
-
 }

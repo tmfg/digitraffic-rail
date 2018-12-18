@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
+import fi.livi.rata.avoindata.common.xray.ElasticUDPEmitter;
 import fi.livi.rata.avoindata.updater.service.CompositionService;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
@@ -30,6 +31,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -80,6 +82,10 @@ public class DatabaseUpdaterApplication  {
         }
     }
 
+    @PostConstruct
+    public void setEmitter() {
+        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
+    }
 
     @Configuration
     public static class Runner implements CommandLineRunner {
