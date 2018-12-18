@@ -78,7 +78,7 @@ public class ElasticUDPEmitter extends Emitter {
 
         InetSocketAddress socketAddress = config.getAddressForEmitter();
 
-        if (port > 0 && host == null) {
+        if (port > 0 && host != null) {
             try {
                 final String resolvedAddress = InetAddress.getByName(host).getHostAddress();
                 socketAddress =  new InetSocketAddress(resolvedAddress, port);
