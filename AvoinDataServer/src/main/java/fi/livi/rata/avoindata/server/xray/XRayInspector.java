@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.server;
+package fi.livi.rata.avoindata.server.xray;
 
 import com.amazonaws.xray.entities.Subsegment;
 import com.amazonaws.xray.spring.aop.AbstractXRayInterceptor;

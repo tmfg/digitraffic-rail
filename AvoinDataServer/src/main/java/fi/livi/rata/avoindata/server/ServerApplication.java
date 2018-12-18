@@ -7,6 +7,7 @@ import java.util.TimeZone;
 
 import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.javax.servlet.AWSXRayServletFilter;
+import fi.livi.rata.avoindata.common.xray.ElasticUDPEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -22,6 +23,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 
 @Configuration
@@ -67,6 +69,11 @@ public class ServerApplication {
     @Bean
     public Filter TracingFilter() {
         return new AWSXRayServletFilter("avoindataserver");
+    }
+
+    @PostConstruct
+    public void setEmitter() {
+        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
     }
 
 }
