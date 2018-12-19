@@ -81,7 +81,6 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     private void sendTrainsToMqtt(final List<Train> updatedTrains) {
-        log.info("Train base update complete. Starting mqtt sending for {} trains", updatedTrains.size());
         try {
             for (Train train : updatedTrains) {
                 String trainAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(train);
@@ -103,8 +102,6 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         } catch (Exception e) {
             log.error("Error publishing trains to MQTT", e);
         }
-
-        log.info("MQTT update complete");
     }
 
     @Override

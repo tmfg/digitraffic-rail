@@ -26,7 +26,7 @@ import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
 public class MQTTPublishService {
-    private static final int QUEUE_SIZE = 150;
+    private static final int QUEUE_SIZE = 35000;
     public static final int NUMBER_OF_THREADS = 1;
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -75,26 +75,23 @@ public class MQTTPublishService {
             final Message<String> message = buildMessage(topic, entity);
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
-            log.info("Submitting task to mqtt");
+
             Future<Message<String>> future = executor.submit(() -> {
-                Logger logger = LoggerFactory.getLogger("MQTT-update");
                 try {
                     Thread.sleep(1000);
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
                     Thread.sleep(4000);
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                        logger.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
+                        log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                     return message;
                 } catch (Exception e) {
-                    logger.error("Error sending data to MQTT. Topic: {}", topic, e);
+                    log.error("Error sending data to MQTT. Topic: {}", topic, e);
                     return null;
                 }
             });
-
-            log.info("Submitted task to mqtt");
 
             return future;
         } catch (Exception e) {
