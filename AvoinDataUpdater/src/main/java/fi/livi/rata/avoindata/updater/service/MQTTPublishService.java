@@ -78,10 +78,10 @@ public class MQTTPublishService {
 
             Future<Message<String>> future = executor.submit(() -> {
                 try {
-                    Thread.sleep(1000);
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
+
                     MQTTGateway.sendToMqtt(message);
-                    Thread.sleep(4000);
+
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
