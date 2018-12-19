@@ -72,31 +72,24 @@ public class MQTTPublishService {
 
     public Future<Message<String>> publishString(String topic, String entity) {
         try {
-            String entityAsString = entity;
-
-            final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
-
-            final String topicToPublishTo = getReplacedTopic(getFullTopic(topic));
-
-            final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
+            final Message<String> message = buildMessage(topic, entity);
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
             log.info("Submitting task to mqtt");
             Future<Message<String>> future = executor.submit(() -> {
-
+                Logger logger = LoggerFactory.getLogger("MQTT-update");
                 try {
                     Thread.sleep(1000);
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
                     Thread.sleep(4000);
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                        Logger logger = LoggerFactory.getLogger("MQTT-update");
                         logger.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                     return message;
                 } catch (Exception e) {
-                    log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
+                    logger.error("Error sending data to MQTT. Topic: {}", topic, e);
                     return null;
                 }
             });
@@ -105,9 +98,17 @@ public class MQTTPublishService {
 
             return future;
         } catch (Exception e) {
-            //  log.error("Error publishing {} to {}", topic, entity, e);
+            log.error("Error publishing to {}", topic, e);
             return null;
         }
+    }
+
+    private Message<String> buildMessage(final String topic, final String entity) {
+        final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entity);
+
+        final String topicToPublishTo = getReplacedTopic(getFullTopic(topic));
+
+        return payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
     }
 
     private String getReplacedTopic(String topic) {
