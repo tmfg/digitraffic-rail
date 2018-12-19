@@ -59,7 +59,7 @@ public class MQTTPublishService {
         }
     }
 
-    public <E> String publishEntity(String topic, E entity, Class viewClass) {
+    public <E> Future<Message<String>> publishEntity(String topic, E entity, Class viewClass) {
         try {
             String entityAsString = getEntityAsString(entity, viewClass);
 
@@ -70,7 +70,7 @@ public class MQTTPublishService {
         return null;
     }
 
-    public String publishString(String topic, String entity) {
+    public Future<Message<String>> publishString(String topic, String entity) {
         try {
             String entityAsString = entity;
 
@@ -82,24 +82,28 @@ public class MQTTPublishService {
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
             log.info("Submitting task to mqtt");
-            Future future = executor.submit(() -> {
-                Logger logger = LoggerFactory.getLogger("MQTT-update");
+            Future<Message<String>> future = executor.submit(() -> {
+
                 try {
                     Thread.sleep(1000);
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
                     MQTTGateway.sendToMqtt(message);
                     Thread.sleep(4000);
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
+                        Logger logger = LoggerFactory.getLogger("MQTT-update");
                         logger.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
+                    return message;
                 } catch (Exception e) {
-                    logger.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
+                    log.error("Error sending data to MQTT. Topic: {}, Entity: {}", topic, entity, e);
+                    return null;
                 }
             });
+
             log.info("Submitted task to mqtt");
 
-            return topic;
+            return future;
         } catch (Exception e) {
 //            log.error("Error publishing {} to {}", topic, entity, e);
             return null;
