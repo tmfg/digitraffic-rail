@@ -73,38 +73,34 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     protected List<Train> doUpdate() {
         return trainLockExecutor.executeInLock(() -> {
             List<Train> updatedTrains = super.doUpdate();
+            log.info("Train base update complete. Starting mqtt sending for {} trains", updatedTrains.size());
+            try {
+                for (Train train : updatedTrains) {
+                    log.info("Pushing train to mqtt {}", train);
+                    String trainAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(train);
 
-            sendTrainsToMqtt(updatedTrains);
+                    mqttPublishService.publishString(
+                            String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", train.id.departureDate, train.id.trainNumber,
+                                    train.trainCategory, train.trainType, train.operator.operatorShortCode, train.commuterLineID,
+                                    train.runningCurrently, train.timetableType), trainAsString);
+
+                    Set<String> announcedStations = new HashSet<>();
+                    for (TimeTableRow timeTableRow : train.timeTableRows) {
+                        String stationShortCode = timeTableRow.station.stationShortCode;
+                        if (!announcedStations.contains(stationShortCode)) {
+                            announcedStations.add(stationShortCode);
+                            mqttPublishService.publishString(String.format("trains-by-station/%s", stationShortCode), trainAsString);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error publishing trains to MQTT", e);
+            }
+
+            log.info("Ended update complete");
 
             return updatedTrains;
         });
-    }
-
-    private void sendTrainsToMqtt(final List<Train> updatedTrains) {
-        log.info("Train base update complete. Starting mqtt sending for {} trains", updatedTrains.size());
-        try {
-            for (Train train : updatedTrains) {
-                String trainAsString = objectMapper.writerWithView(TrainJsonView.LiveTrains.class).writeValueAsString(train);
-
-                mqttPublishService.publishString(
-                        String.format("trains/%s/%s/%s/%s/%s/%s/%s/%s", train.id.departureDate, train.id.trainNumber,
-                                train.trainCategory, train.trainType, train.operator.operatorShortCode, train.commuterLineID,
-                                train.runningCurrently, train.timetableType), trainAsString);
-
-                Set<String> announcedStations = new HashSet<>();
-                for (TimeTableRow timeTableRow : train.timeTableRows) {
-                    String stationShortCode = timeTableRow.station.stationShortCode;
-                    if (!announcedStations.contains(stationShortCode)) {
-                        announcedStations.add(stationShortCode);
-                        mqttPublishService.publishString(String.format("trains-by-station/%s", stationShortCode), trainAsString);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error publishing trains to MQTT", e);
-        }
-
-        log.info("MQTT update complete");
     }
 
     @Override
