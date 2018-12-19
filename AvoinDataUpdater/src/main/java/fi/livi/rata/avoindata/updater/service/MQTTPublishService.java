@@ -105,7 +105,7 @@ public class MQTTPublishService {
 
             return future;
         } catch (Exception e) {
-            log.error("Error publishing {} to {}", topic, entity, e);
+            //  log.error("Error publishing {} to {}", topic, entity, e);
             return null;
         }
     }
