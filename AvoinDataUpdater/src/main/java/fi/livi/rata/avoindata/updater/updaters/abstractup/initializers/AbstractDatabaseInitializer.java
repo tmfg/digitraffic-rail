@@ -89,7 +89,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected List<EntityType> doUpdate() {
-        log.info("Starting data update for {}", this.prefix);
+        log.trace("Starting data update for {}", this.prefix);
 
         final Long latestVersion = persistService.getMaxVersion();
         final ZonedDateTime start = ZonedDateTime.now();
