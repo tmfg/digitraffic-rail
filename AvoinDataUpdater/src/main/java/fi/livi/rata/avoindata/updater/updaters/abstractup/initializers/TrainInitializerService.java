@@ -101,7 +101,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
                 }
             }
         } catch (Exception e) {
-//            log.error("Error publishing trains to MQTT", e);
+            log.error("Error publishing trains to MQTT", e);
         }
 
         log.info("MQTT update complete");
