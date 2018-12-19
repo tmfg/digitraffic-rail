@@ -4,6 +4,7 @@ import com.amazonaws.xray.config.DaemonConfiguration;
 import com.amazonaws.xray.emitters.Emitter;
 import com.amazonaws.xray.entities.Segment;
 import com.amazonaws.xray.entities.Subsegment;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,34 +12,33 @@ import java.io.IOException;
 import java.net.*;
 
 /**
- * Overrides UDPEmitter implementation that does not resolve the dns name after starting the program.
+ * Overrides UDPEmitter implementation. Elastic refer that the emiter will resolve XRAY address always via Java internal services
+ * and obey dns TTL times.
  */
 public class ElasticUDPEmitter extends Emitter {
 
     private static Logger log = LoggerFactory.getLogger(ElasticUDPEmitter.class);
 
-    private DatagramSocket daemonSocket;
-    private DaemonConfiguration config;
+    private final DatagramSocket daemonSocket;
+    private final DaemonConfiguration config;
     private byte[] sendBuffer = new byte[DAEMON_BUF_RECEIVE_SIZE];
 
-    private String prevAddress = null;
+    private volatile String prevAddress = null;
+    private final URI uri;
+    private final boolean enableDNSResolver;
 
-    /**
-     * Constructs a UDPEmitter. Sets the daemon address to the value of the {@code AWS_XRAY_DAEMON_ADDRESS} environment variable or {@code com.amazonaws.xray.emitters.daemonAddress} system property, if either are set
-     * to a non-empty value. Otherwise, points to {@code InetAddress.getLoopbackAddress()} at port {@code 2000}.
-     *
-     * @throws SocketException
-     *             if an error occurs while instantiating a {@code DatagramSocket}.
-     *
-     */
     public ElasticUDPEmitter() {
         config = new DaemonConfiguration();
         try {
             daemonSocket = new DatagramSocket();
-        } catch (SocketException e) {
+            uri = new URI("any://" + config.getUDPAddress());
+        } catch (SocketException | URISyntaxException e) {
             log.error("Exception while instantiating daemon socket.", e);
             throw new RuntimeException(e);
         }
+
+        enableDNSResolver = isHostPortConfiguredAndHostIsDNSName(uri.getHost(), uri.getPort());
+        log.info("UDP XRAY-daemon " + config.getUDPAddress() + " and DNS resolving is set to " + enableDNSResolver);
     }
 
     /**
@@ -47,7 +47,7 @@ public class ElasticUDPEmitter extends Emitter {
      * @see Emitter#sendSegment(Segment)
      */
     public boolean sendSegment(Segment segment) {
-        if (log.isDebugEnabled()) {
+        if (log.isTraceEnabled()) {
             log.trace(segment.prettySerialize());
         }
         return sendData((PROTOCOL_HEADER + PROTOCOL_DELIMITER + segment.serialize()).getBytes());
@@ -59,47 +59,15 @@ public class ElasticUDPEmitter extends Emitter {
      * @see Emitter#sendSubsegment(Subsegment)
      */
     public boolean sendSubsegment(Subsegment subsegment) {
-        if (log.isDebugEnabled()) {
+        if (log.isTraceEnabled()) {
             log.trace(subsegment.prettyStreamSerialize());
         }
         return sendData((PROTOCOL_HEADER + PROTOCOL_DELIMITER + subsegment.streamSerialize()).getBytes());
     }
 
     private boolean sendData(byte[] data) {
-        URI uri = null;
-        try {
-            uri = new URI("any://" + config.getUDPAddress());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        DatagramPacket packet = new DatagramPacket(sendBuffer, DAEMON_BUF_RECEIVE_SIZE, resolveCurrentAddress());
 
-        log.debug(config.getUDPAddress());
-
-        final String host = uri.getHost();
-        final int port = uri.getPort();
-
-        InetSocketAddress socketAddress = config.getAddressForEmitter();
-
-        log.debug("Host " + host + " port " + port);
-
-        if (port > 0 && host != null) {
-            log.debug("Resolve hostname...");
-            try {
-                final String resolvedAddress = InetAddress.getByName(host).getHostAddress();
-                socketAddress =  new InetSocketAddress(resolvedAddress, port);
-
-                if(!resolvedAddress.equals(prevAddress)) {
-                    prevAddress = resolvedAddress;
-                    log.info("URI is " + config.getUDPAddress());
-                    log.info("Xray address changed: " + prevAddress);
-                }
-            } catch (UnknownHostException e) {
-                log.warn("Error resolving host " + host, e);
-            }
-        }
-
-        // To force resolving ip address via Java TTL time.
-        DatagramPacket packet = new DatagramPacket(sendBuffer, DAEMON_BUF_RECEIVE_SIZE, socketAddress);
         packet.setData(data);
         try {
             log.trace("Sending UDP packet.");
@@ -108,7 +76,46 @@ public class ElasticUDPEmitter extends Emitter {
             log.error("Exception while sending segment over UDP.", e);
             return false;
         }
+
         return true;
     }
 
+    private InetSocketAddress resolveCurrentAddress() {
+        InetSocketAddress socketAddress;
+
+        if (enableDNSResolver) {
+            socketAddress = resolveAddress(uri);
+        } else {
+            // Using default configuration of JDK XRAY
+            socketAddress = config.getAddressForEmitter();
+        }
+
+        return socketAddress;
+    }
+
+    private InetSocketAddress resolveAddress(URI uri) {
+        String resolvedAddress;
+
+        try {
+            resolvedAddress = InetAddress.getByName(uri.getHost()).getHostAddress();
+        } catch (UnknownHostException e) {
+            resolvedAddress = prevAddress;
+            log.warn("Error resolving XRAY host. Using previous address.", e);
+        }
+
+        logIfChanged(resolvedAddress);
+
+        return new InetSocketAddress(resolvedAddress, uri.getPort());
+    }
+
+    private synchronized void logIfChanged(String resolvedAddress) {
+        if(!resolvedAddress.equals(prevAddress)) {
+            log.info("XRAY address changed: " + prevAddress + " -> " + resolvedAddress);
+            prevAddress = resolvedAddress;
+        }
+    }
+
+    private static boolean isHostPortConfiguredAndHostIsDNSName(String host, int port) {
+        return port > 0 && host != null && !InetAddresses.isInetAddress(host);
+    }
 }
