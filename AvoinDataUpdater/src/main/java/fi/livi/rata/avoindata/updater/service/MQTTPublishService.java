@@ -48,7 +48,7 @@ public class MQTTPublishService {
 
             final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entityAsString);
 
-            final String topicToPublishTo = getReplacedTopic(getFullTopic(topic));
+            final String topicToPublishTo = getReplacedTopic(topic);
 
             final Message<String> message = payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
             try {
@@ -95,19 +95,5 @@ public class MQTTPublishService {
             entityAsString = objectMapper.writeValueAsString(entity);
         }
         return entityAsString;
-    }
-
-    private String getFullTopic(String topic) {
-        String prefix = "";
-        if (!Sets.newHashSet(environment.getActiveProfiles()).contains("prd")) {
-            prefix = Joiner.on(",").join(environment.getActiveProfiles());
-        }
-
-        if (Strings.isNullOrEmpty(prefix)) {
-            return topic;
-        } else {
-            return String.format("%s/%s", prefix, topic);
-        }
-
     }
 }
