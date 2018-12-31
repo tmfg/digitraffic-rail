@@ -26,7 +26,7 @@ import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
 public class MQTTPublishService {
-    private static final int QUEUE_SIZE = 35000;
+    private static final int QUEUE_SIZE = 50000;
     public static final int NUMBER_OF_THREADS = 1;
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
