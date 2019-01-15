@@ -97,6 +97,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
     protected List<EntityType> doUpdate() {
         return AWSXRay.createSubsegment("abstract_doUpdate", (subsegment) -> {
+            log.trace("Starting data update for {}", this.prefix);
+
             final Long latestVersion = persistService.getMaxVersion();
             final ZonedDateTime start = ZonedDateTime.now();
 
