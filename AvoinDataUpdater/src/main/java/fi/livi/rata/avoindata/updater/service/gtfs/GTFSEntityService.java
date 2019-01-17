@@ -219,10 +219,8 @@ public class GTFSEntityService {
                 log.info("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
                 if (existingCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE &&
                         cancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
-                    log.warn("Merged two cancellations. {} with {}", existingCancellation, cancellation);
                     existingCancellation.cancelledRows.addAll(cancellation.cancelledRows);
                 } else if (existingCancellation.id < cancellation.id) {
-                    log.warn("Replaced cancellation {} with {}", existingCancellation, cancellation);
                     cancellations.put(cancellation.startDate, cancellation.endDate, cancellation);
                 }
             }
