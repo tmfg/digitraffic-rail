@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.metadata.TimeTablePeriodRepository;
 import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import io.swagger.annotations.ApiOperation;

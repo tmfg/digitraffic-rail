@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.localization.Localizations;
 import fi.livi.rata.avoindata.updater.service.LocalizationService;
 import org.springframework.beans.factory.annotation.Autowired;

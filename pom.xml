@@ -18,6 +18,7 @@
         <com.google.guava.version>23.0</com.google.guava.version>
         <mysql.connector.version>5.1.47</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
+        <awx_xray.version>2.1.0</awx_xray.version>
     </properties>
 
     <profiles>
@@ -97,7 +98,15 @@
     </modules>
 
     <dependencyManagement>
+
         <dependencies>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-xray-recorder-sdk-bom</artifactId>
+                <type>pom</type>
+                <version>2.1.0</version>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>

@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
 import org.springframework.beans.factory.annotation.Autowired;

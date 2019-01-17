@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import com.amazonaws.xray.AWSXRay;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -80,7 +81,9 @@ public class MQTTPublishService {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    MQTTGateway.sendToMqtt(message);
+                    AWSXRay.createSegment("MQTTGateway.sendToMqtt", (subsegment) -> {
+                        MQTTGateway.sendToMqtt(message);
+                    });
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
@@ -103,7 +106,7 @@ public class MQTTPublishService {
     private Message<String> buildMessage(final String topic, final String entity) {
         final MessageBuilder<String> payloadBuilder = MessageBuilder.withPayload(entity);
 
-        final String topicToPublishTo = getReplacedTopic(getFullTopic(topic));
+        final String topicToPublishTo = getReplacedTopic(topic);
 
         return payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
     }
@@ -121,21 +124,4 @@ public class MQTTPublishService {
         }
         return entityAsString;
     }
-
-    private String getFullTopic(String topic) {
-        String prefix = "";
-        if (!Sets.newHashSet(environment.getActiveProfiles()).contains("prd")) {
-            prefix = Joiner.on(",").join(environment.getActiveProfiles());
-        }
-
-        if (Strings.isNullOrEmpty(prefix)) {
-            return topic;
-        } else {
-            return String.format("%s/%s", prefix, topic);
-        }
-
-
-    }
-
-
 }

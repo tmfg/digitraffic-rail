@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;

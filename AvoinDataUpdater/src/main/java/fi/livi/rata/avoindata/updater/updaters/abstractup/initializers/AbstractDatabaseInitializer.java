@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 
+import com.amazonaws.xray.AWSXRay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,17 +70,17 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
 
-    public ExecutorService initializeInLockMode() throws InterruptedException {
+    public ExecutorService initializeInLockMode() {
         return addDataInitializeTasks(trainInitializationPeriod.lastDateInLockMode, trainInitializationPeriod.firstDateInLockMode);
     }
 
-    public ExecutorService initializeInLazyMode() throws InterruptedException {
+    public ExecutorService initializeInLazyMode() {
         return addDataInitializeTasks(trainInitializationPeriod.firstDateInLockMode, trainInitializationPeriod.endNonLockDate);
     }
 
 
     public void startUpdating(int delay) {
-        scheduleAtFixedRate(() -> doUpdate(), delay);
+        scheduleAtFixedRate(() -> startUpdate(), delay);
     }
 
 
@@ -88,23 +89,31 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         scheduledExecutorService.scheduleAtFixedRate(new ExceptionLoggingRunnable(runnable), 1000, updateRate, TimeUnit.MILLISECONDS);
     }
 
+    protected void startUpdate() {
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment2) -> {
+            doUpdate();
+        });
+    }
+
     protected List<EntityType> doUpdate() {
-        log.trace("Starting data update for {}", this.prefix);
+        return AWSXRay.createSubsegment("abstract_doUpdate", (subsegment) -> {
+            log.trace("Starting data update for {}", this.prefix);
 
-        final Long latestVersion = persistService.getMaxVersion();
-        final ZonedDateTime start = ZonedDateTime.now();
+            final Long latestVersion = persistService.getMaxVersion();
+            final ZonedDateTime start = ZonedDateTime.now();
 
-        List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
+            List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
 
-        final ZonedDateTime middle = ZonedDateTime.now();
+            final ZonedDateTime middle = ZonedDateTime.now();
 
-        objects = modifyEntitiesBeforePersist(objects);
+            objects = modifyEntitiesBeforePersist(objects);
 
-        final List<EntityType> updatedEntities = persistService.updateEntities(objects);
+            final List<EntityType> updatedEntities = persistService.updateEntities(objects);
 
-        logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+            logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
 
-        return updatedEntities;
+            return updatedEntities;
+        });
     }
 
     protected void logUpdate(final long latestVersion, final ZonedDateTime start, final long length, final long newVersion, final String name, final ZonedDateTime middle, final List<EntityType> objects) {
@@ -135,10 +144,12 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     public void getAndSaveForADate(final LocalDate date) {
-        final ZonedDateTime now = ZonedDateTime.now();
-        final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
-        this.persistService.addEntities(entities);
-        log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix, Duration.between(now, ZonedDateTime.now()).toMillis()));
+        AWSXRay.createSegment(this.getClass().getSimpleName() + "getAndSaveForADate", (subsegment2) -> {
+            final ZonedDateTime now = ZonedDateTime.now();
+            final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
+            this.persistService.addEntities(entities);
+            log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix, Duration.between(now, ZonedDateTime.now()).toMillis()));
+        });
     }
 
     protected abstract <A> Class<A> getEntityCollectionClass();

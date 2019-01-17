@@ -1,9 +1,12 @@
 package fi.livi.rata.avoindata.updater;
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Segment;
 import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
+import fi.livi.rata.avoindata.common.xray.ElasticUDPEmitter;
 import fi.livi.rata.avoindata.updater.service.CompositionService;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
@@ -28,6 +31,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -78,6 +82,10 @@ public class DatabaseUpdaterApplication  {
         }
     }
 
+    @PostConstruct
+    public void setEmitter() {
+        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
+    }
 
     @Configuration
     public static class Runner implements CommandLineRunner {
@@ -135,25 +143,32 @@ public class DatabaseUpdaterApplication  {
 
 
         @Override
-        public void run(final String... args) throws RestClientException, SQLException, IOException, InterruptedException {
+        public void run(final String... args) throws RestClientException {
             if (Strings.isNullOrEmpty(liikeInterfaceUrl)) {
                 log.info("updater.liikeinterface-url is null. Skipping initilization.");
                 return;
             }
 
-            if (isInitiliazationNeeded()) {
-                log.info("Database needs to be initiliazed!");
-
-                clearDatabase();
-
-                initializeInLockMode();
-
-                startLazyUpdate();
-            }
+            startInitPhaseIfNeeded();
 
             startScheduleUpdates();
 
             startUpdating();
+        }
+
+        private void startInitPhaseIfNeeded() {
+            AWSXRay.createSegment("initiliazing", (subsegment) -> {
+                try {
+                    if (isInitiliazationNeeded()) {
+                        log.info("Database needs to be initiliazed!");
+                        clearDatabase();
+                        initializeInLockMode();
+                        startLazyUpdate();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
 
         private void startScheduleUpdates() {
@@ -176,7 +191,7 @@ public class DatabaseUpdaterApplication  {
             forecastInitializerService.startUpdating(10000);
         }
 
-        private void startLazyUpdate() throws InterruptedException {
+        private void startLazyUpdate() {
             trainInitializerService.initializeInLazyMode();
             compositionInitializerService.initializeInLazyMode();
             trainRunningMessageInitializerService.initializeInLazyMode();
