@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater;
 
 import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Segment;
 import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
@@ -26,16 +25,13 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -151,8 +147,6 @@ public class DatabaseUpdaterApplication  {
 
             startInitPhaseIfNeeded();
 
-            startScheduleUpdates();
-
             startUpdating();
         }
 
@@ -167,18 +161,6 @@ public class DatabaseUpdaterApplication  {
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
-                }
-            });
-        }
-
-        private void startScheduleUpdates() {
-            SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = new SimpleAsyncTaskExecutor();
-            simpleAsyncTaskExecutor.execute(() -> {
-                try {
-                    gtfsService.generateGTFS();
-                    scheduleService.extractSchedules();
-                } catch (Exception e) {
-                    log.error("Error creating GTFS.zip or Schedules", e);
                 }
             });
         }
