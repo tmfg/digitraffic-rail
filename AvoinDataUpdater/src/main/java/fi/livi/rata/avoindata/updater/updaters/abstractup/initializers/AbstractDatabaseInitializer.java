@@ -1,17 +1,13 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import javax.annotation.PostConstruct;
-
 import com.amazonaws.xray.AWSXRay;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +16,20 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
+import javax.annotation.PostConstruct;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> {
     private static final Logger log = LoggerFactory.getLogger(AbstractDatabaseInitializer.class);
+    private static final int NUMBER_OF_THREADS_TO_INITIALIZE_WITH = 1;
 
     @Autowired
     private InitializerRetryTemplate retryTemplate;
@@ -131,7 +131,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     public ExecutorService addDataInitializeTasks(final LocalDate startDate, final LocalDate endDate) {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_THREADS_TO_INITIALIZE_WITH);
 
         log.info("Adding initialization tasks from {} to {}", startDate, endDate);
 
