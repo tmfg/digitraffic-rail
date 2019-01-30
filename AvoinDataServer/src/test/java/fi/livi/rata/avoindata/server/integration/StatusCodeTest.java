@@ -63,10 +63,10 @@ public class StatusCodeTest {
 
     @Test
     public void timestampsMatchOnPrdOneAndTwo() throws ExecutionException, InterruptedException, IOException {
-        final String prd1Url = "http://front-prd.integraatiot.eu/api/v1/schedules/1?date=2017-05-19";
+        final String prd1Url = "http://alb.prd.rata.digitraffic.fi/api/v1/schedules/1?date=2017-05-19";
 //        final String prd1Url = BASE_URL + "api/v1/schedules/1?date=2017-05-19";
 
-        final String prd2Url = "http://front-prd2.integraatiot.eu/api/v1/schedules/1?date=2017-05-19";
+        final String prd2Url = "http://alb.prd2.rata.digitraffic.fi/api/v1/schedules/1?date=2017-05-19";
 //        final String prd2Url = BASE_URL + "api/v1/schedules/1?date=2017-05-19";
 
         final Map<String, Future<Response>> responseFutures = getResponseFutures(Sets.newHashSet(prd1Url, prd2Url));
