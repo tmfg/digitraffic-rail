@@ -70,9 +70,4 @@ public class ServerApplication {
     public Filter TracingFilter() {
         return new AWSXRayServletFilter("avoindataserver");
     }
-
-    @PostConstruct
-    public void setEmitter() {
-        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
-    }
 }
