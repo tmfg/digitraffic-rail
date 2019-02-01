@@ -79,16 +79,16 @@ public class MQTTPublishService {
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
 
-            final Entity xrayEntity = AWSXRay.getTraceEntity();
+            //final Entity xrayEntity = AWSXRay.getTraceEntity();
 
             Future<Message<String>> future = executor.submit(() -> {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    AWSXRay.setTraceEntity(xrayEntity);
-                    AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
-                        MQTTGateway.sendToMqtt(message);
-                    });
+                    //AWSXRay.setTraceEntity(xrayEntity);
+                    //AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
+                    //});
+                    MQTTGateway.sendToMqtt(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
