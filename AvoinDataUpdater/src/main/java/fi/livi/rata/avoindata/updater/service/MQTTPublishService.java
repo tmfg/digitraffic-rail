@@ -81,7 +81,7 @@ public class MQTTPublishService {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    AWSXRay.createSegment("MQTTGateway.sendToMqtt", (subsegment) -> {
+                    AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
                         MQTTGateway.sendToMqtt(message);
                     });
 
