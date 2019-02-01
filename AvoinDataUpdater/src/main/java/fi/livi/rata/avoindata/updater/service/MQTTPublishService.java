@@ -8,6 +8,8 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 
+import com.amazonaws.xray.AWSXRayRecorder;
+import com.amazonaws.xray.entities.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,10 +79,13 @@ public class MQTTPublishService {
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
 
+            final Entity xrayEntity = AWSXRay.getTraceEntity();
+
             Future<Message<String>> future = executor.submit(() -> {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
+                    AWSXRay.setTraceEntity(xrayEntity);
                     AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
                         MQTTGateway.sendToMqtt(message);
                     });
