@@ -1,22 +1,11 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Function;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,15 +13,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.function.Function;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 public class GTFSWritingService {
@@ -54,16 +44,16 @@ public class GTFSWritingService {
 
     @Transactional
     public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
-        List<File> files = writeGtfsFiles(gtfsDto);
-
-        writeGtfsZipFile(files, zipFileName);
-
         GTFS gtfs = new GTFS();
         gtfs.data = Files.readAllBytes(new File(zipFileName).toPath());
         gtfs.created = dateProvider.nowInHelsinki();
         gtfs.fileName = zipFileName;
 
         gtfsRepository.persist(Arrays.asList(gtfs));
+
+        List<File> files = writeGtfsFiles(gtfsDto);
+
+        writeGtfsZipFile(files, zipFileName);
 
         return files;
     }
@@ -76,9 +66,9 @@ public class GTFSWritingService {
                         agency -> String.format("%s,%s,%s,%s,,fi", agency.id, agency.name, agency.url, agency.timezone)));
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
-                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign", stop -> String
+                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign,stop_code", stop -> String
                         .format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
-                                stop.longitude, stop.source != null ? stop.source.name : stop.stopCode)));
+                                stop.longitude, stop.source != null ? stop.source.name : stop.stopCode, stop.source.shortCode)));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
                 route -> String.format("%s,%s,%s,%s,,%s", route.routeId, route.agencyId, route.shortName, route.longName, route.type)));
@@ -88,7 +78,7 @@ public class GTFSWritingService {
 
         List<StopTime> stopTimes = new ArrayList<>();
         List<Calendar> calendars = new ArrayList<>();
-        List<CalendarDate> calendarDates = new ArrayList<>();
+        Set<CalendarDate> calendarDates = new HashSet<>();
         for (final Trip trip : gtfsDto.trips) {
             stopTimes.addAll(trip.stopTimes);
             calendars.add(trip.calendar);
@@ -107,7 +97,7 @@ public class GTFSWritingService {
                                 formatBoolean(c.wednesday), formatBoolean(c.thursday), formatBoolean(c.friday), formatBoolean(c.saturday),
                                 formatBoolean(c.sunday), format(c.startDate), format(c.endDate))));
 
-        files.add(write(getPath("calendar_dates.txt"), calendarDates, "service_id,date,exception_type",
+        files.add(write(getPath("calendar_dates.txt"), new ArrayList<>(calendarDates), "service_id,date,exception_type",
                 cd -> String.format("%s,%s,%s", cd.serviceId, format(cd.date), cd.exceptionType)));
 
         final LocalDate minStartDate = gtfsDto.trips.stream().min(Comparator.comparing(left -> left.calendar.startDate))
@@ -115,9 +105,9 @@ public class GTFSWritingService {
         final LocalDate maxEndDate = gtfsDto.trips.stream().max(Comparator.comparing(left -> left.calendar.endDate)).get().calendar.endDate;
 
         files.add(write(getPath("feed_info.txt"), Lists.newArrayList(1),
-                "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
-                        .format("%s,%s,%s,%s,%s,", "Finnish Transport Agency", "http://www.liikennevirasto.fi", "fi", format(minStartDate),
-                                format(maxEndDate))));
+                "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email", cd -> String
+                        .format("%s,%s,%s,%s,%s,%s,%s", "Traffic Management Finland", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
+                                format(maxEndDate), dateProvider.nowInHelsinki().toEpochSecond(), "digitraffic@solita.fi")));
 
 
         return files;
@@ -181,15 +171,20 @@ public class GTFSWritingService {
 
     private <E> File write(String filename, List<E> entities, String header, Function<E, String> converter) {
         final File file = new File(filename);
-        try (PrintStream stream = new PrintStream(file)) {
-            stream.println(header);
+
+        try (OutputStreamWriter writer =
+                     new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8)) {
+            writer.write(header + "\n");
 
             for (final E entity : entities) {
-                stream.println(converter.apply(entity));
+                writer.write(converter.apply(entity) + "\n");
             }
-        } catch (FileNotFoundException e) {
-            log.error("Error writing GTFS files", e);
+        } catch (FileNotFoundException e1) {
+            log.error("Error writing GTFS file", e1);
+        } catch (IOException e1) {
+            log.error("Error writing GTFS file", e1);
         }
+
         return file;
     }
 

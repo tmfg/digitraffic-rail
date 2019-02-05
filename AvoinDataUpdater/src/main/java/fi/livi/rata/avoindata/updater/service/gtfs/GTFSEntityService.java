@@ -9,8 +9,8 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ public class GTFSEntityService {
             route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
 
             if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
-                route.shortName = String.format("%s - %s", firstStop.stopId, lastStop.stopId);
+                route.shortName = "";
             } else {
                 route.shortName = schedule.commuterLineId;
             }
@@ -184,7 +184,7 @@ public class GTFSEntityService {
             }
 
             log.info("Creating cancellation trip from {}", scheduleCancellation);
-            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement");
+            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement" + scheduleCancellation.id);
             partialCancellationTrip.calendar.calendarDates.clear();
 
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(
