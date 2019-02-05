@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -36,12 +35,6 @@ public class GTFSService {
 
     @Autowired
     private ScheduleProviderService scheduleProviderService;
-
-    @PostConstruct
-    public void testup() {
-        generateGTFS();
-    }
-
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
     public void generateGTFS() {
