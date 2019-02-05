@@ -32,9 +32,6 @@ public class GTFSService {
     private GTFSWritingService gtfsWritingService;
 
     @Autowired
-    private GTFSTrainTypeService gtfsTrainTypeService;
-
-    @Autowired
     private DateProvider dp;
 
     @Autowired

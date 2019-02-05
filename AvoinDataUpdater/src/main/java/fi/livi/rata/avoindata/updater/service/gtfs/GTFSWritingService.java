@@ -67,7 +67,7 @@ public class GTFSWritingService {
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
                 "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign,stop_code", stop -> String
-                        .format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
+                        .format("%s,%s,,%s,%s,,,,%s,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
                                 stop.longitude, stop.source != null ? stop.source.name : stop.stopCode, stop.source.shortCode)));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",

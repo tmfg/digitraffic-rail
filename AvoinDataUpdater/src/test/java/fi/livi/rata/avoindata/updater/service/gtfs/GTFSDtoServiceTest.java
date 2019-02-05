@@ -316,7 +316,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         assertAgencies(gtfsDto.agencies, 10);
-        assertRoutes(gtfsDto.routes, "HKI - KLI");
+        assertRoutes(gtfsDto.routes, "");
         assertTrips(gtfsDto.trips, 3);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
@@ -370,7 +370,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals(1, routes.size());
         final Route route = routes.iterator().next();
         Assert.assertEquals(10, route.agencyId);
-        Assert.assertEquals(102, route.type);
+        Assert.assertEquals(2, route.type);
         Assert.assertEquals(shortName, route.shortName);
     }
 
