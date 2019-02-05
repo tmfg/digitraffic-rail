@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.spring.aop.XRayTraced;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +39,7 @@ public abstract class AEntityUpdater<T> {
     }
 
     private void wrapUpdate() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
-            update();
-        });
+        update();
     }
 
     protected abstract void update();
