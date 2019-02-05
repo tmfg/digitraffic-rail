@@ -44,16 +44,16 @@ public class GTFSWritingService {
 
     @Transactional
     public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
+        List<File> files = writeGtfsFiles(gtfsDto);
+
+        writeGtfsZipFile(files, zipFileName);
+
         GTFS gtfs = new GTFS();
         gtfs.data = Files.readAllBytes(new File(zipFileName).toPath());
         gtfs.created = dateProvider.nowInHelsinki();
         gtfs.fileName = zipFileName;
 
         gtfsRepository.persist(Arrays.asList(gtfs));
-
-        List<File> files = writeGtfsFiles(gtfsDto);
-
-        writeGtfsZipFile(files, zipFileName);
 
         return files;
     }
