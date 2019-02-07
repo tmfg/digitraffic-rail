@@ -54,5 +54,4 @@ public class ForecastPersistService extends AbstractPersistService<Forecast> {
         forecastRepository.persist(entities);
     }
 
-
 }

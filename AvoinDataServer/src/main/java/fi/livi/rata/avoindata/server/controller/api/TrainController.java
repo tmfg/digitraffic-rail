@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -31,7 +32,7 @@ import java.util.stream.Stream;
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
-public class TrainController {
+public class TrainController extends ADataController {
     public static final int MAX_ANNOUNCED_TRAINS = 2500;
     @Autowired
     private TrainRepository trainRepository;

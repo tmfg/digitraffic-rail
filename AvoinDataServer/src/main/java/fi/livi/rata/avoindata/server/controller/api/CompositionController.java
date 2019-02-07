@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;

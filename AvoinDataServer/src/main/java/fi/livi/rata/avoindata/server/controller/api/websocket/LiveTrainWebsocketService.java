@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.websocket;
 
+import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
@@ -37,30 +38,35 @@ public class LiveTrainWebsocketService {
     private AnnouncingService announcingService;
 
     @PostConstruct
-    @Transactional
     private void init() {
-        lastFetchedVersion = trainRepository.getMaxVersion();
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
+
+            lastFetchedVersion = trainRepository.getMaxVersion();
+        });
     }
 
     @Scheduled(fixedDelay = 10000L)
     private void updateWebsockets() {
-        final List<TrainId> trainIds = getChangedTrains();
-        if (!trainIds.isEmpty()) {
-            for (List<TrainId> trainIdPartition : Lists.partition(trainIds, NUMBER_OF_TRAINS_TO_ANNOUNCE)) {
-                List<Train> trainList = trainRepository.findTrains(new HashSet<>(trainIdPartition));
+        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment) -> {
 
-                for (final Train train : trainList) {
-                    localizationControllerAdvice.localizeTrain(train);
+            final List<TrainId> trainIds = getChangedTrains();
+            if (!trainIds.isEmpty()) {
+                for (List<TrainId> trainIdPartition : Lists.partition(trainIds, NUMBER_OF_TRAINS_TO_ANNOUNCE)) {
+                    List<Train> trainList = trainRepository.findTrains(new HashSet<>(trainIdPartition));
+
+                    for (final Train train : trainList) {
+                        localizationControllerAdvice.localizeTrain(train);
+                    }
+
+                    announceAll(trainList);
+                    announceSpecificTrains(trainList);
+                    announceStations(trainList);
+                    updateLastFetchedVersion(trainList);
+
+                    log.trace("Published {} new trains trough websocket", trainList.size());
                 }
-
-                announceAll(trainList);
-                announceSpecificTrains(trainList);
-                announceStations(trainList);
-                updateLastFetchedVersion(trainList);
-
-                log.trace("Published {} new trains trough websocket", trainList.size());
             }
-        }
+        });
     }
 
     private void announceStations(final List<Train> trains) {

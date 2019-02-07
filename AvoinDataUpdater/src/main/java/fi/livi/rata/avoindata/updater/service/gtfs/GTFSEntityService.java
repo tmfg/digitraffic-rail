@@ -9,8 +9,8 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ public class GTFSEntityService {
             route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
 
             if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
-                route.shortName = String.format("%s - %s", firstStop.stopId, lastStop.stopId);
+                route.shortName = "";
             } else {
                 route.shortName = schedule.commuterLineId;
             }
@@ -219,10 +219,8 @@ public class GTFSEntityService {
                 log.info("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
                 if (existingCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE &&
                         cancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
-                    log.warn("Merged two cancellations. {} with {}", existingCancellation, cancellation);
                     existingCancellation.cancelledRows.addAll(cancellation.cancelledRows);
                 } else if (existingCancellation.id < cancellation.id) {
-                    log.warn("Replaced cancellation {} with {}", existingCancellation, cancellation);
                     cancellations.put(cancellation.startDate, cancellation.endDate, cancellation);
                 }
             }

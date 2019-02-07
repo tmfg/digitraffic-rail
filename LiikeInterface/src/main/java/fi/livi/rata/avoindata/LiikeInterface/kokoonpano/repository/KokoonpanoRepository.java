@@ -1,13 +1,12 @@
 package fi.livi.rata.avoindata.LiikeInterface.kokoonpano.repository;
 
-import java.time.LocalDate;
-import java.util.List;
-
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Kokoonpano;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Kokoonpano;
+import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
@@ -74,8 +73,9 @@ public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
             "         from" +
             "            Junapaiva p " +
             "         where" +
-            "            p.aikataulu = aikataulu " +
-            "            and p.jupaTila = 'VOIMASSAOLEVA' " +
+            "            p.id.lahtopvm = u.lahtoPvm and " +
+            "            p.id.junanumero = cast(aikataulu.aikataulunJunanumero.junanumero as string) and " +
+            "            p.jupaTila = 'VOIMASSAOLEVA' " +
             "      )" +
             "      or " +
             "      (" +
@@ -86,7 +86,8 @@ public interface KokoonpanoRepository extends CrudRepository<Kokoonpano, Long> {
             "            from" +
             "               Junapaiva p " +
             "            where" +
-            "               p.aikataulu = aikataulu" +
+            "               p.id.lahtopvm = u.lahtoPvm and " +
+            "               p.id.junanumero = cast(aikataulu.aikataulunJunanumero.junanumero as string)" +
             "         )" +
             "      )" +
             "   )" +

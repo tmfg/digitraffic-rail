@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.config;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.bedatadriven.jackson.datatype.jts.JtsModule;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -47,6 +48,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
 @Component
+@XRayEnabled
 public class HttpInputObjectMapper extends ObjectMapper {
     public static final DateTimeFormatter ISO_FIXED_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(
             ZoneId.of("Z"));

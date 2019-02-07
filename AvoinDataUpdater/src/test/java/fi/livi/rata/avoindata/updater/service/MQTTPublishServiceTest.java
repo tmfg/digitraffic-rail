@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service;
 
 import java.time.LocalDate;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,12 +32,12 @@ public class MQTTPublishServiceTest extends BaseTest {
 
     @Transactional
     @Test
-    public void jsonViewsAndDateTimeFormatsShouldBeHonored() {
+    public void jsonViewsAndDateTimeFormatsShouldBeHonored() throws ExecutionException, InterruptedException {
         Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2000, 1, 1)));
 
         causeFactory.create(train.timeTableRows.get(0));
 
-        Message<String> message = mqttPublishService.publishEntity("testing/testtopic", train, TrainJsonView.LiveTrains.class);
+        Message<String> message = mqttPublishService.publishEntity("testing/testtopic", train, TrainJsonView.LiveTrains.class).get();
 
         DocumentContext json = JsonPath.parse(message.getPayload());
 
@@ -51,13 +52,13 @@ public class MQTTPublishServiceTest extends BaseTest {
 
     @Transactional
     @Test
-    public void specialCharactersShouldBeRemovedFromTopic() {
+    public void specialCharactersShouldBeRemovedFromTopic() throws ExecutionException, InterruptedException {
         assertTopic("testing/test+topic+#/123", "testing/testtopic/123");
     }
 
     @Transactional
     @Test
-    public void nullShouldBeEmpty() {
+    public void nullShouldBeEmpty() throws ExecutionException, InterruptedException {
         assertTopic("train-tracking/2018-11-12/43/RELEASE/VIA/155/null/null/null/null", "train-tracking/2018-11-12/43/RELEASE/VIA/155////");
         assertTopic("testing/null/nullify/nullable/null", "testing//nullify/nullable/");
         assertTopic("testing/null/nullify/nullable/nullable", "testing//nullify/nullable/nullable");
@@ -65,8 +66,8 @@ public class MQTTPublishServiceTest extends BaseTest {
         assertTopic("aws,beta/train-tracking/2018-10-26/F6418/OCCUPY/TPE/TPE_097/null/null/TPE_O097/TPE_T097", "aws,beta/train-tracking/2018-10-26/F6418/OCCUPY/TPE/TPE_097///TPE_O097/TPE_T097");
     }
 
-    private void assertTopic(String inputTopic, String publishedTopic) {
-        Message<String> message = mqttPublishService.publishString(inputTopic, "content");
+    private void assertTopic(String inputTopic, String publishedTopic) throws ExecutionException, InterruptedException {
+        Message<String> message = mqttPublishService.publishString(inputTopic, "content").get();
 
         Assert.assertEquals(publishedTopic, message.getHeaders().get(MqttHeaders.TOPIC));
     }

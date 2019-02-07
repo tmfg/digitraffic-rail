@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.updater;
 
+import com.amazonaws.xray.AWSXRay;
 import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
+import fi.livi.rata.avoindata.common.xray.ElasticUDPEmitter;
 import fi.livi.rata.avoindata.updater.service.CompositionService;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
@@ -23,15 +25,13 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
-import java.io.IOException;
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -78,6 +78,10 @@ public class DatabaseUpdaterApplication  {
         }
     }
 
+    @PostConstruct
+    public void setEmitter() {
+        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
+    }
 
     @Configuration
     public static class Runner implements CommandLineRunner {
@@ -135,35 +139,28 @@ public class DatabaseUpdaterApplication  {
 
 
         @Override
-        public void run(final String... args) throws RestClientException, SQLException, IOException, InterruptedException {
+        public void run(final String... args) throws RestClientException {
             if (Strings.isNullOrEmpty(liikeInterfaceUrl)) {
                 log.info("updater.liikeinterface-url is null. Skipping initilization.");
                 return;
             }
 
-            if (isInitiliazationNeeded()) {
-                log.info("Database needs to be initiliazed!");
-
-                clearDatabase();
-
-                initializeInLockMode();
-
-                startLazyUpdate();
-            }
-
-            startScheduleUpdates();
+            startInitPhaseIfNeeded();
 
             startUpdating();
         }
 
-        private void startScheduleUpdates() {
-            SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = new SimpleAsyncTaskExecutor();
-            simpleAsyncTaskExecutor.execute(() -> {
+        private void startInitPhaseIfNeeded() {
+            AWSXRay.createSegment("initiliazing", (subsegment) -> {
                 try {
-                    gtfsService.generateGTFS();
-                    scheduleService.extractSchedules();
+                    if (isInitiliazationNeeded()) {
+                        log.info("Database needs to be initiliazed!");
+                        clearDatabase();
+                        initializeInLockMode();
+                        startLazyUpdate();
+                    }
                 } catch (Exception e) {
-                    log.error("Error creating GTFS.zip or Schedules", e);
+                    throw new RuntimeException(e);
                 }
             });
         }
@@ -176,7 +173,7 @@ public class DatabaseUpdaterApplication  {
             forecastInitializerService.startUpdating(10000);
         }
 
-        private void startLazyUpdate() throws InterruptedException {
+        private void startLazyUpdate() {
             trainInitializerService.initializeInLazyMode();
             compositionInitializerService.initializeInLazyMode();
             trainRunningMessageInitializerService.initializeInLazyMode();

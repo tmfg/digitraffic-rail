@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
+import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
@@ -59,7 +60,6 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
         for (JourneySection journeySection : journeySections) {
             compositions.add(journeySection.composition);
         }
-
 
         try {
             mqttPublishService.publish(s -> String
