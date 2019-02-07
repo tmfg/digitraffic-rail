@@ -1,9 +1,10 @@
 package fi.livi.rata.avoindata.common.dao.train;
 
+import fi.livi.rata.avoindata.common.dao.localization.TrainLocalizer;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import org.hibernate.jpa.QueryHints;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
@@ -20,7 +21,8 @@ public class TrainStreamRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and " + IS_NOT_DELETED + " " + BASE_TRAIN_ORDER)
+    @Autowired
+    private TrainLocalizer trainLocalizer;
 
     public Stream<Train> getByTrainIds(Collection<TrainId> trainIds) {
         String jpql = BASE_TRAIN_SELECT + " where train.id in (?1) and " + IS_NOT_DELETED + " " + BASE_TRAIN_ORDER;
@@ -37,8 +39,11 @@ public class TrainStreamRepository {
     }
 
     private Stream<Train> getStream(String jpql, Object firstParameter) {
-        return entityManager.createQuery(jpql, Train.class)
+        Stream<Train> resultStream = entityManager.createQuery(jpql, Train.class)
                 .setParameter(1, firstParameter)
                 .setHint(QueryHints.HINT_FETCH_SIZE, 50).getResultStream();
+
+
+        return resultStream.map(train -> trainLocalizer.localize(train));
     }
 }

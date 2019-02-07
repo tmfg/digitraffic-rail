@@ -2,20 +2,18 @@ package fi.livi.rata.avoindata.server.controller.api.websocket;
 
 import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.localization.TrainLocalizer;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
-import fi.livi.rata.avoindata.server.advice.LocalizationControllerAdvice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -32,7 +30,7 @@ public class LiveTrainWebsocketService {
     private TrainRepository trainRepository;
 
     @Autowired
-    private LocalizationControllerAdvice localizationControllerAdvice;
+    private TrainLocalizer trainLocalizer;
 
     @Autowired
     private AnnouncingService announcingService;
@@ -55,7 +53,7 @@ public class LiveTrainWebsocketService {
                     List<Train> trainList = trainRepository.findTrains(new HashSet<>(trainIdPartition));
 
                     for (final Train train : trainList) {
-                        localizationControllerAdvice.localizeTrain(train);
+                        trainLocalizer.localize(train);
                     }
 
                     announceAll(trainList);
