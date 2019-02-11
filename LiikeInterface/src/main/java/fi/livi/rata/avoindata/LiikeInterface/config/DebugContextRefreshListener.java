@@ -14,7 +14,7 @@ import java.util.List;
 
 @Configuration
 public class DebugContextRefreshListener {
-    private List<String> printedProperties = Arrays.asList("spring.datasource.url", "spring.profiles.active");
+    private List<String> printedProperties = Arrays.asList("spring.datasource.url", "spring.profiles.active", "kupla.url");
     private Logger log = LoggerFactory.getLogger(DebugContextRefreshListener.class);
 
     @Autowired
