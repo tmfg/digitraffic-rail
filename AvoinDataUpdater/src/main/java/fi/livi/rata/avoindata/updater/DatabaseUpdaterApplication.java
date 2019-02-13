@@ -78,11 +78,6 @@ public class DatabaseUpdaterApplication  {
         }
     }
 
-    @PostConstruct
-    public void setEmitter() {
-        AWSXRay.getGlobalRecorder().setEmitter(new ElasticUDPEmitter());
-    }
-
     @Configuration
     public static class Runner implements CommandLineRunner {
 

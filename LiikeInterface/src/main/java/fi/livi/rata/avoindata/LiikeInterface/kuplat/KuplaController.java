@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.LiikeInterface.kuplat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
 import fi.livi.rata.avoindata.LiikeInterface.services.ClassifiedTrainFilter;
@@ -32,7 +33,7 @@ public class KuplaController {
 
     @RequestMapping(value = "/avoin/kuplas")
     @ResponseBody
-    public Iterable<JsonNode> getByVersion() throws InterruptedException, IOException {
+    public Iterable<JsonNode> getByVersion() throws IOException {
         final JsonNode kuplat = objectMapper.readTree(new URL(kuplaUrl));
 
         final JsonNode kuplatNodes = kuplat.get("kuplat");
@@ -41,6 +42,15 @@ public class KuplaController {
                 Lists.newArrayList(kuplatNodes.elements()),
                 n -> new JunapaivaPrimaryKey(n.get("junanumero").asText(), LocalDate.parse(n.get("lahtopaiva").asText())));
 
-        return filteredJunapaivaPrimaryKeys;
+        Iterable<JsonNode> filteredNullLocations = Iterables.filter(filteredJunapaivaPrimaryKeys, s -> {
+            if (s.get("sijainti") != null && s.get("sijainti").get("latitude") != null) {
+                return true;
+            } else {
+                log.info("Filtered train location because location is null {}", s);
+                return false;
+            }
+        });
+
+        return Lists.newArrayList(filteredNullLocations);
     }
 }

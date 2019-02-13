@@ -23,8 +23,8 @@ import java.util.Map;
 @Ignore
 public class TrainComparingTest extends BaseTest {
     //    public static final String DIGITRAFFIC_URL = "http://rata-beta.digitraffic.fi/api/v1/schedules?departure_date=";
-    public static final String PRD1_URL = "http://front-prd.integraatiot.eu/api/v1/schedules?departure_date=";
-    public static final String PRD2_URL = "http://front-prd2.integraatiot.eu/api/v1/schedules?departure_date=";
+    public static final String PRD1_URL = "http://alb.prd.rata.digitraffic.fi/api/v1/schedules?departure_date=";
+    public static final String PRD2_URL = "http://alb.prd2.rata.digitraffic.fi/api/v1/schedules?departure_date=";
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
