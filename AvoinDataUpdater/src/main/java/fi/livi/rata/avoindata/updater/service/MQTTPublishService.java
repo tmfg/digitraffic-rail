@@ -1,15 +1,8 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.amazonaws.xray.AWSXRay;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.function.Function;
-import javax.annotation.PostConstruct;
-
-import com.amazonaws.xray.AWSXRayRecorder;
-import com.amazonaws.xray.entities.Entity;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +13,12 @@ import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.updater.config.MQTTConfig;
+import javax.annotation.PostConstruct;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.function.Function;
 
 @Service
 public class MQTTPublishService {
@@ -79,15 +72,10 @@ public class MQTTPublishService {
 
             ZonedDateTime submittedAt = ZonedDateTime.now();
 
-            //final Entity xrayEntity = AWSXRay.getTraceEntity();
-
             Future<Message<String>> future = executor.submit(() -> {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    //AWSXRay.setTraceEntity(xrayEntity);
-                    //AWSXRay.createSubsegment("MQTTGateway.sendToMqtt", (subsegment) -> {
-                    //});
                     MQTTGateway.sendToMqtt(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
