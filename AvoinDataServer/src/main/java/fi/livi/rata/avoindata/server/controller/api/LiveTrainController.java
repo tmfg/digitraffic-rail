@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.dao.train.TrainStreamRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
@@ -21,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -29,18 +29,20 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
-@Transactional(timeout = 30, readOnly = true)
 public class LiveTrainController extends ADataController {
     @Autowired
     private TrainRepository trainRepository;
+
+    @Autowired
+    private TrainStreamRepository trainStreamRepository;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -72,16 +74,16 @@ public class LiveTrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @ApiOperation(value = "Returns trains that travel trough {station}")
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
-    public List<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
-            @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,
-            @RequestParam(required = false, defaultValue = "5") Integer arriving_trains,
-            @RequestParam(required = false, defaultValue = "5") Integer departed_trains,
-            @RequestParam(required = false, defaultValue = "5") Integer departing_trains,
-            @RequestParam(required = false) Integer minutes_before_departure,
-            @RequestParam(required = false) Integer minutes_after_departure,
-            @RequestParam(required = false) Integer minutes_before_arrival,
-            @RequestParam(required = false) Integer minutes_after_arrival,
-            @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
+    public Stream<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
+                                         @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,
+                                         @RequestParam(required = false, defaultValue = "5") Integer arriving_trains,
+                                         @RequestParam(required = false, defaultValue = "5") Integer departed_trains,
+                                         @RequestParam(required = false, defaultValue = "5") Integer departing_trains,
+                                         @RequestParam(required = false) Integer minutes_before_departure,
+                                         @RequestParam(required = false) Integer minutes_after_departure,
+                                         @RequestParam(required = false) Integer minutes_before_arrival,
+                                         @RequestParam(required = false) Integer minutes_after_arrival,
+                                         @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
         if (minutes_after_arrival != null && minutes_after_departure != null && minutes_before_arrival != null &&
                 minutes_before_departure != null) {
             return this.getLiveTrainsUsingTimeFiltering(station, version, minutes_before_departure, minutes_after_departure,
@@ -92,28 +94,28 @@ public class LiveTrainController extends ADataController {
         }
     }
 
-    public List<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
-            int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
+    public Stream<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
+                                                             int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
         assertParameters(arrived_trains, arriving_trains, departed_trains, departing_trains);
 
         List<Object[]> liveTrains = trainRepository.findLiveTrains(station, departed_trains, departing_trains, arrived_trains,
                 arriving_trains, !include_nonstopping);
 
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
-        List<Train> trains = new ArrayList<>();
+
+        CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
+
         if (!trainsToRetrieve.isEmpty()) {
-            trains = trainRepository.findTrains(trainsToRetrieve);
+            return trainStreamRepository.getByTrainIds(trainsToRetrieve);
+        } else {
+            return Stream.of();
         }
-
-        forStationLiveTrains.setCacheParameter(response, trains, version);
-
-        return trains;
     }
 
 
-    public List<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
-            Integer minutes_after_departure, Integer minutes_before_arrival, Integer minutes_after_arrival, Boolean include_nonstopping,
-            HttpServletResponse response) {
+    public Stream<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
+                                                       Integer minutes_after_departure, Integer minutes_before_arrival, Integer minutes_after_arrival, Boolean include_nonstopping,
+                                                       HttpServletResponse response) {
         final ZonedDateTime now = ZonedDateTime.now();
 
         ZonedDateTime startArrival = now.minusMinutes(minutes_after_arrival);
@@ -125,17 +127,16 @@ public class LiveTrainController extends ADataController {
         List<LiveTimeTableTrain> liveTrains = trainRepository.findLiveTrains(station, startDeparture, endDeparture, !include_nonstopping,
                 version, startArrival, endArrival);
 
-        List<Train> trains = new ArrayList<>();
+        CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
+
         if (!liveTrains.isEmpty()) {
             final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
             final List<TrainId> uniqueTrainIds = ImmutableSet.copyOf(trainIds).asList();
-            trains = trainRepository.findTrains(uniqueTrainIds);
+            return trainStreamRepository.getByTrainIds(uniqueTrainIds);
         }
-
-        forStationLiveTrains.setCacheParameter(response, trains, version);
-
-
-        return trains;
+        else {
+            return Stream.of();
+        }
     }
 
     private void assertParameters(int arrived_trains, int arriving_trains, int departed_trains, int departing_trains) {

@@ -27,7 +27,7 @@ public class JacksonConfig {
             jackson2ObjectMapperBuilder.serializers(new ZonedDateTimeSerializer(ISO_FIXED_FORMAT));
             jackson2ObjectMapperBuilder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-            jackson2ObjectMapperBuilder.modules(new Jdk8Module(), new JavaTimeModule(), new JtsModule());
+            jackson2ObjectMapperBuilder.modules(new Jdk8Module(), new JavaTimeModule(), new JtsModule(), new StreamModule());
         };
     }
 }

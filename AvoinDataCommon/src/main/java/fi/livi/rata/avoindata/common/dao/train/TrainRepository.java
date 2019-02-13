@@ -27,8 +27,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   left join fetch c.detailedCategoryCode detailedCategoryCode " +
             "   left join fetch c.thirdCategoryCode thirdCategoryCode " +
             "   left join fetch timeTableRow.trainReadies tr ";
-    //    String BASE_TRAIN_SELECT = "select distinct train from Train train inner join fetch train.timeTableRows timeTableRow left join
-    // fetch timeTableRow.causes c left join fetch timeTableRow.trainReady tr ";
+
     String BASE_TRAIN_ORDER = " order by train.id.departureDate, train.id.trainNumber, timeTableRow.scheduledTime, timeTableRow.type";
     String IS_NOT_DELETED = "(train.deleted is null or train.deleted = false)";
 
@@ -141,11 +140,6 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
 
     @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and " + IS_NOT_DELETED + BASE_TRAIN_ORDER)
     Train findByDepartureDateAndTrainNumber(LocalDate departureDate, Long trainNumber);
-
-    @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and (?2 is null OR train.id.trainNumber = ?2) and " + IS_NOT_DELETED +
-            BASE_TRAIN_ORDER)
-    List<Train> findByDepartureAndTrainNumber(LocalDate date, Long trainNumber);
-
 
     @Query("select t.id from Train t where " + "t.version > ?1 order by t.version desc")
     List<TrainId> findByVersionGreaterThan(Long version, Pageable pageable);
