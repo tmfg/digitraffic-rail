@@ -10,6 +10,6 @@ rata.digitraffic.fi koostuu neljästä komponentista:
 * AvoindataUpdater
     * Hakee tietoja lähdejärjestelmistä ja pitää tietokantaa siistinä
 * LiikeInterface
-    * Liike-järjetelmässä sijaitseva rajapinta, jota kautta AvoinDataUpdater hakee tietonsa
+    * Liike-järjestelmässä sijaitseva rajapinta, jota kautta AvoinDataUpdater hakee tietonsa
 * AvoinDataCommon
     * Yhteisiä toimintoja em. mainituille komponenteille. Mm. tietokannasta haku
