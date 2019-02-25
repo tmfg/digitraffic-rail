@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -72,7 +71,7 @@ public class LiveTrainController extends ADataController {
     }
 
     @JsonView(TrainJsonView.LiveTrains.class)
-    @ApiOperation(value = "Returns trains that travel trough {station}")
+    @ApiOperation(value = "Returns trains that travel trough {station}", response = Train.class, responseContainer = "List")
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
     public Stream<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
                                          @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,

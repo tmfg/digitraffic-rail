@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -99,7 +98,7 @@ public class TrainController extends ADataController {
         return trains;
     }
 
-    @ApiOperation(value = "Returns trains run on {departure_date}")
+    @ApiOperation(value = "Returns trains run on {departure_date}", response = Train.class, responseContainer = "List")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public Stream<Train> getTrainsByDepartureDate(
