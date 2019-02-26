@@ -176,4 +176,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
 
     @Query("select distinct train from Train train left join fetch train.timeTableRows timeTableRow where train.id.departureDate = ?1")
     List<Train> findByDepartureDateFull(LocalDate date);
+
+    @Query("select train from Train train where train.id.departureDate < ?1 and train.runningCurrently = true")
+    List<Train> findRunningTrains(LocalDate maxDepartureDate);
 }
