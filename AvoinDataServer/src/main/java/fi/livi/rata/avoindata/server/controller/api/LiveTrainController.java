@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.dao.train.TrainStreamRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
@@ -21,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -28,20 +28,21 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 public class LiveTrainController extends ADataController {
-    @Autowired
-    private TrainRepository trainRepository;
+    public static final int TRAIN_FETCH_SIZE = 50;
 
     @Autowired
-    private TrainStreamRepository trainStreamRepository;
+    private TrainRepository trainRepository;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -73,7 +74,7 @@ public class LiveTrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @ApiOperation(value = "Returns trains that travel trough {station}", response = Train.class, responseContainer = "List")
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
-    public Stream<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
+    public List<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
                                          @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,
                                          @RequestParam(required = false, defaultValue = "5") Integer arriving_trains,
                                          @RequestParam(required = false, defaultValue = "5") Integer departed_trains,
@@ -93,8 +94,8 @@ public class LiveTrainController extends ADataController {
         }
     }
 
-    public Stream<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
-                                                             int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
+    public List<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
+                                                           int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
         assertParameters(arrived_trains, arriving_trains, departed_trains, departing_trains);
 
         List<Object[]> liveTrains = trainRepository.findLiveTrains(station, departed_trains, departing_trains, arrived_trains,
@@ -105,14 +106,36 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return trainStreamRepository.getByTrainIds(trainsToRetrieve);
+            return getTrains(trainsToRetrieve);
         } else {
-            return Stream.of();
+            return Lists.newArrayList();
         }
     }
 
+    private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
+        List<Future<List<Train>>> trainStreamFutures = new ArrayList<>();
+        SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = new SimpleAsyncTaskExecutor();
+        for (List<TrainId> trainIds : Lists.partition(trainsToRetrieve, TRAIN_FETCH_SIZE)) {
+            Future<List<Train>> streamFuture = simpleAsyncTaskExecutor.submit(() -> trainRepository.findTrains(trainIds));
+            trainStreamFutures.add(streamFuture);
+        }
 
-    public Stream<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
+        List<Train> finalTrains = new ArrayList<>();
+        for (Future<List<Train>> trainStreamFuture : trainStreamFutures) {
+            try {
+                finalTrains.addAll(trainStreamFuture.get());
+            } catch (Exception e) {
+                log.error("Error fetching trains", e);
+            }
+        }
+
+        Collections.sort(finalTrains, Train::compareTo);
+
+        return finalTrains;
+    }
+
+
+    public List<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
                                                        Integer minutes_after_departure, Integer minutes_before_arrival, Integer minutes_after_arrival, Boolean include_nonstopping,
                                                        HttpServletResponse response) {
         final ZonedDateTime now = ZonedDateTime.now();
@@ -131,10 +154,9 @@ public class LiveTrainController extends ADataController {
         if (!liveTrains.isEmpty()) {
             final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
             final List<TrainId> uniqueTrainIds = ImmutableSet.copyOf(trainIds).asList();
-            return trainStreamRepository.getByTrainIds(uniqueTrainIds);
-        }
-        else {
-            return Stream.of();
+            return getTrains(uniqueTrainIds);
+        } else {
+            return Lists.newArrayList();
         }
     }
 

@@ -112,6 +112,10 @@ public class TrackBoundingBoxesService {
                         "62.35964523613726],[21.224513053894043,62.360302235532],[21.221938133239746,62.36436336699908]," +
                         "[21.22082233428955,62.36193471719653],[21.221165657043457,62.35588214427196],[21.21734619140625," +
                         "62.348713044626706]]");
+
+        //Kokkola (Ykspihlaja)
+        tree = createPrivateTrack(tree, "[[23.032774,63.848784],[23.033256,63.849739],[23.034149,63.850628],[23.034841,63.851561],[23.035697,63.85247],[23.036315,63.853081],[23.036921,63.853731],[23.037423,63.854354],[23.037424,63.854354],[23.037425,63.854354],[23.037427,63.854355],[23.037428,63.854355],[23.037432,63.854356],[23.037439,63.854355],[23.037489,63.854327],[23.037743,63.854608],[23.038064,63.85503],[23.03843,63.855537],[23.03874,63.856053],[23.038964,63.856286],[23.038961,63.856285],[23.038959,63.856285],[23.038953,63.856284],[23.038948,63.856284],[23.038945,63.856284],[23.038941,63.856284],[23.038941,63.856283],[23.038943,63.856283],[23.038943,63.856284],[23.038942,63.856284],[23.038936,63.856284],[23.038936,63.856285],[23.038943,63.856286],[23.038948,63.856286],[23.038947,63.856286],[23.038945,63.856287],[23.038943,63.856287],[23.038943,63.856288],[23.038944,63.856288]]");
+
         return tree;
     }
 
@@ -137,7 +141,7 @@ public class TrackBoundingBoxesService {
     }
 
     private RTree<TrainBoundary, Geometry> createPrivateTrack(RTree<TrainBoundary, Geometry> tree,
-            final String trackJson) throws IOException {
+                                                              final String trackJson) throws IOException {
         final List<List<Double>> track = Arrays.asList(objectMapper.readValue(trackJson, List.class)).get(0);
 
         for (final PreviousAndNext<List<Double>> listPreviousAndNext : PreviousAndNext.build(Lists.newArrayList(track.iterator()))) {
@@ -159,7 +163,7 @@ public class TrackBoundingBoxesService {
     }
 
     private RTree<TrainBoundary, Geometry> createAndAddBoundingBoxToTree(RTree<TrainBoundary, Geometry> tree, final Point startingPoint,
-            final Point endingPoint) {
+                                                                         final Point endingPoint) {
         final List<Point> boundingBox = boundingBoxService.createBoundingBox(startingPoint, endingPoint, DISTANCE_FROM_LINE);
 
         final Rectangle minMaxRectangle = createMinMaxRectangle(boundingBox);

@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -89,13 +88,13 @@ public class RewriteController {
 
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = "station", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public Stream<Train> getStationsTrainsLimitByNumber(@RequestParam String station,
-            @RequestParam(required = false, defaultValue = "0") long version,
-            @RequestParam(required = false, defaultValue = "5") int arrived_trains,
-            @RequestParam(required = false, defaultValue = "5") int arriving_trains,
-            @RequestParam(required = false, defaultValue = "5") int departed_trains,
-            @RequestParam(required = false, defaultValue = "5") int departing_trains,
-            @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
+    public List<Train> getStationsTrainsLimitByNumber(@RequestParam String station,
+                                                      @RequestParam(required = false, defaultValue = "0") long version,
+                                                      @RequestParam(required = false, defaultValue = "5") int arrived_trains,
+                                                      @RequestParam(required = false, defaultValue = "5") int arriving_trains,
+                                                      @RequestParam(required = false, defaultValue = "5") int departed_trains,
+                                                      @RequestParam(required = false, defaultValue = "5") int departing_trains,
+                                                      @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
         return liveTrainController.getLiveTrainsUsingQuantityFiltering(station, version, arrived_trains, arriving_trains, departed_trains,
                 departing_trains, include_nonstopping, response);
     }
@@ -103,10 +102,10 @@ public class RewriteController {
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = {"station", "minutes_before_departure", "minutes_after_departure",
             "minutes_before_arrival", "minutes_after_arrival"}, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public Stream<Train> getStationsTrainsLimitByTime(@RequestParam(required = true) String station,
-            @RequestParam(defaultValue = "0") long version, @RequestParam int minutes_before_departure,
-            @RequestParam int minutes_after_departure, @RequestParam int minutes_before_arrival, @RequestParam int minutes_after_arrival,
-            @RequestParam(defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
+    public List<Train> getStationsTrainsLimitByTime(@RequestParam(required = true) String station,
+                                                    @RequestParam(defaultValue = "0") long version, @RequestParam int minutes_before_departure,
+                                                    @RequestParam int minutes_after_departure, @RequestParam int minutes_before_arrival, @RequestParam int minutes_after_arrival,
+                                                    @RequestParam(defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
         return liveTrainController.getLiveTrainsUsingTimeFiltering(station, version, minutes_before_departure, minutes_after_departure,
                 minutes_before_arrival, minutes_after_arrival, include_nonstopping, response);
     }
