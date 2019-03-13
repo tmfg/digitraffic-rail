@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -32,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,8 @@ public class LiveTrainController extends ADataController {
 
     @Value("${avoindataserver.livetrains.maxTrainRerieveRequest:1000}")
     private int maxTrainRetrieveRequest;
+
+    private ExecutorService executor = Executors.newFixedThreadPool(10);
 
     private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
@@ -114,9 +117,10 @@ public class LiveTrainController extends ADataController {
 
     private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
         List<Future<List<Train>>> trainStreamFutures = new ArrayList<>();
-        SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = new SimpleAsyncTaskExecutor();
-        for (List<TrainId> trainIds : Lists.partition(trainsToRetrieve, TRAIN_FETCH_SIZE)) {
-            Future<List<Train>> streamFuture = simpleAsyncTaskExecutor.submit(() -> trainRepository.findTrains(trainIds));
+
+        ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
+        for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
+            Future<List<Train>> streamFuture = executor.submit(() -> trainRepository.findTrains(trainIds));
             trainStreamFutures.add(streamFuture);
         }
 
@@ -152,9 +156,7 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!liveTrains.isEmpty()) {
-            final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
-            final List<TrainId> uniqueTrainIds = ImmutableSet.copyOf(trainIds).asList();
-            return getTrains(uniqueTrainIds);
+            return getTrains(Lists.transform(liveTrains, s -> s.id));
         } else {
             return Lists.newArrayList();
         }
