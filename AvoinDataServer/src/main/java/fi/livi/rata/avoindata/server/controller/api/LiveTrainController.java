@@ -116,26 +116,26 @@ public class LiveTrainController extends ADataController {
     }
 
     private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
-        List<Future<List<Train>>> trainStreamFutures = new ArrayList<>();
+        List<Future<List<Train>>> trainFutures = new ArrayList<>();
 
         ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
         for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
             Future<List<Train>> streamFuture = executor.submit(() -> trainRepository.findTrains(trainIds));
-            trainStreamFutures.add(streamFuture);
+            trainFutures.add(streamFuture);
         }
 
-        List<Train> finalTrains = new ArrayList<>();
-        for (Future<List<Train>> trainStreamFuture : trainStreamFutures) {
+        List<Train> trains = new ArrayList<>();
+        for (Future<List<Train>> trainFuture : trainFutures) {
             try {
-                finalTrains.addAll(trainStreamFuture.get());
+                trains.addAll(trainFuture.get());
             } catch (Exception e) {
                 log.error("Error fetching trains", e);
             }
         }
 
-        Collections.sort(finalTrains, Train::compareTo);
+        Collections.sort(trains, Train::compareTo);
 
-        return finalTrains;
+        return trains;
     }
 
 
