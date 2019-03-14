@@ -1,22 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.train;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Index;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-
-import org.hibernate.annotations.Type;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -24,6 +7,14 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Entity
 @Table(indexes = {@Index(name = "train_trainNumber_departureDate", columnList = "trainNumber,departureDate", unique = true), @Index(name
@@ -94,8 +85,8 @@ public class Train implements Comparable<Train> {
     }
 
     public Train(final Long trainNumber, final LocalDate departureDate, final int operatorUICCode, final String operatorShortCode,
-            final long trainCategoryId, final long trainTypeId, final String commuterLineID, final boolean runningCurrently,
-            final boolean cancelled, final Long version, final TimetableType timetableType, final ZonedDateTime timetableAcceptanceDate) {
+                 final long trainCategoryId, final long trainTypeId, final String commuterLineID, final boolean runningCurrently,
+                 final boolean cancelled, final Long version, final TimetableType timetableType, final ZonedDateTime timetableAcceptanceDate) {
         this.id = new TrainId(trainNumber, departureDate);
         this.trainCategoryId = trainCategoryId;
         this.trainTypeId = trainTypeId;
@@ -117,15 +108,12 @@ public class Train implements Comparable<Train> {
         return String.format("%s: %s", id.departureDate, id.trainNumber);
     }
 
-    private static final Comparator<Train> COMPARATOR = new Comparator<Train>() {
-        @Override
-        public int compare(final Train t1, final Train t2) {
-            int trainNumberCompare = t1.id.trainNumber.compareTo(t2.id.trainNumber);
-            if (trainNumberCompare != 0) {
-                return trainNumberCompare;
-            }
-            return t1.id.departureDate.compareTo(t2.id.departureDate);
+    private static final Comparator<Train> COMPARATOR = (t1, t2) -> {
+        int trainNumberCompare = t1.id.departureDate.compareTo(t2.id.departureDate);
+        if (trainNumberCompare != 0) {
+            return trainNumberCompare;
         }
+        return t1.id.trainNumber.compareTo(t2.id.trainNumber);
     };
 
     @Override
