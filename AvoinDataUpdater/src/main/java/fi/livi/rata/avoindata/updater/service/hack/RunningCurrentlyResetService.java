@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,7 +27,6 @@ public class RunningCurrentlyResetService {
     private DateProvider dateProvider;
 
 
-    @Transactional
     @Scheduled(cron = "${updater.running-currently-reset-cron}", zone = "Europe/Helsinki")
     public void resetOldRunningTrains() {
         LocalDate maxDepartureDate = dateProvider.dateInHelsinki().minusDays(2);
@@ -40,7 +38,7 @@ public class RunningCurrentlyResetService {
                 oldRunningTrain.runningCurrently = false;
                 oldRunningTrain.version = maxVersion + 1;
 
-                log.info("Resetting running-currently for {}", oldRunningTrain.id);
+                log.info("Resetting running-currently for {} at version", oldRunningTrain.id, oldRunningTrain.version);
             }
 
             trainRepository.saveAll(oldRunningTrains);
