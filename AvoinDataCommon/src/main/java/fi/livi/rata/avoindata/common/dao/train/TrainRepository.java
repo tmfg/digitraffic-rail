@@ -116,6 +116,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     List<Object[]> findLiveTrains(long version, int minutes);
 
     @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and " + IS_NOT_DELETED + " " + BASE_TRAIN_ORDER)
+    @Transactional(readOnly = true)
     List<Train> findTrains(Collection<TrainId> trainIds);
 
     @Query(BASE_TRAIN_SELECT + " " +
