@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController extends ADataController {
-    public static final int MAX_ANNOUNCED_TRAINS = 2500;
+    public static int MAX_ANNOUNCED_TRAINS = 2500;
     @Autowired
     private TrainRepository trainRepository;
     @Autowired

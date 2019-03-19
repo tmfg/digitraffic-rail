@@ -1,17 +1,15 @@
 package fi.livi.rata.avoindata.common.dao.trainrunningmessage;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.util.List;
-
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 @Repository
 public interface TrainRunningMessageRepository extends CustomGeneralRepository<TrainRunningMessage, Long> {
@@ -65,6 +63,6 @@ public interface TrainRunningMessageRepository extends CustomGeneralRepository<T
             " order by t.id desc")
     LocalDate getMaxDepartureDateForTrainNumber(String trainNumber, LocalDate localDate);
 
-    @Query("SELECT t FROM TrainRunningMessage t where t.version > ?1 order by t.version desc  ")
+    @Query("SELECT t FROM TrainRunningMessage t where t.version > ?1 order by t.version asc")
     List<TrainRunningMessage> findByVersionGreaterThan(long version, Pageable pageable);
 }

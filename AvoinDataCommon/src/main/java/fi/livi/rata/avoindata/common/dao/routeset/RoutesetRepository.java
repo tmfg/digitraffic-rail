@@ -1,17 +1,15 @@
 package fi.livi.rata.avoindata.common.dao.routeset;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.List;
-
-import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 @Repository
 public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Long> {
@@ -49,6 +47,6 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
 
     // This is faster but limiting does not work
     // @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where t.version > ?1 order by t.version desc, rsec.sectionOrder asc ")
-    @Query("SELECT distinct t FROM Routeset t where t.version > ?1 order by t.version desc")
+    @Query("SELECT distinct t FROM Routeset t where t.version > ?1 order by t.version asc")
     List<Routeset> findByVersionGreaterThan(long version, Pageable pageable);
 }

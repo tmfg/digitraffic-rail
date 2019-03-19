@@ -114,7 +114,13 @@ public class StatusCodeTest {
     public void urlsWorkInDocumentation() throws IOException, ExecutionException, InterruptedException {
         Set<String> urls = getUrlsFromDocumentation(DOCUMENTATION_URL, Sets.newHashSet("https://www.digitraffic.fi"));
 
-        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url -> url.contains("digitraffic.fi") && !url.contains("graphql") && !url.contains("list.html"));
+        final Iterable<String> digitrafficUrls = Iterables.filter(urls, url ->
+                url.contains("digitraffic.fi") &&
+                        !url.contains("graphql") &&
+                        !url.contains("list.html") &&
+                        !url.contains("https://rata.digitraffic.fi/jeti-api/") &&
+                        !url.contains("https://rata.digitraffic.fi/infra-api/") &&
+                        !url.contains("https://rata.digitraffic.fi/history/"));
 
         List<String> targetUrls = new ArrayList<>();
         for (String digitrafficUrl : digitrafficUrls) {

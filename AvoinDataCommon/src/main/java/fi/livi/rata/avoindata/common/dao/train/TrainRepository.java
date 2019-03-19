@@ -5,7 +5,6 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -141,9 +140,6 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
 
     @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and " + IS_NOT_DELETED + BASE_TRAIN_ORDER)
     Train findByDepartureDateAndTrainNumber(LocalDate departureDate, Long trainNumber);
-
-    @Query("select t.id from Train t where " + "t.version > ?1 order by t.version desc")
-    List<TrainId> findByVersionGreaterThan(Long version, Pageable pageable);
 
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id in ?1")
