@@ -38,7 +38,7 @@ public class RunningCurrentlyResetService {
                 oldRunningTrain.runningCurrently = false;
                 oldRunningTrain.version = maxVersion + 1;
 
-                log.info("Resetting running-currently for {} at version", oldRunningTrain.id, oldRunningTrain.version);
+                log.info("Resetting running-currently for {} at version {}", oldRunningTrain.id, oldRunningTrain.version);
             }
 
             trainRepository.saveAll(oldRunningTrains);
