@@ -80,6 +80,7 @@ public class AllTrainsControllerTest extends MockMvcBaseTest {
         r1.andExpect(jsonPath("$[4].trainNumber").value(10));
 
         final ResultActions r2 = getJson("/all-trains?version=5");
+        r2.andExpect(jsonPath("$.length()").value(5));
 
         r2.andExpect(jsonPath("$[0].version").value(10));
         r2.andExpect(jsonPath("$[1].version").value(9));
