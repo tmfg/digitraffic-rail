@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /*Hibernate duplicate removal*/
 @ControllerAdvice
@@ -19,7 +20,9 @@ public class DuplicateTimeTableRowRemovalAdvice implements ResponseBodyAdvice<Ob
     @Override
     public boolean supports(final MethodParameter methodParameter, final Class<? extends HttpMessageConverter<?>> aClass) {
         try {
-            if (methodParameter.getNestedGenericParameterType().getTypeName().equals("java.util.List<fi.livi.rata.avoindata.common.domain.train.Train>")) {
+            String typeName = methodParameter.getNestedGenericParameterType().getTypeName();
+            if (typeName.equals("java.util.List<fi.livi.rata.avoindata.common.domain.train.Train>") ||
+                    typeName.equals("java.util.stream.Stream<fi.livi.rata.avoindata.common.domain.train.Train>")) {
                 return true;
             } else {
                 return false;
@@ -33,13 +36,17 @@ public class DuplicateTimeTableRowRemovalAdvice implements ResponseBodyAdvice<Ob
     public Object beforeBodyWrite(final Object body, final MethodParameter methodParameter, final MediaType mediaType,
                                   final Class<? extends HttpMessageConverter<?>> aClass, final ServerHttpRequest serverHttpRequest,
                                   final ServerHttpResponse serverHttpResponse) {
-        List<Train> trainList = (List<Train>) body;
-        ((List<Train>) body).forEach(this::removeDuplicate);
+        if (body instanceof List) {
+            ((List<Train>) body).forEach(this::removeDuplicate);
+        } else if (body instanceof Stream) {
+            return ((Stream<Train>) body).map(s -> removeDuplicate(s));
+        }
 
-        return trainList;
+        return body;
     }
 
-    private void removeDuplicate(final Train train) {
+    private Train removeDuplicate(final Train train) {
         train.timeTableRows = Lists.newArrayList(Sets.newLinkedHashSet(train.timeTableRows));
+        return train;
     }
 }
