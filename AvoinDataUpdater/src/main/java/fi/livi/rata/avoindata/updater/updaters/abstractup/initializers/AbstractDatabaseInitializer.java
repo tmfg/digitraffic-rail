@@ -90,30 +90,26 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected void startUpdate() {
-        AWSXRay.createSegment(this.getClass().getSimpleName(), (subsegment2) -> {
-            doUpdate();
-        });
+        doUpdate();
     }
 
     protected List<EntityType> doUpdate() {
-        return AWSXRay.createSubsegment("abstract_doUpdate", (subsegment) -> {
-            log.trace("Starting data update for {}", this.prefix);
+        log.trace("Starting data update for {}", this.prefix);
 
-            final Long latestVersion = persistService.getMaxVersion();
-            final ZonedDateTime start = ZonedDateTime.now();
+        final Long latestVersion = persistService.getMaxVersion();
+        final ZonedDateTime start = ZonedDateTime.now();
 
-            List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
+        List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
 
-            final ZonedDateTime middle = ZonedDateTime.now();
+        final ZonedDateTime middle = ZonedDateTime.now();
 
-            objects = modifyEntitiesBeforePersist(objects);
+        objects = modifyEntitiesBeforePersist(objects);
 
-            final List<EntityType> updatedEntities = persistService.updateEntities(objects);
+        final List<EntityType> updatedEntities = persistService.updateEntities(objects);
 
-            logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+        logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
 
-            return updatedEntities;
-        });
+        return updatedEntities;
     }
 
     protected void logUpdate(final long latestVersion, final ZonedDateTime start, final long length, final long newVersion, final String name, final ZonedDateTime middle, final List<EntityType> objects) {
