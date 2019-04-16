@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -64,7 +63,9 @@ public class ScheduleController extends ADataController {
             }
         }
 
-        List<Train> list = findSchedules(departure_station, arrival_station, departure_date, include_nonstopping, startDate, endDate);
+        List<Train> list = findTrains(departure_station, arrival_station, departure_date, include_nonstopping, startDate, endDate);
+
+        CacheConfig.SCHEDULE_STATION_CACHECONTROL.setCacheParameter(response, list, -1);
 
         if (list.isEmpty() && departure_date != null) {
             throw new TrainNotFoundException(arrival_station, departure_station, departure_date);
@@ -76,45 +77,43 @@ public class ScheduleController extends ADataController {
 
         final Integer sublistSize = Ordering.<Integer>natural().min(limit, list.size(), MAX_ROUTE_SEARCH_RESULT_SIZE);
 
-        CacheConfig.SCHEDULE_STATION_CACHECONTROL.setCacheParameter(response, list.subList(0, sublistSize), -1);
-
         return list.subList(0, sublistSize);
     }
 
-    private List<Train> findSchedules(final String departure_station, final String arrival_station, final LocalDate departure_date,
-            final Boolean include_nonstopping, final ZonedDateTime from, final ZonedDateTime to) {
-        ZonedDateTime actualScheduleStart;
-        ZonedDateTime actualScheduleEnd;
+    private List<Train> findTrains(final String departure_station, final String arrival_station, final LocalDate departure_date,
+                                   final Boolean include_nonstopping, final ZonedDateTime from, final ZonedDateTime to) {
+        ZonedDateTime actualTrainStart;
+        ZonedDateTime actualTrainEnd;
         LocalDate departureDateStart;
         LocalDate departureDateEnd;
         if (departure_date != null) {
-            actualScheduleStart = departure_date.minusDays(1).atStartOfDay(ZoneId.of("Europe/Helsinki"));
-            actualScheduleEnd = departure_date.plusDays(2).atStartOfDay(ZoneId.of("Europe/Helsinki"));
+            actualTrainStart = departure_date.minusDays(1).atStartOfDay(ZoneId.of("Europe/Helsinki"));
+            actualTrainEnd = departure_date.plusDays(2).atStartOfDay(ZoneId.of("Europe/Helsinki"));
             departureDateStart = departure_date;
             departureDateEnd = departure_date;
         } else {
             if (from == null && to == null) {
-                actualScheduleStart = ZonedDateTime.now();
-                actualScheduleEnd = actualScheduleStart.plusHours(24);
+                actualTrainStart = ZonedDateTime.now();
+                actualTrainEnd = actualTrainStart.plusHours(24);
             } else if (from != null && to == null) {
-                actualScheduleStart = from;
-                actualScheduleEnd = actualScheduleStart.plusHours(24);
+                actualTrainStart = from;
+                actualTrainEnd = actualTrainStart.plusHours(24);
             } else if (from != null && to != null) {
                 if (to.isBefore(from)) {
                     throw new EndDateBeforeStartDateException("from date is earlier than to date.");
                 }
-                actualScheduleStart = from;
-                actualScheduleEnd = to;
+                actualTrainStart = from;
+                actualTrainEnd = to;
             } else {
                 throw new EndDateBeforeStartDateException("to gate given, but from date not given");
             }
 
-            departureDateStart = actualScheduleStart.minusDays(1).toLocalDate();
-            departureDateEnd = actualScheduleEnd.plusDays(1).toLocalDate();
+            departureDateStart = actualTrainStart.minusDays(1).toLocalDate();
+            departureDateEnd = actualTrainEnd.plusDays(1).toLocalDate();
         }
 
         List<Train> list = trainRepository.findByStationsAndScheduledDate(departure_station, TimeTableRow.TimeTableRowType.DEPARTURE,
-                arrival_station, TimeTableRow.TimeTableRowType.ARRIVAL, actualScheduleStart, actualScheduleEnd, departureDateStart,
+                arrival_station, TimeTableRow.TimeTableRowType.ARRIVAL, actualTrainStart, actualTrainEnd, departureDateStart,
                 departureDateEnd, !include_nonstopping);
         return list;
     }
