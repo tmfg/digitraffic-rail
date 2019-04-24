@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.trainrunningmessage.TrainRunningMessageRepository;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
@@ -131,7 +130,7 @@ public class TrainRunningMessageController extends ADataController {
     public List<TrainRunningMessage> getTrainTrackingByVersion(final HttpServletResponse response,
             @RequestParam(required = false) Long version) {
         if (version == null) {
-            version = 0L;
+            version = trainRunningMessageRepository.getMaxVersion() - 1;
         }
 
         final List<TrainRunningMessage> items = trainRunningMessageRepository.findByVersionGreaterThan(version, new PageRequest(0, 2500));

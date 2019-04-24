@@ -59,4 +59,16 @@ public class TrainRunningMessageControllerTest extends MockMvcBaseTest {
         ResultActions resultActions = getJson(url);
         resultActions.andExpect(jsonPath("$.length()").value(1));
     }
+
+    @Test
+    public void withoutVersionShouldReturnNewest() throws Exception {
+        TrainRunningMessage trainRunningMessage1 = trainRunningMessageFactory.create();
+        TrainRunningMessage trainRunningMessage2 = trainRunningMessageFactory.create();
+        trainRunningMessage2.version = 2L;
+
+        ResultActions resultActions = getJson("/train-tracking");
+        resultActions.andExpect(jsonPath("$.length()").value(1));
+        resultActions.andExpect(jsonPath("$[0].version").value("2"));
+
+    }
 }
