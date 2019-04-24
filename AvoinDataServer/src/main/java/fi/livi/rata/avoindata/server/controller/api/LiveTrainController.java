@@ -59,10 +59,7 @@ public class LiveTrainController extends ADataController {
     @ApiOperation(value = "Returns active trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
-    public List<Train> getLiveTrainsByVersion(@RequestParam(required = false, name = "version") Long version, HttpServletResponse response) {
-        if (version == null) {
-            version = trainRepository.getMaxVersion() - 1;
-        }
+    public List<Train> getLiveTrainsByVersion(@RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {
 
         List<Object[]> liveTrains = trainRepository.findLiveTrains(version, 60 * 4);
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
