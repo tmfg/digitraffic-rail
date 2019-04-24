@@ -163,7 +163,7 @@ public class RewriteController {
 
     @RequestMapping(value = TRAIN_TRACKING_PREFIX, method = RequestMethod.GET)
     public List<TrainRunningMessage> getByVersion(final HttpServletResponse response,
-            @RequestParam(required = false, defaultValue = "0") Long version) {
+                                                  @RequestParam(required = false) Long version) {
         return trainRunningMessageController.getTrainTrackingByVersion(response, version);
     }
 
