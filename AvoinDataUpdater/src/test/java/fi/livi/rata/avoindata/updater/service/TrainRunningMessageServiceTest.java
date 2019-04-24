@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.updater.BaseTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,6 +19,7 @@ public class TrainRunningMessageServiceTest extends BaseTest {
     private TrainRunningMessageRepository trainRunningMessageRepository;
 
     @Test
+    @Transactional
     public void addShouldNotProduceErrors() throws IOException {
         List<TrainRunningMessage> trainRunningMessages = testDataService.createTrainRunningMessages("trainRunningMessage.json");
 
