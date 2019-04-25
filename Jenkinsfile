@@ -21,7 +21,7 @@ node {
 		]
 	]
 
-    buildPipelineScript = load 'liike_ci/jenkins/build_pipeline_avoindata.groovy'
+    buildPipelineScript = load 'liike_ci/pipeline/src/main/groovy/fi/livi/liike/jenkins/build_pipeline_avoindata.groovy'
     echo "buildPipelineScript= ${buildPipelineScript}"
 }
 
