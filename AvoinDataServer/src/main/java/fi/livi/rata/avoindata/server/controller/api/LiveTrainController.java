@@ -98,10 +98,13 @@ public class LiveTrainController extends ADataController {
 
     public List<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
                                                            int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering start");
         assertParameters(arrived_trains, arriving_trains, departed_trains, departing_trains);
 
         List<Object[]> liveTrains = trainRepository.findLiveTrainsIds(station, departed_trains, departing_trains, arrived_trains,
                 arriving_trains, !include_nonstopping);
+
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering find ids");
 
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
@@ -115,13 +118,18 @@ public class LiveTrainController extends ADataController {
     }
 
     private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering getTrains start");
+
         List<Future<List<Train>>> trainFutures = new ArrayList<>();
 
         ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
         for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
+            LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering getTrains future");
             Future<List<Train>> streamFuture = executor.submit(() -> trainRepository.findTrains(trainIds));
             trainFutures.add(streamFuture);
         }
+
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering getTrains futures submitted");
 
         List<Train> trains = new ArrayList<>();
         for (Future<List<Train>> trainFuture : trainFutures) {
@@ -131,8 +139,11 @@ public class LiveTrainController extends ADataController {
                 log.error("Error fetching trains", e);
             }
         }
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering getTrains futures executed");
 
         Collections.sort(trains, Train::compareTo);
+
+        LoggerFactory.getLogger("PerformanceLogger").info("getLiveTrainsUsingQuantityFiltering getTrains sorted");
 
         return trains;
     }
