@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.dao.train;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
@@ -18,7 +17,6 @@ import java.util.List;
 
 @Repository
 @Transactional
-@XRayEnabled
 public interface TrainRepository extends CustomGeneralRepository<Train, TrainId> {
 
     String BASE_TRAIN_SELECT = "select distinct train from Train train " +
