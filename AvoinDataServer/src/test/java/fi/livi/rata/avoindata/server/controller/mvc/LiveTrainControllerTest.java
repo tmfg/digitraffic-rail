@@ -224,7 +224,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void stationSearchShouldWork() throws Exception {
-        FieldSetter.setField(liveTrainController, liveTrainController.getClass().getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
         trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));

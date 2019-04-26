@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.server;
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Subsegment;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
