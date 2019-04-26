@@ -35,7 +35,7 @@ public class ExecuteTimeInterceptor extends HandlerInterceptorAdapter {
         long executeTime = endTime - startTime;
         if (executeTime > 1000) {
             Entity traceEntity = AWSXRay.getTraceEntity();
-            String traceId = traceEntity != null ? traceEntity.getId() : "";
+            String traceId = traceEntity != null && traceEntity.getTraceId() != null ? traceEntity.getTraceId().toString() : "";
             log.debug("{}?{}: {} ms (HTTP {}, IP: {}, Trace: {})", request.getRequestURI(), request.getQueryString(), executeTime, response.getStatus(), request.getRemoteAddr(), traceId);
         }
     }
