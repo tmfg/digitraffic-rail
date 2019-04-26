@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
@@ -119,6 +120,8 @@ public class LiveTrainController extends ADataController {
     private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
         List<Future<List<Train>>> trainFutures = new ArrayList<>();
 
+        AWSXRay.beginSegment("getTrains-async");
+
         ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
         for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
             Future<List<Train>> streamFuture = executor.submit(() -> trainRepository.findTrains(trainIds));
@@ -135,6 +138,8 @@ public class LiveTrainController extends ADataController {
         }
 
         Collections.sort(trains, Train::compareTo);
+
+        AWSXRay.endSegment();
 
         return trains;
     }
