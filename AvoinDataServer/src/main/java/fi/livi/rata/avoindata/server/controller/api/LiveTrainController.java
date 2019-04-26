@@ -122,13 +122,14 @@ public class LiveTrainController extends ADataController {
     private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
         List<Future<List<Train>>> trainFutures = new ArrayList<>();
 
-        Entity segment = AWSXRay.getTraceEntity();
+        Entity traceEntity = AWSXRay.getGlobalRecorder().getTraceEntity();
 
         ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
         for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
             Future<List<Train>> streamFuture = executor.submit(() -> {
-                AWSXRay.setTraceEntity(segment);
-                Subsegment subsegment = AWSXRay.beginSubsegment("## Execute train fetch future");
+                AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
+
+                Subsegment subsegment = AWSXRay.beginSubsegment("## Execute train get future");
                 List<Train> trains = trainRepository.findTrains(trainIds);
                 AWSXRay.endSubsegment();
                 return trains;
@@ -146,8 +147,6 @@ public class LiveTrainController extends ADataController {
         }
 
         Collections.sort(trains, Train::compareTo);
-
-        AWSXRay.endSegment();
 
         return trains;
     }
