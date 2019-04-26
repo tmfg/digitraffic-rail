@@ -6,7 +6,6 @@ import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -96,7 +95,6 @@ public class RewriteController {
                                                       @RequestParam(required = false, defaultValue = "5") int departed_trains,
                                                       @RequestParam(required = false, defaultValue = "5") int departing_trains,
                                                       @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
-        LoggerFactory.getLogger("PerformanceLogger").info("Start: {}", ZonedDateTime.now());
         return liveTrainController.getLiveTrainsUsingQuantityFiltering(station, version, arrived_trains, arriving_trains, departed_trains,
                 departing_trains, include_nonstopping, response);
     }
