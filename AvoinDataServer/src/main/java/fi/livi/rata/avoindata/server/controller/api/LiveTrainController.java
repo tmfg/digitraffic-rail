@@ -102,7 +102,7 @@ public class LiveTrainController extends ADataController {
                                                            int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
         assertParameters(arrived_trains, arriving_trains, departed_trains, departing_trains);
 
-        List<Object[]> liveTrains = trainRepository.findLiveTrains(station, departed_trains, departing_trains, arrived_trains,
+        List<Object[]> liveTrains = trainRepository.findLiveTrainsIds(station, departed_trains, departing_trains, arrived_trains,
                 arriving_trains, !include_nonstopping);
 
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);

@@ -73,8 +73,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "        AND t.actual_time IS NULL" +
             " ORDER BY t.predict_time ASC" +
             " LIMIT ?5)) unionedTable", nativeQuery = true)
-    List<Object[]> findLiveTrains(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,
-            Integer arrivingTrains, Boolean excludeNonstopping);
+    List<Object[]> findLiveTrainsIds(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,
+                                     Integer arrivingTrains, Boolean excludeNonstopping);
 
 
     @Query("select t from LiveTimeTableTrain t where " +
