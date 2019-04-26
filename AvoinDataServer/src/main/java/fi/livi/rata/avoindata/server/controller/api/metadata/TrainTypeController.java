@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import io.swagger.annotations.ApiOperation;

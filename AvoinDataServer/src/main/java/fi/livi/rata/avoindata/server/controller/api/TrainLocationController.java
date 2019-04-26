@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Point;

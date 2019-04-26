@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
-@XRayEnabled
 public class GTFSService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -38,14 +35,12 @@ public class GTFSService {
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
     public void generateGTFS() {
-        AWSXRay.createSegment("generateGTFS", (subsegment) -> {
-            try {
-                final LocalDate start = dp.dateInHelsinki().minusDays(7);
-                this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
-            } catch (ExecutionException | InterruptedException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            final LocalDate start = dp.dateInHelsinki().minusDays(7);
+            this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
+        } catch (ExecutionException | InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {

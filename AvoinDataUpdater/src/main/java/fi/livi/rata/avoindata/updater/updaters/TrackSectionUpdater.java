@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
 import fi.livi.rata.avoindata.updater.service.TrackSectionService;
 import org.springframework.beans.factory.annotation.Autowired;

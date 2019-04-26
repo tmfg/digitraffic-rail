@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.metadata.OperatorRepository;
 import fi.livi.rata.avoindata.common.domain.metadata.Operator;
 import io.swagger.annotations.ApiOperation;

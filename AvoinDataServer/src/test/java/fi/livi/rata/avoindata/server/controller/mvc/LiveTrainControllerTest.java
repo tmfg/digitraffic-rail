@@ -260,7 +260,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain() throws Exception {
-        FieldSetter.setField(liveTrainController, liveTrainController.getClass().getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
         final Train train = trainFactory.createBaseTrain();
         for (final TimeTableRow timeTableRow : train.timeTableRows) {

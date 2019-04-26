@@ -1,11 +1,9 @@
 package fi.livi.rata.avoindata.updater;
 
-import com.amazonaws.xray.AWSXRay;
 import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
-import fi.livi.rata.avoindata.common.xray.ElasticUDPEmitter;
 import fi.livi.rata.avoindata.updater.service.CompositionService;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
@@ -18,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
@@ -29,7 +26,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
-import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -39,14 +35,13 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 
 @SpringBootApplication
-@EnableAutoConfiguration
 @EnableCaching
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @ComponentScan(basePackages = {"fi.livi.rata.avoindata.updater", "fi.livi.rata.avoindata.common"})
 @EntityScan(basePackages = "fi.livi.rata.avoindata.common.domain")
 @EnableJpaRepositories(basePackages = "fi.livi.rata.avoindata.common.dao", repositoryBaseClass = CustomGeneralRepositoryImpl.class)
 @EnableScheduling
-public class DatabaseUpdaterApplication  {
+public class DatabaseUpdaterApplication {
 
     private static Logger log = LoggerFactory.getLogger(DatabaseUpdaterApplication.class);
 
@@ -146,18 +141,16 @@ public class DatabaseUpdaterApplication  {
         }
 
         private void startInitPhaseIfNeeded() {
-            AWSXRay.createSegment("initiliazing", (subsegment) -> {
-                try {
-                    if (isInitiliazationNeeded()) {
-                        log.info("Database needs to be initiliazed!");
-                        clearDatabase();
-                        initializeInLockMode();
-                        startLazyUpdate();
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+            try {
+                if (isInitiliazationNeeded()) {
+                    log.info("Database needs to be initiliazed!");
+                    clearDatabase();
+                    initializeInLockMode();
+                    startLazyUpdate();
                 }
-            });
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private void startUpdating() {

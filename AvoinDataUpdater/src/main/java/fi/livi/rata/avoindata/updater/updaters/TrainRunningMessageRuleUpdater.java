@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import com.amazonaws.xray.AWSXRay;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
 import fi.livi.rata.avoindata.updater.service.TrainRunningMessageRuleService;
 import org.springframework.beans.factory.annotation.Autowired;

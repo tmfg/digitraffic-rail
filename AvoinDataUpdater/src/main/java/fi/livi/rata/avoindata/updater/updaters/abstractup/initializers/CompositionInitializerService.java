@@ -1,21 +1,16 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
-import com.amazonaws.xray.AWSXRay;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
+import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-
+import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.CompositionPersistService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.CompositionPersistService;
 
 import java.util.ArrayList;
 import java.util.List;

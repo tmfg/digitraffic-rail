@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import com.amazonaws.xray.AWSXRay;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
@@ -140,12 +139,10 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     public void getAndSaveForADate(final LocalDate date) {
-        AWSXRay.createSegment(this.getClass().getSimpleName() + "getAndSaveForADate", (subsegment2) -> {
-            final ZonedDateTime now = ZonedDateTime.now();
-            final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
-            this.persistService.addEntities(entities);
-            log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix, Duration.between(now, ZonedDateTime.now()).toMillis()));
-        });
+        final ZonedDateTime now = ZonedDateTime.now();
+        final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
+        this.persistService.addEntities(entities);
+        log.debug(String.format("Initialized data for %s (%d %s) in %s ms", date, entities.size(), this.prefix, Duration.between(now, ZonedDateTime.now()).toMillis()));
     }
 
     protected abstract <A> Class<A> getEntityCollectionClass();

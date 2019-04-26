@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
-@XRayEnabled
+//@XRayEnabled
 public class LiveTrainController extends ADataController {
     public static final int TRAIN_FETCH_SIZE = 50;
 
@@ -62,7 +61,6 @@ public class LiveTrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
     public List<Train> getLiveTrainsByVersion(@RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {
-
         List<Object[]> liveTrains = trainRepository.findLiveTrains(version, 60 * 4);
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
