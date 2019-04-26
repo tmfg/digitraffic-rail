@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.server.config;
 
 
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,13 +28,15 @@ public class ExecuteTimeInterceptor extends HandlerInterceptorAdapter {
     //after the handler is executed
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-            ModelAndView modelAndView) throws Exception {
+                           ModelAndView modelAndView) throws Exception {
 
         long startTime = (Long) request.getAttribute("startTime");
         long endTime = System.currentTimeMillis();
         long executeTime = endTime - startTime;
         if (executeTime > 1000) {
-            log.debug("{}?{}: {} ms (HTTP {}, IP: {})", request.getRequestURI(), request.getQueryString(), executeTime, response.getStatus(),request.getRemoteAddr());
+            Entity traceEntity = AWSXRay.getTraceEntity();
+            String traceId = traceEntity != null ? traceEntity.getId() : "";
+            log.debug("{}?{}: {} ms (HTTP {}, IP: {}, Trace: {})", request.getRequestURI(), request.getQueryString(), executeTime, response.getStatus(), request.getRemoteAddr(), traceId);
         }
     }
 }
