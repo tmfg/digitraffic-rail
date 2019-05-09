@@ -20,20 +20,11 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
     @Modifying
     void removeById(List<Long> ids);
 
-    @Query("SELECT max(t.virtualDepartureDate) FROM Routeset t " +
-            "where t.trainId.trainNumber = ?1 and t.virtualDepartureDate > ?2" +
-            " order by t.id desc")
-    LocalDate getMaxDepartureDateForTrainNumber(String train_number, LocalDate localDate);
-
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
             " t.trainId.trainNumber = ?1 and " +
-            " t.version > ?3 and" +
-            " (" +
             "   t.virtualDepartureDate = ?2 " +
-            "   or" +
-            "   (t.virtualDepartureDate = ?4 and t.trainId.departureDate is null and t.messageTime between ?5 and ?6)" +
-            " ) order by t.id desc, rsec.sectionOrder asc")
-    List<Routeset> findByTrainNumberAndDepartureDate(String trainNumber, LocalDate departureDate, Long version, LocalDate localDate, ZonedDateTime start, ZonedDateTime end);
+            " order by t.messageId asc, rsec.sectionOrder asc")
+    List<Routeset> findByTrainNumberAndDepartureDate(String trainNumber, LocalDate departureDate);
 
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
             " rsec.stationCode = ?1 and" +

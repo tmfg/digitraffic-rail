@@ -29,7 +29,7 @@ public class RoutesetPersistService extends AbstractPersistService<Routeset> {
     public List<Routeset> updateEntities(final List<Routeset> entities) {
         final List<Routeset> filteredEntities = recentlySeenRoutesetFilter.filter(entities);
 
-        removeTrainRunningMessagesById(filteredEntities);
+        removeEntitiesById(filteredEntities);
         routesetRepository.flush();
 
         addEntities(filteredEntities);
@@ -42,7 +42,7 @@ public class RoutesetPersistService extends AbstractPersistService<Routeset> {
         return routesetRepository.getMaxVersion();
     }
 
-    private void removeTrainRunningMessagesById(final List<Routeset> entities) {
+    private void removeEntitiesById(final List<Routeset> entities) {
         if (entities.isEmpty()) {
             return;
         }
