@@ -157,7 +157,7 @@ public class DatabaseUpdaterApplication {
             trainInitializerService.startUpdating(UPDATE_TRAINS_DELAY);
             compositionInitializerService.startUpdating(UPDATE_COMPOSITIONS_DELAY);
             trainRunningMessageInitializerService.startUpdating(UPDATE_TRAINRUNNINGMESSAGES_DELAY);
-            //            routesetInitializerService.startUpdating(UPDATE_ROUTESETS_DELAY);
+            routesetInitializerService.startUpdating(UPDATE_ROUTESETS_DELAY);
             forecastInitializerService.startUpdating(10000);
         }
 
@@ -165,7 +165,7 @@ public class DatabaseUpdaterApplication {
             trainInitializerService.initializeInLazyMode();
             compositionInitializerService.initializeInLazyMode();
             trainRunningMessageInitializerService.initializeInLazyMode();
-            //            routesetInitializerService.initializeInLazyMode();
+            routesetInitializerService.initializeInLazyMode();
             forecastInitializerService.initializeInLazyMode();
         }
 
@@ -178,7 +178,7 @@ public class DatabaseUpdaterApplication {
             executors.add(trainInitializerService.initializeInLockMode());
             executors.add(compositionInitializerService.initializeInLockMode());
             executors.add(trainRunningMessageInitializerService.initializeInLockMode());
-            //            executors.add(routesetInitializerService.initializeInLockMode());
+            executors.add(routesetInitializerService.initializeInLockMode());
 
             for (final ExecutorService executor : executors) {
                 AbstractDatabaseInitializer.waitUntilTasksAreDone(executor);
@@ -195,7 +195,7 @@ public class DatabaseUpdaterApplication {
             trainInitializerService.clearEntities();
             compositionInitializerService.clearEntities();
             trainRunningMessageInitializerService.clearEntities();
-            //            routesetInitializerService.clearEntities();
+            routesetInitializerService.clearEntities();
             forecastInitializerService.clearEntities();
         }
 

@@ -9,15 +9,15 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Routeset {
     @Id
+    @JsonIgnore
     public Long id;
 
-    @JsonIgnore
     public Long version;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
@@ -37,8 +37,10 @@ public class Routeset {
 
     public String clientSystem;
 
+    public String messageId;
+
     @OneToMany(mappedBy = "routeset")
-    public Set<Routesection> routesections = new HashSet<>();
+    public List<Routesection> routesections = new ArrayList<>();
 
     @Override
     public String toString() {

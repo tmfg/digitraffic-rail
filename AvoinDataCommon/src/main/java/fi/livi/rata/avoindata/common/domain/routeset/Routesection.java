@@ -20,6 +20,5 @@ public class Routesection {
     public String stationCode;
     public String commercialTrackId;
 
-    @JsonIgnore
     public int sectionOrder;
 }

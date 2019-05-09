@@ -6,7 +6,7 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 public class Routeset extends BaseEntity {
@@ -29,7 +29,9 @@ public class Routeset extends BaseEntity {
     public String routeType;
     public String clientSystem;
     public String trainNumber;
+    @Column(name = "MESSAGE_ID")
+    public String messageId;
 
     @OneToMany(mappedBy = "routeset")
-    public Set<Routesection> routesections;
+    public List<Routesection> routesections;
 }

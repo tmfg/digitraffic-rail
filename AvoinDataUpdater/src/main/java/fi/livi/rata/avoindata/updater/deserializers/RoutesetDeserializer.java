@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
@@ -11,9 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 @Component
 public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
@@ -29,13 +28,15 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
         final LocalDate departureDate = this.getNodeAsLocalDate(node.get("departureDate"));
         routeset.trainId = new StringTrainId(trainNumber, departureDate);
         routeset.version = node.get("version").asLong();
+        routeset.messageId = node.get("messageId").asText();
         routeset.messageTime = this.getNodeAsDateTime(node.get("messageTime"));
         routeset.clientSystem = getNullableString(node, "clientSystem");
         routeset.routeType = getNullableString(node, "routeType");
 
         final JsonNode routesectionNodes = node.get("routesections");
         if (routesectionNodes != null) {
-            final Set<Routesection> routesections = deserializeRoutesections(jsonParser, routesectionNodes);
+            final List<Routesection> routesections = deserializeRoutesections(jsonParser, routesectionNodes);
+
             routeset.routesections.addAll(routesections);
             for (final Routesection routesection : routesections) {
                 routesection.routeset = routeset;
@@ -45,7 +46,7 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
         return routeset;
     }
 
-    private static Set<Routesection> deserializeRoutesections(final JsonParser jsonParser, final JsonNode node) throws IOException {
-        return new HashSet<>(Arrays.asList(jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Routesection[].class)));
+    private static List<Routesection> deserializeRoutesections(final JsonParser jsonParser, final JsonNode node) throws IOException {
+        return Lists.newArrayList(jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Routesection[].class));
     }
 }
