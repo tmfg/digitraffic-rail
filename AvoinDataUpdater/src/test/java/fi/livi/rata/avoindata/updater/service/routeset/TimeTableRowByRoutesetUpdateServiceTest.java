@@ -53,18 +53,6 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
     }
 
     @Test
-    public void oldRoutesetShouldNotUpdate() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
-        Routeset routeset = routesetFactory.create();
-        routeset.routesections.get(0).stationCode = "HKI";
-        routeset.routesections.get(0).commercialTrackId = "ABC123";
-
-        List<Train> trains = service.updateTrainByRouteset(Lists.newArrayList(routeset));
-
-        Assert.assertEquals("1", trains.get(0).timeTableRows.get(0).commercialTrack);
-    }
-
-    @Test
     public void oneMatchUpdateShouldWork() {
         Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
         Routeset routeset = routesetFactory.create();
@@ -72,7 +60,7 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "ABC123";
 
-        List<Train> trains = service.updateTrainByRouteset(Lists.newArrayList(routeset));
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assert.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
@@ -88,7 +76,7 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
         routeset.routesections.get(0).commercialTrackId = "UPD";
         routeset.messageTime = train.timeTableRows.get(0).scheduledTime;
 
-        List<Train> trains = service.updateTrainByRouteset(Lists.newArrayList(routeset));
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assert.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
@@ -109,12 +97,27 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
         routeset.routesections.get(0).commercialTrackId = "UPD";
         routeset.messageTime = Iterables.getLast(train.timeTableRows).scheduledTime;
 
-        List<Train> trains = service.updateTrainByRouteset(Lists.newArrayList(routeset));
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assert.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
         Assert.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
         Assert.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
+    }
+
+    @Test
+    public void twoConsecutiveTimeTableRowsShouldBeUpdated() {
+        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        Routeset routeset = routesetFactory.create();
+        routeset.routesections.get(0).stationCode = "TPE";
+        routeset.routesections.get(0).commercialTrackId = "UPD";
+
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+
+        Assert.assertEquals(1, trains.size());
+        Train returnedTrain = trains.get(0);
+        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(3).commercialTrack);
+        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(4).commercialTrack);
     }
 
     private Train replaceLastRow() {

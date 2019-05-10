@@ -1,21 +1,8 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
+import com.google.common.collect.*;
 import fi.livi.rata.avoindata.common.dao.train.ForecastRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -26,8 +13,17 @@ import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.miku.ForecastMergingService;
+import fi.livi.rata.avoindata.updater.service.routeset.TimeTableRowByRoutesetUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class TrainInitializerService extends AbstractDatabaseInitializer<Train> {
@@ -53,6 +49,9 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
 
     @Override
     public String getPrefix() {
@@ -108,19 +107,27 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     public List<Train> modifyEntitiesBeforePersist(final List<Train> entities) {
         final List<TrainId> trainIds = Lists.newArrayList(Iterables.transform(entities, f -> f.id));
         if (!trainIds.isEmpty()) {
-
-            List<Forecast> forecasts = bes.transform(trainIds, t -> forecastRepository.findByTrains(t));
-
-            final ImmutableListMultimap<Train, Forecast> trainMap = Multimaps.index(forecasts, forecast -> forecast.timeTableRow.train);
-
-            for (final Train train : entities) {
-                final ImmutableList<Forecast> trainsForecasts = trainMap.get(train);
-                if (!trainsForecasts.isEmpty()) {
-                    forecastMergingService.mergeEstimates(train, trainsForecasts);
-                }
-            }
+            mergeForecasts(entities, trainIds);
+            mergeRoutesets(entities);
         }
 
         return entities;
+    }
+
+    private void mergeRoutesets(List<Train> entities) {
+        timeTableRowByRoutesetUpdateService.updateByTrains(entities);
+    }
+
+    private void mergeForecasts(List<Train> entities, List<TrainId> trainIds) {
+        List<Forecast> forecasts = bes.transform(trainIds, t -> forecastRepository.findByTrains(t));
+
+        final ImmutableListMultimap<Train, Forecast> trainMap = Multimaps.index(forecasts, forecast -> forecast.timeTableRow.train);
+
+        for (final Train train : entities) {
+            final ImmutableList<Forecast> trainsForecasts = trainMap.get(train);
+            if (!trainsForecasts.isEmpty()) {
+                forecastMergingService.mergeEstimates(train, trainsForecasts);
+            }
+        }
     }
 }

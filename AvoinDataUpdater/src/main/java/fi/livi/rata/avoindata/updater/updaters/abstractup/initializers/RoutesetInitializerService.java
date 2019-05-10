@@ -46,7 +46,7 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
         sendEntitiesToMqtt(updatedEntities);
 
-        timeTableRowByRoutesetUpdateService.updateTrainByRouteset(updatedEntities);
+        timeTableRowByRoutesetUpdateService.updateByRoutesets(updatedEntities);
 
         return updatedEntities;
     }
