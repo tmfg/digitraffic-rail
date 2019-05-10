@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.routeset.TimeTableRowByRoutesetUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.RoutesetPersistService;
 import org.slf4j.Logger;
@@ -20,10 +20,10 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
     private RoutesetPersistService routesetPersistService;
 
     @Autowired
-    private TrainLockExecutor trainLockExecutor;
+    private MQTTPublishService mqttPublishService;
 
     @Autowired
-    private MQTTPublishService mqttPublishService;
+    private TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
 
     @Override
     public String getPrefix() {
@@ -42,13 +42,14 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
     @Override
     protected List<Routeset> doUpdate() {
-            List<Routeset> updatedEntities = super.doUpdate();
+        List<Routeset> updatedEntities = super.doUpdate();
 
-            sendEntitiesToMqtt(updatedEntities);
+        sendEntitiesToMqtt(updatedEntities);
 
-            return updatedEntities;
+        timeTableRowByRoutesetUpdateService.updateTrainByRouteset(updatedEntities);
+
+        return updatedEntities;
     }
-
 
     private void sendEntitiesToMqtt(final List<Routeset> updatedEntities) {
         try {

@@ -1,10 +1,11 @@
-package fi.livi.rata.avoindata.updater.service;
+package fi.livi.rata.avoindata.updater.service.routeset;
 
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesectionRepository;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import fi.livi.rata.avoindata.updater.service.VersionedService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
