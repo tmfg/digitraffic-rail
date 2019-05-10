@@ -32,7 +32,7 @@ public class RoutesetController {
     @RequestMapping(value = "/avoin/routesets", params = "date")
     @ResponseBody
     public Iterable<Routeset> getRoutesets(
-            @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
         log.info("Requesting routeset data date " + date);
 
         final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Helsinki"));
@@ -49,7 +49,7 @@ public class RoutesetController {
 
     @RequestMapping(value = "/avoin/routesets", params = "version")
     @ResponseBody
-    public Iterable<Routeset> getRoutesets(@RequestParam(required = true) final Long version) {
+    public Iterable<Routeset> getRoutesets(@RequestParam final Long version) {
         log.info("Requesting routeset data version " + version);
 
         final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Helsinki"));

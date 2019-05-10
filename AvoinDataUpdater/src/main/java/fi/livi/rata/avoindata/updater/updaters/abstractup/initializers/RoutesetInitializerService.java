@@ -42,13 +42,11 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
     @Override
     protected List<Routeset> doUpdate() {
-        return trainLockExecutor.executeInLock(() -> {
             List<Routeset> updatedEntities = super.doUpdate();
 
             sendEntitiesToMqtt(updatedEntities);
 
             return updatedEntities;
-        });
     }
 
 

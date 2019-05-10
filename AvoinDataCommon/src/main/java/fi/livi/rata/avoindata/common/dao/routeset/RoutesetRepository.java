@@ -23,7 +23,7 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
             " t.trainId.trainNumber = ?1 and " +
             "   t.virtualDepartureDate = ?2 " +
-            " order by t.messageId asc, rsec.sectionOrder asc")
+            " order by t.version asc, rsec.sectionOrder asc")
     List<Routeset> findByTrainNumberAndDepartureDate(String trainNumber, LocalDate departureDate);
 
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
@@ -32,7 +32,7 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
             "   t.virtualDepartureDate = ?2 " +
             "   or" +
             "   (t.virtualDepartureDate = ?3 and t.trainId.departureDate is null and t.messageTime between ?4 and ?5)" +
-            " ) order by t.id desc, rsec.sectionOrder asc")
+            " ) order by t.version desc, rsec.sectionOrder asc")
     List<Routeset> findByStationAndDepartureDate(String station, LocalDate departureDate, final LocalDate nextDay,
                                                  final ZonedDateTime nextDayStart, final ZonedDateTime nextDayEnd);
 

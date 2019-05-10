@@ -5,9 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -16,6 +20,11 @@ import java.util.List;
 
 @Component
 public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
+    private Logger log = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    private RoutesetRepository routesetRepository;
+
     @Override
     public Routeset deserialize(final JsonParser jsonParser,
                                 final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
@@ -27,7 +36,13 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
         final String trainNumber = getNullableString(node, "trainNumber");
         final LocalDate departureDate = this.getNodeAsLocalDate(node.get("departureDate"));
         routeset.trainId = new StringTrainId(trainNumber, departureDate);
-        routeset.version = node.get("version").asLong();
+        JsonNode versionNode = node.get("version");
+        if (versionNode != null) {
+            routeset.version = versionNode.asLong();
+        } else {
+            routeset.version = routesetRepository.getMaxVersion() + 1;
+            log.info("Made up version for {}/{}/{}, version:{} ", trainNumber, departureDate, routeset.id, routeset.version);
+        }
         routeset.messageId = node.get("messageId").asText();
         routeset.messageTime = this.getNodeAsDateTime(node.get("messageTime"));
         routeset.clientSystem = getNullableString(node, "clientSystem");

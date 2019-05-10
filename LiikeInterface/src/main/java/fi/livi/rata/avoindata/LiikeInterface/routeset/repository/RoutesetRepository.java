@@ -25,7 +25,7 @@ public interface RoutesetRepository extends CrudRepository<Routeset, Long> {
             "where " +
             " rs.messageId != 'LIFE' and " +
             " rs.version > ?1 and " +
-            " rs.departureDate > CURRENT_DATE - 2 " +
+            " rs.id > (select max(rs_a.id)-25000 from Routeset rs_a) " +
             "order by rs.messageId asc, rsec.sectionOrder asc")
     List<Routeset> findByVersioGreaterThan(Long version);
 }
