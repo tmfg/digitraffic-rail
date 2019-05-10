@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @Repository
@@ -26,18 +25,17 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
             " order by t.version asc, rsec.sectionOrder asc")
     List<Routeset> findByTrainNumberAndDepartureDate(String trainNumber, LocalDate departureDate);
 
-    @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
-            " rsec.stationCode = ?1 and" +
-            " (" +
-            "   t.virtualDepartureDate = ?2 " +
-            "   or" +
-            "   (t.virtualDepartureDate = ?3 and t.trainId.departureDate is null and t.messageTime between ?4 and ?5)" +
-            " ) order by t.version desc, rsec.sectionOrder asc")
-    List<Routeset> findByStationAndDepartureDate(String station, LocalDate departureDate, final LocalDate nextDay,
-                                                 final ZonedDateTime nextDayStart, final ZonedDateTime nextDayEnd);
 
-    // This is faster but limiting does not work
-    // @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where t.version > ?1 order by t.version desc, rsec.sectionOrder asc ")
-    @Query("SELECT distinct t FROM Routeset t where t.version > ?1 order by t.version asc")
-    List<Routeset> findByVersionGreaterThan(long version, Pageable pageable);
+    @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
+            " t.id in  ?1 " +
+            " order by t.version asc, rsec.sectionOrder asc")
+    List<Routeset> findAllById(List<Long> ids);
+
+    @Query("SELECT distinct t.id FROM Routeset t left join t.routesections rsec where " +
+            " rsec.stationCode = ?2 and " +
+            " t.virtualDepartureDate = ?1")
+    List<Long> findIdByStationAndDepartureDate(LocalDate departureDate, String station);
+
+    @Query("SELECT distinct t.id FROM Routeset t where t.version > ?1 order by t.version asc")
+    List<Long> findIdByVersionGreaterThan(long version, Pageable pageable);
 }
