@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.common.dao.routeset;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,11 +30,6 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
             " t.id in  ?1 " +
             " order by t.version asc, rsec.sectionOrder asc")
     List<Routeset> findAllById(List<Long> ids);
-
-    @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
-            " t.trainId in  ?1 " +
-            " order by t.version asc, rsec.sectionOrder asc")
-    List<Routeset> findAllByTrainId(List<StringTrainId> ids);
 
     @Query("SELECT distinct t.id FROM Routeset t left join t.routesections rsec where " +
             " rsec.stationCode = ?2 and " +

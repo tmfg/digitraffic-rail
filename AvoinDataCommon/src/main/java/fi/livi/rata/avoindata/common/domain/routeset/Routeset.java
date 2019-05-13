@@ -44,6 +44,9 @@ public class Routeset {
 
     @Override
     public String toString() {
-        return id.toString();
+        return "Routeset{" +
+                "id=" + id +
+                ", trainId=" + trainId +
+                '}';
     }
 }

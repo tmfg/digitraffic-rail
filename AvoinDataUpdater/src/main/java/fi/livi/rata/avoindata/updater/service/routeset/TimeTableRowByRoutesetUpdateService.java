@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
@@ -40,13 +39,15 @@ public class TimeTableRowByRoutesetUpdateService {
 
             try {
                 List<Routeset> routesetsWithValidTrain = getRoutesetsWithValidTrain(routesets);
-                List<TrainId> validTrainIds = Lists.transform(routesetsWithValidTrain, s -> new TrainId(s.trainId));
+                List<TrainId> validTrainIds = Lists.transform(routesetsWithValidTrain, s -> getTrainId(s));
                 if (validTrainIds.isEmpty()) {
                     return new ArrayList<>();
                 }
                 Map<TrainId, Train> trainMap = Maps.uniqueIndex(trainRepository.findTrains(validTrainIds), s -> s.id);
                 updateCommercialTracks(routesetsWithValidTrain, trainMap);
-                return Lists.newArrayList(trainMap.values());
+                List<Train> updatedTrains = Lists.newArrayList(trainMap.values());
+
+                return updatedTrains;
             } catch (Exception e) {
                 log.error("Failed to updated trains with routesets", e);
                 return new ArrayList<>();
@@ -55,19 +56,23 @@ public class TimeTableRowByRoutesetUpdateService {
     }
 
     public List<Train> updateByTrains(List<Train> trains) {
-        List<Routeset> routesetsForTrains = routesetRepository.findAllByTrainId(Lists.transform(trains, s -> new StringTrainId(s.id.trainNumber.toString(), s.id.departureDate)));
+        List<Routeset> routesetsForTrains = new ArrayList<>();
+        for (Train train : trains) {
+            routesetsForTrains.addAll(routesetRepository.findByTrainNumberAndDepartureDate(train.id.trainNumber.toString(), train.id.departureDate));
+        }
+
         updateCommercialTracks(routesetsForTrains, Maps.uniqueIndex(trains, s -> s.id));
         return trains;
     }
 
     private void updateCommercialTracks(List<Routeset> routesets, Map<TrainId, Train> trainMap) {
+        Long maxVersion = trainRepository.getMaxVersion();
+
         for (Routeset routeset : routesets) {
-            Train train = trainMap.get(new TrainId(routeset.trainId));
+            Train train = trainMap.get(getTrainId(routeset));
             if (train == null) {
                 continue;
             }
-
-            Long maxVersion = trainRepository.getMaxVersion();
 
             ListMultimap<String, TimeTableRowAndItsIndex> timeTableRowsByStation = LinkedListMultimap.create();
             for (int i = 0; i < train.timeTableRows.size(); i++) {
@@ -85,11 +90,11 @@ public class TimeTableRowByRoutesetUpdateService {
                     }
                     //Update a single time-table-row
                     else if (timeTableRowsToUpdate.size() == 1) {
-                        updateSingleStopTimeTableRow(maxVersion, routesection, timeTableRowsToUpdate);
+                        updateSingleStopTimeTableRow(maxVersion, train, routesection, timeTableRowsToUpdate);
                     }
                     //Update a two consecutive time-table-rows
                     else if (timeTableRowsToUpdate.size() == 2 && Math.abs(timeTableRowsToUpdate.get(0).index - timeTableRowsToUpdate.get(1).index) == 1) {
-                        updateSingleStopTimeTableRow(maxVersion, routesection, timeTableRowsToUpdate);
+                        updateSingleStopTimeTableRow(maxVersion, train, routesection, timeTableRowsToUpdate);
                     }
                     //Update multi-stop time-table-row. Match by scheduled time +- 30 minutes
                     else {
@@ -100,15 +105,17 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private void updateSingleStopTimeTableRow(Long maxVersion, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
+    private void updateSingleStopTimeTableRow(Long maxVersion, Train train, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
         for (TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowsToUpdate) {
             TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
             if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else {
-                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", timeTableRow.train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, timeTableRow.version, maxVersion + 1);
+                long newVersion = maxVersion + 1;
+                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", timeTableRow.train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, train.version, newVersion);
                 timeTableRow.commercialTrack = routesection.commercialTrackId;
-                timeTableRow.version = maxVersion + 1;
+                train.version = newVersion;
+                timeTableRow.version = newVersion;
             }
         }
     }
@@ -121,9 +128,11 @@ public class TimeTableRowByRoutesetUpdateService {
             } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
                 log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
             } else {
-                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, timeTableRow.version, maxVersion + 1);
+                long newVersion = maxVersion + 1;
+                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, train.version, newVersion);
                 timeTableRow.commercialTrack = routesection.commercialTrackId;
-                timeTableRow.version = maxVersion + 1;
+                train.version = newVersion;
+                timeTableRow.version = newVersion;
             }
         }
     }
@@ -132,7 +141,7 @@ public class TimeTableRowByRoutesetUpdateService {
         Iterable<Routeset> routesetsWithValidTrain = Iterables.filter(routesets, s -> {
             try {
                 long idAsLong = Long.parseLong(s.trainId.trainNumber);
-                if (idAsLong > 0L && s.trainId.departureDate != null) {
+                if (idAsLong > 0L && (s.trainId.departureDate != null || s.messageTime.toLocalDate() != null)) {
                     return true;
                 } else {
                     return false;
@@ -153,6 +162,14 @@ public class TimeTableRowByRoutesetUpdateService {
         public TimeTableRowAndItsIndex(int index, TimeTableRow timeTableRow) {
             this.index = index;
             this.timeTableRow = timeTableRow;
+        }
+    }
+
+    private TrainId getTrainId(Routeset routeset) {
+        if (routeset.trainId.departureDate == null) {
+            return new TrainId(Long.parseLong(routeset.trainId.trainNumber), routeset.messageTime.toLocalDate());
+        } else {
+            return new TrainId(routeset.trainId);
         }
     }
 }
