@@ -7,6 +7,7 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Api(tags = "routesets", description = "Returns routesets")
-@RequestMapping(WebConfig.CONTEXT_PATH + "routeset")
+@RequestMapping(WebConfig.CONTEXT_PATH + "routesets")
 @Transactional(timeout = 30, readOnly = true)
 @RestController
 public class RoutesetController extends ADataController {
@@ -34,9 +35,10 @@ public class RoutesetController extends ADataController {
     @Autowired
     private BatchExecutionService bes;
 
+    @ApiOperation("Returns routesets for {train_number} and {departure_date}")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
-    public List<Routeset> getByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
-                                           @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+    public List<Routeset> getRoutesetsByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
+                                                    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         final List<Routeset> routesets = routesetRepository.findByTrainNumberAndDepartureDate(train_number, departure_date);
 
@@ -45,10 +47,11 @@ public class RoutesetController extends ADataController {
         return routesets;
     }
 
+    @ApiOperation("Returns routesets for {station} and {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}", method = RequestMethod.GET)
-    public List<Routeset> getRoutesetByStationAndTrackSectionAndDate(HttpServletResponse response,
-                                                                     @PathVariable final String station,
-                                                                     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+    public List<Routeset> getRoutesetsByStationAndDepartureDate(HttpServletResponse response,
+                                                                @PathVariable final String station,
+                                                                @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         List<Long> ids = routesetRepository.findIdByStationAndDepartureDate(departure_date, station);
 
@@ -56,8 +59,9 @@ public class RoutesetController extends ADataController {
         return findByIds(ids);
     }
 
-    @RequestMapping
-    public List<Routeset> getByVersion(final HttpServletResponse response,
+    @ApiOperation("Returns routesets that are newer than {version}")
+    @RequestMapping(method = RequestMethod.GET)
+    public List<Routeset> getRoutesetsByVersion(final HttpServletResponse response,
                                        @RequestParam(required = false, defaultValue = "0") Long version) {
 
         final List<Long> ids = routesetRepository.findIdByVersionGreaterThan(version, new PageRequest(0, 2500));

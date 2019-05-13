@@ -36,6 +36,6 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
             " t.virtualDepartureDate = ?1")
     List<Long> findIdByStationAndDepartureDate(LocalDate departureDate, String station);
 
-    @Query("SELECT distinct t.id FROM Routeset t where t.version > ?1 order by t.version asc")
+    @Query("SELECT t.id FROM Routeset t where t.version > ?1 order by t.version asc")
     List<Long> findIdByVersionGreaterThan(long version, Pageable pageable);
 }
