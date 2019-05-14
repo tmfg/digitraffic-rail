@@ -35,7 +35,7 @@ public class TimeTableRowByRoutesetUpdateService {
 
 
     public List<Train> updateByRoutesets(List<Routeset> routesets) {
-        return trainLockExecutor.executeInLock(() -> {
+        return trainLockExecutor.executeInTransactionLock(() -> {
 
             try {
                 List<Routeset> routesetsWithValidTrain = getRoutesetsWithValidTrain(routesets);
@@ -111,12 +111,22 @@ public class TimeTableRowByRoutesetUpdateService {
             if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else {
-                long newVersion = maxVersion + 1;
-                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", timeTableRow.train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, train.version, newVersion);
-                timeTableRow.commercialTrack = routesection.commercialTrackId;
-                train.version = newVersion;
-                timeTableRow.version = newVersion;
+                setCommercialTrack(maxVersion, train, routesection, timeTableRow, timeTableRow.train);
             }
+        }
+    }
+
+    private void setCommercialTrack(Long maxVersion, Train train, Routesection routesection, TimeTableRow timeTableRow, Train train2) {
+        long possibleNewVersion = maxVersion + 1;
+        String oldCommercialTrack = timeTableRow.commercialTrack;
+        timeTableRow.commercialTrack = routesection.commercialTrackId;
+
+        if (train.version < possibleNewVersion) {
+            log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", train2, timeTableRow, oldCommercialTrack, timeTableRow.commercialTrack, train.version, possibleNewVersion);
+            train.version = possibleNewVersion;
+            timeTableRow.version = possibleNewVersion;
+        } else {
+            //log.info("Updated, but did not alter version {} - {}. Old: {}, New: {}. Version {}, maxVersion: {}", train2, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, train.version, maxVersion);
         }
     }
 
@@ -126,13 +136,9 @@ public class TimeTableRowByRoutesetUpdateService {
             if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
-                log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
+                //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
             } else {
-                long newVersion = maxVersion + 1;
-                log.info("Updated {} - {}. Old: {}, New: {}. Version {} -> {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId, train.version, newVersion);
-                timeTableRow.commercialTrack = routesection.commercialTrackId;
-                train.version = newVersion;
-                timeTableRow.version = newVersion;
+                setCommercialTrack(maxVersion, train, routesection, timeTableRow, train);
             }
         }
     }
