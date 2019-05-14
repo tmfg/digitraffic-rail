@@ -4,8 +4,7 @@ ADD COLUMN `message_id` BIGINT(20) NOT NULL AFTER `virtual_departure_date`;
 ALTER TABLE `routeset`
 CHANGE COLUMN `route_type` `route_type` VARCHAR(1) NOT NULL ,
 CHANGE COLUMN `train_number` `train_number` VARCHAR(8) NOT NULL ,
-CHANGE COLUMN `client_system` `client_system` VARCHAR(8) NOT NULL ,
-CHANGE COLUMN `virtual_departure_date` `virtual_departure_date` DATE NOT NULL ;
+CHANGE COLUMN `client_system` `client_system` VARCHAR(8) NOT NULL ;
 
 ALTER TABLE `routesection`
 CHANGE COLUMN `section_id` `section_id` VARCHAR(30) NOT NULL ,
