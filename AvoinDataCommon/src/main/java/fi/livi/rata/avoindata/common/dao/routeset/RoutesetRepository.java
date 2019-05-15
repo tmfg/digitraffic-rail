@@ -22,13 +22,13 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
             " t.trainId.trainNumber = ?1 and " +
             "   t.virtualDepartureDate = ?2 " +
-            " order by t.version asc, rsec.sectionOrder asc")
+            " order by t.messageTime asc, rsec.sectionOrder asc")
     List<Routeset> findByTrainNumberAndDepartureDate(String trainNumber, LocalDate departureDate);
 
 
     @Query("SELECT distinct t FROM Routeset t left join fetch t.routesections rsec where " +
             " t.id in  ?1 " +
-            " order by t.version asc, rsec.sectionOrder asc")
+            " order by t.messageTime asc, rsec.sectionOrder asc")
     List<Routeset> findAllById(List<Long> ids);
 
     @Query("SELECT distinct t.id FROM Routeset t left join t.routesections rsec where " +
