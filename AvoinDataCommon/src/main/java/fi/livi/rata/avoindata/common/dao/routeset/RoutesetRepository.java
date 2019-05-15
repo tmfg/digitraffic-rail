@@ -35,7 +35,8 @@ public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Lo
 
     @Query("SELECT distinct t.id FROM Routeset t left join t.routesections rsec where " +
             " rsec.stationCode = ?2 and " +
-            " t.virtualDepartureDate = ?1")
+            " t.virtualDepartureDate = ?1" +
+            " order by t.id")
     List<Long> findIdByStationAndDepartureDate(LocalDate departureDate, String station);
 
     @Query("SELECT t.id FROM Routeset t where t.version > ?1 order by t.version asc")
