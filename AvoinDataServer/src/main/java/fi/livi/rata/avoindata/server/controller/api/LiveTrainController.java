@@ -1,12 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Entity;
-import com.amazonaws.xray.entities.Subsegment;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -18,6 +14,7 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainLimitBelowZer
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMaximumLimitException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -31,13 +28,8 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 @Api(tags = "live-trains", description = "Returns trains that have been recently active")
@@ -45,17 +37,16 @@ import java.util.stream.Collectors;
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @XRayEnabled
 public class LiveTrainController extends ADataController {
-    public static final int TRAIN_FETCH_SIZE = 50;
-
     @Autowired
     private TrainRepository trainRepository;
+
+    @Autowired
+    private FindByIdService findByIdService;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Value("${avoindataserver.livetrains.maxTrainRerieveRequest:1000}")
     private int maxTrainRetrieveRequest;
-
-    private ExecutorService executor = Executors.newFixedThreadPool(10);
 
     private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
@@ -113,43 +104,13 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return getTrains(trainsToRetrieve);
+            return findByIdService.findById(s -> trainRepository.findTrains(s), trainsToRetrieve, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
     }
 
-    private List<Train> getTrains(List<TrainId> trainsToRetrieve) {
-        List<Future<List<Train>>> trainFutures = new ArrayList<>();
 
-        Entity traceEntity = AWSXRay.getGlobalRecorder().getTraceEntity();
-
-        ArrayList<TrainId> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(trainsToRetrieve));
-        for (List<TrainId> trainIds : Lists.partition(uniqueIds, TRAIN_FETCH_SIZE)) {
-            Future<List<Train>> streamFuture = executor.submit(() -> {
-                AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
-
-                Subsegment subsegment = AWSXRay.beginSubsegment("## Execute train get future");
-                List<Train> trains = trainRepository.findTrains(trainIds);
-                AWSXRay.endSubsegment();
-                return trains;
-            });
-            trainFutures.add(streamFuture);
-        }
-
-        List<Train> trains = new ArrayList<>();
-        for (Future<List<Train>> trainFuture : trainFutures) {
-            try {
-                trains.addAll(trainFuture.get());
-            } catch (Exception e) {
-                log.error("Error fetching trains", e);
-            }
-        }
-
-        Collections.sort(trains, Train::compareTo);
-
-        return trains;
-    }
 
 
     public List<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
@@ -169,7 +130,7 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!liveTrains.isEmpty()) {
-            return getTrains(Lists.transform(liveTrains, s -> s.id));
+            return findByIdService.findById(s -> trainRepository.findTrains(s), Lists.transform(liveTrains, s -> s.id), Train::compareTo);
         } else {
             return Lists.newArrayList();
         }

@@ -3,10 +3,10 @@ package fi.livi.rata.avoindata.server.controller.api;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
-import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @XRayEnabled
@@ -27,15 +28,17 @@ import java.util.List;
 @Transactional(timeout = 30, readOnly = true)
 @RestController
 public class RoutesetController extends ADataController {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-
-    private final CacheControl cacheControl = CacheConfig.TRAIN_RUNNING_MESSAGE_CACHECONTROL;
-
     @Autowired
     private RoutesetRepository routesetRepository;
 
     @Autowired
-    private BatchExecutionService bes;
+    private FindByIdService findByIdService;
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private final CacheControl cacheControl = CacheConfig.TRAIN_RUNNING_MESSAGE_CACHECONTROL;
+
+    private static final Comparator<Routeset> COMPARATOR = Comparator.comparing(t -> t.messageTime);
 
     @ApiOperation("Returns routesets for {train_number} and {departure_date}")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
@@ -73,6 +76,6 @@ public class RoutesetController extends ADataController {
     }
 
     public List<Routeset> findByIds(List<Long> ids) {
-        return bes.transform(ids, s -> routesetRepository.findAllById(s));
+        return findByIdService.findById(s -> routesetRepository.findAllById(s), ids, COMPARATOR);
     }
 }
