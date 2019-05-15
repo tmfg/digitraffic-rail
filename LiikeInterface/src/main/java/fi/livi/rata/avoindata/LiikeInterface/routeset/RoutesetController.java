@@ -44,7 +44,7 @@ public class RoutesetController {
         log.info(String.format("Retrieved routeset data for %d messages in %s", routesetList.size(),
                 Duration.between(now, ZonedDateTime.now())));
 
-        return classifiedTrainFilter.filterClassifiedTrains(routesetList, s -> new JunapaivaPrimaryKey(s.trainNumber, s.departureDate == null ? LocalDate.MAX : s.departureDate));
+        return classifiedTrainFilter.filterClassifiedTrains(routesetList, s -> new JunapaivaPrimaryKey(s.trainNumber, s.departureDate == null ? LocalDate.now(ZoneId.of("Europe/Helsinki")) : s.departureDate));
     }
 
     @RequestMapping(value = "/avoin/routesets", params = "version")
@@ -59,7 +59,7 @@ public class RoutesetController {
         log.info(String.format("Retrieved %d routeset data for %s ms (version %d)", routesetList.size(),
                 Duration.between(now, ZonedDateTime.now()).toMillis(), version));
 
-        return classifiedTrainFilter.filterClassifiedTrains(routesetList, s -> new JunapaivaPrimaryKey(s.trainNumber, s.departureDate == null ? LocalDate.MAX : s.departureDate));
+        return classifiedTrainFilter.filterClassifiedTrains(routesetList, s -> new JunapaivaPrimaryKey(s.trainNumber, s.departureDate == null ? LocalDate.now(ZoneId.of("Europe/Helsinki")) : s.departureDate));
     }
 
 }
