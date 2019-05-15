@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.List;
 
+@XRayEnabled
 @Api(tags = "routesets", description = "Returns routesets")
 @RequestMapping(WebConfig.CONTEXT_PATH + "routesets")
 @Transactional(timeout = 30, readOnly = true)
@@ -62,7 +64,7 @@ public class RoutesetController extends ADataController {
     @ApiOperation("Returns routesets that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET)
     public List<Routeset> getRoutesetsByVersion(final HttpServletResponse response,
-                                       @RequestParam(required = false, defaultValue = "0") Long version) {
+                                                @RequestParam(required = false, defaultValue = "0") Long version) {
 
         final List<Long> ids = routesetRepository.findIdByVersionGreaterThan(version, new PageRequest(0, 2500));
 
