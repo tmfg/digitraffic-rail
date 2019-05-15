@@ -130,7 +130,8 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!liveTrains.isEmpty()) {
-            return findByIdService.findById(s -> trainRepository.findTrains(s), Lists.transform(liveTrains, s -> s.id), Train::compareTo);
+            List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
+            return findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
