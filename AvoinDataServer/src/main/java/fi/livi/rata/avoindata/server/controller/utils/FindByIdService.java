@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.server.controller.utils;
 import com.amazonaws.xray.AWSXRay;
 import com.amazonaws.xray.entities.Entity;
 import com.amazonaws.xray.entities.Subsegment;
+import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class FindByIdService {
 
     public static final int ENTITY_FETCH_SIZE = 100;
 
+    @XRayEnabled
     public <ID_TYPE extends Serializable, ENTITY_TYPE> List<ENTITY_TYPE> findById(Function<List<ID_TYPE>, List<ENTITY_TYPE>> entityProvider, List<ID_TYPE> ids, Comparator<ENTITY_TYPE> order) {
         List<Future<List<ENTITY_TYPE>>> streamFutures = new ArrayList<>();
 
@@ -38,9 +40,9 @@ public class FindByIdService {
                 AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
 
                 Subsegment subsegment = AWSXRay.beginSubsegment("## Execute findById");
-                List<ENTITY_TYPE> trains = entityProvider.apply(subIds);
+                List<ENTITY_TYPE> entities = entityProvider.apply(subIds);
                 AWSXRay.endSubsegment();
-                return trains;
+                return entities;
             });
             streamFutures.add(streamFuture);
         }
