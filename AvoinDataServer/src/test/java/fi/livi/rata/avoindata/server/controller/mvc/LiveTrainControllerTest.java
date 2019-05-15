@@ -16,6 +16,7 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.controller.api.LiveTrainController;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
 import org.junit.Test;
@@ -56,6 +57,9 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
     @Autowired
     private DateProvider dp;
+
+    @Autowired
+    private FindByIdService findByIdService;
 
     @Test
     @Transactional
@@ -224,7 +228,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void stationSearchShouldWork() throws Exception {
-        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
         trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
@@ -254,13 +258,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 "/live-trains/station/PSL");
         r6.andExpect(jsonPath("$.length()").value(2));
 
-        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
     }
 
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain() throws Exception {
-        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
         final Train train = trainFactory.createBaseTrain();
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
@@ -285,6 +289,6 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length(").value(0));
         getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length(").value(0));
 
-        FieldSetter.setField(liveTrainController, LiveTrainController.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
     }
 }

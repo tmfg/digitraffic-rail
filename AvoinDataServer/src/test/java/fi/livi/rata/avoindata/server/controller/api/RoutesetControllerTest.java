@@ -1,13 +1,20 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import fi.livi.rata.avoindata.server.factory.RoutesetFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.internal.util.reflection.FieldSetter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.Executors;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -15,6 +22,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class RoutesetControllerTest extends MockMvcBaseTest {
     @Autowired
     private RoutesetFactory routesetFactory;
+
+    @Autowired
+    private FindByIdService findByIdService;
+
+    @Before
+    public void setup() throws NoSuchFieldException {
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+    }
+
+    @After
+    public void teardown() throws NoSuchFieldException {
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+    }
 
     @Test
     public void versionLimitingShouldWork() throws Exception {
