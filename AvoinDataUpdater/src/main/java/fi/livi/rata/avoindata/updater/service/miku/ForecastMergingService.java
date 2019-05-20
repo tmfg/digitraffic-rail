@@ -29,7 +29,8 @@ public class ForecastMergingService {
     private DateProvider dp;
 
     public Train mergeEstimates(final Train train, final List<Forecast> forecasts) {
-        List<Forecast> forecastsFilteredById = filterOutDoubleForecasts(forecasts);
+        List<Forecast> forecastsWithoutTimeTableRow = filterOutForecastsWithoutTimeTableRow(forecasts);
+        List<Forecast> forecastsFilteredById = filterOutDoubleForecasts(forecastsWithoutTimeTableRow);
 
         Map<TimeTableRowId, Forecast> forecastMap = Maps.uniqueIndex(Iterables.filter(forecastsFilteredById, f -> allowedSources.contains(f.source)), f -> f.timeTableRow.id);
 
@@ -69,8 +70,19 @@ public class ForecastMergingService {
         return train;
     }
 
+    private List<Forecast> filterOutForecastsWithoutTimeTableRow(List<Forecast> forecasts) {
+        return Lists.newArrayList(Iterables.filter(forecasts, f -> {
+            if (f.timeTableRow != null) {
+                return true;
+            } else {
+                log.info("Filtered out forecast {} because timeTableRow was null", f);
+                return false;
+            }
+        }));
+    }
+
     private List<Forecast> filterOutDoubleForecasts(List<Forecast> forecasts) {
-        Ordering<Forecast> ordering = Ordering.from((Comparator<Forecast>) (o1, o2) -> o1.id.compareTo(o2.id));
+        Ordering<Forecast> ordering = Ordering.from(Comparator.comparing(o -> o.id));
 
         ImmutableListMultimap<TimeTableRowId, Forecast> forecastsById = Multimaps.index(forecasts, f -> f.timeTableRow.id);
 

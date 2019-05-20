@@ -67,7 +67,10 @@ public class RoutesetController extends ADataController {
     @ApiOperation("Returns routesets that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET)
     public List<Routeset> getRoutesetsByVersion(final HttpServletResponse response,
-                                                @RequestParam(required = false, defaultValue = "0") Long version) {
+                                                @RequestParam(required = false) Long version) {
+        if (version == null) {
+            version = routesetRepository.getMaxVersion() - 1;
+        }
 
         final List<Long> ids = routesetRepository.findIdByVersionGreaterThan(version, new PageRequest(0, 2500));
 

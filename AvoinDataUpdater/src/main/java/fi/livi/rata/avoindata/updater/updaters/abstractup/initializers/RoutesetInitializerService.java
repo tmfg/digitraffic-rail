@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.TrainPublishingService;
 import fi.livi.rata.avoindata.updater.service.routeset.TimeTableRowByRoutesetUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.RoutesetPersistService;
@@ -25,6 +26,9 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
     @Autowired
     private TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
 
+    @Autowired
+    private TrainPublishingService trainPublishingService;
+
     @Override
     public String getPrefix() {
         return "routesets";
@@ -46,7 +50,7 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
         sendEntitiesToMqtt(updatedEntities);
 
-        timeTableRowByRoutesetUpdateService.updateByRoutesets(updatedEntities);
+        trainPublishingService.publish(timeTableRowByRoutesetUpdateService.updateByRoutesets(updatedEntities));
 
         return updatedEntities;
     }
