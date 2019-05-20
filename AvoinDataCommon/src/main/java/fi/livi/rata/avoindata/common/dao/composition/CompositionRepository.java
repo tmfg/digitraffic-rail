@@ -36,7 +36,7 @@ public interface CompositionRepository extends CustomGeneralRepository<Compositi
 
     @Query("select composition.id from Composition composition " +
             "where composition.version > ?1 " +
-            "order by composition.version desc ")
+            "order by composition.version asc ")
     List<TrainId> findIdsByVersionGreaterThan(Long version, Pageable pageable);
 
     @Query("select coalesce(max(composition.version),0) from Composition composition")
