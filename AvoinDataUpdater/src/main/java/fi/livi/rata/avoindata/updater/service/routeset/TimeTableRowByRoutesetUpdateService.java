@@ -74,6 +74,10 @@ public class TimeTableRowByRoutesetUpdateService {
                 continue;
             }
 
+            if (routeset.clientSystem.equals("TAKO")) {
+                continue;
+            }
+
             ListMultimap<String, TimeTableRowAndItsIndex> timeTableRowsByStation = LinkedListMultimap.create();
             for (int i = 0; i < train.timeTableRows.size(); i++) {
                 TimeTableRow timeTableRow = train.timeTableRows.get(i);
