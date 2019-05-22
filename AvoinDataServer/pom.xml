@@ -144,6 +144,12 @@
             <artifactId>aws-xray-recorder-sdk-spring</artifactId>
             <version>2.2.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>technology.dice.open</groupId>
+            <artifactId>dice-fairlink</artifactId>
+            <version>1.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -202,4 +208,14 @@
             </plugin>
         </plugins>
     </build>
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-dicetechnology-dice-fairlink</id>
+            <name>bintray</name>
+            <url>https://dl.bintray.com/dicetechnology/dice-fairlink</url>
+        </repository>
+    </repositories>
 </project>

@@ -8,6 +8,6 @@ import javax.annotation.PostConstruct;
 public class DNSConfig {
     @PostConstruct
     public void setTTL() {
-        java.security.Security.setProperty("networkaddress.cache.ttl", "10");
+        java.security.Security.setProperty("networkaddress.cache.ttl", "0");
     }
 }
