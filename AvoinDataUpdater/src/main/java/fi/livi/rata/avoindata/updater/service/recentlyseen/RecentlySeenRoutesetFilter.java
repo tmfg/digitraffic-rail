@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
 
 @Component
 public class RecentlySeenRoutesetFilter extends AbstractRecentlySeenEntityFilter<Routeset, Long> {
-    public static final int TIMESTAMP_RECENT_TRESHOLD_MINUTES = 60 * 4;
+    public static final int TIMESTAMP_RECENT_TRESHOLD_MINUTES = 60 * 24;
     @Autowired
     private DateProvider dp;
 
