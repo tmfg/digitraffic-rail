@@ -44,9 +44,9 @@ public class TrainRunningMessageController extends ADataController {
 
     @ApiOperation("Returns train running messages for single train")
     @RequestMapping(path = "/{departure_date}/{train_number}", method = RequestMethod.GET)
-    public List<TrainRunningMessage> getTrainTrackingByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "0") final Long version) {
+    public List<TrainRunningMessage> getTrainTrackingByTrainNumberAndDepartureDate(HttpServletResponse response, @PathVariable final String train_number,
+                                                                                   @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+                                                                                   @RequestParam(required = false, defaultValue = "0") final Long version) {
 
         if (departure_date == null) {
             departure_date = trainRunningMessageRepository.getMaxDepartureDateForTrainNumber(train_number, LocalDate.now().minusDays(2));
@@ -68,23 +68,20 @@ public class TrainRunningMessageController extends ADataController {
     @ApiOperation("Returns latest train running messages for single train")
     @RequestMapping(path = "/latest/{train_number}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
-            @RequestParam(required = false, defaultValue = "0") final Long version) {
+                                                                   @RequestParam(required = false, defaultValue = "0") final Long version) {
+        LocalDate departure_date = trainRunningMessageRepository.getMaxDepartureDateForTrainNumber(train_number, LocalDate.now().minusDays(2));
+        if (departure_date == null) {
+            departure_date = LocalDate.now();
+        }
 
 
-          LocalDate  departure_date = trainRunningMessageRepository.getMaxDepartureDateForTrainNumber(train_number, LocalDate.now().minusDays
-                  (2));
-            if (departure_date == null) {
-                departure_date = LocalDate.now();
-            }
-
-
-        return this.getTrainTrackingByTrainNumber(response,train_number,departure_date,0L);
+        return this.getTrainTrackingByTrainNumberAndDepartureDate(response, train_number, departure_date, version);
     }
 
     @ApiOperation("Returns train running messages for trains that have passed {station} on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "station/{station}/{departure_date}")
     public List<TrainRunningMessage> getTrainTrackingByStationAndDepartureDate(HttpServletResponse response,
-            @PathVariable final String station, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+                                                                               @PathVariable final String station, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
         List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndDepartureDate(station,
@@ -97,8 +94,8 @@ public class TrainRunningMessageController extends ADataController {
     @ApiOperation("Returns train running messages for trains that have passed {station}, {track_section} on {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}/{track_section}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndDate(HttpServletResponse response,
-            @PathVariable final String station, @PathVariable final String track_section,
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+                                                                                     @PathVariable final String station, @PathVariable final String track_section,
+                                                                                     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
         List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSectionAndDepartureDate(station,
@@ -112,8 +109,8 @@ public class TrainRunningMessageController extends ADataController {
     @ApiOperation("Returns train running messages for trains that have passed {station}, {track_section}")
     @RequestMapping(path = "/station/{station}/latest/{track_section}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndLimit(HttpServletResponse response,
-            @PathVariable final String station, @PathVariable final String track_section,
-            @RequestParam(defaultValue = "100") Integer limit) {
+                                                                                      @PathVariable final String station, @PathVariable final String track_section,
+                                                                                      @RequestParam(defaultValue = "100") Integer limit) {
         if (limit > MAX_LIMIT) {
             limit = MAX_LIMIT;
         }
@@ -128,7 +125,7 @@ public class TrainRunningMessageController extends ADataController {
     @ApiOperation("Returns train running messages newer than {version}")
     @RequestMapping(path = "/", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByVersion(final HttpServletResponse response,
-            @RequestParam(required = false) Long version) {
+                                                               @RequestParam(required = false) Long version) {
         if (version == null) {
             version = trainRunningMessageRepository.getMaxVersion() - 1;
         }

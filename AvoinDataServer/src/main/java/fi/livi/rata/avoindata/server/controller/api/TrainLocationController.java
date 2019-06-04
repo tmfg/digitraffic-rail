@@ -47,7 +47,7 @@ public class TrainLocationController extends ADataController {
 
     @ApiOperation("Returns latest wsg84 coordinates for a train")
     @RequestMapping(method = RequestMethod.GET, path = "latest/{train_number}")
-    public Iterable<TrainLocation> getTrainLocation(@PathVariable @ApiParam(example = "1") Long train_number, @RequestParam(required = false) @ApiParam(example =
+    public Iterable<TrainLocation> getTrainLocationByTrainNumber(@PathVariable @ApiParam(example = "1") Long train_number, @RequestParam(required = false) @ApiParam(example =
             "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
 
@@ -57,7 +57,7 @@ public class TrainLocationController extends ADataController {
 
     @ApiOperation("Returns wsg84 coordinates for a train run on departure date")
     @RequestMapping(method = RequestMethod.GET, path = "{departure_date}/{train_number}")
-    public Iterable<TrainLocation> getTrainLocation(@PathVariable @ApiParam(example = "1") Long train_number, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date, @RequestParam(required = false) @ApiParam(example =
+    public Iterable<TrainLocation> getTrainLocationByTrainNumberAndDepartureDate(@PathVariable @ApiParam(example = "1") Long train_number, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date, @RequestParam(required = false) @ApiParam(example =
             "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_HISTORY);
 
