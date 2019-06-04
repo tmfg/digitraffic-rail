@@ -171,6 +171,6 @@ public class RewriteController {
     public List<TrainRunningMessage> getTrainTrackingByTrainNumberAndDepartureDate(HttpServletResponse response, @PathVariable final String train_number,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
             @RequestParam(required = false, defaultValue = "0") final Long version) {
-        return trainRunningMessageController.getTrainTrackingByTrainNumber(response, train_number, departure_date, version);
+        return trainRunningMessageController.getTrainTrackingByTrainNumberAndDepartureDate(response, train_number, departure_date, version);
     }
 }
