@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -118,6 +119,28 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
         Train returnedTrain = trains.get(0);
         Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(3).commercialTrack);
         Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(4).commercialTrack);
+    }
+
+    @Test
+    public void trainWithDoubleStopNearEachOtherShouldNotUpdateBoth() {
+        Train train = replaceLastRow();
+
+        ZonedDateTime firstScheduledTime = train.timeTableRows.get(0).scheduledTime;
+        for (int i = 0; i < train.timeTableRows.size(); i++) {
+            train.timeTableRows.get(i).scheduledTime = firstScheduledTime.plusSeconds(i);
+        }
+
+        Routeset routeset = routesetFactory.create();
+        routeset.routesections.get(0).stationCode = "HKI";
+        routeset.routesections.get(0).commercialTrackId = "UPD";
+        routeset.messageTime = Iterables.getLast(train.timeTableRows).scheduledTime;
+
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+
+        Assert.assertEquals(1, trains.size());
+        Train returnedTrain = trains.get(0);
+        Assert.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assert.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     private Train replaceLastRow() {

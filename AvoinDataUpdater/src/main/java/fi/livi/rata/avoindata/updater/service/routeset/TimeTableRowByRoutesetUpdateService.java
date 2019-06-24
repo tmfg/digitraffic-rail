@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -131,15 +132,21 @@ public class TimeTableRowByRoutesetUpdateService {
     }
 
     private void updateMultistopTimeTableRow(Routeset routeset, Train train, Long maxVersion, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowAndItsIndexList) {
-        for (TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowAndItsIndexList) {
-            TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
-            if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
-                //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
-            } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
-                //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
-            } else {
-                setCommercialTrack(maxVersion, train, routesection, timeTableRow, train);
-            }
+        Collections.sort(timeTableRowAndItsIndexList, (left, right) -> {
+            Long leftDiff = Math.abs(Duration.between(left.timeTableRow.scheduledTime, routeset.messageTime).toSeconds());
+            Long rightDiff = Math.abs(Duration.between(right.timeTableRow.scheduledTime, routeset.messageTime).toSeconds());
+
+            return leftDiff.compareTo(rightDiff);
+        });
+
+
+        TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
+        if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
+            //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
+        } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
+            //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
+        } else {
+            setCommercialTrack(maxVersion, train, routesection, timeTableRow, train);
         }
     }
 
