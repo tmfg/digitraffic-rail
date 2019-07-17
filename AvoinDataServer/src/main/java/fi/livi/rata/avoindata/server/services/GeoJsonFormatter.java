@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class GeoJsonFormatter {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public <E> Map<String, Object> wrapAsGeoJson(List<E> entities, Function<E, Double[]> coordinateProvider) {
+    public <E> Map<String, Object> wrapAsGeoJson(ServerHttpResponse response, List<E> entities, Function<E, Double[]> coordinateProvider) {
         Map<String, Object> output = new HashMap<>();
         output.put("type", "FeatureCollection");
 
@@ -27,6 +28,8 @@ public class GeoJsonFormatter {
 
             features.add(featureMap);
         }
+
+        response.getHeaders().add("Content-Type", "application/vnd.geo+json");
 
         return output;
     }

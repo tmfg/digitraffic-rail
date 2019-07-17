@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
@@ -33,11 +32,11 @@ public class GeoJsonControllerAdvice implements ResponseBodyAdvice<Object> {
                                   final Class<? extends HttpMessageConverter<?>> aClass, final ServerHttpRequest serverHttpRequest,
                                   final ServerHttpResponse serverHttpResponse) {
         String path = serverHttpRequest.getURI().getPath();
-        if (serverHttpRequest instanceof ServletServerHttpRequest && ((ServletServerHttpRequest) serverHttpRequest).getServletRequest().getParameter("format").equals("geojson")) {
+        if (serverHttpRequest.getHeaders().getAccept().contains(MediaType.valueOf("application/vnd.geo+json"))) {
             if (path.contains("/train-locations")) {
-                return geoJsonFormatter.wrapAsGeoJson((List<TrainLocation>) body, s -> new Double[]{s.location.getX(), s.location.getY()});
+                return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<TrainLocation>) body, s -> new Double[]{s.location.getX(), s.location.getY()});
             } else if (path.contains("metadata/stations")) {
-                return geoJsonFormatter.wrapAsGeoJson((List<Station>) body, s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()});
+                return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<Station>) body, s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()});
             }
         }
 
