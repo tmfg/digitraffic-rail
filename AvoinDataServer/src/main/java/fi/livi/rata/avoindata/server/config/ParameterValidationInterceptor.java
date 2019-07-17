@@ -36,7 +36,7 @@ public class ParameterValidationInterceptor extends HandlerInterceptorAdapter {
                 final String camelParameterName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, parameterName);
                 final boolean isMethodFound = methodParameterNames.contains(parameterName) || methodParameterNames.contains(
                         camelParameterName);
-                if (!isMethodFound && !isDateAlias(methodParameterNames, parameterName)) {
+                if (!isMethodFound && !isDateAlias(methodParameterNames, parameterName) && !isFormatParameter(parameterName)) {
                     throw new UnknownParametersException(request, parameterName);
                 }
             }
@@ -49,5 +49,9 @@ public class ParameterValidationInterceptor extends HandlerInterceptorAdapter {
 
     private boolean isDateAlias(final Set<String> methodParameterNames, final String parameterName) {
         return methodParameterNames.contains("departure_date") && parameterName.equals("date");
+    }
+
+    private boolean isFormatParameter(final String parameterName) {
+        return parameterName.equals("format");
     }
 }

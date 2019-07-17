@@ -133,8 +133,8 @@ public class TimeTableRowByRoutesetUpdateService {
 
     private void updateMultistopTimeTableRow(Routeset routeset, Train train, Long maxVersion, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowAndItsIndexList) {
         Collections.sort(timeTableRowAndItsIndexList, (left, right) -> {
-            Long leftDiff = Math.abs(Duration.between(left.timeTableRow.scheduledTime, routeset.messageTime).toSeconds());
-            Long rightDiff = Math.abs(Duration.between(right.timeTableRow.scheduledTime, routeset.messageTime).toSeconds());
+            Long leftDiff = getDifference(routeset, left.timeTableRow);
+            Long rightDiff = getDifference(routeset, right.timeTableRow);
 
             return leftDiff.compareTo(rightDiff);
         });
@@ -143,11 +143,15 @@ public class TimeTableRowByRoutesetUpdateService {
         TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
         if (routesection.commercialTrackId.equals(timeTableRow.commercialTrack)) {
             //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
-        } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
+        } else if (getDifference(routeset, timeTableRow) > (30 * 60)) {
             //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
         } else {
             setCommercialTrack(maxVersion, train, routesection, timeTableRow, train);
         }
+    }
+
+    private Long getDifference(Routeset routeset, TimeTableRow ttr) {
+        return Math.abs(Duration.between(ttr.scheduledTime, routeset.messageTime).toSeconds());
     }
 
     private List<Routeset> getRoutesetsWithValidTrain(List<Routeset> routesets) {
