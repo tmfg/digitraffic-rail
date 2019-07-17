@@ -42,6 +42,8 @@ public class GeoJsonFormatter {
 
         Map propertyMap = objectMapper.convertValue(entity, Map.class);
         propertyMap.remove("location");
+        propertyMap.remove("longitude");
+        propertyMap.remove("latitude");
         featureMap.put("properties", propertyMap);
         return featureMap;
     }
