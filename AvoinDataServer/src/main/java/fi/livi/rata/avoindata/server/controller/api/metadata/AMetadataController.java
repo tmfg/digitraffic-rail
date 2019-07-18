@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 
 @RestController
-@RequestMapping(value = WebConfig.CONTEXT_PATH + "metadata", produces = "application/json")
+@RequestMapping(value = WebConfig.CONTEXT_PATH + "metadata")
 @Api(tags = "metadata",description = "Returns supporting metadata. For example list of stations")
 public abstract class AMetadataController {
     protected void setCache(final HttpServletResponse response, Collection items) {

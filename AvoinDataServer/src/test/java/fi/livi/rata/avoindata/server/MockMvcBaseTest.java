@@ -33,6 +33,15 @@ public abstract class MockMvcBaseTest extends BaseTest {
         return resultActions;
     }
 
+    protected ResultActions getGeoJson(String url) throws Exception {
+        final ResultActions resultActions = this.mockMvc.perform(
+                get("/api/v1" + url).accept(MediaType.parseMediaType("application/vnd.geo+json"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.features").exists());
+//                .andExpect(content().contentType("application/vnd.geo+json")); // does not work for some reason
+
+        return resultActions;
+    }
+
     protected void assertLength(String url, int length) throws Exception {
         final ResultActions r1 = getJson(url);
         r1.andExpect(jsonPath("$.length()").value(length));

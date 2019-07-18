@@ -17,21 +17,23 @@ public class GeoJsonFormatter {
     private ObjectMapper objectMapper;
 
     public <E> Map<String, Object> wrapAsGeoJson(ServerHttpResponse response, List<E> entities, Function<E, Double[]> coordinateProvider) {
+        response.getHeaders().add("Content-Type", "application/vnd.geo+json");
+
         Map<String, Object> output = new HashMap<>();
         output.put("type", "FeatureCollection");
+        output.put("features", createFeatureCollection(entities, coordinateProvider));
 
+        return output;
+    }
+
+    private <E> List<Map<String, Object>> createFeatureCollection(List<E> entities, Function<E, Double[]> coordinateProvider) {
         List<Map<String, Object>> features = new ArrayList<>();
-        output.put("features", features);
-
         for (E entity : entities) {
             Map<String, Object> featureMap = createFeature(coordinateProvider, entity);
 
             features.add(featureMap);
         }
-
-        response.getHeaders().add("Content-Type", "application/vnd.geo+json");
-
-        return output;
+        return features;
     }
 
     private <E> Map<String, Object> createFeature(Function<E, Double[]> coordinateProvider, E entity) {
