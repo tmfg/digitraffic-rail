@@ -18,7 +18,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo())
                 .useDefaultResponseMessages(false)
                 .select()
-                .paths(PathSelectors.ant("/api/v1/**"))
+                .paths(PathSelectors.ant("/api/v*/**"))
                 .build()   ;
     }
 
