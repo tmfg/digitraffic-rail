@@ -32,7 +32,7 @@ public class GeoJsonControllerAdvice implements ResponseBodyAdvice<Object> {
                                   final Class<? extends HttpMessageConverter<?>> aClass, final ServerHttpRequest serverHttpRequest,
                                   final ServerHttpResponse serverHttpResponse) {
         String path = serverHttpRequest.getURI().getPath();
-        if (serverHttpRequest.getHeaders().getAccept().contains(MediaType.valueOf("application/vnd.geo+json"))) {
+        if (isAGeoJsonRequest(serverHttpRequest)) {
             if (path.contains("/train-locations")) {
                 return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<TrainLocation>) body, s -> new Double[]{s.location.getX(), s.location.getY()});
             } else if (path.contains("metadata/stations")) {
@@ -41,5 +41,9 @@ public class GeoJsonControllerAdvice implements ResponseBodyAdvice<Object> {
         }
 
         return body;
+    }
+
+    private boolean isAGeoJsonRequest(ServerHttpRequest serverHttpRequest) {
+        return serverHttpRequest.getHeaders().getAccept().contains(MediaType.valueOf("application/vnd.geo+json"));
     }
 }
