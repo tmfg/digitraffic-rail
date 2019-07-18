@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.util.List;
+import java.util.Map;
 
 @ControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
@@ -33,8 +34,10 @@ public class GeoJsonControllerAdvice implements ResponseBodyAdvice<Object> {
                                   final ServerHttpResponse serverHttpResponse) {
         String path = serverHttpRequest.getURI().getPath();
         if (isAGeoJsonRequest(serverHttpRequest)) {
-            if (path.contains("/train-locations")) {
+            if (path.contains("api/v1/train-locations")) {
                 return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<TrainLocation>) body, s -> new Double[]{s.location.getX(), s.location.getY()});
+            } else if (path.contains("api/v2/train-locations")) {
+                return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<Map<String, Object>>) body, s -> (Double[]) s.get("location"));
             } else if (path.contains("metadata/stations")) {
                 return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<Station>) body, s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()});
             }

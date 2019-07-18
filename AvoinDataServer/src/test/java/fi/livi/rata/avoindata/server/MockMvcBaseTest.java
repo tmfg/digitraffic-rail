@@ -26,8 +26,12 @@ public abstract class MockMvcBaseTest extends BaseTest {
     }
 
     protected ResultActions getJson(String url) throws Exception {
+        return getJson(url, "v1");
+    }
+
+    protected ResultActions getJson(String url, String apiVersion) throws Exception {
         final ResultActions resultActions = this.mockMvc.perform(
-                get("/api/v1" + url).accept(MediaType.parseMediaType("application/json;charset=UTF-8"))).andExpect(status().isOk())
+                get("/api/" + apiVersion + "/" + url).accept(MediaType.parseMediaType("application/json;charset=UTF-8"))).andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"));
 
         return resultActions;
