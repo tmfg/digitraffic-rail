@@ -12,11 +12,11 @@ import java.time.LocalDate;
 public class TrainId implements Serializable {
     @NonNull
     @Column
-    @ApiModelProperty(value = "Identifies the train inside a single departure date", required = true)
+    @ApiModelProperty(value = "Identifies the train inside a single departure date", example = "1", required = true)
     public Long trainNumber;
     @NonNull
     @Column
-    @Type(type="org.hibernate.type.LocalDateType")
+    @Type(type = "org.hibernate.type.LocalDateType")
     @ApiModelProperty(value = "Date of the train's first departure", required = true, example = "2017-12-01")
     public LocalDate departureDate;
 
@@ -60,6 +60,6 @@ public class TrainId implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s: %s",departureDate,trainNumber);
+        return String.format("%s: %s", departureDate, trainNumber);
     }
 }

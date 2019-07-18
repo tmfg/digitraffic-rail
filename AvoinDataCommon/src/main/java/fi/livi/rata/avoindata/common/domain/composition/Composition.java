@@ -1,16 +1,16 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
-import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import javax.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import javax.persistence.*;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table
@@ -39,7 +39,7 @@ public class Composition  {
     public long trainTypeId;
 
     @Column
-    @ApiModelProperty("When was this data last modified")
+    @ApiModelProperty(value = "When was this data last modified", example = "253328854733")
     public Long version;
 
     @OneToMany(mappedBy = "composition", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)

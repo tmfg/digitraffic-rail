@@ -15,7 +15,7 @@ public class Locomotive {
     public Long id;
 
     @Column
-    @ApiModelProperty("Location of the locomotive in the train. 1=start of the train")
+    @ApiModelProperty(value = "Location of the locomotive in the train. 1=start of the train", example = "1")
     public int location;
 
     @Column

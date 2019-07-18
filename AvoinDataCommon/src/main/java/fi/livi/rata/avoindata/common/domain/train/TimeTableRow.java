@@ -102,7 +102,7 @@ public class TimeTableRow {
 
     @Column
     @JsonView(LiveTrains.class)
-    @ApiModelProperty("Difference between schedule and actual time in minutes")
+    @ApiModelProperty(value = "Difference between schedule and actual time in minutes", example = "5")
     public Long differenceInMinutes;
 
     @OneToMany(mappedBy = "timeTableRow", fetch = FetchType.LAZY)
