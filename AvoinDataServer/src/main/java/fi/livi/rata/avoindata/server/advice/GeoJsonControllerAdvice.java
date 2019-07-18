@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.advice;
 
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.server.dto.TrainLocationV2;
 import fi.livi.rata.avoindata.server.services.GeoJsonFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.util.List;
-import java.util.Map;
 
 @ControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
@@ -37,7 +37,7 @@ public class GeoJsonControllerAdvice implements ResponseBodyAdvice<Object> {
             if (path.contains("api/v1/train-locations")) {
                 return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<TrainLocation>) body, s -> new Double[]{s.location.getX(), s.location.getY()});
             } else if (path.contains("api/v2/train-locations")) {
-                return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<Map<String, Object>>) body, s -> (Double[]) s.get("location"));
+                return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<TrainLocationV2>) body, s -> s.location);
             } else if (path.contains("metadata/stations")) {
                 return geoJsonFormatter.wrapAsGeoJson(serverHttpResponse, (List<Station>) body, s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()});
             }
