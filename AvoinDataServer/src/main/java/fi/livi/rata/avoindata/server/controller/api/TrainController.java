@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
-@Transactional(readOnly = true)
 public class TrainController extends ADataController {
     public static int MAX_ANNOUNCED_TRAINS = 2500;
     @Autowired
@@ -52,6 +51,7 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
+    @Transactional(readOnly = true)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
