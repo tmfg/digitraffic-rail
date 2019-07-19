@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
+@Transactional(readOnly = true)
 public class TrainController extends ADataController {
     public static int MAX_ANNOUNCED_TRAINS = 2500;
     @Autowired
