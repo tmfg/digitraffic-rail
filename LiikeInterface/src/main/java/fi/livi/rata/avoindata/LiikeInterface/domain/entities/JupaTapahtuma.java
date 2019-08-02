@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.LiikeInterface.domain.BaseEntity;
 import fi.livi.rata.avoindata.LiikeInterface.domain.JunatapahtumaPrimaryKey;
@@ -31,6 +32,10 @@ public class JupaTapahtuma extends BaseEntity {
 
     @Type(type="org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime toteutunutAika;
+
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @JsonIgnore
+    public ZonedDateTime muokkausAika;
 
     @Column(name="ATTAP_TYPE")
     public String tyyppi;
