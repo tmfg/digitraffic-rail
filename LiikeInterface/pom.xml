@@ -16,7 +16,6 @@
 
     <properties>
         <start-class>fi.livi.rata.avoindata.LiikeInterface.LiikeInterfaceApplication</start-class>
-        <java.version>11</java.version>
     </properties>
 
     <dependencies>
