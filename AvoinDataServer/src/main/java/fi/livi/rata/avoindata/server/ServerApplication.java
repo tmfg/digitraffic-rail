@@ -30,6 +30,8 @@ public class ServerApplication {
     private static Logger log = LoggerFactory.getLogger(ServerApplication.class);
 
     public static void main(String[] args) {
+        log.info("Dummy change");
+
         System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH","true");
 
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
