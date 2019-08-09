@@ -305,12 +305,12 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
         FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
-        LocalDate now = LocalDate.now();
-        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, now));
-        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, now));
-        final Train train3 = trainFactory.createBaseTrain(new TrainId(3L, now));
-        final Train train4 = trainFactory.createBaseTrain(new TrainId(4L, now));
-        final Train train5 = trainFactory.createBaseTrain(new TrainId(5L, now));
+        LocalDate dateNow = LocalDate.now();
+        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, dateNow));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, dateNow));
+        final Train train3 = trainFactory.createBaseTrain(new TrainId(3L, dateNow));
+        final Train train4 = trainFactory.createBaseTrain(new TrainId(4L, dateNow));
+        final Train train5 = trainFactory.createBaseTrain(new TrainId(5L, dateNow));
 
         clearActualTimes(train1);
         clearActualTimes(train2);
@@ -318,11 +318,12 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         clearActualTimes(train4);
         clearActualTimes(train5);
 
-        train1.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(1);
-        train2.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(2);
-        train3.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(3);
-        train4.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(4);
-        train5.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(5);
+        ZonedDateTime zonedDateTimeNow = ZonedDateTime.now();
+        train1.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(1);
+        train2.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(2);
+        train3.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(3);
+        train4.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(4);
+        train5.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(5);
 
         train1.deleted = true;
         train2.deleted = true;
