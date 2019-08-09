@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.concurrent.Executors;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -173,6 +174,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         r3.andExpect(jsonPath("$.length()").value(1));
     }
 
+
+    private void clearActualTimes(Train train1) {
+        for (TimeTableRow timeTableRow : train1.timeTableRows) {
+            timeTableRow.actualTime = null;
+        }
+    }
+
     @Test
     @Transactional
     public void causeShouldShow() throws Exception {
@@ -288,6 +296,42 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 .andExpect(jsonPath("$.length(").value(0));
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length(").value(0));
         getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length(").value(0));
+
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+    }
+
+    @Test
+    @Transactional
+    public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+
+        LocalDate now = LocalDate.now();
+        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, now));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, now));
+        final Train train3 = trainFactory.createBaseTrain(new TrainId(3L, now));
+        final Train train4 = trainFactory.createBaseTrain(new TrainId(4L, now));
+        final Train train5 = trainFactory.createBaseTrain(new TrainId(5L, now));
+
+        clearActualTimes(train1);
+        clearActualTimes(train2);
+        clearActualTimes(train3);
+        clearActualTimes(train4);
+        clearActualTimes(train5);
+
+        train1.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(1);
+        train2.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(2);
+        train3.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(3);
+        train4.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(4);
+        train5.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().plusMinutes(5);
+
+        train1.deleted = true;
+        train2.deleted = true;
+
+        final ResultActions r1 = getJson("/live-trains/station/HKI?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=3&include_nonstopping=false");
+        r1.andExpect(jsonPath("$.length()").value(3));
+        r1.andExpect(jsonPath("$[0].trainNumber").value(3));
+        r1.andExpect(jsonPath("$[1].trainNumber").value(4));
+        r1.andExpect(jsonPath("$[2].trainNumber").value(5));
 
         FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
     }
