@@ -109,7 +109,7 @@ public class TimeTableRowByRoutesetUpdateService {
     private void updateSingleStopTimeTableRow(Long maxVersion, Train train, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
         for (TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowsToUpdate) {
             TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
-            if (IsUpdatePossible(routesection, timeTableRow)) {
+            if (isUpdatePossible(routesection, timeTableRow)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else {
                 setCommercialTrack(maxVersion, train, routesection, timeTableRow, timeTableRow.train);
@@ -117,8 +117,8 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private boolean IsUpdatePossible(Routesection routesection, TimeTableRow timeTableRow) {
-        return routesection.commercialTrackId.equals(timeTableRow.commercialTrack) && timeTableRow.station.stationShortCode.equals("PSL") == false;
+    private boolean isUpdatePossible(Routesection routesection, TimeTableRow timeTableRow) {
+        return routesection.commercialTrackId.equals(timeTableRow.commercialTrack);
     }
 
     private void setCommercialTrack(Long maxVersion, Train train, Routesection routesection, TimeTableRow timeTableRow, Train train2) {
@@ -145,7 +145,7 @@ public class TimeTableRowByRoutesetUpdateService {
 
 
         TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
-        if (IsUpdatePossible(routesection, timeTableRow)) {
+        if (isUpdatePossible(routesection, timeTableRow)) {
             //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
         } else if (Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()) > 30) {
             //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));
