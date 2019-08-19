@@ -28,10 +28,7 @@ public class GeoJsonFormatter {
     private <E> List<Feature> createFeatureCollection(List<E> entities, Function<E, Double[]> coordinateProvider) {
         List<Feature> features = new ArrayList<>();
         for (E entity : entities) {
-            Feature feature = createFeature(coordinateProvider, entity);
-
-
-            features.add(feature);
+            features.add(createFeature(coordinateProvider, entity));
         }
         return features;
     }
