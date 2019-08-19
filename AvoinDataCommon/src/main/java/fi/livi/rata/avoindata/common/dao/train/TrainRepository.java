@@ -37,40 +37,44 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             " FROM" +
             "    live_time_table_train t" +
             " WHERE" +
-            "    (t.train_stopping = true or t.train_stopping = ?6)" +
-            "        AND (?1 is null OR t.station_short_code = ?1)" +
-            "        AND t.type = '1'" +
-            "        AND t.actual_time IS NOT NULL " +
+            "   (t.train_stopping = true or t.train_stopping = ?6)" +
+            "   AND (?1 is null OR t.station_short_code = ?1)" +
+            "   AND t.type = '1'" +
+            "   AND t.actual_time IS NOT NULL" +
+            "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.actual_time DESC" +
             " LIMIT ?2) UNION ALL (SELECT " +
             "    '2', t.departure_date, t.train_number, t.version" +
             " FROM" +
             "    live_time_table_train t" +
             " WHERE" +
-            "    (t.train_stopping = true or t.train_stopping = ?6)" +
-            "        AND (?1 is null OR t.station_short_code = ?1)" +
-            "        AND t.type = '1'" +
-            "        AND t.actual_time IS NULL" +
+            "   (t.train_stopping = true or t.train_stopping = ?6)" +
+            "   AND (?1 is null OR t.station_short_code = ?1)" +
+            "   AND t.type = '1'" +
+            "   AND t.actual_time IS NULL" +
+            "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.predict_time ASC" +
             " LIMIT ?3) UNION ALL (SELECT " +
             "    '3', t.departure_date, t.train_number, t.version" +
             " FROM" +
             "    live_time_table_train t" +
             " WHERE" +
-            "    (t.train_stopping = true or t.train_stopping = ?6)" +
-            "        AND (?1 is null OR t.station_short_code = ?1)" +
-            "        AND t.type = '0'" +
-            "        AND t.actual_time IS NOT NULL" +
+            "   (t.train_stopping = true or t.train_stopping = ?6)" +
+            "   AND (?1 is null OR t.station_short_code = ?1)" +
+            "   AND t.type = '0'" +
+            "   AND t.actual_time IS NOT NULL" +
+            "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.actual_time DESC" +
             " LIMIT ?4) UNION ALL (SELECT " +
             "    '4', t.departure_date, t.train_number, t.version" +
             " FROM" +
             "    live_time_table_train t" +
             " WHERE" +
-            "    (t.train_stopping = true or t.train_stopping = ?6)" +
-            "        AND (?1 is null OR t.station_short_code = ?1)" +
-            "        AND t.type = '0'" +
-            "        AND t.actual_time IS NULL" +
+            "   (t.train_stopping = true or t.train_stopping = ?6)" +
+            "   AND (?1 is null OR t.station_short_code = ?1)" +
+            "   AND t.type = '0'" +
+            "   AND t.actual_time IS NULL" +
+            "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.predict_time ASC" +
             " LIMIT ?5)) unionedTable", nativeQuery = true)
     List<Object[]> findLiveTrainsIds(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,

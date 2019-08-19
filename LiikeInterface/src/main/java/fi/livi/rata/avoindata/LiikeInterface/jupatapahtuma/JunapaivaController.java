@@ -53,7 +53,7 @@ public class JunapaivaController {
         final ZonedDateTime now = ZonedDateTime.now();
         Collection<Junapaiva> junapaivas = new HashSet<>();
 
-        final long maxVersion = jupaTapahtumaRepository.getMaxVersion(LocalDate.now(ZoneId.of("Europe/Helsinki")).minusDays(1));
+        final long maxVersion = jupaTapahtumaRepository.getMaxVersion(ZonedDateTime.now(ZoneId.of("Europe/Helsinki")).minusHours(18));
 
         List<JunapaivaPrimaryKey> junapaivaPrimaryKeysCasted = getChangedJunapaivasByVersion(version, maxVersion);
 

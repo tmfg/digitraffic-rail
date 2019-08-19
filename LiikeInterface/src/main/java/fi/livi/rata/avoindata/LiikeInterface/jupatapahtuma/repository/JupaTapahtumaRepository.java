@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 @Repository
 public interface JupaTapahtumaRepository extends CrudRepository<JupaTapahtuma, JunatapahtumaPrimaryKey> {
-    @Query("select coalesce(max(t.version),0) from JupaTapahtuma t where t.id.lahtopvm >= ?1")
-    long getMaxVersion(LocalDate minDepartureDate);
+    @Query("select coalesce(max(t.version),0) from JupaTapahtuma t where t.muokkausAika >= ?1")
+    long getMaxVersion(ZonedDateTime minMuokkausaika);
 }
