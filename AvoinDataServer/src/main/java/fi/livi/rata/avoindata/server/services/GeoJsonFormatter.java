@@ -7,7 +7,6 @@ import fi.livi.rata.avoindata.server.controller.api.geojson.Geometry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +17,7 @@ public class GeoJsonFormatter {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public <E> GeoJsonResponse wrapAsGeoJson(HttpServletResponse response, List<E> entities, Function<E, Double[]> coordinateProvider) {
-        response.addHeader("Content-Type", "application/vnd.geo+json");
-
+    public <E> GeoJsonResponse wrapAsGeoJson(List<E> entities, Function<E, Double[]> coordinateProvider) {
         GeoJsonResponse geoJsonResponse = new GeoJsonResponse();
         geoJsonResponse.type = "FeatureCollection";
         geoJsonResponse.features = createFeatureCollection(entities, coordinateProvider);
