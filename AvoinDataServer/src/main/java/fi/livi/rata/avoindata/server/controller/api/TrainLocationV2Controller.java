@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
+@ApiIgnore
 @RestController
 @RequestMapping("/api/v2/" + "train-locations")
 public class TrainLocationV2Controller extends ADataController {
