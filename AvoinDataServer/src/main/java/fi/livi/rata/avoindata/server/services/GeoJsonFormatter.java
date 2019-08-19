@@ -1,12 +1,14 @@
 package fi.livi.rata.avoindata.server.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
+import fi.livi.rata.avoindata.server.controller.api.geojson.GeoJsonResponse;
+import fi.livi.rata.avoindata.server.controller.api.geojson.Geometry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -16,40 +18,41 @@ public class GeoJsonFormatter {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public <E> Map<String, Object> wrapAsGeoJson(ServerHttpResponse response, List<E> entities, Function<E, Double[]> coordinateProvider) {
-        response.getHeaders().add("Content-Type", "application/vnd.geo+json");
+    public <E> GeoJsonResponse wrapAsGeoJson(HttpServletResponse response, List<E> entities, Function<E, Double[]> coordinateProvider) {
+        response.addHeader("Content-Type", "application/vnd.geo+json");
 
-        Map<String, Object> output = new HashMap<>();
-        output.put("type", "FeatureCollection");
-        output.put("features", createFeatureCollection(entities, coordinateProvider));
+        GeoJsonResponse geoJsonResponse = new GeoJsonResponse();
+        geoJsonResponse.type = "FeatureCollection";
+        geoJsonResponse.features = createFeatureCollection(entities, coordinateProvider);
 
-        return output;
+        return geoJsonResponse;
     }
 
-    private <E> List<Map<String, Object>> createFeatureCollection(List<E> entities, Function<E, Double[]> coordinateProvider) {
-        List<Map<String, Object>> features = new ArrayList<>();
+    private <E> List<Feature> createFeatureCollection(List<E> entities, Function<E, Double[]> coordinateProvider) {
+        List<Feature> features = new ArrayList<>();
         for (E entity : entities) {
-            Map<String, Object> featureMap = createFeature(coordinateProvider, entity);
+            Feature feature = createFeature(coordinateProvider, entity);
 
-            features.add(featureMap);
+
+            features.add(feature);
         }
         return features;
     }
 
-    private <E> Map<String, Object> createFeature(Function<E, Double[]> coordinateProvider, E entity) {
-        Map<String, Object> featureMap = new HashMap<>();
-        featureMap.put("type", "Feature");
+    private <E> Feature createFeature(Function<E, Double[]> coordinateProvider, E entity) {
+        Feature feature = new Feature();
+        feature.type = "Feature";
 
-        Map<String, Object> geometryMap = new HashMap<>();
-        geometryMap.put("type", "Point");
-        geometryMap.put("coordinates", coordinateProvider.apply(entity));
-        featureMap.put("geometry", geometryMap);
+        Geometry geometry = new Geometry();
+        geometry.type = "Point";
+        geometry.coordinates = coordinateProvider.apply(entity);
+        feature.geometry = geometry;
 
         Map propertyMap = objectMapper.convertValue(entity, Map.class);
         propertyMap.remove("location");
         propertyMap.remove("longitude");
         propertyMap.remove("latitude");
-        featureMap.put("properties", propertyMap);
-        return featureMap;
+        feature.properties = propertyMap;
+        return feature;
     }
 }
