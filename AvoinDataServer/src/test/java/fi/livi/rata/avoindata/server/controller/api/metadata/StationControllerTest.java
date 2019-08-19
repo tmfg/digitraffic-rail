@@ -10,7 +10,7 @@ public class StationControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void geoJsonWorks() throws Exception {
-        getGeoJson("/metadata/stations").andExpect(jsonPath("$.features").exists());
+        getGeoJson("/metadata/stations.geojson").andExpect(jsonPath("$.features").exists());
         getJson("/metadata/stations").andExpect(jsonPath("$.features").doesNotExist());
     }
 }

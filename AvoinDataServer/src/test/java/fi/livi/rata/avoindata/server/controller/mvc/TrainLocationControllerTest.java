@@ -49,14 +49,14 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
     public void geoJsonWorks() throws Exception {
         trainLocationFactory.createTrainLocation();
 
-        getGeoJson("/train-locations/latest")
+        getGeoJson("/train-locations.geojson/latest")
                 .andExpect(jsonPath("$.features.length()").value(1))
                 .andExpect(jsonPath("$.features[0].properties.length()").value(4))
                 .andExpect(jsonPath("$.features[0].properties['trainNumber']").value(1))
                 .andExpect(jsonPath("$.features[0].properties['departureDate']").value(dp.dateInHelsinki().toString()))
                 .andExpect(jsonPath("$.features[0].properties['speed']").value(100))
                 .andExpect(jsonPath("$.features[0].properties['timestamp']").exists());
-        getGeoJson("/train-locations/latest/1").andExpect(jsonPath("$.features.length()").value(1));
+        getGeoJson("/train-locations.geojson/latest/1").andExpect(jsonPath("$.features.length()").value(1));
         getJson("/train-locations/latest/1").andExpect(jsonPath("$.features").doesNotExist());
     }
 
