@@ -175,9 +175,11 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     }
 
 
-    private void clearActualTimes(Train train1) {
-        for (TimeTableRow timeTableRow : train1.timeTableRows) {
-            timeTableRow.actualTime = null;
+    private void clearActualTimes(Train... trains) {
+        for (Train train : trains) {
+            for (TimeTableRow timeTableRow : train.timeTableRows) {
+                timeTableRow.actualTime = null;
+            }
         }
     }
 
@@ -271,6 +273,39 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
     @Test
     @Transactional
+    public void trainCategoryFilteringShouldWork() throws Exception {
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+
+        Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
+        Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
+
+        clearActualTimes(train1, train2);
+
+        train1.trainCategoryId = 1;
+        train2.trainCategoryId = 2;
+
+        final ResultActions r1 = getJson("/live-trains/station/PSL");
+        r1.andExpect(jsonPath("$.length()").value(2));
+
+        final ResultActions r2 = getJson("/live-trains/station/PSL/?minutes_before_departure=1000&minutes_after_departure=1000&minutes_before_arrival=1000&minutes_after_arrival=1000");
+        r2.andExpect(jsonPath("$.length()").value(2));
+        final ResultActions r3 = getJson("/live-trains/station/PSL/?minutes_before_departure=1000&minutes_after_departure=1000&minutes_before_arrival=1000&minutes_after_arrival=1000&train_categories=test category");
+        r3.andExpect(jsonPath("$.length()").value(1));
+
+        final ResultActions r4 = getJson("/live-trains/station/PSL?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=2&include_nonstopping=false");
+        r4.andExpect(jsonPath("$.length()").value(2));
+
+        final ResultActions r5 = getJson("/live-trains/station/PSL?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=2&include_nonstopping=false&train_categories=test category, test cat,ABCD");
+        r5.andExpect(jsonPath("$.length()").value(2));
+
+        final ResultActions r6 = getJson("/live-trains/station/PSL?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=2&include_nonstopping=false&train_categories=test category");
+        r6.andExpect(jsonPath("$.length()").value(1));
+
+        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+    }
+
+    @Test
+    @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain() throws Exception {
         FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
 
@@ -312,11 +347,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         final Train train4 = trainFactory.createBaseTrain(new TrainId(4L, dateNow));
         final Train train5 = trainFactory.createBaseTrain(new TrainId(5L, dateNow));
 
-        clearActualTimes(train1);
-        clearActualTimes(train2);
-        clearActualTimes(train3);
-        clearActualTimes(train4);
-        clearActualTimes(train5);
+        clearActualTimes(train1, train2, train3, train4, train5);
 
         ZonedDateTime zonedDateTimeNow = ZonedDateTime.now();
         train1.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(1);

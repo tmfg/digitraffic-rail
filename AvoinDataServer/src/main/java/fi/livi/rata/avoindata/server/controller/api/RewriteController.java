@@ -74,15 +74,15 @@ public class RewriteController {
     @RequestMapping(value = HISTORY_PREFIX + "/{train_number}", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public Collection<Train> getTrains(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-            @PathVariable final Long train_number, HttpServletResponse response) {
+                                       @PathVariable final Long train_number, HttpServletResponse response) {
         return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, 0, response);
     }
 
     @RequestMapping(value = LIVE_TRAINS_PREFIX + "/{train_number}", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public List<Train> getSingleTrain(@PathVariable final long train_number,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
+                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+                                      @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
         return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, version, response);
     }
 
@@ -95,8 +95,8 @@ public class RewriteController {
                                                       @RequestParam(required = false, defaultValue = "5") int departed_trains,
                                                       @RequestParam(required = false, defaultValue = "5") int departing_trains,
                                                       @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
-        return liveTrainController.getLiveTrainsUsingQuantityFiltering(station, version, arrived_trains, arriving_trains, departed_trains,
-                departing_trains, include_nonstopping, null, response);
+        return liveTrainController.getStationsTrains(station, version, arrived_trains, arriving_trains, departed_trains,
+                departing_trains, null, null, null, null, include_nonstopping, null, response);
     }
 
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = {"station", "minutes_before_departure", "minutes_after_departure",
@@ -106,21 +106,21 @@ public class RewriteController {
                                                     @RequestParam(defaultValue = "0") long version, @RequestParam int minutes_before_departure,
                                                     @RequestParam int minutes_after_departure, @RequestParam int minutes_before_arrival, @RequestParam int minutes_after_arrival,
                                                     @RequestParam(defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
-        return liveTrainController.getLiveTrainsUsingTimeFiltering(station, version, minutes_before_departure, minutes_after_departure,
+        return liveTrainController.getStationsTrains(station, version, null, null, null, null, minutes_before_departure, minutes_after_departure,
                 minutes_before_arrival, minutes_after_arrival, include_nonstopping, null, response);
     }
 
     @RequestMapping(path = SCHEDULES_PREFIX, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public Stream<Train> getOldSchedules(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-            HttpServletResponse response) {
+                                         HttpServletResponse response) {
         return trainController.getTrainsByDepartureDate(departure_date, response);
     }
 
     @RequestMapping(value = SCHEDULES_PREFIX + "/{train_number}", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public Train getTrain(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-            @PathVariable final Long train_number, HttpServletResponse response) {
+                          @PathVariable final Long train_number, HttpServletResponse response) {
         final List<Train> trains = trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, 0, response);
         if (trains.isEmpty()) {
             return null;
@@ -132,32 +132,32 @@ public class RewriteController {
     @RequestMapping(value = SCHEDULES_PREFIX, params = {"departure_station", "arrival_station"}, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public List<Train> getTrains(@RequestParam final String departure_station, @RequestParam final String arrival_station,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime to,
-            @RequestParam(required = false) Integer limit, HttpServletResponse response) {
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+                                 @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime from,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime to,
+                                 @RequestParam(required = false) Integer limit, HttpServletResponse response) {
         return scheduleController.getTrainsFromDepartureToArrivalStation(departure_station, arrival_station, departure_date,
                 include_nonstopping, from, to, limit, response);
     }
 
     @RequestMapping(value = TRAIN_TRACKING_PREFIX, params = {"station", "departure_date"}, method = RequestMethod.GET)
     public List<TrainRunningMessage> getByStationAndDepartureDate(HttpServletResponse response, @RequestParam final String station,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+                                                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
         return trainRunningMessageController.getTrainTrackingByStationAndDepartureDate(response, station, departure_date);
     }
 
     @RequestMapping(value = TRAIN_TRACKING_PREFIX, params = {"station", "track_section", "departure_date"}, method = RequestMethod.GET)
     public List<TrainRunningMessage> getStationAndTrackSectionAndDate(HttpServletResponse response, @RequestParam final String station,
-            @RequestParam final String track_section,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+                                                                      @RequestParam final String track_section,
+                                                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
         return trainRunningMessageController.getTrainTrackingByStationAndTrackSectionAndDate(response, station, track_section,
                 departure_date);
     }
 
     @RequestMapping(value = TRAIN_TRACKING_PREFIX, params = {"station", "track_section"}, method = RequestMethod.GET)
     public List<TrainRunningMessage> getStationAndTrackSectionAndLimit(HttpServletResponse response, @RequestParam final String station,
-            @RequestParam final String track_section, @RequestParam(defaultValue = "100") Integer limit) {
+                                                                       @RequestParam final String track_section, @RequestParam(defaultValue = "100") Integer limit) {
         return trainRunningMessageController.getTrainTrackingByStationAndTrackSectionAndLimit(response, station, track_section, limit);
     }
 
@@ -169,8 +169,8 @@ public class RewriteController {
 
     @RequestMapping(path = TRAIN_TRACKING_PREFIX + "/{train_number}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByTrainNumberAndDepartureDate(HttpServletResponse response, @PathVariable final String train_number,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "0") final Long version) {
+                                                                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+                                                                                   @RequestParam(required = false, defaultValue = "0") final Long version) {
         return trainRunningMessageController.getTrainTrackingByTrainNumberAndDepartureDate(response, train_number, departure_date, version);
     }
 }
