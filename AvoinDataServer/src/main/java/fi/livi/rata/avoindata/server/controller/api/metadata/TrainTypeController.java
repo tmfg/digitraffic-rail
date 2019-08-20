@@ -19,7 +19,7 @@ public class TrainTypeController extends AMetadataController {
     @Autowired
     private TrainTypeRepository trainTypeRepository;
 
-    @ApiOperation("Returns list of train types")
+    @ApiOperation("Returns a list of train types")
     @RequestMapping(value = "train-types", method = RequestMethod.GET)
     public List<TrainType> getTrainTypes(HttpServletResponse response) {
         final List<TrainType> all = trainTypeRepository.findAll();
