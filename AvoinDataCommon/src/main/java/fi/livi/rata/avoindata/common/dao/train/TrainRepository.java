@@ -40,6 +40,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   (t.train_stopping = true or t.train_stopping = ?6)" +
             "   AND (?1 is null OR t.station_short_code = ?1)" +
             "   AND t.type = '1'" +
+            "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NOT NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.actual_time DESC" +
@@ -51,6 +52,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   (t.train_stopping = true or t.train_stopping = ?6)" +
             "   AND (?1 is null OR t.station_short_code = ?1)" +
             "   AND t.type = '1'" +
+            "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.predict_time ASC" +
@@ -62,6 +64,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   (t.train_stopping = true or t.train_stopping = ?6)" +
             "   AND (?1 is null OR t.station_short_code = ?1)" +
             "   AND t.type = '0'" +
+            "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NOT NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.actual_time DESC" +
@@ -73,16 +76,18 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   (t.train_stopping = true or t.train_stopping = ?6)" +
             "   AND (?1 is null OR t.station_short_code = ?1)" +
             "   AND t.type = '0'" +
+            "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
             " ORDER BY t.predict_time ASC" +
             " LIMIT ?5)) unionedTable", nativeQuery = true)
     List<Object[]> findLiveTrainsIds(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,
-                                     Integer arrivingTrains, Boolean excludeNonstopping);
+                                     Integer arrivingTrains, Boolean excludeNonstopping, List<Long> trainCategoryIds);
 
 
     @Query("select t from LiveTimeTableTrain t where " +
             " t.stationShortCode = ?1 and" +
+            " t.trainCategoryId in ?8 and" +
             " t.version > ?5 and" +
             " (" +
             " ((t.trainStopping = true or t.trainStopping = ?4) and t.type = 1 and ((t.actualTime BETWEEN ?2 AND ?3) " +
@@ -95,7 +100,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             " ) " +
             ")")
     List<LiveTimeTableTrain> findLiveTrains(String station, ZonedDateTime startDeparture, ZonedDateTime endDeparture,
-            Boolean excludeNonstopping, Long version, ZonedDateTime startArrival, ZonedDateTime endArrival);
+                                            Boolean excludeNonstopping, Long version, ZonedDateTime startArrival, ZonedDateTime endArrival, List<Long> trainCategoryIds);
 
     @Query(value = "SELECT  " +
             "    '1',departure_date, train_number, MAX(version) " +

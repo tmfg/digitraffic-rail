@@ -96,7 +96,7 @@ public class RewriteController {
                                                       @RequestParam(required = false, defaultValue = "5") int departing_trains,
                                                       @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
         return liveTrainController.getLiveTrainsUsingQuantityFiltering(station, version, arrived_trains, arriving_trains, departed_trains,
-                departing_trains, include_nonstopping, response);
+                departing_trains, include_nonstopping, null, response);
     }
 
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = {"station", "minutes_before_departure", "minutes_after_departure",
@@ -107,7 +107,7 @@ public class RewriteController {
                                                     @RequestParam int minutes_after_departure, @RequestParam int minutes_before_arrival, @RequestParam int minutes_after_arrival,
                                                     @RequestParam(defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
         return liveTrainController.getLiveTrainsUsingTimeFiltering(station, version, minutes_before_departure, minutes_after_departure,
-                minutes_before_arrival, minutes_after_arrival, include_nonstopping, response);
+                minutes_before_arrival, minutes_after_arrival, include_nonstopping, null, response);
     }
 
     @RequestMapping(path = SCHEDULES_PREFIX, method = RequestMethod.GET)

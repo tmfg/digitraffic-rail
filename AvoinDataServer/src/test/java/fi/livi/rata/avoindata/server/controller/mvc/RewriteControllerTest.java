@@ -49,29 +49,29 @@ public class RewriteControllerTest extends MockMvcBaseTest {
 
         getJson("/live-trains?arrived_trains=1&arriving_trains=2&departed_trains=3&departing_trains=4&include_nonstopping=true&station" +
                 "=HKI&version=5");
-        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(5L), eq(1), eq(2), eq(3), eq(4), eq(true), any());
+        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(5L), eq(1), eq(2), eq(3), eq(4), eq(true), any(), any());
 
         getJson("/live-trains?arrived_trains=1&arriving_trains=2&departed_trains=3&departing_trains=4&station=HKI&version=5");
-        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(5L), eq(1), eq(2), eq(3), eq(4), eq(false), any());
+        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(5L), eq(1), eq(2), eq(3), eq(4), eq(false), any(), any());
 
         getJson("/live-trains?arrived_trains=1&arriving_trains=2&departed_trains=3&departing_trains=4&station=HKI");
-        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(1), eq(2), eq(3), eq(4), eq(false), any());
+        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(1), eq(2), eq(3), eq(4), eq(false), any(), any());
         getJson("/live-trains?arrived_trains=1&station=HKI");
-        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(1), eq(5), eq(5), eq(5), eq(false), any());
+        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(1), eq(5), eq(5), eq(5), eq(false), any(), any());
         getJson("/live-trains?station=HKI");
-        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(5), eq(5), eq(5), eq(5), eq(false), any());
+        verify(liveTrainController).getLiveTrainsUsingQuantityFiltering(eq("HKI"), eq(0L), eq(5), eq(5), eq(5), eq(5), eq(false), any(), any());
 
         getJson("/live-trains?version=1&include_nonstopping=true&station=HKI&minutes_before_departure=2&minutes_after_departure=3" +
                 "&minutes_before_arrival=4&minutes_after_arrival=5");
-        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(1L), eq(2), eq(3), eq(4), eq(5), eq(true), any());
+        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(1L), eq(2), eq(3), eq(4), eq(5), eq(true), any(), any());
 
         getJson("/live-trains?include_nonstopping=true&station=HKI&minutes_before_departure=2&minutes_after_departure=3" +
                 "&minutes_before_arrival=4&minutes_after_arrival=5");
-        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(0L), eq(2), eq(3), eq(4), eq(5), eq(true), any());
+        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(0L), eq(2), eq(3), eq(4), eq(5), eq(true), any(), any());
 
         getJson("/live-trains?station=HKI&minutes_before_departure=2&minutes_after_departure=3&minutes_before_arrival=4" +
                 "&minutes_after_arrival=5");
-        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(0L), eq(2), eq(3), eq(4), eq(5), eq(false), any());
+        verify(liveTrainController).getLiveTrainsUsingTimeFiltering(eq("HKI"), eq(0L), eq(2), eq(3), eq(4), eq(5), eq(false), any(), any());
 
         getJson("/live-trains?version=1");
         verify(liveTrainController).getLiveTrainsByVersion(eq(1L), any());

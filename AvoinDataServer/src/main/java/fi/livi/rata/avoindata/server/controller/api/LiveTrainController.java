@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.server.controller.api;
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -43,6 +44,9 @@ public class LiveTrainController extends ADataController {
     @Autowired
     private FindByIdService findByIdService;
 
+    @Autowired
+    private TrainCategoryRepository trainCategoryRepository;
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Value("${avoindataserver.livetrains.maxTrainRerieveRequest:1000}")
@@ -81,23 +85,38 @@ public class LiveTrainController extends ADataController {
                                          @RequestParam(required = false) Integer minutes_after_departure,
                                          @RequestParam(required = false) Integer minutes_before_arrival,
                                          @RequestParam(required = false) Integer minutes_after_arrival,
-                                         @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping, HttpServletResponse response) {
+                                         @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
+                                         @RequestParam(required = false) List<String> train_categories,
+                                         HttpServletResponse response) {
+
+        List<Long> trainCategoryIds = getTrainCategories(train_categories);
+
         if (minutes_after_arrival != null && minutes_after_departure != null && minutes_before_arrival != null &&
                 minutes_before_departure != null) {
             return this.getLiveTrainsUsingTimeFiltering(station, version, minutes_before_departure, minutes_after_departure,
-                    minutes_before_arrival, minutes_after_arrival, include_nonstopping, response);
+                    minutes_before_arrival, minutes_after_arrival, include_nonstopping, trainCategoryIds, response);
         } else {
             return this.getLiveTrainsUsingQuantityFiltering(station, version, arrived_trains, arriving_trains, departed_trains,
-                    departing_trains, include_nonstopping, response);
+                    departing_trains, include_nonstopping, trainCategoryIds, response);
         }
     }
 
+    private List<Long> getTrainCategories(@RequestParam(required = false) List<String> train_categories) {
+        List<Long> trainCategoryIds;
+        if (train_categories == null || train_categories.isEmpty()) {
+            trainCategoryIds = Lists.transform(trainCategoryRepository.findAllCached(), s -> s.id);
+        } else {
+            trainCategoryIds = Lists.transform(trainCategoryRepository.findByNameCached(train_categories), s -> s.id);
+        }
+        return trainCategoryIds;
+    }
+
     public List<Train> getLiveTrainsUsingQuantityFiltering(String station, long version, int arrived_trains, int arriving_trains,
-                                                           int departed_trains, int departing_trains, Boolean include_nonstopping, HttpServletResponse response) {
+                                                           int departed_trains, int departing_trains, Boolean include_nonstopping, List<Long> trainCategoryIds, HttpServletResponse response) {
         assertParameters(arrived_trains, arriving_trains, departed_trains, departing_trains);
 
         List<Object[]> liveTrains = trainRepository.findLiveTrainsIds(station, departed_trains, departing_trains, arrived_trains,
-                arriving_trains, !include_nonstopping);
+                arriving_trains, !include_nonstopping, trainCategoryIds);
 
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
@@ -111,11 +130,9 @@ public class LiveTrainController extends ADataController {
     }
 
 
-
-
     public List<Train> getLiveTrainsUsingTimeFiltering(String station, long version, Integer minutes_before_departure,
                                                        Integer minutes_after_departure, Integer minutes_before_arrival, Integer minutes_after_arrival, Boolean include_nonstopping,
-                                                       HttpServletResponse response) {
+                                                       List<Long> trainCategoryIds, HttpServletResponse response) {
         final ZonedDateTime now = ZonedDateTime.now();
 
         ZonedDateTime startArrival = now.minusMinutes(minutes_after_arrival);
@@ -125,7 +142,7 @@ public class LiveTrainController extends ADataController {
         ZonedDateTime endDeparture = now.plusMinutes(minutes_before_departure);
 
         List<LiveTimeTableTrain> liveTrains = trainRepository.findLiveTrains(station, startDeparture, endDeparture, !include_nonstopping,
-                version, startArrival, endArrival);
+                version, startArrival, endArrival, trainCategoryIds);
 
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
