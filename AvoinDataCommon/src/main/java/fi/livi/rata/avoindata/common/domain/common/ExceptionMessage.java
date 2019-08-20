@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.common;
 
-import java.io.Serializable;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.io.Serializable;
 
 public class ExceptionMessage implements Serializable {
 
@@ -33,7 +33,9 @@ public class ExceptionMessage implements Serializable {
         TOO_MUCH_LOAD_IN_SYSTEM,
         TRAIN_MINIUM_LIMIT_ERROR,
         END_DATE_BEFORE_START_DATE,
-        VERSION_TOO_OLD, UNKNOWN_PARAMETER
+        VERSION_TOO_OLD,
+        UNKNOWN_PARAMETER,
+        ILLEGAL_ARGUMENT_EXCEPTION,
     }
 
     @Override

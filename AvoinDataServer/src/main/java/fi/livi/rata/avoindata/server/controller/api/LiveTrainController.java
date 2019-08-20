@@ -107,6 +107,9 @@ public class LiveTrainController extends ADataController {
             trainCategoryIds = Lists.transform(trainCategoryRepository.findAllCached(), s -> s.id);
         } else {
             trainCategoryIds = Lists.transform(trainCategoryRepository.findByNameCached(train_categories), s -> s.id);
+            if (trainCategoryIds.isEmpty()) {
+                throw new IllegalArgumentException("No recognized train categories given");
+            }
         }
         return trainCategoryIds;
     }

@@ -57,6 +57,15 @@ public class DefaultExceptionHandler {
         return exceptionMessage;
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ExceptionMessage handleIllegalArgumentException(IllegalArgumentException e, HttpServletResponse response,
+                                                           HttpServletRequest request) throws IOException {
+        setResponseTypeToJson(response);
+        log.info(String.format("Threw IllegalArgumentException from url %s?%s", request.getRequestURL().toString(), request.getQueryString()), e);
+        return new ExceptionMessage(e.getMessage(), ExceptionMessage.ErrorCodeEnum.ILLEGAL_ARGUMENT_EXCEPTION, request.getRequestURL().toString(), request.getQueryString());
+    }
+
     @ExceptionHandler(AbstractException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ExceptionMessage handleException(AbstractException e, HttpServletResponse response,
