@@ -62,7 +62,7 @@ public class RoutesetController {
 
     public Iterable<Routeset> fillTimeZones(Iterable<Routeset> routesets) {
         for (Routeset routeset : routesets) {
-            routeset.messageTime = ZonedDateTime.of(routeset.messageTimeAsLocal, ZoneId.of("Helsinki/Europe"));
+            routeset.messageTime = ZonedDateTime.of(routeset.messageTimeAsLocal, ZoneId.of("Europe/Helsinki"));
         }
 
         return routesets;
