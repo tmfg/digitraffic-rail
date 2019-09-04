@@ -1,10 +1,12 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities.routeset;
 
 import fi.livi.rata.avoindata.LiikeInterface.domain.BaseEntity;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -23,7 +25,12 @@ public class Routeset extends BaseEntity {
     @Type(type="org.hibernate.type.LocalDateType")
     public LocalDate departureDate;
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type="org.hibernate.type.LocalDateTimeType")
+    @Column(name = "message_time")
+    @JsonIgnore
+    public LocalDateTime messageTimeAsLocal;
+
+    @Transient
     public ZonedDateTime messageTime;
 
     public String routeType;

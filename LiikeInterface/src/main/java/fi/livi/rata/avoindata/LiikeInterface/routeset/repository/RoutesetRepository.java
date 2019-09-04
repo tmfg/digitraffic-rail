@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -16,9 +17,9 @@ public interface RoutesetRepository extends CrudRepository<Routeset, Long> {
             "where " +
             "   rs.messageId != 'LIFE' and " +
             "   (rs.departureDate = ?1 or " +
-            "   (rs.departureDate is null and rs.messageTime between ?2 and ?3)) " +
+            "   (rs.departureDate is null and rs.messageTimeAsLocal between ?2 and ?3)) " +
             "order by rs.messageId asc, rsec.sectionOrder asc")
-    List<Routeset> findByLahtopvm(LocalDate date, ZonedDateTime start, ZonedDateTime end);
+    List<Routeset> findByLahtopvm(LocalDate date, LocalDateTime start, LocalDateTime end);
 
     @Query("select distinct rs " +
             "from Routeset rs inner join fetch rs.routesections rsec " +
