@@ -1,0 +1,16 @@
+CREATE TABLE `track_work_notification` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ruma_id` INT UNSIGNED NOT NULL,
+  `ruma_version` INT UNSIGNED NOT NULL,
+  `state` TINYINT UNSIGNED NOT NULL,
+  `organization` VARCHAR(64) NOT NULL,
+  `description` TEXT NULL,
+  `created` DATETIME NOT NULL,
+  `modified` DATETIME NULL,
+  `traffic_safety_plan` BIT NOT NULL,
+  `speed_limit_removal_plan` BIT NOT NULL,
+  `electricity_safety_plan` BIT NOT NULL,
+  `speed_limit_plan` BIT NOT NULL,
+  `person_in_charge_plan` BIT NOT NULL,
+  `parts` JSON NOT NULL,
+  PRIMARY KEY (`id`));

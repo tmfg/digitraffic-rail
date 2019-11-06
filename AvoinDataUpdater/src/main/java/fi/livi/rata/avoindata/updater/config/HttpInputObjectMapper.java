@@ -1,5 +1,15 @@
 package fi.livi.rata.avoindata.updater.config;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.bedatadriven.jackson.datatype.jts.JtsModule;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -28,23 +38,49 @@ import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriodChangeDate;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackRange;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
-import fi.livi.rata.avoindata.updater.deserializers.*;
-import fi.livi.rata.avoindata.updater.deserializers.timetable.*;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.TimeZone;
+import fi.livi.rata.avoindata.updater.deserializers.CategoryCodeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.DetailedCategoryCodeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.ForecastDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.LocalizationsDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.LocomotiveDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.OperatorDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.OperatorTrainNumberDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.RoutesectionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.RoutesetDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.StationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.ThirdCategoryCodeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TimeTableRowDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackRangeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackSectionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackWorkNotificationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainCategoryDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainLocationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageRuleDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainTypeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.WagonDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleCancellationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleExceptionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleRowDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleRowPartDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.TimeTablePeriodChangeDateDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.timetable.TimeTablePeriodDeserializer;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 @Component
 public class HttpInputObjectMapper extends ObjectMapper {
@@ -141,6 +177,9 @@ public class HttpInputObjectMapper extends ObjectMapper {
     @Autowired
     private TimeTablePeriodChangeDateDeserializer timeTablePeriodChangeDateDeserializer;
 
+    @Autowired
+    private TrackWorkNotificationDeserializer trackWorkNotificationDeserializer;
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
@@ -185,6 +224,8 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
         module.addDeserializer(TimeTablePeriod.class, timetablePeriodDeserializer);
         module.addDeserializer(TimeTablePeriodChangeDate.class, timeTablePeriodChangeDateDeserializer);
+
+        module.addDeserializer(TrackWorkNotification.class, trackWorkNotificationDeserializer);
 
         registerModule(module);
     }

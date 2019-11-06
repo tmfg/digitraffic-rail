@@ -1,11 +1,9 @@
 package fi.livi.rata.avoindata.LiikeInterface.kuplat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
-import fi.livi.rata.avoindata.LiikeInterface.services.ClassifiedTrainFilter;
+import java.io.IOException;
+import java.net.URL;
+import java.time.LocalDate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +12,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.io.IOException;
-import java.net.URL;
-import java.time.LocalDate;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
+import fi.livi.rata.avoindata.LiikeInterface.services.ClassifiedTrainFilter;
 
 @Controller
 public class KuplaController {
@@ -28,13 +29,16 @@ public class KuplaController {
     @Autowired
     private ClassifiedTrainFilter classifiedTrainFilter;
 
+    @Value("${liike.base-url}")
+    private String liikeBaseUrl;
+
     @Value("${kupla.url}")
     private String kuplaUrl;
 
     @RequestMapping(value = "/avoin/kuplas")
     @ResponseBody
     public Iterable<JsonNode> getByVersion() throws IOException {
-        final JsonNode kuplat = objectMapper.readTree(new URL(kuplaUrl));
+        final JsonNode kuplat = objectMapper.readTree(new URL(liikeBaseUrl + kuplaUrl));
 
         final JsonNode kuplatNodes = kuplat.get("kuplat");
 
