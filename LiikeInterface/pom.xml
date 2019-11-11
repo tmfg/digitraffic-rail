@@ -42,9 +42,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>oracle</groupId>
-            <artifactId>ojdbc6</artifactId>
-            <version>12.1.0.2.0</version>
+            <groupId>com.oracle.ojdbc</groupId>
+            <artifactId>ojdbc10</artifactId>
+            <version>19.3.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -127,8 +127,8 @@
 
     <repositories>
         <repository>
-            <id>liike</id>
-            <url>https://deus.solita.fi/Solita/projects/liike/repositories/maven/liike-maven</url>
+            <id>maven-central</id>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
     </repositories>
 </project>
