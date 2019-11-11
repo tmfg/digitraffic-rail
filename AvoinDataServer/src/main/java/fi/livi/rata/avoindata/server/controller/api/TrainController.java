@@ -1,5 +1,30 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import java.math.BigInteger;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -13,21 +38,6 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
-import java.math.BigInteger;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
 @RestController
@@ -51,17 +61,19 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
 
+        final long finalVersion = version;
+
         List<TrainId> trainIds = allTrainsRepository.findByVersionGreaterThan(version, new PageRequest(0, MAX_ANNOUNCED_TRAINS));
 
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
+            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrainsByIdAndVersion(t, finalVersion)));
         }
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
