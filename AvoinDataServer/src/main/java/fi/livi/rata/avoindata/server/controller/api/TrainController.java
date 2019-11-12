@@ -16,8 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.collect.Iterables;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainStreamRepository;
@@ -62,39 +61,22 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    @Transactional(readOnly = true)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
 
-        List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
-
-        List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
+        List<TrainId> trainIds = allTrainsRepository.findByVersionGreaterThan(version, new PageRequest(0, MAX_ANNOUNCED_TRAINS));
 
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
-        List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
-        List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
-        if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
-            log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
-        }
-
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
         return trains;
-    }
-
-    private List<TrainId> createTrainIdsFromRawIds(List<Object[]> rawIds) {
-        return rawIds.stream().map(s -> {
-            long trainNumber = ((BigInteger) s[0]).longValue();
-            LocalDate departureDate = ((Date) s[1]).toLocalDate();
-
-            return new TrainId(trainNumber, departureDate);
-        }).collect(Collectors.toList());
     }
 
     @ApiOperation("Returns latest train")
