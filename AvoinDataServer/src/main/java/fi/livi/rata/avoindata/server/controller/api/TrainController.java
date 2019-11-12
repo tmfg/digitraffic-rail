@@ -63,18 +63,23 @@ public class TrainController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
+        log.info("HTTP-parametri {}", version);
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
+            log.info("Haettu kannasta versio {}", version);
         }
-
-        final long finalVersion = version;
 
         List<TrainId> trainIds = allTrainsRepository.findByVersionGreaterThan(version, new PageRequest(0, MAX_ANNOUNCED_TRAINS));
 
+        log.info("Idt palautettu {}", trainIds);
+
+        final long finalVersion = version;
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrainsByIdAndVersion(t, finalVersion)));
         }
+
+        log.info("Junat haettu {}", trains);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
