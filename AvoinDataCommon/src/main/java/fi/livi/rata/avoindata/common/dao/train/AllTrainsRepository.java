@@ -16,7 +16,7 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 @Repository
 public interface AllTrainsRepository extends CustomGeneralRepository<Train, TrainId> {
     @Query(BASE_TRAIN_SELECT + " where train.id in (?1) " + BASE_TRAIN_ORDER)
-    List<Train> findTrainsByIdAndVersion(Collection<TrainId> trainIds);
+    List<Train> findTrains(Collection<TrainId> trainIds);
 
     @Query(nativeQuery = true, value = "select train_number, departure_date, version from train where version > ?1 order by version limit ?2")
     List<Object[]> findByVersionGreaterThanRawSql(Long version, int limit);
