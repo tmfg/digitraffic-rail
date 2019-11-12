@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,7 +60,7 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         log.info("HTTP-parametri {}", version);
         if (version == null) {
@@ -69,14 +68,19 @@ public class TrainController extends ADataController {
             log.info("Haettu kannasta versio {}", version);
         }
 
-        List<TrainId> trainIds = allTrainsRepository.findByVersionGreaterThan(version, new PageRequest(0, MAX_ANNOUNCED_TRAINS));
+        List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
+        log.info("Idt palautettu {}", rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).collect(Collectors.toList()));
 
-        log.info("Idt palautettu {}", trainIds);
+        List<TrainId> trainIds = rawIds.stream().map(s -> {
+            long trainNumber = ((BigInteger) s[0]).longValue();
+            LocalDate departureDate = ((java.sql.Date) s[1]).toLocalDate();
 
-        final long finalVersion = version;
+            return new TrainId(trainNumber, departureDate);
+        }).collect(Collectors.toList());
+
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrainsByIdAndVersion(t, finalVersion)));
+            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrainsByIdAndVersion(t)));
         }
 
         log.info("Junat haettu {}", trains);
