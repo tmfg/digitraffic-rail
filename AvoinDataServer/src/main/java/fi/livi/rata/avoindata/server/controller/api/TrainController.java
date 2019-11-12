@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,7 +61,7 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         log.info("HTTP-parametri {}", version);
         if (version == null) {
@@ -83,7 +84,7 @@ public class TrainController extends ADataController {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
-        log.info("Junat haettu {}", trains);
+        log.info("Junat haettu {}", trains.stream().map(s -> String.format("%s (%s)", s.id, s.version)).collect(Collectors.toList()));
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
