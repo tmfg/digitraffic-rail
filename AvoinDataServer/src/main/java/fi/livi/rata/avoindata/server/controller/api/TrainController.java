@@ -85,7 +85,7 @@ public class TrainController extends ADataController {
         List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
         List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
         if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
-            log.error("Elements are not equal. {} vs {}", returnedIds, returnedTrains);
+            log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
         }
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
