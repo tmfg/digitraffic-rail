@@ -80,7 +80,7 @@ public class TrainController extends ADataController {
 
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrainsByIdAndVersion(t)));
+            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
         log.info("Junat haettu {}", trains);
