@@ -70,12 +70,7 @@ public class TrainController extends ADataController {
 
         List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
 
-        List<TrainId> trainIds = rawIds.stream().map(s -> {
-            long trainNumber = ((BigInteger) s[0]).longValue();
-            LocalDate departureDate = ((java.sql.Date) s[1]).toLocalDate();
-
-            return new TrainId(trainNumber, departureDate);
-        }).collect(Collectors.toList());
+        List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
@@ -91,6 +86,15 @@ public class TrainController extends ADataController {
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
         return trains;
+    }
+
+    private List<TrainId> createTrainIdsFromRawIds(List<Object[]> rawIds) {
+        return rawIds.stream().map(s -> {
+            long trainNumber = ((BigInteger) s[0]).longValue();
+            LocalDate departureDate = ((Date) s[1]).toLocalDate();
+
+            return new TrainId(trainNumber, departureDate);
+        }).collect(Collectors.toList());
     }
 
     @ApiOperation("Returns latest train")
