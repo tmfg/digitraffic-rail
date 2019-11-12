@@ -70,7 +70,7 @@ public class TrainController extends ADataController {
         }
 
         List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
-        log.info("Idt palautettu {}", rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).collect(Collectors.toList()));
+        log.info("Idt palautettu {}", rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList()));
 
         List<TrainId> trainIds = rawIds.stream().map(s -> {
             long trainNumber = ((BigInteger) s[0]).longValue();
@@ -84,7 +84,7 @@ public class TrainController extends ADataController {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
-        log.info("Junat haettu {}", trains.stream().map(s -> String.format("%s (%s)", s.id, s.version)).collect(Collectors.toList()));
+        log.info("Junat palautettu {}", trains.stream().map(s -> String.format("%s (%s)", s.id, s.version)).sorted((String::compareTo)).collect(Collectors.toList()));
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
