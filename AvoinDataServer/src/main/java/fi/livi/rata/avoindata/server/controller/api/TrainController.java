@@ -62,7 +62,7 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
@@ -82,7 +82,7 @@ public class TrainController extends ADataController {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
-        List<String> returnedTrains = trains.stream().map(s -> String.format("%s (%s)", s.id, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
+        List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
         List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
         if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
             log.error("Elements are not equal. {} vs {}", returnedIds, returnedTrains);
