@@ -6,16 +6,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
 
-import org.hibernate.Session;
-import org.hibernate.cfg.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,18 +59,11 @@ public class TrainController extends ADataController {
     private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
-        Session session = (Session) entityManager.getDelegate();
-        session.doWork(connection -> log.info("Transaction isolation level is {}", Environment.isolationLevelToString(connection.getTransactionIsolation())));
-
-
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
@@ -82,7 +72,10 @@ public class TrainController extends ADataController {
 
         List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        final List<Train> trains = allTrainsRepository.findAllById(trainIds);
+        final List<Train> trains = new LinkedList<>();
+        if (!trainIds.isEmpty()) {
+            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
+        }
 
         List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
         List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
