@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -22,11 +21,10 @@ public class DebugContextRefreshListener {
     private Logger log = LoggerFactory.getLogger(DebugContextRefreshListener.class);
 
     @Autowired
-    private ApplicationContext applicationContext;
+    Environment environment;
 
     @EventListener(ContextRefreshedEvent.class)
     private void printPropertyValues() {
-        final Environment environment = applicationContext.getEnvironment();
         log.info("Properties: {}", Joiner.on(",").join(printedProperties.stream().map(s -> String.format("%s = %s", s, environment.getProperty(s))).collect(Collectors.toList())));
         log.info("It is now {}", ZonedDateTime.now());
     }
