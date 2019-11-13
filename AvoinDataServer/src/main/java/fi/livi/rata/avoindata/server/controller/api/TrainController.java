@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,19 +82,12 @@ public class TrainController extends ADataController {
 
         List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        final List<Train> trains = new LinkedList<>();
-        if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
-        }
+        final List<Train> trains = allTrainsRepository.findAllById(trainIds);
 
         List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
         List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
         if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
-
-            List<Train> trainsWithoutJoins = allTrainsRepository.findAllById(trainIds);
-            List<String> returnedTrainsWithoutJoins = trainsWithoutJoins.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
-
-            log.error("Elements are not equal. Version {}. {} vs {}. Pure trains: {}", version, returnedIds, returnedTrains, returnedTrainsWithoutJoins);
+            log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
         }
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
