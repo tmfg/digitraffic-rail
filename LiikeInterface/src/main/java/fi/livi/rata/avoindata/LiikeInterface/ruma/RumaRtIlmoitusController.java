@@ -44,10 +44,10 @@ public class RumaRtIlmoitusController {
 
     @RequestMapping(value = "/avoin/ruma/rti")
     @ResponseBody
-    public Object getRoutesets() throws IOException {
+    public Object getRtis() throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
 
-        log.info("Requesting routeset status from {} with token {}", liikeBaseUrl + rumaRtiStatusUrl, authenticationToken);
+        log.info("Requesting rti status from {}", liikeBaseUrl + rumaRtiStatusUrl);
 
         final JsonNode nodes = objectMapper.readTree(getFromRumaWithToken(liikeBaseUrl + rumaRtiStatusUrl, authenticationToken));
 
