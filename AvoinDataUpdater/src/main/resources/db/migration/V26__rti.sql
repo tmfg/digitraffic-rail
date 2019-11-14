@@ -4,7 +4,6 @@ CREATE TABLE `track_work_notification` (
   `ruma_version` INT UNSIGNED NOT NULL,
   `state` TINYINT UNSIGNED NOT NULL,
   `organization` VARCHAR(64) NOT NULL,
-  `description` TEXT NULL,
   `created` DATETIME NOT NULL,
   `modified` DATETIME NULL,
   `traffic_safety_plan` BIT NOT NULL,

@@ -17,7 +17,6 @@ public class TrackWorkNotification {
     public Integer rumaVersion;
     public TrackWorkNotificationState state;
     public String organization;
-    public String description;
     public ZonedDateTime created;
     public ZonedDateTime modified;
     public Boolean trafficSafetyPlan;

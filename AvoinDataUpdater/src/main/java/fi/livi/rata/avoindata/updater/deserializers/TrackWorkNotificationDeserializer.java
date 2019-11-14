@@ -27,7 +27,6 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         trackWorkNotification.rumaId = node.get("id").asInt();
         trackWorkNotification.rumaVersion = node.get("version").asInt();
         trackWorkNotification.state = getState(getStringFromNode(node, "state"));
-        trackWorkNotification.description = getStringFromNode(node, "kuvausJaKalusto");
         trackWorkNotification.organization = getStringFromNode(node, "organization");
         trackWorkNotification.speedLimitPlan = getNullableBoolean(node, "nopeusrajoitusSuunnitelma");
         trackWorkNotification.created = getNodeAsDateTime(node.get("created"));
