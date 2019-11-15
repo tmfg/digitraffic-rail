@@ -17,7 +17,7 @@ import com.google.common.base.Joiner;
 
 @Configuration(value = "DebugContextRefreshListener_AvoindataUpdater")
 public class DebugContextRefreshListener {
-    private List<String> printedProperties = Arrays.asList("spring.datasource.url", "spring.profiles.active", "updater.liikeinterface-url", "updater.mqtt.server-url", "spring.datasource.driverClassName");
+    private List<String> printedProperties = Arrays.asList("spring.datasource.url", "spring.profiles.active", "updater.liikeinterface-url", "updater.mqtt.server-url");
     private Logger log = LoggerFactory.getLogger(DebugContextRefreshListener.class);
 
     @Autowired
