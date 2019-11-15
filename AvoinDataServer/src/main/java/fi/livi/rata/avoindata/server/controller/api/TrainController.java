@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,14 +61,13 @@ public class TrainController extends ADataController {
     @ApiOperation("Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
 
         List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
-
         List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
         final List<Train> trains = new LinkedList<>();
