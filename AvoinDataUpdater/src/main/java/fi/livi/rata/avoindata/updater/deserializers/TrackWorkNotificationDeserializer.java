@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,14 +18,15 @@ import java.util.Set;
 @Component
 public class TrackWorkNotificationDeserializer extends AEntityDeserializer<TrackWorkNotification> {
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @Override
     public TrackWorkNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        TrackWorkNotification trackWorkNotification = deSerializeTrackWorkNotifications(node);
+        trackWorkNotification.trackWorkParts = deSerializeTrackWorkParts(node.get("tyonosat"), trackWorkNotification);
+        return trackWorkNotification;
+    }
 
+    private TrackWorkNotification deSerializeTrackWorkNotifications(JsonNode node) {
         TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
         trackWorkNotification.rumaId = node.get("id").asInt();
         trackWorkNotification.rumaVersion = node.get("version").asInt();
@@ -40,9 +39,12 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         trackWorkNotification.electricitySafetyPlan = getNullableBoolean(node, "jannitekatkoIlmoitus");
         trackWorkNotification.personInChargePlan = getNullableBoolean(node, "ratatyovastaavienVuorolista");
         trackWorkNotification.trafficSafetyPlan = getNullableBoolean(node, "liikenneturvallisuusSuunnitelma");
+        return trackWorkNotification;
+    }
 
+    private Set<TrackWorkPart> deSerializeTrackWorkParts(JsonNode tyonosat, TrackWorkNotification trackWorkNotification) {
         Set<TrackWorkPart> trackWorkParts = new HashSet<>();
-        for (final JsonNode trackWorkPartNode : node.get("tyonosat")) {
+        for (final JsonNode trackWorkPartNode : tyonosat) {
             final TrackWorkPart trackWorkpart = new TrackWorkPart();
             trackWorkpart.partIndex = trackWorkPartNode.get("numero").asLong();
             trackWorkpart.startDay = getNodeAsLocalDate(trackWorkPartNode.get("aloituspaiva"));
@@ -55,24 +57,35 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
                 advanceNotifications.add(advanceNotificationNode.textValue());
             }
             trackWorkpart.advanceNotifications = advanceNotifications;
+            trackWorkpart.locations = deSerializeRumaLocations(trackWorkPartNode.get("kohteet"), trackWorkpart);
             trackWorkParts.add(trackWorkpart);
         }
-        trackWorkNotification.trackWorkParts = trackWorkParts;
+        return trackWorkParts;
+    }
 
-        return trackWorkNotification;
+    private Set<RumaLocation> deSerializeRumaLocations(JsonNode locations, TrackWorkPart trackWorkpart) {
+        Set<RumaLocation> rumaLocations = new HashSet<>();
+        for (final JsonNode location : locations) {
+            RumaLocation rumaLocation = new RumaLocation();
+            rumaLocation.locationType = LocationType.fromKohdeType(location.get("type").asText());
+            rumaLocation.operatingPointId = location.get("liikennepaikkaId").asText();
+            rumaLocation.sectionBetweenOperatingPointsId = location.get("liikennepaikkavaliId").asText();
+            rumaLocation.trackWorkPart = trackWorkpart;
+            rumaLocations.add(rumaLocation);
+        }
+        return rumaLocations;
     }
 
     private TrackWorkNotificationState getState(String state) {
-        if (state.equals("ACTIVE")) {
-            return TrackWorkNotificationState.ACTIVE;
-        } else if (state.equals("FINISHED")) {
-            return TrackWorkNotificationState.FINISHED;
-        } else if (state.equals("PASSIVE")) {
-            return TrackWorkNotificationState.PASSIVE;
-        } else if (state.equals("SENT")) {
-            return TrackWorkNotificationState.PASSIVE;
+        switch (state) {
+            case "ACTIVE":
+                return TrackWorkNotificationState.ACTIVE;
+            case "FINISHED":
+                return TrackWorkNotificationState.FINISHED;
+            case "PASSIVE":
+            case "SENT":
+                return TrackWorkNotificationState.PASSIVE;
         }
-
         throw new IllegalArgumentException(String.format("Could not produce State from %s", state));
     }
 }

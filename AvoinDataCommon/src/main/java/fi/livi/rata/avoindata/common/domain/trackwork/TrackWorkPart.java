@@ -30,6 +30,6 @@ public class TrackWorkPart {
     @ManyToOne(optional = false)
     public TrackWorkNotification trackWorkNotification;
 
-    @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
     public Set<RumaLocation> locations = new HashSet<>();
 }

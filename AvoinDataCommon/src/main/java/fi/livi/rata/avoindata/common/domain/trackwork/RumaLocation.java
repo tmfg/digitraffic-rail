@@ -15,6 +15,7 @@ public class RumaLocation {
     public String sectionBetweenOperatingPointsId;
 
     @ManyToOne(optional = true)
+    @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
     public TrackWorkPart trackWorkPart;
 
     @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
