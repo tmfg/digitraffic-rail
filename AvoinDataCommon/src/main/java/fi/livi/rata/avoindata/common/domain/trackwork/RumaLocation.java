@@ -18,6 +18,6 @@ public class RumaLocation {
     @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
     public TrackWorkPart trackWorkPart;
 
-    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
     public Set<IdentifierRange> identifierRanges = new HashSet<>();
 }

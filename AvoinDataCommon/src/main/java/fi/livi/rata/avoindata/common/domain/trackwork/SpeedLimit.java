@@ -9,4 +9,9 @@ public class SpeedLimit {
     public boolean signs;
     public boolean balises;
 
+    public SpeedLimit(Integer speed, boolean signs, boolean balises) {
+        this.speed = speed;
+        this.signs = signs;
+        this.balises = balises;
+    }
 }

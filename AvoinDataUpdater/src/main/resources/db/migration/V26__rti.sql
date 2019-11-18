@@ -15,7 +15,7 @@ CREATE TABLE track_work_notification (
 
 create table track_work_part
 (
-    id bigint unsigned auto_increment
+    id bigint unsigned not null auto_increment
         primary key,
     part_index int unsigned not null,
     permission_minimum_duration varchar(64) not null,
@@ -33,7 +33,7 @@ create index FK_track_work_notification_id_idx
 
 create table ruma_location
 (
-    id bigint unsigned auto_increment
+    id bigint unsigned not null auto_increment
         primary key,
     location_type varchar(10) not null,
     operating_point_id varchar(64),
@@ -43,5 +43,23 @@ create table ruma_location
         foreign key (track_work_part_id) references track_work_part (id)
             on update cascade on delete cascade
 );
-create index FK_track_work_notification_id_idx
+create index FK_track_work_part_id_idx
     on ruma_location (track_work_part_id);
+
+create table identifier_range
+(
+    id bigint unsigned not null auto_increment
+        primary key,
+    element_id varchar(64),
+    element_pair_id1 varchar(64),
+    element_pair_id2 varchar(64),
+    speed int unsigned,
+    signs bit,
+    balises bit,
+    ruma_location_id bigint unsigned not null,
+    constraint FK_ruma_location_id
+        foreign key (ruma_location_id) references ruma_location (id)
+            on update cascade on delete cascade
+);
+create index FK_ruma_location_id_idx
+    on identifier_range (ruma_location_id);

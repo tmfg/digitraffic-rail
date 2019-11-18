@@ -10,10 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class TrackWorkNotificationDeserializer extends AEntityDeserializer<TrackWorkNotification> {
@@ -21,13 +18,13 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
     @Override
     public TrackWorkNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-        TrackWorkNotification trackWorkNotification = deSerializeTrackWorkNotifications(node);
+        final TrackWorkNotification trackWorkNotification = deSerializeTrackWorkNotifications(node);
         trackWorkNotification.trackWorkParts = deSerializeTrackWorkParts(node.get("tyonosat"), trackWorkNotification);
         return trackWorkNotification;
     }
 
     private TrackWorkNotification deSerializeTrackWorkNotifications(JsonNode node) {
-        TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
+        final TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
         trackWorkNotification.rumaId = node.get("id").asInt();
         trackWorkNotification.rumaVersion = node.get("version").asInt();
         trackWorkNotification.state = getState(getStringFromNode(node, "state"));
@@ -43,7 +40,7 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
     }
 
     private Set<TrackWorkPart> deSerializeTrackWorkParts(JsonNode tyonosat, TrackWorkNotification trackWorkNotification) {
-        Set<TrackWorkPart> trackWorkParts = new HashSet<>();
+        final Set<TrackWorkPart> trackWorkParts = new HashSet<>();
         for (final JsonNode trackWorkPartNode : tyonosat) {
             final TrackWorkPart trackWorkpart = new TrackWorkPart();
             trackWorkpart.partIndex = trackWorkPartNode.get("numero").asLong();
@@ -64,16 +61,39 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
     }
 
     private Set<RumaLocation> deSerializeRumaLocations(JsonNode locations, TrackWorkPart trackWorkpart) {
-        Set<RumaLocation> rumaLocations = new HashSet<>();
-        for (final JsonNode location : locations) {
+        final Set<RumaLocation> rumaLocations = new HashSet<>();
+        for (final JsonNode locationNode : locations) {
             RumaLocation rumaLocation = new RumaLocation();
-            rumaLocation.locationType = LocationType.fromKohdeType(location.get("type").asText());
-            rumaLocation.operatingPointId = location.get("liikennepaikkaId").asText();
-            rumaLocation.sectionBetweenOperatingPointsId = location.get("liikennepaikkavaliId").asText();
+            rumaLocation.locationType = LocationType.fromKohdeType(locationNode.get("type").asText());
+            rumaLocation.operatingPointId = locationNode.get("liikennepaikkaId").asText();
+            rumaLocation.sectionBetweenOperatingPointsId = locationNode.get("liikennepaikkavaliId").asText();
+            rumaLocation.identifierRanges = deSerializeIdentifierRanges(locationNode.get("tunnusvalit"), rumaLocation);
             rumaLocation.trackWorkPart = trackWorkpart;
             rumaLocations.add(rumaLocation);
         }
         return rumaLocations;
+    }
+
+    private Set<IdentifierRange> deSerializeIdentifierRanges(JsonNode identifierRangeNodes, RumaLocation rumaLocation) {
+        final Set<IdentifierRange> identifierRanges = new HashSet<>();
+        for (final JsonNode identifierRangeNode : identifierRangeNodes) {
+            final IdentifierRange identifierRange = new IdentifierRange();
+            identifierRange.elementId = identifierRangeNode.get("elementtiId").asText();
+            identifierRange.elementPairId1 = identifierRangeNode.get("elementtipariId1").asText();
+            identifierRange.elementPairId2 = identifierRangeNode.get("elementtipariId2").asText();
+            identifierRange.speedLimit = deserializeSpeedLimit(identifierRangeNode.get("nopeusrajoitus"));
+            identifierRange.location = rumaLocation;
+            identifierRanges.add(identifierRange);
+        }
+        return identifierRanges;
+    }
+
+    private SpeedLimit deserializeSpeedLimit(JsonNode speedLimitNode) {
+        final JsonNode speedNode = speedLimitNode.get("nopeus");
+        final JsonNode signsNode = speedLimitNode.get("merkit");
+        final JsonNode balisesNode = speedLimitNode.get("baliisit");
+         return speedNode != null && signsNode != null && balisesNode != null ?
+                new SpeedLimit(speedNode.asInt(), signsNode.asBoolean(), balisesNode.asBoolean()) : null;
     }
 
     private TrackWorkNotificationState getState(String state) {

@@ -12,11 +12,12 @@ public class IdentifierRange {
 
     public String elementId;
     public String elementPairId1;
-    public String getElementPairId2;
+    public String elementPairId2;
 
     @Embedded
     public SpeedLimit speedLimit;
 
+    @JoinColumn(name = "ruma_location_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     public RumaLocation location;
 
