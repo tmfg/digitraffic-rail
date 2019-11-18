@@ -13,15 +13,16 @@ public class ElementRange {
 
     public String elementId1;
     public String elementId2;
-    private String ratakmvali;
+    private String trackKilometerRange;
 
+    @JoinColumn(name = "identifier_range_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
     public IdentifierRange identifierRange;
 
     @Convert(converter = StringListConverter.class)
-    private List<String> raideIds;
+    public List<String> trackIds;
 
     @Convert(converter = StringListConverter.class)
-    private List<String> specifiers;
+    public List<String> specifiers;
 
 }

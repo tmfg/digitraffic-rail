@@ -13,53 +13,70 @@ CREATE TABLE track_work_notification (
   person_in_charge_plan BIT NOT NULL,
   PRIMARY KEY (id));
 
-create table track_work_part
+CREATE TABLE track_work_part
 (
-    id bigint unsigned not null auto_increment
-        primary key,
-    part_index int unsigned not null,
-    permission_minimum_duration varchar(64) not null,
-    start_day datetime not null,
-    planned_working_gap time null,
-    advance_notifications varchar(4000) not null,
-    contains_fire_work bit not null,
-    track_work_notification_id bigint unsigned not null,
-    constraint FK_track_work_notification_id
-        foreign key (track_work_notification_id) references track_work_notification (id)
-            on update cascade on delete cascade
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+        PRIMARY KEY,
+    part_index INT UNSIGNED NOT NULL,
+    permission_minimum_duration VARCHAR(64) NOT NULL,
+    start_day DATETIME NOT NULL,
+    planned_working_gap TIME NULL,
+    advance_notifications VARCHAR(4000) NOT NULL,
+    contains_fire_work BIT NOT NULL,
+    track_work_notification_id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_track_work_notification_id
+        FOREIGN KEY (track_work_notification_id) REFERENCES track_work_notification (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
-create index FK_track_work_notification_id_idx
-    on track_work_part (track_work_notification_id);
+CREATE INDEX FK_track_work_notification_id_idx
+    ON track_work_part (track_work_notification_id);
 
-create table ruma_location
+CREATE TABLE ruma_location
 (
-    id bigint unsigned not null auto_increment
-        primary key,
-    location_type varchar(10) not null,
-    operating_point_id varchar(64),
-    section_between_operating_points_id varchar(64),
-    track_work_part_id bigint unsigned not null,
-    constraint FK_track_work_part_id
-        foreign key (track_work_part_id) references track_work_part (id)
-            on update cascade on delete cascade
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+        PRIMARY KEY,
+    location_type VARCHAR(10) NOT NULL,
+    operating_point_id VARCHAR(64),
+    section_between_operating_points_id VARCHAR(64),
+    track_work_part_id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_track_work_part_id
+        FOREIGN KEY (track_work_part_id) REFERENCES track_work_part (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
-create index FK_track_work_part_id_idx
-    on ruma_location (track_work_part_id);
+CREATE INDEX FK_track_work_part_id_idx
+    ON ruma_location (track_work_part_id);
 
-create table identifier_range
+CREATE TABLE identifier_range
 (
-    id bigint unsigned not null auto_increment
-        primary key,
-    element_id varchar(64),
-    element_pair_id1 varchar(64),
-    element_pair_id2 varchar(64),
-    speed int unsigned,
-    signs bit,
-    balises bit,
-    ruma_location_id bigint unsigned not null,
-    constraint FK_ruma_location_id
-        foreign key (ruma_location_id) references ruma_location (id)
-            on update cascade on delete cascade
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+        PRIMARY KEY,
+    element_id VARCHAR(64),
+    element_pair_id1 VARCHAR(64),
+    element_pair_id2 VARCHAR(64),
+    speed INT UNSIGNED,
+    signs BIT,
+    balises BIT,
+    ruma_location_id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_ruma_location_id
+        FOREIGN KEY (ruma_location_id) REFERENCES ruma_location (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
-create index FK_ruma_location_id_idx
-    on identifier_range (ruma_location_id);
+CREATE INDEX FK_ruma_location_id_idx
+    ON identifier_range (ruma_location_id);
+
+CREATE TABLE element_range
+(
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+        PRIMARY KEY,
+    element_id1 VARCHAR(64),
+    element_id2 VARCHAR(64),
+    track_kilometer_range VARCHAR(32),
+    track_ids VARCHAR(4000) NOT NULL,
+    specifiers VARCHAR(4000) NOT NULL,
+    identifier_range_id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_identifier_Range_id
+        FOREIGN KEY (identifier_range_id) REFERENCES identifier_range (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+);
+CREATE INDEX FK_identifier_range_id_idx
+    ON element_range (identifier_range_id);

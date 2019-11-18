@@ -21,7 +21,7 @@ public class IdentifierRange {
     @ManyToOne(optional = false)
     public RumaLocation location;
 
-    @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
     public Set<ElementRange> elementRanges = new HashSet<>();
 
 }

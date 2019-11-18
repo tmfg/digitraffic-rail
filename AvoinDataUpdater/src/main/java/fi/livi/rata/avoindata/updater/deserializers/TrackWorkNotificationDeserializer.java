@@ -18,12 +18,12 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
     @Override
     public TrackWorkNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-        final TrackWorkNotification trackWorkNotification = deSerializeTrackWorkNotifications(node);
-        trackWorkNotification.trackWorkParts = deSerializeTrackWorkParts(node.get("tyonosat"), trackWorkNotification);
+        final TrackWorkNotification trackWorkNotification = deserializeTrackWorkNotifications(node);
+        trackWorkNotification.trackWorkParts = deserializeTrackWorkParts(node.get("tyonosat"), trackWorkNotification);
         return trackWorkNotification;
     }
 
-    private TrackWorkNotification deSerializeTrackWorkNotifications(JsonNode node) {
+    private TrackWorkNotification deserializeTrackWorkNotifications(JsonNode node) {
         final TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
         trackWorkNotification.rumaId = node.get("id").asInt();
         trackWorkNotification.rumaVersion = node.get("version").asInt();
@@ -39,7 +39,7 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         return trackWorkNotification;
     }
 
-    private Set<TrackWorkPart> deSerializeTrackWorkParts(JsonNode tyonosat, TrackWorkNotification trackWorkNotification) {
+    private Set<TrackWorkPart> deserializeTrackWorkParts(JsonNode tyonosat, TrackWorkNotification trackWorkNotification) {
         final Set<TrackWorkPart> trackWorkParts = new HashSet<>();
         for (final JsonNode trackWorkPartNode : tyonosat) {
             final TrackWorkPart trackWorkpart = new TrackWorkPart();
@@ -54,27 +54,27 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
                 advanceNotifications.add(advanceNotificationNode.textValue());
             }
             trackWorkpart.advanceNotifications = advanceNotifications;
-            trackWorkpart.locations = deSerializeRumaLocations(trackWorkPartNode.get("kohteet"), trackWorkpart);
+            trackWorkpart.locations = deserializeRumaLocations(trackWorkPartNode.get("kohteet"), trackWorkpart);
             trackWorkParts.add(trackWorkpart);
         }
         return trackWorkParts;
     }
 
-    private Set<RumaLocation> deSerializeRumaLocations(JsonNode locations, TrackWorkPart trackWorkpart) {
+    private Set<RumaLocation> deserializeRumaLocations(JsonNode locations, TrackWorkPart trackWorkpart) {
         final Set<RumaLocation> rumaLocations = new HashSet<>();
         for (final JsonNode locationNode : locations) {
             RumaLocation rumaLocation = new RumaLocation();
             rumaLocation.locationType = LocationType.fromKohdeType(locationNode.get("type").asText());
             rumaLocation.operatingPointId = locationNode.get("liikennepaikkaId").asText();
             rumaLocation.sectionBetweenOperatingPointsId = locationNode.get("liikennepaikkavaliId").asText();
-            rumaLocation.identifierRanges = deSerializeIdentifierRanges(locationNode.get("tunnusvalit"), rumaLocation);
+            rumaLocation.identifierRanges = deserializeIdentifierRanges(locationNode.get("tunnusvalit"), rumaLocation);
             rumaLocation.trackWorkPart = trackWorkpart;
             rumaLocations.add(rumaLocation);
         }
         return rumaLocations;
     }
 
-    private Set<IdentifierRange> deSerializeIdentifierRanges(JsonNode identifierRangeNodes, RumaLocation rumaLocation) {
+    private Set<IdentifierRange> deserializeIdentifierRanges(JsonNode identifierRangeNodes, RumaLocation rumaLocation) {
         final Set<IdentifierRange> identifierRanges = new HashSet<>();
         for (final JsonNode identifierRangeNode : identifierRangeNodes) {
             final IdentifierRange identifierRange = new IdentifierRange();
@@ -82,10 +82,33 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
             identifierRange.elementPairId1 = identifierRangeNode.get("elementtipariId1").asText();
             identifierRange.elementPairId2 = identifierRangeNode.get("elementtipariId2").asText();
             identifierRange.speedLimit = deserializeSpeedLimit(identifierRangeNode.get("nopeusrajoitus"));
+            identifierRange.elementRanges = deserializeElementRanges(identifierRangeNode.get("elementtivalit"), identifierRange);
             identifierRange.location = rumaLocation;
             identifierRanges.add(identifierRange);
         }
         return identifierRanges;
+    }
+
+    private Set<ElementRange> deserializeElementRanges(JsonNode elementRangeNodes, IdentifierRange identifierRange) {
+        final Set<ElementRange> elementRanges = new HashSet<>();
+        for (final JsonNode elementRangeNode : elementRangeNodes) {
+            final ElementRange elementRange = new ElementRange();
+            elementRange.elementId1 = elementRangeNode.get("elementtiId1").asText();
+            elementRange.elementId2 = elementRangeNode.get("elementtiId2").asText();
+            final List<String> trackIds = new ArrayList<>();
+            for (final JsonNode trackIdNode : elementRangeNode.get("raideIds")) {
+                trackIds.add(trackIdNode.textValue());
+            }
+            elementRange.trackIds = trackIds;
+            final List<String> specifiers = new ArrayList<>();
+            for (final JsonNode specifierNode : elementRangeNode.get("tarkenteet")) {
+                specifiers.add(specifierNode.textValue());
+            }
+            elementRange.specifiers = specifiers;
+            elementRange.identifierRange = identifierRange;
+            elementRanges.add(elementRange);
+        }
+        return elementRanges;
     }
 
     private SpeedLimit deserializeSpeedLimit(JsonNode speedLimitNode) {
