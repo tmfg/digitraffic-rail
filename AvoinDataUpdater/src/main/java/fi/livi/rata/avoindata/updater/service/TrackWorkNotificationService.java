@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkPartRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ public class TrackWorkNotificationService {
 
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
+    @Autowired
+    private TrackWorkPartRepository trackWorkPartRepository;
 
     @Transactional
     public void update(TrackWorkNotification[] trackWorkNotifications) {
@@ -31,7 +34,6 @@ public class TrackWorkNotificationService {
         if (!toBeSaved.isEmpty()) {
             trackWorkNotificationRepository.saveAll(toBeSaved);
             log.info("Update data for {} TrackWorkNotifications", toBeSaved.size());
-
         }
     }
 }

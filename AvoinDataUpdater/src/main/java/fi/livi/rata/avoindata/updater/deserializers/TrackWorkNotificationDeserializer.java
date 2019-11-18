@@ -1,16 +1,21 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class TrackWorkNotificationDeserializer extends AEntityDeserializer<TrackWorkNotification> {
@@ -35,7 +40,24 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         trackWorkNotification.electricitySafetyPlan = getNullableBoolean(node, "jannitekatkoIlmoitus");
         trackWorkNotification.personInChargePlan = getNullableBoolean(node, "ratatyovastaavienVuorolista");
         trackWorkNotification.trafficSafetyPlan = getNullableBoolean(node, "liikenneturvallisuusSuunnitelma");
-        trackWorkNotification.parts = objectMapper.writeValueAsString(node.get("tyonosat"));
+
+        Set<TrackWorkPart> trackWorkParts = new HashSet<>();
+        for (final JsonNode trackWorkPartNode : node.get("tyonosat")) {
+            final TrackWorkPart trackWorkpart = new TrackWorkPart();
+            trackWorkpart.partIndex = trackWorkPartNode.get("numero").asLong();
+            trackWorkpart.startDay = getNodeAsLocalDate(trackWorkPartNode.get("aloituspaiva"));
+            trackWorkpart.permissionMinimumDuration = Duration.parse(trackWorkPartNode.get("luvanMinimiPituus").asText());
+            trackWorkpart.plannedWorkingGap = getLocalTimeFromNode(trackWorkPartNode, "suunniteltuTyorako");
+            trackWorkpart.containsFireWork = getNullableBoolean(trackWorkPartNode, "sisaltaaTulityota");
+            trackWorkpart.trackWorkNotification = trackWorkNotification;
+            final List<String> advanceNotifications = new ArrayList<>();
+            for (final JsonNode advanceNotificationNode : trackWorkPartNode.get("ennakkoilmoitukset")) {
+                advanceNotifications.add(advanceNotificationNode.textValue());
+            }
+            trackWorkpart.advanceNotifications = advanceNotifications;
+            trackWorkParts.add(trackWorkpart);
+        }
+        trackWorkNotification.trackWorkParts = trackWorkParts;
 
         return trackWorkNotification;
     }

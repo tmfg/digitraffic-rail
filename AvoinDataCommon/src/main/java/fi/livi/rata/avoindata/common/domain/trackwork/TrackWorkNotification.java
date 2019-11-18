@@ -1,11 +1,10 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 public class TrackWorkNotification {
@@ -24,5 +23,7 @@ public class TrackWorkNotification {
     public Boolean electricitySafetyPlan;
     public Boolean speedLimitPlan;
     public Boolean personInChargePlan;
-    public String parts;
+
+    @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 }
