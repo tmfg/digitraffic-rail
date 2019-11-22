@@ -1,26 +1,49 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.util.*;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 @Service
 public class GTFSEntityService {
@@ -97,18 +120,18 @@ public class GTFSEntityService {
         List<Stop> stops = new ArrayList<>();
 
 
-        Map<Integer, StationEmbeddable> stationMap = new HashMap<>();
+        Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
             final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
             for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
                 final Schedule schedule = trainsSchedules.get(localDates);
                 for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
-                    stationMap.putIfAbsent(scheduleRow.station.stationUICCode, scheduleRow.station);
+                    uniqueStationEmbeddables.putIfAbsent(scheduleRow.station.stationShortCode, scheduleRow.station);
                 }
             }
         }
 
-        for (final StationEmbeddable stationEmbeddable : stationMap.values()) {
+        for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
             final Station station = stationRepository.findByShortCode(stationEmbeddable.stationShortCode);
 
             Stop stop = new Stop(station);
@@ -119,6 +142,8 @@ public class GTFSEntityService {
                 stop.name = station.name;
                 stop.latitude = station.latitude.doubleValue();
                 stop.longitude = station.longitude.doubleValue();
+            } else {
+                log.error("Could not find Station for {}", stationEmbeddable.stationShortCode);
             }
 
             stops.add(stop);
@@ -141,7 +166,7 @@ public class GTFSEntityService {
 
                 List<Trip> partialCancellationTrips = createPartialCancellationTrips(localDates, schedule, trip);
                 if (!partialCancellationTrips.isEmpty()) {
-                    log.info("Created {} partial cancellation trips: {}", partialCancellationTrips.size(), partialCancellationTrips);
+                    log.trace("Created {} partial cancellation trips: {}", partialCancellationTrips.size(), partialCancellationTrips);
 
                     trips.addAll(partialCancellationTrips);
                 }
@@ -183,7 +208,7 @@ public class GTFSEntityService {
                 trip.calendar.calendarDates.add(createCalendarDate(trip.serviceId, date, true));
             }
 
-            log.info("Creating cancellation trip from {}", scheduleCancellation);
+            log.trace("Creating cancellation trip from {}", scheduleCancellation);
             final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement");
             partialCancellationTrip.calendar.calendarDates.clear();
 
@@ -216,7 +241,7 @@ public class GTFSEntityService {
             if (existingCancellation == null) {
                 cancellations.put(cancellation.startDate, cancellation.endDate, cancellation);
             } else {
-                log.info("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
+                log.trace("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
                 if (existingCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE &&
                         cancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
                     existingCancellation.cancelledRows.addAll(cancellation.cancelledRows);
