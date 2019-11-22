@@ -1,21 +1,24 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
 public class GTFSService {
@@ -34,6 +37,7 @@ public class GTFSService {
     private ScheduleProviderService scheduleProviderService;
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
+    @PostConstruct
     public void generateGTFS() {
         try {
             final LocalDate start = dp.dateInHelsinki().minusDays(7);
