@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -17,6 +18,8 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
+    @Autowired
+    private DateProvider dp;
 
     @Autowired
     private GTFSRepository gtfsRepository;
@@ -25,7 +28,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-all.zip")
     public byte[] getGtfsForAllTrains(HttpServletResponse response) {
         GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-all.zip");
-        response.addHeader("GTFS-timestamp", gtfs.created.toString());
+        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
         return gtfs.data;
     }
 
@@ -33,7 +36,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger.zip")
     public byte[] getGtfsForPassengerTrains(HttpServletResponse response) {
         GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-passenger.zip");
-        response.addHeader("GTFS-timestamp", gtfs.created.toString());
+        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
         return gtfs.data;
     }
 }
