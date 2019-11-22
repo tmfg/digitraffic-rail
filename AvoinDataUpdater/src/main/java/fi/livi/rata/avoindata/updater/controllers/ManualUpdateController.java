@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.CompositionInitializerService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainInitializerService;
@@ -41,6 +42,9 @@ public class ManualUpdateController {
 
     @Autowired
     private CompositionInitializerService compositionInitializerService;
+
+    @Autowired
+    private GTFSService gtfsService;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -84,5 +88,12 @@ public class ManualUpdateController {
     public void extractSchedules() {
         logger.info("Starting manual extract");
         scheduleService.extractSchedules();
+    }
+
+    @RequestMapping("/gtfs")
+    @ResponseBody
+    public void generateGTFS() {
+        logger.info("Starting manual gtfs");
+        gtfsService.generateGTFS();
     }
 }

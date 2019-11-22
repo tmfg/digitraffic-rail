@@ -5,8 +5,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import javax.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +35,6 @@ public class GTFSService {
     private ScheduleProviderService scheduleProviderService;
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
-    @PostConstruct
     public void generateGTFS() {
         try {
             final LocalDate start = dp.dateInHelsinki().minusDays(7);
