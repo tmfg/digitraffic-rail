@@ -68,7 +68,7 @@ public class GTFSService {
     }
 
     private void createVR(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        Predicate<Schedule> filter = schedule -> schedule.operator.operatorUICCode == 10 && schedule.trainCategory.id == 1;
+        Predicate<Schedule> filter = schedule -> schedule.operator.operatorUICCode == 10;
         List<Schedule> vrPassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(filter).collect(Collectors.toList());
         List<Schedule> vrRegularSchedules = passengerRegularSchedules.stream().filter(filter).collect(Collectors.toList());
 
