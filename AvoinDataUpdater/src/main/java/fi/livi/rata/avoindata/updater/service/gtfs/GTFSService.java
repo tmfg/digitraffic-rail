@@ -62,8 +62,18 @@ public class GTFSService {
         gtfsWritingService.writeGTFSFiles(passengerGtfsDto, "gtfs-passenger.zip");
 
         createVRTre(passengerAdhocSchedules, passengerRegularSchedules);
+        createVR(passengerAdhocSchedules, passengerRegularSchedules);
 
         log.info("Successfully wrote GTFS files");
+    }
+
+    private void createVR(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
+        Predicate<Schedule> filter = schedule -> schedule.operator.operatorUICCode == 10 && schedule.trainCategory.id == 1;
+        List<Schedule> vrPassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(filter).collect(Collectors.toList());
+        List<Schedule> vrRegularSchedules = passengerRegularSchedules.stream().filter(filter).collect(Collectors.toList());
+
+        GTFSDto vrTREGtfsDto = gtfsEntityService.createGTFSEntity(vrPassengerAdhocSchedules, vrRegularSchedules);
+        gtfsWritingService.writeGTFSFiles(vrTREGtfsDto, "gtfs-vr.zip");
     }
 
     private void createVRTre(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
@@ -72,10 +82,12 @@ public class GTFSService {
             for (ScheduleRow scheduleRow : schedule.scheduleRows) {
                 boolean isArrival = scheduleRow.arrival != null && scheduleRow.departure == null;
                 boolean isDeparture = scheduleRow.arrival == null && scheduleRow.departure != null;
-                if (isArrival || isDeparture || !scheduleRow.arrival.timestamp.equals(scheduleRow.departure.timestamp))
-                    if (includedStations.contains(scheduleRow.station.stationShortCode)) {
-                        return true;
-                    }
+                if (schedule.operator.operatorUICCode == 10) {
+                    if (isArrival || isDeparture || !scheduleRow.arrival.timestamp.equals(scheduleRow.departure.timestamp))
+                        if (includedStations.contains(scheduleRow.station.stationShortCode)) {
+                            return true;
+                        }
+                }
             }
             return false;
         };

@@ -13,6 +13,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import springfox.documentation.annotations.ApiIgnore;
 
 @Api(tags = "trains", description = "Returns trains as gtfs", position = Integer.MIN_VALUE)
 @RestController
@@ -40,10 +41,18 @@ public class GtfsController {
         return gtfs.data;
     }
 
-    @ApiOperation("Returns GTFS zip file")
+    @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     public byte[] getGtfsForVRTRETrains(HttpServletResponse response) {
         GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-vr-tre.zip");
+        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
+        return gtfs.data;
+    }
+
+    @ApiIgnore
+    @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
+    public byte[] getGtfsForVRTrains(HttpServletResponse response) {
+        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-vr.zip");
         response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
         return gtfs.data;
     }
