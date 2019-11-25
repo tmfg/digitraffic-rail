@@ -39,4 +39,12 @@ public class GtfsController {
         response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
         return gtfs.data;
     }
+
+    @ApiOperation("Returns GTFS zip file")
+    @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip")
+    public byte[] getGtfsForVRTRETrains(HttpServletResponse response) {
+        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-vr-tre.zip");
+        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
+        return gtfs.data;
+    }
 }
