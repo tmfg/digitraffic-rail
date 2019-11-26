@@ -72,8 +72,8 @@ public class GTFSService {
         List<Schedule> vrPassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(filter).collect(Collectors.toList());
         List<Schedule> vrRegularSchedules = passengerRegularSchedules.stream().filter(filter).collect(Collectors.toList());
 
-        GTFSDto vrTREGtfsDto = gtfsEntityService.createGTFSEntity(vrPassengerAdhocSchedules, vrRegularSchedules);
-        gtfsWritingService.writeGTFSFiles(vrTREGtfsDto, "gtfs-vr.zip");
+        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(vrPassengerAdhocSchedules, vrRegularSchedules);
+        gtfsWritingService.writeGTFSFiles(vrGtfsDto, "gtfs-vr.zip");
     }
 
     private void createVRTre(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {

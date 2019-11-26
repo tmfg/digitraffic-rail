@@ -61,8 +61,9 @@ public class GTFSEntityService {
     @Autowired
     private DateProvider dp;
 
-
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
+        encounteredCalendarDates.clear();
+
         Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
 
         GTFSDto gtfsDto = new GTFSDto();
@@ -132,24 +133,61 @@ public class GTFSEntityService {
         }
 
         for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
-            final Station station = stationRepository.findByShortCode(stationEmbeddable.stationShortCode);
+            String stationShortCode = stationEmbeddable.stationShortCode;
+            final Station station = stationRepository.findByShortCode(stationShortCode);
 
             Stop stop = new Stop(station);
-            stop.stopId = stationEmbeddable.stationShortCode;
-            stop.stopCode = stationEmbeddable.stationShortCode;
+            stop.stopId = stationShortCode;
+            stop.stopCode = stationShortCode;
 
             if (station != null) {
                 stop.name = station.name;
                 stop.latitude = station.latitude.doubleValue();
                 stop.longitude = station.longitude.doubleValue();
             } else {
-                log.error("Could not find Station for {}", stationEmbeddable.stationShortCode);
+                log.error("Could not find Station for {}", stationShortCode);
             }
+
+            setRUSLocations(stationShortCode, stop);
 
             stops.add(stop);
         }
 
         return Maps.uniqueIndex(stops, s -> s.stopId);
+    }
+
+    private void setRUSLocations(String stationShortCode, Stop stop) {
+        if (stationShortCode.equals("NRL")) {
+            stop.latitude = 62.174676;
+            stop.longitude = 30.603983;
+        } else if (stationShortCode.equals("BSL")) {
+            stop.latitude = 60.818538;
+            stop.longitude = 28.411931;
+        } else if (stationShortCode.equals("VYB")) {
+            stop.latitude = 60.715331;
+            stop.longitude = 28.751582;
+        } else if (stationShortCode.equals("PGO")) {
+            stop.latitude = 60.085222;
+            stop.longitude = 30.253509;
+        } else if (stationShortCode.equals("PTR")) {
+            stop.latitude = 59.955762;
+            stop.longitude = 30.356215;
+        } else if (stationShortCode.equals("TVE")) {
+            stop.latitude = 56.834918;
+            stop.longitude = 35.894602;
+        } else if (stationShortCode.equals("PTL")) {
+            stop.latitude = 59.932326;
+            stop.longitude = 30.439884;
+        } else if (stationShortCode.equals("BOLO")) {
+            stop.latitude = 57.877987;
+            stop.longitude = 34.106246;
+        } else if (stationShortCode.equals("MVA")) {
+            stop.latitude = 55.776115;
+            stop.longitude = 37.655077;
+        } else if (stationShortCode.equals("PRK")) {
+            stop.latitude = 61.783872;
+            stop.longitude = 34.344124;
+        }
     }
 
     private List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
@@ -347,11 +385,22 @@ public class GTFSEntityService {
         return calendarDates;
     }
 
+    private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
+
     private CalendarDate createCalendarDate(final String serviceId, final LocalDate date, final boolean cancelled) {
-        CalendarDate calendarDate = new CalendarDate();
-        calendarDate.serviceId = serviceId;
-        calendarDate.date = date;
-        calendarDate.exceptionType = cancelled ? 2 : 1;
+        String key = String.format("%s_%s", serviceId, date.toString());
+        CalendarDate calendarDate = encounteredCalendarDates.get(key);
+
+        if (calendarDate == null) {
+            calendarDate = new CalendarDate();
+            calendarDate.serviceId = serviceId;
+            calendarDate.date = date;
+            calendarDate.exceptionType = cancelled ? 2 : 1;
+            encounteredCalendarDates.put(key, calendarDate);
+
+            return calendarDate;
+        }
+
         return calendarDate;
     }
 
