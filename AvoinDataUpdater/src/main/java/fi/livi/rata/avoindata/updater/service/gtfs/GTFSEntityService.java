@@ -24,13 +24,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
-import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
-import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
@@ -50,7 +45,10 @@ public class GTFSEntityService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    private StationRepository stationRepository;
+    private GTFSStopsService gtfsStopsService;
+
+    @Autowired
+    private GTFSAgencyService gtfsAgencyService;
 
     @Autowired
     private TodaysScheduleService todaysScheduleService;
@@ -68,9 +66,9 @@ public class GTFSEntityService {
 
         GTFSDto gtfsDto = new GTFSDto();
 
-        final Map<String, Stop> stopMap = createStops(scheduleIntervalsByTrain);
+        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain);
         gtfsDto.stops = Lists.newArrayList(stopMap.values());
-        gtfsDto.agencies = createAgencies(scheduleIntervalsByTrain);
+        gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
         gtfsDto.trips = createTrips(scheduleIntervalsByTrain, stopMap);
         gtfsDto.routes = createRoutesFromTrips(gtfsDto.trips, stopMap);
 
@@ -117,78 +115,6 @@ public class GTFSEntityService {
         return id.toString();
     }
 
-    private Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
-        List<Stop> stops = new ArrayList<>();
-
-
-        Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
-        for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
-            final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
-            for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
-                final Schedule schedule = trainsSchedules.get(localDates);
-                for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
-                    uniqueStationEmbeddables.putIfAbsent(scheduleRow.station.stationShortCode, scheduleRow.station);
-                }
-            }
-        }
-
-        for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
-            String stationShortCode = stationEmbeddable.stationShortCode;
-            final Station station = stationRepository.findByShortCode(stationShortCode);
-
-            Stop stop = new Stop(station);
-            stop.stopId = stationShortCode;
-            stop.stopCode = stationShortCode;
-
-            if (station != null) {
-                stop.name = station.name;
-                stop.latitude = station.latitude.doubleValue();
-                stop.longitude = station.longitude.doubleValue();
-            } else {
-                log.error("Could not find Station for {}", stationShortCode);
-            }
-
-            setRUSLocations(stationShortCode, stop);
-
-            stops.add(stop);
-        }
-
-        return Maps.uniqueIndex(stops, s -> s.stopId);
-    }
-
-    private void setRUSLocations(String stationShortCode, Stop stop) {
-        if (stationShortCode.equals("NRL")) {
-            stop.latitude = 62.174676;
-            stop.longitude = 30.603983;
-        } else if (stationShortCode.equals("BSL")) {
-            stop.latitude = 60.818538;
-            stop.longitude = 28.411931;
-        } else if (stationShortCode.equals("VYB")) {
-            stop.latitude = 60.715331;
-            stop.longitude = 28.751582;
-        } else if (stationShortCode.equals("PGO")) {
-            stop.latitude = 60.085222;
-            stop.longitude = 30.253509;
-        } else if (stationShortCode.equals("PTR")) {
-            stop.latitude = 59.955762;
-            stop.longitude = 30.356215;
-        } else if (stationShortCode.equals("TVE")) {
-            stop.latitude = 56.834918;
-            stop.longitude = 35.894602;
-        } else if (stationShortCode.equals("PTL")) {
-            stop.latitude = 59.932326;
-            stop.longitude = 30.439884;
-        } else if (stationShortCode.equals("BOLO")) {
-            stop.latitude = 57.877987;
-            stop.longitude = 34.106246;
-        } else if (stationShortCode.equals("MVA")) {
-            stop.latitude = 55.776115;
-            stop.longitude = 37.655077;
-        } else if (stationShortCode.equals("PRK")) {
-            stop.latitude = 61.783872;
-            stop.longitude = 34.344124;
-        }
-    }
 
     private List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                    final Map<String, Stop> stopMap) {
@@ -410,29 +336,6 @@ public class GTFSEntityService {
         } else {
             return departureDate.getDayOfWeek().equals(dayOfWeek);
         }
-    }
-
-    private List<Agency> createAgencies(Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
-        List<Agency> agencies = new ArrayList<>();
-
-        Map<Integer, Operator> operators = new HashMap<>();
-        for (final Map<List<LocalDate>, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
-            for (final Schedule schedule : trainsSchedules.values()) {
-                operators.putIfAbsent(schedule.operator.operatorUICCode, schedule.operator);
-            }
-        }
-
-
-        for (final Operator operator : operators.values()) {
-            final Agency agency = new Agency();
-            agency.name = operator.operatorShortCode;
-            agency.id = operator.operatorUICCode;
-            agency.url = "http://";
-            agency.timezone = "Europe/Helsinki";
-            agencies.add(agency);
-        }
-
-        return agencies;
     }
 
 
