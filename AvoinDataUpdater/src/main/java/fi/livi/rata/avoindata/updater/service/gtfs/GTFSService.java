@@ -63,16 +63,14 @@ public class GTFSService {
 //    }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        GTFSDto allGtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, regularSchedules);
-        gtfsWritingService.writeGTFSFiles(allGtfsDto, "gtfs-all.zip");
+        createAllGtfs(adhocSchedules, regularSchedules);
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
                 Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
         final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
                 Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
 
-        GTFSDto passengerGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
-        gtfsWritingService.writeGTFSFiles(passengerGtfsDto, "gtfs-passenger.zip");
+        createPassengerGtfs(passengerAdhocSchedules, passengerRegularSchedules);
 
 
         List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
@@ -82,6 +80,16 @@ public class GTFSService {
         createVR(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
 
         log.info("Successfully wrote GTFS files");
+    }
+
+    private void createPassengerGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
+        GTFSDto passengerGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+        gtfsWritingService.writeGTFSFiles(passengerGtfsDto, "gtfs-passenger.zip");
+    }
+
+    private void createAllGtfs(List<Schedule> adhocSchedules, List<Schedule> regularSchedules) throws IOException {
+        GTFSDto allGtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, regularSchedules);
+        gtfsWritingService.writeGTFSFiles(allGtfsDto, "gtfs-all.zip");
     }
 
     private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
