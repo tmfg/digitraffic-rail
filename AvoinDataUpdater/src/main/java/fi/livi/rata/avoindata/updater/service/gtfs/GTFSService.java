@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -73,18 +74,39 @@ public class GTFSService {
         GTFSDto passengerGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
         gtfsWritingService.writeGTFSFiles(passengerGtfsDto, "gtfs-passenger.zip");
 
-        createVRTre(passengerAdhocSchedules, passengerRegularSchedules);
-        createVR(passengerAdhocSchedules, passengerRegularSchedules);
+
+        List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
+        List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
+
+        createVRTre(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
+        createVR(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
 
         log.info("Successfully wrote GTFS files");
     }
 
-    private void createVR(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        Predicate<Schedule> filter = schedule -> schedule.operator.operatorUICCode == 10;
-        List<Schedule> vrPassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(filter).collect(Collectors.toList());
-        List<Schedule> vrRegularSchedules = passengerRegularSchedules.stream().filter(filter).collect(Collectors.toList());
+    private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
+        List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
+        for (Schedule schedule : passengerAdhocSchedules) {
+            filterOutNonStops(schedule);
+            if (schedule.operator.operatorUICCode == 10) {
+                vrPassengerAdhocSchedules.add(schedule);
+            }
+        }
+        return vrPassengerAdhocSchedules;
+    }
 
-        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(vrPassengerAdhocSchedules, vrRegularSchedules);
+    private void filterOutNonStops(Schedule schedule) {
+        List<ScheduleRow> filteredRows = new ArrayList<>();
+        for (ScheduleRow scheduleRow : schedule.scheduleRows) {
+            if (scheduleRow.arrival == null || scheduleRow.departure == null || !scheduleRow.departure.timestamp.equals(scheduleRow.arrival.timestamp)) {
+                filteredRows.add(scheduleRow);
+            }
+        }
+        schedule.scheduleRows = filteredRows;
+    }
+
+    private void createVR(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
+        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
         gtfsWritingService.writeGTFSFiles(vrGtfsDto, "gtfs-vr.zip");
     }
 
@@ -92,13 +114,8 @@ public class GTFSService {
         Set<String> includedStations = Sets.newHashSet("OV", "OVK", "LPÄ", "NOK");
         Predicate<Schedule> treFilter = schedule -> {
             for (ScheduleRow scheduleRow : schedule.scheduleRows) {
-                boolean isArrival = scheduleRow.arrival != null && scheduleRow.departure == null;
-                boolean isDeparture = scheduleRow.arrival == null && scheduleRow.departure != null;
-                if (schedule.operator.operatorUICCode == 10) {
-                    if (isArrival || isDeparture || !scheduleRow.arrival.timestamp.equals(scheduleRow.departure.timestamp))
-                        if (includedStations.contains(scheduleRow.station.stationShortCode)) {
-                            return true;
-                        }
+                if (includedStations.contains(scheduleRow.station.stationShortCode)) {
+                    return true;
                 }
             }
             return false;
