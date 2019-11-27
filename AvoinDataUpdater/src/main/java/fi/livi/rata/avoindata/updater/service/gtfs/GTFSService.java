@@ -49,6 +49,18 @@ public class GTFSService {
         }
     }
 
+//For generating test json
+//    @PostConstruct
+//    public void writeJson() throws ExecutionException, InterruptedException, IOException {
+//        List<Schedule> allSchedules = new ArrayList<>();
+//        allSchedules.addAll(scheduleProviderService.getAdhocSchedules(LocalDate.now()));
+//        allSchedules.addAll(scheduleProviderService.getRegularSchedules(LocalDate.now()));
+//
+//        List<Schedule> filteredSchedules = allSchedules.stream().filter(schedule -> schedule.trainNumber == 910).collect(Collectors.toList());
+//
+//        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
+//    }
+
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
         GTFSDto allGtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, regularSchedules);
         gtfsWritingService.writeGTFSFiles(allGtfsDto, "gtfs-all.zip");

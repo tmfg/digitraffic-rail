@@ -45,7 +45,7 @@ public class ScheduleProviderService {
     }
 
     private List<Long> getScheduleIds(final String url) {
-        log.info("Fetching regular schedule ids from {}", url);
+        log.info("Fetching schedule ids from {}", url);
         return Lists.newArrayList(restTemplate.getForObject(url, Long[].class));
     }
 

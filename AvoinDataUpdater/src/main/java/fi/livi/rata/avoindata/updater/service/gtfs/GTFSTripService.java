@@ -49,13 +49,16 @@ public class GTFSTripService {
                 final Schedule schedule = trainsSchedules.get(localDates);
 
                 final Trip trip = createTrip(schedule, localDates.get(0), localDates.get(1), "");
-                trips.add(trip);
 
                 List<Trip> partialCancellationTrips = createPartialCancellationTrips(localDates, schedule, trip);
                 if (!partialCancellationTrips.isEmpty()) {
                     log.trace("Created {} partial cancellation trips: {}", partialCancellationTrips.size(), partialCancellationTrips);
 
                     trips.addAll(partialCancellationTrips);
+                }
+
+                if (!isTripFullyCancelled(trip, partialCancellationTrips)) {
+                    trips.add(trip);
                 }
             }
         }
@@ -74,6 +77,16 @@ public class GTFSTripService {
         encounteredCalendarDates.clear();
 
         return trips;
+    }
+
+    private boolean isTripFullyCancelled(Trip trip, List<Trip> partialCancellationTrips) {
+        boolean isFullyCancelled = false;
+        for (Trip partialCancellationTrip : partialCancellationTrips) {
+            if ((partialCancellationTrip.calendar.startDate.equals(trip.calendar.startDate) && partialCancellationTrip.calendar.endDate.equals(trip.calendar.endDate))) {
+                isFullyCancelled = true;
+            }
+        }
+        return isFullyCancelled;
     }
 
     private List<Trip> createPartialCancellationTrips(final List<LocalDate> localDates, final Schedule schedule, final Trip trip) {
