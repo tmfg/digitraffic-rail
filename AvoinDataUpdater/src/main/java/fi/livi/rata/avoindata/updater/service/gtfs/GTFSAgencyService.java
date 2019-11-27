@@ -24,7 +24,7 @@ public class GTFSAgencyService {
 
     @PostConstruct
     private void setup() {
-        urls.put("vr", "https://www.vr.fi/");
+        urls.put("vr", "https://vr.fi");
     }
 
     public List<Agency> createAgencies(Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
