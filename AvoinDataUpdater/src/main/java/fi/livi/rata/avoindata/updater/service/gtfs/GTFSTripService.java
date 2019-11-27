@@ -43,8 +43,6 @@ public class GTFSTripService {
                                   final Map<String, Stop> stopMap) {
         List<Trip> trips = new ArrayList<>();
 
-        encounteredCalendarDates.clear();
-
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
             final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
             for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
@@ -72,6 +70,8 @@ public class GTFSTripService {
         }
 
         trips.removeAll(toBeRemoved);
+
+        encounteredCalendarDates.clear();
 
         return trips;
     }

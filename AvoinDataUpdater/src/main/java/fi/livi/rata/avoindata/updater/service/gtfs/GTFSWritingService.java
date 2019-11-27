@@ -57,6 +57,8 @@ public class GTFSWritingService {
 
     @Transactional
     public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
+        log.info("Generating {}", zipFileName);
+
         List<File> files = writeGtfsFiles(gtfsDto);
 
         writeGtfsZipFile(files, zipFileName);

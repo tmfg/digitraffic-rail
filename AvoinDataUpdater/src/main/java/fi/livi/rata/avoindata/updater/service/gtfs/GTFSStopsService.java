@@ -72,7 +72,7 @@ public class GTFSStopsService {
                 stop.latitude = station.latitude.doubleValue();
                 stop.longitude = station.longitude.doubleValue();
             } else {
-                log.error("Could not find Station for {}", stationShortCode);
+                log.warn("Could not find Station for {}", stationShortCode);
             }
 
             setCustomLocations(stationShortCode, stop);
