@@ -53,10 +53,9 @@ public class ScheduleProviderService {
         List<Schedule> output = new ArrayList<>();
 
         for (final List<Long> idPartition : Lists.partition(scheduleIds, 200)) {
+            log.info("Fetching schedules {}", idPartition);
             final String scheduleUrl = String.format("%s/schedules?ids=%s", liikeInterfaceUrl, Joiner.on(",").join(idPartition));
-            log.info("Fetching schedules {}",idPartition);
             output.addAll(Lists.newArrayList(restTemplate.getForObject(scheduleUrl, Schedule[].class)));
-            log.info("Fetched schedules");
         }
 
         return output;

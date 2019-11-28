@@ -85,15 +85,18 @@ public class ManualUpdateController {
 
     @RequestMapping("/extract")
     @ResponseBody
-    public void extractSchedules() {
+    public boolean extractSchedules() {
         logger.info("Starting manual extract");
         scheduleService.extractSchedules();
+
+        return true;
     }
 
     @RequestMapping("/gtfs")
     @ResponseBody
-    public void generateGTFS() {
+    public boolean generateGTFS() {
         logger.info("Starting manual gtfs");
         gtfsService.generateGTFS();
+        return true;
     }
 }
