@@ -28,32 +28,31 @@ public class GtfsController {
     @ApiOperation("Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-all.zip", produces = "application/zip")
     public byte[] getGtfsForAllTrains(HttpServletResponse response) {
-        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-all.zip");
-        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
-        return gtfs.data;
+        return getData(response, "gtfs-all.zip");
     }
 
     @ApiOperation("Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger.zip", produces = "application/zip")
     public byte[] getGtfsForPassengerTrains(HttpServletResponse response) {
-        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-passenger.zip");
-        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
-        return gtfs.data;
+        return getData(response, "gtfs-passenger.zip");
     }
 
     @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     public byte[] getGtfsForVRTRETrains(HttpServletResponse response) {
-        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-vr-tre.zip");
-        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
-        return gtfs.data;
+        return getData(response, "gtfs-vr-tre.zip");
     }
 
     @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     public byte[] getGtfsForVRTrains(HttpServletResponse response) {
-        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc("gtfs-vr.zip");
-        response.addHeader("is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
+        return getData(response, "gtfs-vr.zip");
+    }
+
+    private byte[] getData(HttpServletResponse response, String zipFileName) {
+        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(zipFileName);
+        response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
+        response.addHeader("x-timestamp", gtfs.created.toString());
         return gtfs.data;
     }
 }
