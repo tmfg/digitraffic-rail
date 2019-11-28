@@ -68,7 +68,7 @@ public class GTFSStopsService {
             stop.stopCode = stationShortCode;
 
             if (station != null) {
-                stop.name = station.name;
+                stop.name = station.name.replace("_", "");
                 stop.latitude = station.latitude.doubleValue();
                 stop.longitude = station.longitude.doubleValue();
             } else {
