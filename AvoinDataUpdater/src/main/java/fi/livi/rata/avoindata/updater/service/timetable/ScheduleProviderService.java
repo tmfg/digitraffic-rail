@@ -15,7 +15,6 @@ import org.springframework.web.client.RestTemplate;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 @Component
 public class ScheduleProviderService {
@@ -53,26 +52,13 @@ public class ScheduleProviderService {
     private List<Schedule> getSchedules(final List<Long> scheduleIds) throws InterruptedException, ExecutionException {
         List<Schedule> output = new ArrayList<>();
 
-        for (final List<Long> idPartition : Lists.partition(scheduleIds, 500)) {
+        for (final List<Long> idPartition : Lists.partition(scheduleIds, 200)) {
             final String scheduleUrl = String.format("%s/schedules?ids=%s", liikeInterfaceUrl, Joiner.on(",").join(idPartition));
             log.info("Fetching schedules {}",idPartition);
-            ArrayList<Schedule> schedules = Lists.newArrayList(restTemplate.getForObject(scheduleUrl, Schedule[].class));
-            for (Schedule schedule : schedules) {
-                filterOutNonStops(schedule);
-            }
-            output.addAll(schedules);
+            output.addAll(Lists.newArrayList(restTemplate.getForObject(scheduleUrl, Schedule[].class)));
+            log.info("Fetched schedules");
         }
 
         return output;
-    }
-
-    private void filterOutNonStops(Schedule schedule) {
-        List<ScheduleRow> filteredRows = new ArrayList<>();
-        for (ScheduleRow scheduleRow : schedule.scheduleRows) {
-            if (scheduleRow.arrival == null || scheduleRow.departure == null || !scheduleRow.departure.timestamp.equals(scheduleRow.arrival.timestamp)) {
-                filteredRows.add(scheduleRow);
-            }
-        }
-        schedule.scheduleRows = filteredRows;
     }
 }

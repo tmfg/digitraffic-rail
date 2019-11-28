@@ -78,7 +78,7 @@ public class MQTTPublishService {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    //   MQTTGateway.sendToMqtt(message);
+                    MQTTGateway.sendToMqtt(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
