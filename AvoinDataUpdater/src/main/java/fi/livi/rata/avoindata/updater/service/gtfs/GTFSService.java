@@ -62,34 +62,32 @@ public class GTFSService {
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
 
+    private void createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
+        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+        gtfsWritingService.writeGTFSFiles(vrGtfsDto, zipFileName);
+    }
+
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        createAllGtfs(adhocSchedules, regularSchedules);
+        createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip");
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
                 Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
         final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
                 Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
 
-        createPassengerGtfs(passengerAdhocSchedules, passengerRegularSchedules);
+        createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip");
 
-
-        List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
-        List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
-
-        createVRTre(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
-        createVR(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
+        createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
 
         log.info("Successfully wrote GTFS files");
     }
 
-    private void createPassengerGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        GTFSDto passengerGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
-        gtfsWritingService.writeGTFSFiles(passengerGtfsDto, "gtfs-passenger.zip");
-    }
+    private void createVrGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
+        List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
+        List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
 
-    private void createAllGtfs(List<Schedule> adhocSchedules, List<Schedule> regularSchedules) throws IOException {
-        GTFSDto allGtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, regularSchedules);
-        gtfsWritingService.writeGTFSFiles(allGtfsDto, "gtfs-all.zip");
+        createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip");
+        createVRTreGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
     }
 
     private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
@@ -113,26 +111,14 @@ public class GTFSService {
         schedule.scheduleRows = filteredRows;
     }
 
-    private void createVR(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
-        gtfsWritingService.writeGTFSFiles(vrGtfsDto, "gtfs-vr.zip");
-    }
 
-    private void createVRTre(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
+    private void createVRTreGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
         Set<String> includedStations = Sets.newHashSet("OV", "OVK", "LPÄ", "NOK");
-        Predicate<Schedule> treFilter = schedule -> {
-            for (ScheduleRow scheduleRow : schedule.scheduleRows) {
-                if (includedStations.contains(scheduleRow.station.stationShortCode)) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        Predicate<Schedule> treFilter = schedule -> schedule.scheduleRows.stream().anyMatch(scheduleRow -> includedStations.contains(scheduleRow.station.stationShortCode));
         List<Schedule> vrTrePassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(treFilter).collect(Collectors.toList());
         List<Schedule> vrTreRegularSchedules = passengerRegularSchedules.stream().filter(treFilter).collect(Collectors.toList());
 
-        GTFSDto vrTREGtfsDto = gtfsEntityService.createGTFSEntity(vrTrePassengerAdhocSchedules, vrTreRegularSchedules);
-        gtfsWritingService.writeGTFSFiles(vrTREGtfsDto, "gtfs-vr-tre.zip");
+        createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip");
     }
 
     private boolean isPassengerTrain(Schedule s) {
