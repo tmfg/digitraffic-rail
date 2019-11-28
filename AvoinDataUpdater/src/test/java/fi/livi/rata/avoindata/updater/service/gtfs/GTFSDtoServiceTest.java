@@ -1,22 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.Resource;
-import org.springframework.transaction.annotation.Transactional;
+import static org.mockito.BDDMockito.given;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -26,7 +10,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.BDDMockito.given;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.Resource;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 public class GTFSDtoServiceTest extends BaseTest {
     public static final String KOKKOLA_UIC = "KOK";
@@ -41,9 +46,6 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Autowired
     private GTFSWritingService gtfsWritingService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private DateProvider dp;
@@ -66,26 +68,27 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/27.json")
     private Resource schedules_27;
 
+    @Value("classpath:gtfs/910.json")
+    private Resource schedules_910;
+
 
     @Before
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+    }
 
-        //To write test json for a train:
-        //                List<JsonNode> nodes = new ArrayList<>();
-        //                final long trainNumber = 27L;
-        //                for (final JsonNode jsonNode : objectMapper.readTree(new File("C:\\temp\\schedules\\regular-schedules.json"))) {
-        //                    if (jsonNode.get("aikataulunJunanumero").get("junanumero").longValue() == trainNumber) {
-        //                        nodes.add(jsonNode);
-        //                    }
-        //                }
-        //                for (final JsonNode jsonNode : objectMapper.readTree(new File("C:\\temp\\schedules\\adhoc-schedules.json"))) {
-        //                    if (jsonNode.get("aikataulunJunanumero").get("junanumero").longValue() == trainNumber) {
-        //                        nodes.add(jsonNode);
-        //                    }
-        //                }
-        //                objectMapper.writeValue(new File(String.format("%s.json", trainNumber)), nodes);
+    @Test
+    @Transactional
+    public void train910ShouldBeOkay() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
+        given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_910.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        //Original schedule is completely cancelled, so there should be three trips
+        assertTrips(gtfsDto.trips, 2);
     }
 
     @Test
@@ -348,8 +351,8 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void assertTrip(final Trip trip, final LocalDate startDate, final LocalDate endDate, final boolean monday,
-            final boolean tuesday, final boolean wednesday, final boolean thursday, final boolean friday, final boolean saturday,
-            final boolean sunday) {
+                            final boolean tuesday, final boolean wednesday, final boolean thursday, final boolean friday, final boolean saturday,
+                            final boolean sunday) {
         Assert.assertEquals(startDate, trip.calendar.startDate);
         Assert.assertEquals(endDate, trip.calendar.endDate);
         Assert.assertEquals(monday, trip.calendar.monday);

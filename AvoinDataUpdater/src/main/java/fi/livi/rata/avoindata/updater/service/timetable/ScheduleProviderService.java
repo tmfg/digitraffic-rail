@@ -45,16 +45,16 @@ public class ScheduleProviderService {
     }
 
     private List<Long> getScheduleIds(final String url) {
-        log.info("Fetching regular schedule ids from {}", url);
+        log.info("Fetching schedule ids from {}", url);
         return Lists.newArrayList(restTemplate.getForObject(url, Long[].class));
     }
 
     private List<Schedule> getSchedules(final List<Long> scheduleIds) throws InterruptedException, ExecutionException {
         List<Schedule> output = new ArrayList<>();
 
-        for (final List<Long> idPartition : Lists.partition(scheduleIds, 500)) {
+        for (final List<Long> idPartition : Lists.partition(scheduleIds, 200)) {
+            log.info("Fetching schedules {}", idPartition);
             final String scheduleUrl = String.format("%s/schedules?ids=%s", liikeInterfaceUrl, Joiner.on(",").join(idPartition));
-            log.info("Fetching schedules {}",idPartition);
             output.addAll(Lists.newArrayList(restTemplate.getForObject(scheduleUrl, Schedule[].class)));
         }
 

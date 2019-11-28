@@ -57,6 +57,8 @@ public class GTFSWritingService {
 
     @Transactional
     public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
+        log.info("Generating {}", zipFileName);
+
         List<File> files = writeGtfsFiles(gtfsDto);
 
         writeGtfsZipFile(files, zipFileName);
@@ -80,9 +82,9 @@ public class GTFSWritingService {
 
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
-                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_headsign,stop_code", stop ->
-                        String.format("%s,%s,,%s,%s,,,,%s,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
-                                stop.longitude, stop.source != null ? stop.source.name : stop.stopCode, stop.source != null ? stop.source.shortCode : stop.stopCode)
+                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code", stop ->
+                        String.format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
+                                stop.longitude, stop.source != null ? stop.source.shortCode : stop.stopCode)
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
@@ -120,9 +122,9 @@ public class GTFSWritingService {
         final LocalDate maxEndDate = gtfsDto.trips.stream().max(Comparator.comparing(left -> left.calendar.endDate)).get().calendar.endDate;
 
         files.add(write(getPath("feed_info.txt"), Lists.newArrayList(1),
-                "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email", cd -> String
-                        .format("%s,%s,%s,%s,%s,%s,%s", "Traffic Management Finland", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
-                                format(maxEndDate), dateProvider.nowInHelsinki().toEpochSecond(), "digitraffic@solita.fi")));
+                "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
+                        .format("%s,%s,%s,%s,%s,%s", "Traffic Management Finland", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
+                                format(maxEndDate), dateProvider.nowInHelsinki().toEpochSecond())));
 
 
         return files;

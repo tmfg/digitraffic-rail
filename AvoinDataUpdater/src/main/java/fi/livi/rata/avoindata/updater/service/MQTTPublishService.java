@@ -1,8 +1,13 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.livi.rata.avoindata.updater.config.MQTTConfig;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.function.Function;
+
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +18,9 @@ import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.function.Function;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
 public class MQTTPublishService {
