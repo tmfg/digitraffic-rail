@@ -10,8 +10,10 @@ import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import fi.livi.rata.avoindata.common.dao.metadata.OperatorRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -20,10 +22,15 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 public class GTFSAgencyService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
+    @Autowired
+    private OperatorRepository operatorRepository;
+
     public Map<String, String> urls = new HashMap<>();
+    public Map<String, String> names = new HashMap<>();
 
     @PostConstruct
     private void setup() {
+        names.put("vr", "VR");
         urls.put("vr", "https://vr.fi");
     }
 
@@ -40,15 +47,28 @@ public class GTFSAgencyService {
 
         for (final Operator operator : operators.values()) {
             final Agency agency = new Agency();
-            agency.name = operator.operatorShortCode;
+            agency.name = getName(operator.operatorShortCode);
             agency.id = operator.operatorUICCode;
-            String url = getUrl(operator, agency);
-            agency.url = url;
+            agency.url = getUrl(operator, agency);
             agency.timezone = "Europe/Helsinki";
             agencies.add(agency);
         }
 
         return agencies;
+    }
+
+    private String getName(String operatorShortCode) {
+        String name = names.get(operatorShortCode);
+        if (name != null) {
+            return name;
+        }
+
+        fi.livi.rata.avoindata.common.domain.metadata.Operator operator = operatorRepository.findByOperatorShortCode(operatorShortCode);
+        if (operator != null) {
+            return operator.operatorName;
+        } else {
+            return operatorShortCode;
+        }
     }
 
     private String getUrl(Operator operator, Agency agency) {

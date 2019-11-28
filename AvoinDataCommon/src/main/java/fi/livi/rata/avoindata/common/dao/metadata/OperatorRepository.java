@@ -1,11 +1,12 @@
 package fi.livi.rata.avoindata.common.dao.metadata;
 
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.metadata.Operator;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.domain.metadata.Operator;
 
 @Repository
 public interface OperatorRepository extends CustomGeneralRepository<Operator, Integer> {
@@ -14,4 +15,6 @@ public interface OperatorRepository extends CustomGeneralRepository<Operator, In
             "left join fetch operator.trainNumbers " +
             "order by operator.operatorName")
     List<Operator> findAllAndFetchTrainNumbers();
+
+    Operator findByOperatorShortCode(String operatorShortCode);
 }
