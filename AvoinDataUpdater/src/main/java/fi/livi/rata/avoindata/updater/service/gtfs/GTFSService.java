@@ -63,14 +63,14 @@ public class GTFSService {
 //    }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-//        createAllGtfs(adhocSchedules, regularSchedules);
+        createAllGtfs(adhocSchedules, regularSchedules);
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
                 Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
         final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
                 Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
 
-//        createPassengerGtfs(passengerAdhocSchedules, passengerRegularSchedules);
+        createPassengerGtfs(passengerAdhocSchedules, passengerRegularSchedules);
 
 
         List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
