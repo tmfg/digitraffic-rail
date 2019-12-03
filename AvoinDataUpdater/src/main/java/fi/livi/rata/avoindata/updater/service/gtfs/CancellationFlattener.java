@@ -3,14 +3,15 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 
@@ -46,8 +47,33 @@ public class CancellationFlattener {
             }
         }
 
+        List<ScheduleCancellation> results = new ArrayList<>();
+        ScheduleCancellation previous = scheduleCancellationsPerDay.get(minAndMax[0].startDate);
+        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
+            ScheduleCancellation current = scheduleCancellationsPerDay.get(date);
 
-        return Lists.newArrayList(scheduleCancellationsPerDay.values());
+            if (current != null && previous != null && areCancellationsEqual(previous, current)) {
+                previous.endDate = date;
+            } else {
+                if (previous != null) {
+                    results.add(previous);
+                }
+                previous = current;
+            }
+        }
+        if (previous != null) {
+            results.add(previous);
+        }
+
+
+        return results;
+    }
+
+    private boolean areCancellationsEqual(ScheduleCancellation today, ScheduleCancellation tomorrow) {
+        List<Long> todaysIds = today.cancelledRows.stream().filter(s -> s != null).map(s -> s.id).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+        List<Long> tomorrowsIds = tomorrow.cancelledRows.stream().filter(s -> s != null).map(s -> s.id).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+
+        return todaysIds.equals(tomorrowsIds);
     }
 
     private ScheduleCancellation mergeScheduleCancellations(Collection<ScheduleCancellation> cancellations, LocalDate date) {

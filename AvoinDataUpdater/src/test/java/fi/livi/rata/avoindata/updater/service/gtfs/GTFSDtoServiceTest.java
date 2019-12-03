@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,8 +20,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -103,10 +106,19 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
-        gtfsWritingService.writeGTFSFiles(gtfsDto);
+        final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
+        Trip normalTrip = tripsByServiceId.get("66_2019-11-25_2019-12-14");
+        Trip KAJTrip = tripsByServiceId.get("66_2019-12-01_2019-12-01_replacement");
+        Trip KUOTrip = tripsByServiceId.get("66_2019-12-02_2019-12-02_replacement");
 
-        //Original schedule is completely cancelled, so there should be three trips
-        // assertTrips(gtfsDto.trips, 2);
+        Assert.assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
+        Assert.assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
+        Assert.assertEquals(KUOTrip.stopTimes.get(0).stopId, "KUO");
+
+        Assert.assertEquals(Iterables.getLast(normalTrip.stopTimes).stopId, "HKI");
+        Assert.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
+        Assert.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
+
     }
 
     @Test
@@ -383,8 +395,14 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void assertTrips(final List<Trip> trips, int expectedTripCount) {
+        printTrips(trips);
+
         final ImmutableMap<String, Trip> tripsAreUnique = Maps.uniqueIndex(trips, s -> s.tripId);
         Assert.assertEquals(expectedTripCount, trips.size());
+    }
+
+    private void printTrips(List<Trip> trips) {
+        System.out.println("Trips: " + Joiner.on(",").join(trips.stream().map(s -> s.tripId).collect(Collectors.toList())));
     }
 
     private void assertRoutes(final List<Route> routes, final String shortName) {
