@@ -71,6 +71,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/910.json")
     private Resource schedules_910;
 
+    @Value("classpath:gtfs/66.json")
+    private Resource schedules_66;
+
 
     @Before
     public void setup() throws IOException {
@@ -89,6 +92,21 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         //Original schedule is completely cancelled, so there should be three trips
         assertTrips(gtfsDto.trips, 2);
+    }
+
+    @Test
+    @Transactional
+    public void train66ShouldBeOkay() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 2));
+        given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        gtfsWritingService.writeGTFSFiles(gtfsDto);
+
+        //Original schedule is completely cancelled, so there should be three trips
+        // assertTrips(gtfsDto.trips, 2);
     }
 
     @Test
@@ -380,7 +398,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     private void assertAgencies(final List<Agency> agencies, final int agencyId) {
         Assert.assertEquals(1, agencies.size());
         final Agency agency = agencies.iterator().next();
-        Assert.assertEquals("vr", agency.name);
+        Assert.assertEquals("VR", agency.name);
         Assert.assertEquals(agencyId, agency.id);
         Assert.assertEquals("Europe/Helsinki", agency.timezone);
     }

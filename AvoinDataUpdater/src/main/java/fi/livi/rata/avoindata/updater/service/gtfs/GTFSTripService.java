@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.base.MoreObjects;
@@ -36,6 +37,9 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 @Service
 public class GTFSTripService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    private CancellationFlattener cancellationFlattener;
 
     private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
@@ -133,8 +137,12 @@ public class GTFSTripService {
     private Table<LocalDate, LocalDate, ScheduleCancellation> getFilteredCancellations(final Schedule schedule) {
         final Collection<ScheduleCancellation> partialCancellations = Collections2.filter(schedule.scheduleCancellations,
                 sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY);
-        final Collection<ScheduleCancellation> differentRouteCancellations = Collections2.filter(schedule.scheduleCancellations,
+        Collection<ScheduleCancellation> differentRouteCancellations = Collections2.filter(schedule.scheduleCancellations,
                 sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE);
+
+        if (differentRouteCancellations.size() > 1) {
+            differentRouteCancellations = cancellationFlattener.flatten(differentRouteCancellations);
+        }
 
         final Iterable<ScheduleCancellation> allCancellations = Iterables.concat(partialCancellations, differentRouteCancellations);
         Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = HashBasedTable.create();
@@ -167,6 +175,9 @@ public class GTFSTripService {
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix) {
         final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate, endDate, scheduleSuffix);
+        if (tripId.equals("66_2019-11-25_2019-11-25_replacement")) {
+            System.out.println("jorma");
+        }
         final String serviceId = tripId;
 
         Trip trip = new Trip(schedule);
