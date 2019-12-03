@@ -175,9 +175,6 @@ public class GTFSTripService {
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix) {
         final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate, endDate, scheduleSuffix);
-        if (tripId.equals("66_2019-11-25_2019-11-25_replacement")) {
-            System.out.println("jorma");
-        }
         final String serviceId = tripId;
 
         Trip trip = new Trip(schedule);

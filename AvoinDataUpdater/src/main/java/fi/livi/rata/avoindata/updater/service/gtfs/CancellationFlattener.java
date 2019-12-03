@@ -21,11 +21,7 @@ public class CancellationFlattener {
         ScheduleCancellation[] minAndMax = getMinMax(scheduleCancellations);
 
         Map<LocalDate, ScheduleCancellation> scheduleCancellationsPerDay = new HashMap<>();
-        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
-            if (date.equals(LocalDate.of(2019, 11, 24)) || date.equals(LocalDate.of(2019, 11, 25))) {
-                System.out.println("jorma");
-            }
-
+        for (LocalDate date = minAndMax[0].startDate; !date.isAfter(minAndMax[1].endDate); date = date.plusDays(1)) {
             List<ScheduleCancellation> intersectingScheduleCancellations = getIntersectingScheduleCancellations(scheduleCancellations, date);
 
             if (intersectingScheduleCancellations.isEmpty()) {
@@ -39,7 +35,7 @@ public class CancellationFlattener {
             }
         }
 
-        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
+        for (LocalDate date = minAndMax[0].startDate; !date.isAfter(minAndMax[1].endDate); date = date.plusDays(1)) {
             ScheduleCancellation scheduleCancellation = scheduleCancellationsPerDay.get(date);
             if (scheduleCancellation != null) {
                 scheduleCancellation.startDate = date;
@@ -47,26 +43,26 @@ public class CancellationFlattener {
             }
         }
 
-        List<ScheduleCancellation> results = new ArrayList<>();
-        ScheduleCancellation previous = scheduleCancellationsPerDay.get(minAndMax[0].startDate);
-        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
-            ScheduleCancellation current = scheduleCancellationsPerDay.get(date);
+//        List<ScheduleCancellation> results = new ArrayList<>();
+//        ScheduleCancellation previous = scheduleCancellationsPerDay.get(minAndMax[0].startDate);
+//        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
+//            ScheduleCancellation current = scheduleCancellationsPerDay.get(date);
+//
+//            if (current != null && previous != null && areCancellationsEqual(previous, current)) {
+//                previous.endDate = date;
+//            } else {
+//                if (previous != null) {
+//                    results.add(previous);
+//                }
+//                previous = current;
+//            }
+//        }
+//        if (previous != null) {
+//            results.add(previous);
+//        }
 
-            if (current != null && previous != null && areCancellationsEqual(previous, current)) {
-                previous.endDate = date;
-            } else {
-                if (previous != null) {
-                    results.add(previous);
-                }
-                previous = current;
-            }
-        }
-        if (previous != null) {
-            results.add(previous);
-        }
 
-
-        return results;
+        return scheduleCancellationsPerDay.values().stream().sorted((o1, o2) -> o1.startDate.compareTo(o2.startDate)).collect(Collectors.toList());
     }
 
     private boolean areCancellationsEqual(ScheduleCancellation today, ScheduleCancellation tomorrow) {

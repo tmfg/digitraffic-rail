@@ -1,6 +1,21 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
@@ -13,14 +28,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SingleDayScheduleExtractServiceTest extends BaseTest {
     @Autowired
@@ -717,7 +724,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
 
         for (int i = 0; i < timeTableRows.size(); i++) {
             final TimeTableRow timeTableRow = timeTableRows.get(i);
-            //            System.out.println(timeTableRow.scheduledTime.withZoneSameInstant(ZoneId.of("Europe/Helsinki")));
             Assert.assertTrue(timeTableRow.scheduledTime.isEqual(times[i]));
         }
     }

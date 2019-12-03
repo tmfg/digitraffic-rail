@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,7 +19,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -237,9 +235,10 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train9ShouldBeOkay() throws IOException {
+
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
-
+        gtfsWritingService.writeGTFSFiles(gtfsDto);
         assertTrips(gtfsDto.trips, 71);
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
@@ -402,7 +401,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void printTrips(List<Trip> trips) {
-        System.out.println("Trips: " + Joiner.on(",").join(trips.stream().map(s -> s.tripId).collect(Collectors.toList())));
+        //System.out.println("Trips: " + Joiner.on(",").join(trips.stream().map(s -> s.tripId).sorted().collect(Collectors.toList())));
     }
 
     private void assertRoutes(final List<Route> routes, final String shortName) {
