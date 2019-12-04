@@ -32,6 +32,15 @@ public class GTFSAgencyService {
     private void setup() {
         names.put("vr", "VR");
         urls.put("vr", "https://vr.fi");
+        urls.put("kmoy", "https://www.keitelemuseo.fi/");
+        urls.put("porha", "http://www.elisanet.fi/porhaltaja/");
+        urls.put("hmvy", "http://www.hmvy.fi/");
+        urls.put("hvm1009", "http://hoyryveturimatkat1009.fi/");
+        urls.put("winco", "https://www.winco.fi/");
+        urls.put("vr-track", "https://nrcgroup.fi/");
+        urls.put("sundstroms", "https://sundstroms.fi/");
+        urls.put("destia", "https://www.destia.fi/");
+        urls.put("ferfi", "https://www.fenniarail.fi/");
     }
 
     public List<Agency> createAgencies(Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
