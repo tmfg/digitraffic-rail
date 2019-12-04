@@ -49,7 +49,7 @@ public class GTFSAgencyService {
             final Agency agency = new Agency();
             agency.name = getName(operator.operatorShortCode);
             agency.id = operator.operatorUICCode;
-            agency.url = getUrl(operator, agency);
+            agency.url = getUrl(operator);
             agency.timezone = "Europe/Helsinki";
             agencies.add(agency);
         }
@@ -71,7 +71,7 @@ public class GTFSAgencyService {
         }
     }
 
-    private String getUrl(Operator operator, Agency agency) {
+    private String getUrl(Operator operator) {
         String url = urls.get(operator.operatorShortCode);
         if (url == null) {
             log.warn("Url not found for operator {}", operator.operatorShortCode);
