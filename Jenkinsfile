@@ -1,6 +1,6 @@
 def buildPipelineScript
 
-node {
+node(getTargetNode()) {
 	String branch = getCIBranch()
 
 	checkout changelog: false, poll: false, scm: [
@@ -34,6 +34,10 @@ String getCIBranch() {
 		echo "No LIIKE_CI_BRANCH defined. Using default: master"
 		return "master"
 	}
+}
+
+String getTargetNode() {
+    return "${TARGET_NODE}"
 }
 
 echo "Running build pipeline script..."
