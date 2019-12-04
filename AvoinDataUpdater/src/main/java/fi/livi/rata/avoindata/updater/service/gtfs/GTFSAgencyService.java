@@ -74,8 +74,8 @@ public class GTFSAgencyService {
     private String getUrl(Operator operator, Agency agency) {
         String url = urls.get(operator.operatorShortCode);
         if (url == null) {
-            agency.url = "https://google.com";
             log.warn("Url not found for operator {}", operator.operatorShortCode);
+            return "https://google.com";
         }
         return url;
     }
