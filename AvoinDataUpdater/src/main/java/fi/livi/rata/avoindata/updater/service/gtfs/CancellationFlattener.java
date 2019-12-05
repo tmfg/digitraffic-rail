@@ -43,33 +43,8 @@ public class CancellationFlattener {
             }
         }
 
-//        List<ScheduleCancellation> results = new ArrayList<>();
-//        ScheduleCancellation previous = scheduleCancellationsPerDay.get(minAndMax[0].startDate);
-//        for (LocalDate date = minAndMax[0].startDate; date.isBefore(minAndMax[1].endDate); date = date.plusDays(1)) {
-//            ScheduleCancellation current = scheduleCancellationsPerDay.get(date);
-//
-//            if (current != null && previous != null && areCancellationsEqual(previous, current)) {
-//                previous.endDate = date;
-//            } else {
-//                if (previous != null) {
-//                    results.add(previous);
-//                }
-//                previous = current;
-//            }
-//        }
-//        if (previous != null) {
-//            results.add(previous);
-//        }
 
-
-        return scheduleCancellationsPerDay.values().stream().sorted((o1, o2) -> o1.startDate.compareTo(o2.startDate)).collect(Collectors.toList());
-    }
-
-    private boolean areCancellationsEqual(ScheduleCancellation today, ScheduleCancellation tomorrow) {
-        List<Long> todaysIds = today.cancelledRows.stream().filter(s -> s != null).map(s -> s.id).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
-        List<Long> tomorrowsIds = tomorrow.cancelledRows.stream().filter(s -> s != null).map(s -> s.id).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
-
-        return todaysIds.equals(tomorrowsIds);
+        return scheduleCancellationsPerDay.values().stream().sorted(Comparator.comparing(o -> o.startDate)).collect(Collectors.toList());
     }
 
     private ScheduleCancellation mergeScheduleCancellations(Collection<ScheduleCancellation> cancellations, LocalDate date) {
