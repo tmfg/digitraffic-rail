@@ -36,7 +36,7 @@ public class GTFSRouteService {
             route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
 
             if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
-                route.shortName = "";
+                route.shortName = String.format("%s %s", schedule.trainType.name, schedule.trainNumber);
             } else {
                 route.shortName = schedule.commuterLineId;
             }
