@@ -75,29 +75,50 @@ public class GTFSEntityService {
         Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervals = new HashMap<>();
 
         for (final Long trainNumber : daysSchedulesByTrainNumber.columnKeySet()) {
-            Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
+            Map<List<LocalDate>, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
+            Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
 
-            Schedule previousSchedule = null;
-            LocalDate intervalStart = start;
-            for (LocalDate date = start; date.isBefore(end) || date.isEqual(end); date = date.plusDays(1)) {
-                Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
-
-                //  log.info("{}: {}", date, schedule != null ? schedule.id : "null");
-
-                if (date.equals(end)) {
-                    trainsScheduleIntervals.put(Arrays.asList(intervalStart, date), schedule == null ? previousSchedule : schedule);
-                } else if (schedule == null) {
-                    continue;
-                } else if (previousSchedule != null && previousSchedule.id != schedule.id) {
-                    trainsScheduleIntervals.put(Arrays.asList(intervalStart, date.minusDays(1)), previousSchedule);
-                    intervalStart = date;
-                }
-
-                previousSchedule = schedule;
-            }
-
-            scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, trainsScheduleIntervals);
+            scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, correctedTrainsScheduleIntervals);
         }
         return scheduleIntervals;
+    }
+
+    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end, Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
+        Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
+
+        Schedule previousSchedule = null;
+        LocalDate intervalStart = start;
+        for (LocalDate date = start; date.isBefore(end) || date.isEqual(end); date = date.plusDays(1)) {
+            Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
+
+            //  log.info("{}: {}", date, schedule != null ? schedule.id : "null");
+
+            if (date.equals(end)) {
+                trainsScheduleIntervals.put(Arrays.asList(intervalStart, date), schedule == null ? previousSchedule : schedule);
+            } else if (schedule == null) {
+                continue;
+            } else if (previousSchedule != null && previousSchedule.id != schedule.id) {
+                trainsScheduleIntervals.put(Arrays.asList(intervalStart, date.minusDays(1)), previousSchedule);
+                intervalStart = date;
+            }
+
+            previousSchedule = schedule;
+        }
+        return trainsScheduleIntervals;
+    }
+
+    private Map<List<LocalDate>, Schedule> correctIntervalEnds(Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
+        Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            List<LocalDate> oldKey = entry.getKey();
+            LocalDate scheduleEndDate = entry.getValue().endDate;
+            if (scheduleEndDate != null && oldKey.get(1).isAfter(scheduleEndDate)) {
+                List<LocalDate> newKey = Lists.newArrayList(oldKey.get(0), scheduleEndDate);
+                correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
+            } else {
+                correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return correctedTrainsScheduleIntervals;
     }
 }

@@ -75,6 +75,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/66.json")
     private Resource schedules_66;
 
+    @Value("classpath:gtfs/141_151.json")
+    private Resource schedules_141_151;
+
 
     @Before
     public void setup() throws IOException {
@@ -86,7 +89,6 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void train910ShouldBeOkay() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
-        given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_910.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
@@ -99,7 +101,6 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void train66ShouldBeOkay() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 2));
-        given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
@@ -222,6 +223,23 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Test
     @Transactional
+    public void schedulePeriodChangeShouldBeOkay() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 9));
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_141_151.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        assertTrips(gtfsDto.trips, 3);
+
+        final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
+
+        Assert.assertNotNull(trips.get(String.format("%s_%s_%s", 141L, LocalDate.of(2019, 12, 2), LocalDate.of(2019, 12, 14))));
+        Assert.assertNotNull(trips.get(String.format("%s_%s_%s", 151L, LocalDate.of(2019, 12, 2), LocalDate.of(2019, 12, 13))));
+        Assert.assertNotNull(trips.get(String.format("%s_%s_%s", 151L, LocalDate.of(2019, 12, 15), LocalDate.of(2020, 12, 11))));
+    }
+
+    @Test
+    @Transactional
     public void differentRouteShouldBeOkay() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_1.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
@@ -231,11 +249,11 @@ public class GTFSDtoServiceTest extends BaseTest {
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
         final Trip firstTrip = tripsByServiceId.get("1_2017-09-02_2017-12-09");
         final Trip secondTrip = tripsByServiceId.get("1_2017-12-10_2018-06-17");
-        final Trip thirdTrip = tripsByServiceId.get("1_2018-06-18_2018-12-31");
+        final Trip thirdTrip = tripsByServiceId.get("1_2018-06-18_2018-12-08");
 
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), true, true, true, true, true, true, true);
         assertTrip(secondTrip, LocalDate.of(2017, 12, 10), LocalDate.of(2018, 6, 17), true, true, true, true, true, true, true);
-        assertTrip(thirdTrip, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 31), true, true, true, true, true, true, true);
+        assertTrip(thirdTrip, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 8), true, true, true, true, true, true, true);
 
     }
 
@@ -250,7 +268,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        Assert.assertNotNull(trips.get(String.format("%s_%s_%s", 9L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 31))));
+        Assert.assertNotNull(trips.get(String.format("%s_%s_%s", 9L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 8))));
 
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 11))));        // ma
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 12))));        // ti
@@ -308,7 +326,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 10))), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9))), OULU_UIC,
                 HELSINKI_UIC);
         assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 9, 9))), KOKKOLA_UIC,
                 HELSINKI_UIC);    // 9.9. la KOK-HKI
@@ -333,9 +351,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 12, 2))));            // 2.12. la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 12, 9))));            // 9.12. la
 
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 12, 11), LocalDate.of(2018, 6, 17))), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 12, 11), LocalDate.of(2018, 6, 16))), OULU_UIC,
                 HELSINKI_UIC);
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 31))), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 8))), OULU_UIC,
                 HELSINKI_UIC);
     }
 
@@ -355,27 +373,27 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         assertAgencies(gtfsDto.agencies, 10);
-        assertRoutes(gtfsDto.routes, "");
+        assertRoutes(gtfsDto.routes, "PYO 263");
         assertTrips(gtfsDto.trips, 3);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
 
-        final Trip firstTrip = tripsByServiceId.get("263_2017-09-02_2017-12-14");
-        assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 14), false, false, true, false, true, true,
+        final Trip firstTrip = tripsByServiceId.get("263_2017-09-02_2017-12-09");
+        assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), false, false, true, false, true, true,
                 false);
 
         Assert.assertEquals(1, firstTrip.calendar.calendarDates.size());
         Assert.assertEquals(2, firstTrip.calendar.calendarDates.iterator().next().exceptionType);
         Assert.assertEquals(LocalDate.of(2017, 10, 7), firstTrip.calendar.calendarDates.iterator().next().date);
 
-        final Trip secondTrip = tripsByServiceId.get("263_2017-12-15_2018-06-17");
-        assertTrip(secondTrip, LocalDate.of(2017, 12, 15), LocalDate.of(2018, 6, 17), true, false, true, false, true, false, false);
+        final Trip secondTrip = tripsByServiceId.get("263_2017-12-15_2018-04-20");
+        assertTrip(secondTrip, LocalDate.of(2017, 12, 15), LocalDate.of(2018, 4, 20), true, false, true, false, true, false, false);
         Assert.assertEquals(35, secondTrip.calendar.calendarDates.size());
         Assert.assertEquals(1, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 1).size());
         Assert.assertEquals(34, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 2).size());
 
-        final Trip thirdTrip = tripsByServiceId.get("263_2018-06-18_2018-12-31");
-        assertTrip(thirdTrip, LocalDate.of(2018, 06, 18), LocalDate.of(2018, 12, 31), true, false, false, false, true, true, false);
+        final Trip thirdTrip = tripsByServiceId.get("263_2018-06-18_2018-12-08");
+        assertTrip(thirdTrip, LocalDate.of(2018, 06, 18), LocalDate.of(2018, 12, 8), true, false, false, false, true, true, false);
         Assert.assertEquals(0, thirdTrip.calendar.calendarDates.size());
 
         Assert.assertEquals(125 - 8, firstTrip.stopTimes.size());

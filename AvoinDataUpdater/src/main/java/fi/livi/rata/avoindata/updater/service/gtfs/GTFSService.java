@@ -57,7 +57,8 @@ public class GTFSService {
 //        allSchedules.addAll(scheduleProviderService.getAdhocSchedules(LocalDate.now()));
 //        allSchedules.addAll(scheduleProviderService.getRegularSchedules(LocalDate.now()));
 //
-//        List<Schedule> filteredSchedules = allSchedules.stream().filter(schedule -> schedule.trainNumber == 66).collect(Collectors.toList());
+//        Set<Long> trainNumbers = Sets.newHashSet(141L,151L);
+//        List<Schedule> filteredSchedules = allSchedules.stream().filter(schedule -> trainNumbers.contains( schedule.trainNumber)).collect(Collectors.toList());
 //
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
