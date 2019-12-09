@@ -237,6 +237,10 @@ public class GTFSTripService {
 
             stopTimes.add(stopTime);
         }
+
+        stopTimes.get(0).dropoffType = 1;
+        Iterables.getLast(stopTimes).pickupType = 1;
+
         return stopTimes;
     }
 

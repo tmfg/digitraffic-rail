@@ -203,10 +203,17 @@ public class GTFSDtoServiceTest extends BaseTest {
         stopTypes.put("VLH", 1);
         stopTypes.put("HKI", 0);
 
-        Assert.assertEquals(stopTypes.size(), firstTrip.stopTimes.size());
+        List<StopTime> stopTimes = firstTrip.stopTimes;
+        Assert.assertEquals(stopTypes.size(), stopTimes.size());
 
-        for (int i = 0; i < firstTrip.stopTimes.size(); i++) {
-            final StopTime stopTime = firstTrip.stopTimes.get(i);
+        Assert.assertEquals(1, stopTimes.get(0).dropoffType);
+        Assert.assertEquals(0, stopTimes.get(0).pickupType);
+
+        Assert.assertEquals(0, Iterables.getLast(stopTimes).dropoffType);
+        Assert.assertEquals(1, Iterables.getLast(stopTimes).pickupType);
+
+        for (int i = 1; i < stopTimes.size() - 1; i++) {
+            final StopTime stopTime = stopTimes.get(i);
             Assert.assertEquals(stopTime.stopId, stopTypes.get(stopTime.stopId).intValue(), stopTime.dropoffType);
             Assert.assertEquals(stopTime.stopId, stopTypes.get(stopTime.stopId).intValue(), stopTime.pickupType);
         }
