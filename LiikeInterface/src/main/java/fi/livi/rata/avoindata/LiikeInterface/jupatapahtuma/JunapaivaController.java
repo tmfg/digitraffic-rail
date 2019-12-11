@@ -1,11 +1,15 @@
 package fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.JupaTapahtuma;
-import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JunapaivaRepository;
-import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JupaTapahtumaRepository;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,15 +20,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonView;
+import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.JupaTapahtuma;
+import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JunapaivaRepository;
+import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JupaTapahtumaRepository;
 
 @Controller
 public class JunapaivaController {
@@ -48,7 +49,6 @@ public class JunapaivaController {
     @ResponseBody
     @JsonView(JunapaivaController.class)
     public List<Junapaiva> getByVersion(@RequestParam Long version) throws InterruptedException {
-        log.info("Requesting trains. Version: {}", version);
 
         final ZonedDateTime now = ZonedDateTime.now();
         Collection<Junapaiva> junapaivas = new HashSet<>();
@@ -74,7 +74,7 @@ public class JunapaivaController {
             }
         }
 
-        log.info(String.format("Retrieved schedule data for %d trains in %s ms (version %d -> %d)", junapaivas.size(),
+        log.info(String.format("Retrieved %d trains in %s ms (version %d -> %d)", junapaivas.size(),
                 Duration.between(now, ZonedDateTime.now()).toMillis(), version, maxVersion));
 
         return new ArrayList<>(junapaivas);
@@ -84,7 +84,6 @@ public class JunapaivaController {
     @ResponseBody
     @JsonView(JunapaivaController.class)
     public Collection<Junapaiva> getByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
-        log.info("Requesting trains. Version: {}", date);
 
         final ZonedDateTime now = ZonedDateTime.now();
 
@@ -92,7 +91,7 @@ public class JunapaivaController {
 
         junapaivas = junapaivaPostProcessService.postProcess(new ArrayList<>(junapaivas));
 
-        log.info(String.format("Retrieved schedule data for %d trains in %s ms (date %s)", junapaivas.size(),
+        log.info(String.format("Retrieved %d trains in %s ms (date %s)", junapaivas.size(),
                 Duration.between(now, ZonedDateTime.now()).toMillis(), date));
 
         return junapaivas;

@@ -1,10 +1,12 @@
 package fi.livi.rata.avoindata.LiikeInterface.kulkutietoviesti;
 
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.kulkutietoviesti.Kulkutietoviesti;
-import fi.livi.rata.avoindata.LiikeInterface.kulkutietoviesti.repository.KulkutietoviestiRepository;
-import fi.livi.rata.avoindata.LiikeInterface.services.ClassifiedTrainFilter;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.kulkutietoviesti.Kulkutietoviesti;
+import fi.livi.rata.avoindata.LiikeInterface.kulkutietoviesti.repository.KulkutietoviestiRepository;
+import fi.livi.rata.avoindata.LiikeInterface.services.ClassifiedTrainFilter;
 
 @Controller
 public class KulkutietoviestiController {
@@ -44,8 +45,6 @@ public class KulkutietoviestiController {
     @ResponseBody
     public Collection<Kulkutietoviesti> getTrainRunningMessages(
             @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
-        log.info("Requesting trainrunningmessage data date " + date);
-
         final ZonedDateTime now = ZonedDateTime.now();
 
         List<Kulkutietoviesti> kulkutietoviestiCollection = kulkutietoviestiRepository.findByLahtopvm(date);
@@ -60,8 +59,6 @@ public class KulkutietoviestiController {
     @RequestMapping(value = "/avoin/trainrunningmessages", params = "version")
     @ResponseBody
     public Collection<Kulkutietoviesti> getTrainRunningMessages(@RequestParam(required = true) final Long version) {
-        log.info("Requesting trainrunningmessage data version " + version);
-
         final ZonedDateTime now = ZonedDateTime.now();
 
         final ZonedDateTime minimumTapahtumaPvm;
