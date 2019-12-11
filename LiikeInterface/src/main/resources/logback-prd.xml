@@ -4,10 +4,6 @@
     <property name="PATTERN"
               value="%d{'yyyy-MM-dd HH:mm:ss,SSS',Europe/Helsinki} [%X{user}] [%-12thread] %-5level %c{1} - %m%n"/>
 
-    <springProperty name="logback.email.server" source="logback.email.server"/>
-    <springProperty name="logback.email.from" source="logback.email.from"/>
-    <springProperty name="logback.email.to" source="logback.email.to"/>
-
     <appender name="JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOGDIR}/server-logstash.%d{yyyy-MM-dd_HH}.json</fileNamePattern>
@@ -38,59 +34,6 @@
     <springProperty scope="context" name="activeProfiles" source="spring.profiles.active" defaultValue="-"/>
     <springProperty scope="context" name="hostname" source="myHostname" defaultValue="-"/>
 
-    <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
-        <smtpHost>${logback.email.server}</smtpHost>
-        <from>${logback.email.from}</from>
-        <to>${logback.email.to}</to>
-        <subject>[rata.digitraffic.fi] interface ${hostname}/${activeProfiles}: %logger{20} - %m</subject>
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%date %-5level %logger{35} - %message%n</pattern>
-        </layout>
-        <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTracker">
-            <bufferSize>64</bufferSize>
-        </cyclicBufferTracker>
-    </appender>
-
-    <appender name="EMAIL_DIGEST" class="ch.qos.logback.classic.net.SMTPAppender">
-        <smtpHost>${logback.email.server}</smtpHost>
-        <from>${logback.email.from}</from>
-        <to>${logback.email.to}</to>
-        <subject>%X{whisper.digest.subject}</subject>
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%date %-5level %logger{35} - %message%n</pattern>
-        </layout>
-    </appender>
-
-    <appender name="WHISPER"
-              class="com.eclecticlogic.whisper.logback.WhisperAppender">
-        <!-- Filter out non error logs -->
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>ERROR</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-        <!-- This is the name of the logging category to use to send out error digests. This is associated with the
-        errorDigest appender. -->
-        <digestLoggerName>digest.appender.logger</digestLoggerName>
-        <!--  suppressAfter specifies the criteria to enter suppression. The example below says that if 3 errors of the same kind
-        are encountered within a 5 minute window, then suppression should kick in. -->
-        <!-- Other expressions: 4 in 30 seconds, 10 in 1 hour, etc. -->
-        <suppressAfter>3 in 5 minutes</suppressAfter>
-        <!-- expireAfter specifies how much of silence the logger between messages before stopping suppression. -->
-        <expireAfter>4 minutes</expireAfter>
-        <!-- digestFrequency specifies how often error email digests should be sent containing statistics on messages
-        suppressed -->
-        <!-- You can also specify the unit as sec, seconds, min, hour, hr, hrs (not beyond hours) -->
-        <digestFrequency>20 minutes</digestFrequency>
-
-        <!-- The pass-through appender for the normal case when suppression is not in-force. -->
-        <appender-ref ref="EMAIL"/>
-    </appender>
-
-    <logger name="digest.appender.logger" level="error" additivity="false">
-        <appender-ref ref="EMAIL_DIGEST"/>
-    </logger>
-
     <logger name="fi.livi.rata.avoindata" level="DEBUG"/>
     <logger name="org.flywaydb" level="DEBUG"/>
 
@@ -101,7 +44,6 @@
     <root level="INFO">
         <appender-ref ref="JSON"/>
         <appender-ref ref="DEFAULT"/>
-        <appender-ref ref="WHISPER"/>
     </root>
 
 </configuration>
