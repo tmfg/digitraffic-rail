@@ -105,7 +105,7 @@ public class GTFSService {
     private void filterOutNonStops(Schedule schedule) {
         List<ScheduleRow> filteredRows = new ArrayList<>();
         for (ScheduleRow scheduleRow : schedule.scheduleRows) {
-            if (scheduleRow.arrival == null || scheduleRow.departure == null || !scheduleRow.departure.timestamp.equals(scheduleRow.arrival.timestamp)) {
+            if (scheduleRow.arrival == null || scheduleRow.departure == null || (!scheduleRow.departure.timestamp.equals(scheduleRow.arrival.timestamp) && scheduleRow.departure.stopType != ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL)) {
                 filteredRows.add(scheduleRow);
             }
         }
