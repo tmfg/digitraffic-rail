@@ -78,6 +78,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/141_151.json")
     private Resource schedules_141_151;
 
+    @Value("classpath:gtfs/9924.json")
+    private Resource schedules_9924;
+
 
     @Before
     public void setup() throws IOException {
@@ -95,6 +98,19 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         //Original schedule is completely cancelled, so there should be three trips
         assertTrips(gtfsDto.trips, 2);
+    }
+
+    @Test
+    @Transactional
+    public void train9924ShouldBeOkay() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 18));
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_9924.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        assertTrips(gtfsDto.trips, 1);
+        final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
+        Assert.assertNotNull(tripsByServiceId.get("9924_2019-12-15_2020-12-12"));
     }
 
     @Test

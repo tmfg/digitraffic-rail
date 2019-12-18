@@ -91,10 +91,10 @@ public class GTFSEntityService {
         for (LocalDate date = start; date.isBefore(end) || date.isEqual(end); date = date.plusDays(1)) {
             Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
 
-            //  log.info("{}: {}", date, schedule != null ? schedule.id : "null");
-
             if (date.equals(end)) {
-                trainsScheduleIntervals.put(Arrays.asList(intervalStart, date), schedule == null ? previousSchedule : schedule);
+                Schedule usedSchedule = schedule == null ? previousSchedule : schedule;
+                LocalDate intervalStartDate = usedSchedule.startDate.isAfter(intervalStart) ? usedSchedule.startDate : intervalStart;
+                trainsScheduleIntervals.put(Arrays.asList(intervalStartDate, date), usedSchedule);
             } else if (schedule == null) {
                 continue;
             } else if (previousSchedule != null && previousSchedule.id != schedule.id) {
