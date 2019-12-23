@@ -1,10 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.isuptodate;
 
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.CATEGORY_CODES;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.FUTURE_TRAINS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.GTFS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.LOCALIZATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.OLD_TRAINS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.OPERATORS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.STATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TIME_TABLE_PERIODS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACKSECTIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES;
@@ -47,9 +49,12 @@ public class IsUpToDateService {
 
     @PostConstruct
     private void setup() {
+        // real time
         for (LastUpdateService.LastUpdatedType value : LastUpdateService.LastUpdatedType.values()) {
             alarmLimits.put(value, Duration.ofMinutes(5));
         }
+
+        //once a day
         alarmLimits.put(LOCALIZATIONS, Duration.ofHours(25));
         alarmLimits.put(OPERATORS, Duration.ofHours(25));
         alarmLimits.put(TIME_TABLE_PERIODS, Duration.ofHours(25));
@@ -58,6 +63,8 @@ public class IsUpToDateService {
         alarmLimits.put(GTFS, Duration.ofHours(25));
         alarmLimits.put(FUTURE_TRAINS, Duration.ofHours(25));
         alarmLimits.put(OLD_TRAINS, Duration.ofHours(25));
+        alarmLimits.put(STATIONS, Duration.ofHours(25));
+        alarmLimits.put(CATEGORY_CODES, Duration.ofHours(25));
     }
 
     public Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> getIsUpToDates() {

@@ -16,7 +16,7 @@ public class LastUpdateService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     public enum LastUpdatedType {
-        TRAINS, COMPOSITIONS, ROUTESETS, TRAIN_RUNNING_MESSAGES, TRAIN_LOCATIONS, FORECASTS, LOCALIZATIONS, OPERATORS, TIME_TABLE_PERIODS, TRAIN_RUNNING_MESSAGE_RULES, TRACKSECTIONS, GTFS, FUTURE_TRAINS, OLD_TRAINS;
+        TRAINS, COMPOSITIONS, ROUTESETS, TRAIN_RUNNING_MESSAGES, TRAIN_LOCATIONS, FORECASTS, LOCALIZATIONS, OPERATORS, TIME_TABLE_PERIODS, TRAIN_RUNNING_MESSAGE_RULES, TRACKSECTIONS, GTFS, FUTURE_TRAINS, OLD_TRAINS, STATIONS, CATEGORY_CODES;
     }
 
     private Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();
@@ -36,6 +36,8 @@ public class LastUpdateService {
         prefixToEnumMap.put("timetableperiods", LastUpdatedType.TIME_TABLE_PERIODS);
         prefixToEnumMap.put("train-running-message-rules", LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES);
         prefixToEnumMap.put("tracksections", LastUpdatedType.TRACKSECTIONS);
+        prefixToEnumMap.put("stations", LastUpdatedType.STATIONS);
+        prefixToEnumMap.put("category-codes", LastUpdatedType.CATEGORY_CODES);
     }
 
     public void update(String lastUpdatedType) {
