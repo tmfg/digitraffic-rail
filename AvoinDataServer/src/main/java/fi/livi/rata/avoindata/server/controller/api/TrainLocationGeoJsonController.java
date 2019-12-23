@@ -63,7 +63,7 @@ public class TrainLocationGeoJsonController extends ADataController {
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
     }
 
-    private void validateBBox(@ApiParam(example = "1,1,70,70") @RequestParam(required = false) List<Double> bbox) {
+    private void validateBBox(List<Double> bbox) {
         if (bbox != null && bbox.size() != 0 && bbox.size() != 2) {
             throw new IllegalArgumentException("Invalid bbox");
         }
