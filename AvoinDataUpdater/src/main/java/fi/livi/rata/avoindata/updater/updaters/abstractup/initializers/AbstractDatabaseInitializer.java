@@ -1,21 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -24,6 +9,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
 
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> {
@@ -38,6 +41,9 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private LastUpdateService lastUpdateService;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
@@ -107,6 +113,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         final List<EntityType> updatedEntities = persistService.updateEntities(objects);
 
         logUpdate(latestVersion, start, updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+
+        lastUpdateService.update(this.prefix);
 
         return updatedEntities;
     }

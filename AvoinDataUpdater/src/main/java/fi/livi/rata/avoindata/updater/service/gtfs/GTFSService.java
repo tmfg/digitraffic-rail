@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -42,11 +43,16 @@ public class GTFSService {
     @Autowired
     private ScheduleProviderService scheduleProviderService;
 
+    @Autowired
+    private LastUpdateService lastUpdateService;
+
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
     public void generateGTFS() {
         try {
             final LocalDate start = dp.dateInHelsinki().minusDays(7);
             this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
+
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
         } catch (ExecutionException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }

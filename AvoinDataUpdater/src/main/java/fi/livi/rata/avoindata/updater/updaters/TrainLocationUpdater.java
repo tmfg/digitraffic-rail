@@ -1,15 +1,12 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
-import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +15,17 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
+import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
+import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
 
 @Service
 public class TrainLocationUpdater {
@@ -53,6 +55,9 @@ public class TrainLocationUpdater {
     @Autowired
     private MQTTPublishService mqttPublishService;
 
+    @Autowired
+    private LastUpdateService lastUpdateService;
+
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION = new DecimalFormat("#.000000");
 
     @Scheduled(fixedDelay = 1000)
@@ -81,6 +86,8 @@ public class TrainLocationUpdater {
 
                     log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
                             trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+
+                    lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS);
                 }
             } catch (Exception e) {
                 log.error("Error updating train locations", e);

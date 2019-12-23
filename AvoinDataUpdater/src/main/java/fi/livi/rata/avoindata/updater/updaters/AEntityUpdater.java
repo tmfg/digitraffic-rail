@@ -1,6 +1,9 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import java.util.function.Consumer;
+
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +12,8 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
-import java.util.function.Consumer;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 
 public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
@@ -23,6 +26,9 @@ public abstract class AEntityUpdater<T> {
 
     @Autowired
     protected RestTemplate restTemplate;
+
+    @Autowired
+    private LastUpdateService lastUpdateService;
 
     @PostConstruct
     private void init() {
@@ -52,5 +58,7 @@ public abstract class AEntityUpdater<T> {
         final T results = getForObjectWithRetry(targetUrl, responseType);
         updater.accept(results);
         log.info(String.format("Updated %s", path));
+
+        lastUpdateService.update(path);
     }
 }
