@@ -21,7 +21,7 @@ CREATE TABLE track_work_part
     permission_minimum_duration VARCHAR(64) NOT NULL,
     start_day DATETIME NOT NULL,
     planned_working_gap TIME NULL,
-    advance_notifications VARCHAR(4000) NOT NULL,
+    advance_notifications VARCHAR(4000),
     contains_fire_work BIT NOT NULL,
     track_work_notification_id BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_track_work_notification_id
@@ -72,7 +72,7 @@ CREATE TABLE element_range
     element_id2 VARCHAR(64),
     track_kilometer_range VARCHAR(32),
     track_ids VARCHAR(4000) NOT NULL,
-    specifiers VARCHAR(4000) NOT NULL,
+    specifiers VARCHAR(4000),
     identifier_range_id BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_identifier_Range_id
         FOREIGN KEY (identifier_range_id) REFERENCES identifier_range (id)

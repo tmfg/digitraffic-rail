@@ -13,7 +13,7 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 
     @Override
     public String convertToDatabaseColumn(final List<String> strings) {
-        return strings != null ? String.join(SEPARATOR, strings) : null;
+        return strings != null && !strings.isEmpty() ? String.join(SEPARATOR, strings) : null;
     }
 
     @Override
