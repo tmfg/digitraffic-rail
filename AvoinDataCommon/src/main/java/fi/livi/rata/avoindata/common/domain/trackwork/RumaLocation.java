@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,6 +18,7 @@ public class RumaLocation {
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
+    @JsonIgnore
     public TrackWorkPart trackWorkPart;
 
     @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })

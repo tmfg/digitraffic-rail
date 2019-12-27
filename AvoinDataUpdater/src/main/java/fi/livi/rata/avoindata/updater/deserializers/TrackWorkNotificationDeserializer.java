@@ -65,8 +65,13 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         for (final JsonNode locationNode : locations) {
             RumaLocation rumaLocation = new RumaLocation();
             rumaLocation.locationType = LocationType.fromKohdeType(locationNode.get("type").asText());
-            rumaLocation.operatingPointId = locationNode.get("liikennepaikkaId").asText();
-            rumaLocation.sectionBetweenOperatingPointsId = locationNode.get("liikennepaikkavaliId").asText();
+
+            JsonNode operatingPointNode = locationNode.get("liikennepaikkaId");
+            rumaLocation.operatingPointId = operatingPointNode.isNull() ? null : operatingPointNode.asText();
+
+            JsonNode sectionBetweenOperatingPointsNode = locationNode.get("liikennepaikkavaliId");
+            rumaLocation.sectionBetweenOperatingPointsId = sectionBetweenOperatingPointsNode.isNull() ? null : sectionBetweenOperatingPointsNode.asText();
+
             rumaLocation.identifierRanges = deserializeIdentifierRanges(locationNode.get("tunnusvalit"), rumaLocation);
             rumaLocation.trackWorkPart = trackWorkpart;
             rumaLocations.add(rumaLocation);
@@ -78,9 +83,16 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         final Set<IdentifierRange> identifierRanges = new HashSet<>();
         for (final JsonNode identifierRangeNode : identifierRangeNodes) {
             final IdentifierRange identifierRange = new IdentifierRange();
-            identifierRange.elementId = identifierRangeNode.get("elementtiId").asText();
-            identifierRange.elementPairId1 = identifierRangeNode.get("elementtipariId1").asText();
-            identifierRange.elementPairId2 = identifierRangeNode.get("elementtipariId2").asText();
+
+            JsonNode elementNode = identifierRangeNode.get("elementtiId");
+            identifierRange.elementId = elementNode.isNull() ? null : elementNode.asText();
+
+            JsonNode elementPairNode1 = identifierRangeNode.get("elementtipariId1");
+            identifierRange.elementPairId1 = elementPairNode1.isNull() ? null : elementPairNode1.asText();
+
+            JsonNode elementPairNode2 = identifierRangeNode.get("elementtipariId2");
+            identifierRange.elementPairId2 = elementPairNode2.isNull() ? null : elementPairNode2.asText();
+
             identifierRange.speedLimit = deserializeSpeedLimit(identifierRangeNode.get("nopeusrajoitus"));
             identifierRange.elementRanges = deserializeElementRanges(identifierRangeNode.get("elementtivalit"), identifierRange);
             identifierRange.location = rumaLocation;
