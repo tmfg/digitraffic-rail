@@ -15,12 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
@@ -73,10 +75,17 @@ public class GTFSService {
 
     private void createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
         GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+        for (Stop stop : vrGtfsDto.stops) {
+            stop.name = stop.name.replace(" asema", "");
+        }
+
+        for (Trip trip : vrGtfsDto.trips) {
+            trip.headsign = trip.headsign.replace(" asema", "");
+        }
 
         for (Trip trip : vrGtfsDto.trips) {
             if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
-                trip.headsign = "Helsinki asema -> Lentoasema -> Helsinki asema";
+                trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
             }
         }
 
@@ -107,10 +116,12 @@ public class GTFSService {
     }
 
     private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
+        Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z");
         List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
         for (Schedule schedule : passengerAdhocSchedules) {
             filterOutNonStops(schedule);
-            if (schedule.operator.operatorUICCode == 10) {
+            if (schedule.operator.operatorUICCode == 10 &&
+                    (Strings.isNullOrEmpty(schedule.commuterLineId) || acceptedCommuterLineIds.contains(schedule.commuterLineId))) {
                 vrPassengerAdhocSchedules.add(schedule);
             }
         }
