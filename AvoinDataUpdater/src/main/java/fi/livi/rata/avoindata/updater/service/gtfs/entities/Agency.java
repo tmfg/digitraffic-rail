@@ -8,4 +8,5 @@ public class Agency {
     public int id;
     public String url;
     public String timezone;
+    public String phoneNumber;
 }

@@ -27,10 +27,12 @@ public class GTFSAgencyService {
 
     public Map<String, String> urls = new HashMap<>();
     public Map<String, String> names = new HashMap<>();
+    public Map<String, String> phoneNumbers = new HashMap<>();
 
     @PostConstruct
     private void setup() {
         names.put("vr", "VR");
+
         urls.put("vr", "https://vr.fi");
         urls.put("kmoy", "https://www.keitelemuseo.fi/");
         urls.put("porha", "http://www.elisanet.fi/porhaltaja/");
@@ -41,6 +43,8 @@ public class GTFSAgencyService {
         urls.put("sundstroms", "https://sundstroms.fi/");
         urls.put("destia", "https://www.destia.fi/");
         urls.put("ferfi", "https://www.fenniarail.fi/");
+
+        phoneNumbers.put("vr", "+35860041900");
     }
 
     public List<Agency> createAgencies(Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
@@ -60,10 +64,19 @@ public class GTFSAgencyService {
             agency.id = operator.operatorUICCode;
             agency.url = getUrl(operator);
             agency.timezone = "Europe/Helsinki";
+            agency.phoneNumber = getPhoneNumber(operator.operatorShortCode);
             agencies.add(agency);
         }
 
         return agencies;
+    }
+
+    private String getPhoneNumber(String operatorShortCode) {
+        String phoneNumber = phoneNumbers.get(operatorShortCode);
+        if (phoneNumber != null) {
+            return "";
+        }
+        return phoneNumber;
     }
 
     private String getName(String operatorShortCode) {
