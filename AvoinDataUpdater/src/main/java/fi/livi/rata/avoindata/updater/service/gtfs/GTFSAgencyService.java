@@ -73,7 +73,7 @@ public class GTFSAgencyService {
 
     private String getPhoneNumber(String operatorShortCode) {
         String phoneNumber = phoneNumbers.get(operatorShortCode);
-        if (phoneNumber != null) {
+        if (phoneNumber == null) {
             return "";
         }
         return phoneNumber;

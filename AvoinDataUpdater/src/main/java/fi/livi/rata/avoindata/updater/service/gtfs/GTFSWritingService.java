@@ -78,7 +78,7 @@ public class GTFSWritingService {
 
         files.add(
                 write(getPath("agency.txt"), gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
-                        agency -> String.format("%s,%s,%s,%s,%s,fi", agency.id, agency.name, agency.url, agency.phoneNumber, agency.timezone)));
+                        agency -> String.format("%s,%s,%s,%s,%s,fi", agency.id, agency.name, agency.url, agency.timezone, agency.phoneNumber)));
 
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
