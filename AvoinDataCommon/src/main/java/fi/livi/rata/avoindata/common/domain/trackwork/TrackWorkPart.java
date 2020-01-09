@@ -27,11 +27,14 @@ public class TrackWorkPart {
     @Convert(converter = StringListConverter.class)
     public List<String> advanceNotifications;
 
-    @JoinColumn(name = "track_work_notification_id", referencedColumnName = "id")
+    @JoinColumns({
+            @JoinColumn(name = "track_work_notification_id", referencedColumnName = "id", nullable = false),
+            @JoinColumn(name = "track_work_notification_version", referencedColumnName = "version", nullable = false)
+    })
     @ManyToOne(optional = false)
     @JsonIgnore
     public TrackWorkNotification trackWorkNotification;
 
-    @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
+    @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
     public Set<RumaLocation> locations = new HashSet<>();
 }

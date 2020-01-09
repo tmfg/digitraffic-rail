@@ -1,20 +1,27 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import fi.livi.rata.avoindata.updater.service.TrackWorkNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.updater.service.TrackWorkNotificationService;
+import javax.annotation.PostConstruct;
 
 @Service
-public class TrackWorkNotificationUpdater extends AEntityUpdater<TrackWorkNotification[]> {
+public class TrackWorkNotificationUpdater {
+
     @Autowired
     private TrackWorkNotificationService trackWorkNotificationService;
 
-    @Override
-    @Scheduled(fixedDelay = 1000 * 30L)
-    protected void update() {
-        doUpdate("ruma/rti", trackWorkNotificationService::update, TrackWorkNotification[].class);
+    @PostConstruct
+    private void init() {
+        new SimpleAsyncTaskExecutor().execute(this::update);
     }
+
+    //@Scheduled(fixedDelay = 100000 * 30L)
+    protected void update() {
+        trackWorkNotificationService.update();
+    }
+
 }

@@ -24,7 +24,7 @@ public class IdentifierRange {
     @JsonIgnore
     public RumaLocation location;
 
-    @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
+    @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
     public Set<ElementRange> elementRanges = new HashSet<>();
 
 }

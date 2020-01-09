@@ -21,6 +21,6 @@ public class RumaLocation {
     @JsonIgnore
     public TrackWorkPart trackWorkPart;
 
-    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.PERSIST })
+    @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
     public Set<IdentifierRange> identifierRanges = new HashSet<>();
 }

@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -8,12 +9,9 @@ import javax.persistence.*;
 
 @Entity
 public class TrackWorkNotification {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
 
-    public Integer rumaId;
-    public Integer rumaVersion;
+    @EmbeddedId
+    public TrackWorkNotificationId id;
     public TrackWorkNotificationState state;
     public String organization;
     public ZonedDateTime created;
@@ -24,6 +22,31 @@ public class TrackWorkNotification {
     public Boolean speedLimitPlan;
     public Boolean personInChargePlan;
 
-    @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
+
+    public Integer getId() {
+        return id.id;
+    }
+
+    public Integer getVersion() {
+        return id.version;
+    }
+
+    @Embeddable
+    public static class TrackWorkNotificationId implements Serializable {
+        @Column(name = "id")
+        public Integer id;
+        @Column(name = "version")
+        public Integer version;
+
+        public TrackWorkNotificationId() {
+            // for Hibernate
+        }
+
+        public TrackWorkNotificationId(final Integer id, final Integer version) {
+            this.id = id;
+            this.version = version;
+        }
+    }
 }

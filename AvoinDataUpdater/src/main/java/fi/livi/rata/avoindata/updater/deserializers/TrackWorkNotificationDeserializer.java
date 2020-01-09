@@ -3,9 +3,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -25,8 +23,7 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
 
     private TrackWorkNotification deserializeTrackWorkNotifications(JsonNode node) {
         final TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
-        trackWorkNotification.rumaId = node.get("id").asInt();
-        trackWorkNotification.rumaVersion = node.get("version").asInt();
+        trackWorkNotification.id = new TrackWorkNotification.TrackWorkNotificationId(node.get("id").asInt(), node.get("version").asInt());
         trackWorkNotification.state = getState(getStringFromNode(node, "state"));
         trackWorkNotification.organization = getStringFromNode(node, "organization");
         trackWorkNotification.speedLimitPlan = getNullableBoolean(node, "nopeusrajoitusSuunnitelma");
@@ -138,8 +135,15 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
             case "FINISHED":
                 return TrackWorkNotificationState.FINISHED;
             case "PASSIVE":
-            case "SENT":
                 return TrackWorkNotificationState.PASSIVE;
+            case "SENT":
+                return TrackWorkNotificationState.SENT;
+            case "DRAFT":
+                return TrackWorkNotificationState.DRAFT;
+            case "REMOVED":
+                return TrackWorkNotificationState.REMOVED;
+            case "REJECTED":
+                return TrackWorkNotificationState.REJECTED;
         }
         throw new IllegalArgumentException(String.format("Could not produce State from %s", state));
     }

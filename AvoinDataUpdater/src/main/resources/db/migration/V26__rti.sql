@@ -1,7 +1,6 @@
 CREATE TABLE track_work_notification (
-  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-  ruma_id INT UNSIGNED NOT NULL,
-  ruma_version INT UNSIGNED NOT NULL,
+  id INT UNSIGNED NOT NULL,
+  version INT UNSIGNED NOT NULL,
   state TINYINT UNSIGNED NOT NULL,
   organization VARCHAR(64) NOT NULL,
   created DATETIME NOT NULL,
@@ -11,7 +10,7 @@ CREATE TABLE track_work_notification (
   electricity_safety_plan BIT NOT NULL,
   speed_limit_plan BIT NOT NULL,
   person_in_charge_plan BIT NOT NULL,
-  PRIMARY KEY (id));
+  PRIMARY KEY (id, version));
 
 CREATE TABLE track_work_part
 (
@@ -23,13 +22,14 @@ CREATE TABLE track_work_part
     planned_working_gap TIME NULL,
     advance_notifications VARCHAR(4000),
     contains_fire_work BIT NOT NULL,
-    track_work_notification_id BIGINT UNSIGNED NOT NULL,
+    track_work_notification_id INT UNSIGNED NOT NULL,
+    track_work_notification_version INT UNSIGNED NOT NULL,
     CONSTRAINT FK_track_work_notification_id
-        FOREIGN KEY (track_work_notification_id) REFERENCES track_work_notification (id)
+        FOREIGN KEY (track_work_notification_id, track_work_notification_version) REFERENCES track_work_notification (id, version)
             ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX FK_track_work_notification_id_idx
-    ON track_work_part (track_work_notification_id);
+CREATE INDEX FK_track_work_notification_id_version_idx
+    ON track_work_part (track_work_notification_id, track_work_notification_version);
 
 CREATE TABLE ruma_location
 (

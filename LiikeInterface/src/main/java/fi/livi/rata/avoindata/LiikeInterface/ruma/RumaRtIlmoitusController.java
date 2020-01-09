@@ -14,12 +14,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import javax.servlet.http.HttpServletResponse;
 
 @Controller
 public class RumaRtIlmoitusController {
@@ -42,54 +46,22 @@ public class RumaRtIlmoitusController {
 
     private Map<String, Object[]> recentlySeenMap = new HashMap<>();
 
-    @RequestMapping(value = "/avoin/ruma/rti")
+    @RequestMapping(value = "/avoin/ruma/rti", produces = "application/json")
     @ResponseBody
     public Object getRtis() throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-
-        log.info("Requesting rti status from {}", liikeBaseUrl + rumaRtiStatusUrl);
-
-        final JsonNode nodes = objectMapper.readTree(getFromRumaWithToken(liikeBaseUrl + rumaRtiStatusUrl, authenticationToken));
-
-        ZonedDateTime now = ZonedDateTime.now();
-        List<JsonNode> output = new ArrayList<>();
-        for (JsonNode node : nodes) {
-            JsonNode id = node.get("id");
-            JsonNode version = node.get("version");
-            String key = String.format("%s %s", id, version);
-            Object[] value = recentlySeenMap.get(key);
-            if (value == null) {
-                String url = liikeBaseUrl + String.format(rumaRtiDetailedUrl, id, version);
-                JsonNode detailedNodes = objectMapper.readTree(getFromRumaWithToken(url, authenticationToken));
-                output.add(detailedNodes);
-                recentlySeenMap.put(getRecentlySeenKey(id, version), new Object[]{now, detailedNodes});
-            } else {
-                output.add((JsonNode) value[1]);
-            }
-        }
-
-        removeOldEntriesFromRecentlySeen();
-
-        return output;
+        String fullUrl = liikeBaseUrl + rumaRtiStatusUrl + "?state=DRAFT&state=SENT&state=REJECTED&state=PASSIVE&state=ACTIVE&state=FINISHED&state=REMOVED";
+        log.info("Requesting rti status from {}", fullUrl);
+        return getFromRumaWithToken(fullUrl, authenticationToken);
     }
 
-    private void removeOldEntriesFromRecentlySeen() {
-        ZonedDateTime now = ZonedDateTime.now();
-        List<String> toBeDeleted = new ArrayList<>();
-        for (Map.Entry<String, Object[]> entry : recentlySeenMap.entrySet()) {
-            ZonedDateTime timestamp = (ZonedDateTime) entry.getValue()[0];
-            if (timestamp.isBefore(now.minusDays(7))) {
-                toBeDeleted.add(entry.getKey());
-            }
-        }
-
-        for (String key : toBeDeleted) {
-            recentlySeenMap.remove(key);
-        }
-    }
-
-    private String getRecentlySeenKey(JsonNode id, JsonNode version) {
-        return String.format("%s %s", id, version);
+    @RequestMapping(value = "/avoin/ruma/rti/{id}/{version}")
+    @ResponseBody
+    public Object getRti(@PathVariable String id, @PathVariable long version) throws IOException {
+        String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
+        String fullUrl = liikeBaseUrl + String.format(rumaRtiDetailedUrl, id, version) ;
+        log.info("Requesting rti version from {}", fullUrl);
+        return getFromRumaWithToken(fullUrl, authenticationToken);
     }
 
     private String getFromRumaWithToken(String url, String token) throws IOException {
