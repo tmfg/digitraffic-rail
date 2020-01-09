@@ -22,6 +22,34 @@ public class TrackWorkNotification {
     public Boolean speedLimitPlan;
     public Boolean personInChargePlan;
 
+    public TrackWorkNotification(
+            final TrackWorkNotificationId id,
+            final TrackWorkNotificationState state,
+            final String organization,
+            final ZonedDateTime created,
+            final ZonedDateTime modified,
+            final Boolean trafficSafetyPlan,
+            final Boolean speedLimitPlan,
+            final Boolean speedLimitRemovalPlan,
+            final Boolean electricitySafetyPlan,
+            final Boolean personInChargePlan
+    ) {
+        this.id = id;
+        this.state = state;
+        this.organization = organization;
+        this.created = created;
+        this.modified = modified;
+        this.trafficSafetyPlan = trafficSafetyPlan;
+        this.speedLimitPlan = speedLimitPlan;
+        this.speedLimitRemovalPlan = speedLimitRemovalPlan;
+        this.electricitySafetyPlan = electricitySafetyPlan;
+        this.personInChargePlan = personInChargePlan;
+    }
+
+    public TrackWorkNotification() {
+        // for Hibernate
+    }
+
     @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 
@@ -49,4 +77,6 @@ public class TrackWorkNotification {
             this.version = version;
         }
     }
+
+
 }
