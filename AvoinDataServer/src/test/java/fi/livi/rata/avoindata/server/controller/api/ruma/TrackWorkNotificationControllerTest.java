@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.server.controller.api;
+package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
