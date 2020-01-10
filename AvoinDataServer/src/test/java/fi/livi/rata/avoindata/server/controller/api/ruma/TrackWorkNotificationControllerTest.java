@@ -16,7 +16,6 @@ import java.util.Random;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@Transactional
 public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
 
     @Autowired
