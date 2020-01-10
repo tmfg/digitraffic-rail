@@ -38,7 +38,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
 
     @Test
     public void versions() throws Exception {
-        List<TrackWorkNotification> twnVersions = factory.createPersist(random.nextInt(10));
+        List<TrackWorkNotification> twnVersions = factory.createPersist(1 + random.nextInt(10));
         TrackWorkNotification twn = twnVersions.get(0);
 
         ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twn.id.id));

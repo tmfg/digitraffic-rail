@@ -7,6 +7,8 @@ import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
+import fi.livi.rata.avoindata.common.domain.trackwork.*;
+import fi.livi.rata.avoindata.updater.deserializers.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -38,37 +40,12 @@ import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriodChangeDate;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackRange;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
-import fi.livi.rata.avoindata.updater.deserializers.CategoryCodeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.DetailedCategoryCodeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.ForecastDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.LocalizationsDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.LocomotiveDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.OperatorDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.OperatorTrainNumberDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.RoutesectionDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.RoutesetDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.StationDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.ThirdCategoryCodeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TimeTableRowDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrackRangeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrackSectionDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrackWorkNotificationDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainCategoryDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainLocationDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageRuleDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainTypeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.WagonDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleCancellationDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleExceptionDeserializer;
@@ -180,6 +157,18 @@ public class HttpInputObjectMapper extends ObjectMapper {
     @Autowired
     private TrackWorkNotificationDeserializer trackWorkNotificationDeserializer;
 
+    @Autowired
+    private TrackWorkPartDeserializer trackWorkPartDeserializer;
+
+    @Autowired
+    private RumaLocationDeserializer rumaLocationDeserializer;
+
+    @Autowired
+    private IdentifierRangeDeserializer identifierRangeDeserializer;
+
+    @Autowired
+    private ElementRangeDeserializer elementRangeDeserializer;
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
@@ -226,6 +215,10 @@ public class HttpInputObjectMapper extends ObjectMapper {
         module.addDeserializer(TimeTablePeriodChangeDate.class, timeTablePeriodChangeDateDeserializer);
 
         module.addDeserializer(TrackWorkNotification.class, trackWorkNotificationDeserializer);
+        module.addDeserializer(TrackWorkPart.class, trackWorkPartDeserializer);
+        module.addDeserializer(RumaLocation.class, rumaLocationDeserializer);
+        module.addDeserializer(IdentifierRange.class, identifierRangeDeserializer);
+        module.addDeserializer(ElementRange.class, elementRangeDeserializer);
 
         registerModule(module);
     }
