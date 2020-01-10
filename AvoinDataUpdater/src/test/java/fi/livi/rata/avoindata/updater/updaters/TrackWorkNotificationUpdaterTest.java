@@ -8,6 +8,7 @@ import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationStatus;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,11 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Before
     public void setUp() {
         updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService);
+    }
+
+    @After
+    public void tearDown() {
+        testDataService.clearTrackWorkNotifications();
     }
 
     @Test

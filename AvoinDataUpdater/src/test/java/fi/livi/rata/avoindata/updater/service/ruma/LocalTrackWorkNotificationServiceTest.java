@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.service.ruma;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -22,6 +24,11 @@ public class LocalTrackWorkNotificationServiceTest extends BaseTest {
     private LocalTrackWorkNotificationService service;
 
     private static final Random random = new Random(System.nanoTime());
+
+    @After
+    public void tearDown() {
+        testDataService.clearTrackWorkNotifications();
+    }
 
     @Test
     public void getLocalTrackWorkNotifications() {

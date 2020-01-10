@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -17,5 +18,7 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = ?1 ORDER by id, version ASC")
     List<TrackWorkNotification> findByTwnId(int id);
 
-}
+    @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = ?1 AND t.id.version = ?2")
+    Optional<TrackWorkNotification> findByTwnIdAndVersion(int id, int version);
 
+}
