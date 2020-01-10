@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Optional;
 
 @Api(tags = "trackwork-notification", description = "Returns track work notifications")
 @RestController
@@ -35,13 +34,12 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns a specific trackwork notification")
     @RequestMapping(method = RequestMethod.GET, path = "/{trackwork-notification-id}")
-    public TrackWorkNotification get(
+    public List<TrackWorkNotification> get(
             @PathVariable("trackwork-notification-id") final int trackworkNotificationId,
             HttpServletResponse response) {
-        //final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findById(trackworkNotificationId);
+        final List<TrackWorkNotification> trackWorkNotifications = trackWorkNotificationRepository.findByTwnId(trackworkNotificationId);
         //CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions, version);
-        //return trackWorkNotification.orElse(null);
-        return null;
+        return trackWorkNotifications;
     }
 
 }
