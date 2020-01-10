@@ -1,8 +1,9 @@
-package fi.livi.rata.avoindata.server.controller.api;
+package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.server.config.WebConfig;
+import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -17,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Optional;
 
-import static fi.livi.rata.avoindata.server.controller.api.TrainLocationController.CACHE_MAX_AGE;
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
 
 @Api(tags = "trackwork-notification", description = "Returns track work notifications")
@@ -31,26 +31,18 @@ public class TrackWorkNotificationController extends ADataController {
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
-    @ApiOperation("Returns all trackwork notifications")
-    @RequestMapping(method = RequestMethod.GET)
-    public List<TrackWorkNotification> findAll(HttpServletResponse response) {
-        final List<TrackWorkNotification> trackWorkNotifications = trackWorkNotificationRepository.findAll();
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
-        return trackWorkNotifications;
-    }
-
     @ApiOperation("Returns all versions of a trackwork notification")
     @RequestMapping(method = RequestMethod.GET, path = "/{id}")
-    public List<TrackWorkNotification> get(
+    public TrackWorkNotificationWithVersionsDto get(
             @PathVariable final int id,
             HttpServletResponse response) {
-        final List<TrackWorkNotification> trackWorkNotifications = trackWorkNotificationRepository.findByTwnId(id);
-        if (trackWorkNotifications.isEmpty()) {
+        final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
+        if (versions.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return null;
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-            return trackWorkNotifications;
+            return new TrackWorkNotificationWithVersionsDto(id, versions);
         }
     }
 

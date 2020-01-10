@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -39,21 +38,16 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
-    public void all() throws Exception {
-        int versionAmount = IntStream.rangeClosed(1, random.nextInt(10)).map(i -> {
-            int versions = random.nextInt(10);
-            factory.createPersist(versions);
-            return versions;
-        }).sum();
-
-        assertLength("/trackwork-notifications", versionAmount);
-    }
-
-    @Test
     public void versions() throws Exception {
-        List<TrackWorkNotification> twnVersions = factory.createPersist(random.nextInt(50));
+        List<TrackWorkNotification> twnVersions = factory.createPersist(random.nextInt(10));
+        TrackWorkNotification twn = twnVersions.get(0);
 
-        assertLength("/trackwork-notifications/" + twnVersions.get(0).id.id, twnVersions.size());
+        ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twn.id.id));
+
+        ra.andExpect(jsonPath("$.id").value(twn.id.id));
+        for (TrackWorkNotification v : twnVersions) {
+            ra.andExpect(jsonPath(String.format("$.versions[%d].version", v.id.version - 1)).value(v.id.version));
+        }
     }
 
     @Test
@@ -61,6 +55,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         TrackWorkNotification twn = factory.createPersist(1).get(0);
 
         ResultActions ra = getJson(String.format("/trackwork-notifications/%s/%s", twn.id.id, twn.id.version));
+
         ra.andExpect(jsonPath("$.id").value(twn.id.id));
         ra.andExpect(jsonPath("$.version").value(twn.id.version));
     }
