@@ -67,16 +67,16 @@ public class TrackWorkNotificationUpdater {
 
     private void updateTrackWorkNotifications(Map<Integer, Integer> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
         int updatedCount = localTrackWorkNotifications.stream()
-                .map(localTrackWorkNotification -> getVersions(localTrackWorkNotification, statuses))
-                .filter(not(SortedSet::isEmpty))
+                .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
+                .filter(not(Boolean::booleanValue))
                 .mapToInt(x -> 1)
                 .sum();
         log.info("Updated {} track work notifications", updatedCount);
     }
 
-    private SortedSet<Integer> getVersions(LocalTrackWorkNotificationStatus localTrackWorkNotification, Map<Integer, Integer> statuses) {
+    private boolean updateNotificationVersions(LocalTrackWorkNotificationStatus localTrackWorkNotification, Map<Integer, Integer> statuses) {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
-            return Collections.emptySortedSet();
+            return false;
         }
         int remoteVersion = statuses.get(localTrackWorkNotification.id);
         SortedSet<Integer> versions = new TreeSet<>();
@@ -89,7 +89,7 @@ public class TrackWorkNotificationUpdater {
         if (!versions.isEmpty()) {
             updateTrackWorkNotification(localTrackWorkNotification.id, versions);
         }
-        return versions;
+        return !versions.isEmpty();
     }
 
     private void updateTrackWorkNotification(int id, SortedSet<Integer> versions) {
