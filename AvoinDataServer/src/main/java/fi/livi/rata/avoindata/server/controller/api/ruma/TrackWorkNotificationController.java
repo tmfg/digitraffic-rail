@@ -9,10 +9,12 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +30,9 @@ import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_
 public class TrackWorkNotificationController extends ADataController {
 
     public static final int CACHE_MAX_AGE_SECONDS = 30;
+    public static final ZoneId ZONE_ID = ZoneId.of("Europe/Helsinki");
+    public static final ZonedDateTime START_OF_TIME = ZonedDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZONE_ID);
+    public static final ZonedDateTime END_OF_TIME = ZonedDateTime.of(3000, 12, 31, 23, 59, 59, 0, ZONE_ID);
 
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
@@ -35,10 +40,10 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns ids and latest versions of all trackwork notifications")
     @RequestMapping(method = RequestMethod.GET)
     public List<TrackWorkNotificationIdAndVersion> findAll(
-            @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end) {
-        return trackWorkNotificationRepository.findByModifiedBetween(start != null ? ZonedDateTime.parse(start) : null,
-                end != null ? ZonedDateTime.parse(end) : null);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
+        return trackWorkNotificationRepository.findByModifiedBetween(start != null ? start : START_OF_TIME,
+                end != null ? end : END_OF_TIME);
     }
 
     @ApiOperation("Returns all versions of a trackwork notification")

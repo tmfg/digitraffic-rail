@@ -14,7 +14,7 @@ CREATE TABLE track_work_notification
   PRIMARY KEY (id, version)
 );
 
-CREATE INDEX track_work_notification_id_version_modified_idx ON track_work_notification
+CREATE INDEX track_work_notification_modified_id_version_idx ON track_work_notification
 (
     modified,
     id asc,

@@ -22,6 +22,6 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = ?1 AND t.id.version = ?2")
     Optional<TrackWorkNotification> findByTwnIdAndVersion(int id, int version);
 
-    @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version FROM TrackWorkNotification t WHERE t.modified BETWEEN COALESCE(?1, '2000-01-01') AND COALESCE(?2, '3000-01-01') GROUP BY t.id.id ORDER BY id ASC")
+    @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version FROM TrackWorkNotification t WHERE t.modified BETWEEN ?1 AND ?2 GROUP BY t.id.id ORDER BY id ASC")
     List<TrackWorkNotificationIdAndVersion> findByModifiedBetween(ZonedDateTime start, ZonedDateTime end);
 }
