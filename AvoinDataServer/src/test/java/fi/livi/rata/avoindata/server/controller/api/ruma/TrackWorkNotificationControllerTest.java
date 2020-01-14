@@ -61,7 +61,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        ResultActions ra = getJson("/trackwork-notifications/?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(after.id.id));
     }
@@ -74,7 +74,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        ResultActions ra = getJson("/trackwork-notifications/?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(before.id.id));
     }
@@ -92,8 +92,8 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         repository.saveAll(Arrays.asList(before, between, after));
 
         ResultActions ra = getJson(String.format("/trackwork-notifications/?start=%s&end=%s",
-                start.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                end.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
+                start.format(DateTimeFormatter.ISO_DATE_TIME),
+                end.format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(between.id.id));
     }
