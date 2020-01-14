@@ -9,6 +9,7 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -22,39 +23,41 @@ import java.util.Optional;
 
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
 
-@Api(tags = "trackwork-notification", description = "Returns track work notifications")
+@Api(tags = "track-work-notifications", description = "Returns track work notifications")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trackwork-notifications")
 @Transactional(timeout = 30, readOnly = true)
 public class TrackWorkNotificationController extends ADataController {
 
-    public static final int CACHE_MAX_AGE_SECONDS = 30;
-    public static final ZonedDateTime START_OF_TIME = ZonedDateTime.parse("2000-01-01T00:00:00Z");
-    public static final ZonedDateTime END_OF_TIME = ZonedDateTime.parse("3000-12-31T23:59:59Z");
+    private static final int MAX_RESULTS = 500;
+    private static final int CACHE_MAX_AGE_SECONDS = 30;
+    private static final ZonedDateTime START_OF_TIME = ZonedDateTime.parse("2000-01-01T00:00:00Z");
+    private static final ZonedDateTime END_OF_TIME = ZonedDateTime.parse("3000-12-31T23:59:59Z");
 
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
-    @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to 500 results")
+    @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET)
     public List<TrackWorkNotificationIdAndVersion> findAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trackWorkNotificationRepository.findByModifiedBetween(start != null ? start : START_OF_TIME,
-                end != null ? end : END_OF_TIME);
+                end != null ? end : END_OF_TIME,
+                PageRequest.of(0, MAX_RESULTS));
     }
 
-    @ApiOperation("Returns all versions of a trackwork notification")
+    @ApiOperation("Returns all versions of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = "/{id}")
-    public TrackWorkNotificationWithVersionsDto get(
+    public TrackWorkNotificationWithVersions get(
             @PathVariable final int id,
             HttpServletResponse response) {
         final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-        return new TrackWorkNotificationWithVersionsDto(id, versions);
+        return new TrackWorkNotificationWithVersions(id, versions);
     }
 
-    @ApiOperation("Returns a specific version of a trackwork notification")
+    @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = "/{id}/{version}")
     public Collection<TrackWorkNotification> getVersion(
             @PathVariable  final int id,
