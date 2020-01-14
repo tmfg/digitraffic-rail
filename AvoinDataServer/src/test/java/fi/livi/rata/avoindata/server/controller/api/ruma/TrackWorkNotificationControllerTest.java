@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -111,13 +112,30 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    public void versions_empty() throws Exception {
+        int twnId = random.nextInt(99999);
+        ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twnId));
+
+        ra.andExpect(jsonPath("$.id").value(twnId));
+        ra.andExpect(jsonPath("$.versions", empty()));
+    }
+
+    @Test
     public void singleVersion() throws Exception {
         TrackWorkNotification twn = factory.createPersist(1).get(0);
 
         ResultActions ra = getJson(String.format("/trackwork-notifications/%s/%s", twn.id.id, twn.id.version));
 
-        ra.andExpect(jsonPath("$.id").value(twn.id.id));
-        ra.andExpect(jsonPath("$.version").value(twn.id.version));
+        ra.andExpect(jsonPath("$[0]id").value(twn.id.id));
+        ra.andExpect(jsonPath("$[0]version").value(twn.id.version));
+    }
+
+    @Test
+    public void singleVersion_empty() throws Exception {
+        int twnId = random.nextInt(99999);
+        ResultActions ra = getJson(String.format("/trackwork-notifications/%s/%s", twnId, random.nextInt(99999)));
+
+        ra.andExpect(jsonPath("$", empty()));
     }
 
     @Transactional

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,28 +47,23 @@ public class TrackWorkNotificationController extends ADataController {
             @PathVariable final int id,
             HttpServletResponse response) {
         final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
-        if (versions.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return null;
-        } else {
-            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-            return new TrackWorkNotificationWithVersionsDto(id, versions);
-        }
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+        return new TrackWorkNotificationWithVersionsDto(id, versions);
     }
 
     @ApiOperation("Returns a specific version of a trackwork notification")
     @RequestMapping(method = RequestMethod.GET, path = "/{id}/{version}")
-    public TrackWorkNotification getVersion(
+    public Collection<TrackWorkNotification> getVersion(
             @PathVariable  final int id,
             @PathVariable  final int version,
             HttpServletResponse response) {
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdAndVersion(id, version);
         if (trackWorkNotification.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return null;
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+            return Collections.emptyList();
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return trackWorkNotification.get();
+            return Collections.singleton(trackWorkNotification.get());
         }
     }
 
