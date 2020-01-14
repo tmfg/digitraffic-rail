@@ -1,4 +1,5 @@
-CREATE TABLE track_work_notification (
+CREATE TABLE track_work_notification
+(
   id INT UNSIGNED NOT NULL,
   version INT UNSIGNED NOT NULL,
   state TINYINT UNSIGNED NOT NULL,
@@ -10,7 +11,15 @@ CREATE TABLE track_work_notification (
   electricity_safety_plan BIT NOT NULL,
   speed_limit_plan BIT NOT NULL,
   person_in_charge_plan BIT NOT NULL,
-  PRIMARY KEY (id, version));
+  PRIMARY KEY (id, version)
+);
+
+CREATE INDEX track_work_notification_id_version_modified_idx ON track_work_notification
+(
+    modified,
+    id asc,
+    version asc
+);
 
 CREATE TABLE track_work_part
 (

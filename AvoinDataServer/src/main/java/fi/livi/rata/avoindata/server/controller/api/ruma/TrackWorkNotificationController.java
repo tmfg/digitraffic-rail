@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.server.config.WebConfig;
@@ -9,12 +10,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +29,15 @@ public class TrackWorkNotificationController extends ADataController {
 
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
+
+    @ApiOperation("Returns ids and latest versions of all trackwork notifications")
+    @RequestMapping(method = RequestMethod.GET)
+    public List<TrackWorkNotificationIdAndVersion> findAll(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end) {
+        return trackWorkNotificationRepository.findByModifiedBetween(start != null ? ZonedDateTime.parse(start) : null,
+                end != null ? ZonedDateTime.parse(end) : null);
+    }
 
     @ApiOperation("Returns all versions of a trackwork notification")
     @RequestMapping(method = RequestMethod.GET, path = "/{id}")
