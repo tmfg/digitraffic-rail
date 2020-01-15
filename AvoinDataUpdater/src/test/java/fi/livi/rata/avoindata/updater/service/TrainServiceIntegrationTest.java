@@ -1,5 +1,17 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -7,16 +19,6 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class TrainServiceIntegrationTest extends BaseTest {
 
@@ -34,10 +36,6 @@ public class TrainServiceIntegrationTest extends BaseTest {
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    private static final int AMOUNT_OF_TRAINS = 1768;
-    private static final int AMOUNT_OF_TIMETABLEROWS = 62424;
-    private static final int AMOUNT_OF_CAUSES = 1097;
 
     @Test
     @Transactional
@@ -61,7 +59,11 @@ public class TrainServiceIntegrationTest extends BaseTest {
     @Test
     @Transactional
     public void testRemoveTrainsCascadesToChildren() throws Exception {
-        testDataService.createTrains();
+        final int AMOUNT_OF_TRAINS = 1;
+        final int AMOUNT_OF_TIMETABLEROWS = 46;
+        final int AMOUNT_OF_CAUSES = 0;
+
+        testDataService.createTrainsFromResource("trainsSingle.json");
 
         Assert.assertEquals(String.format("Should contain %d individual trains", AMOUNT_OF_TRAINS), AMOUNT_OF_TRAINS,
                 trainRepository.count());

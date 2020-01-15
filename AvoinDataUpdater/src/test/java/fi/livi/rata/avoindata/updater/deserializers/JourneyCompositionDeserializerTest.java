@@ -1,15 +1,18 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.time.LocalDate;
+
+import org.junit.Test;
+
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
-
-import java.time.LocalDate;
-
-import static org.junit.Assert.*;
 
 public class JourneyCompositionDeserializerTest extends BaseTest {
 
@@ -18,7 +21,7 @@ public class JourneyCompositionDeserializerTest extends BaseTest {
 
     @Test
     public void testDeserializer() throws Exception {
-        final JourneyComposition journeyComposition = testDataService.getJourneyComposition()[0];
+        final JourneyComposition journeyComposition = testDataService.getJourneyComposition().get(0);
 
         assertEquals(TEST_VERSION, journeyComposition.version);
         assertEquals("vr", journeyComposition.operator.operatorShortCode);

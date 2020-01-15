@@ -1,6 +1,26 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import fi.livi.rata.avoindata.common.dao.composition.*;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
+import fi.livi.rata.avoindata.common.dao.composition.CompositionTimeTableRowRepository;
+import fi.livi.rata.avoindata.common.dao.composition.JourneySectionRepository;
+import fi.livi.rata.avoindata.common.dao.composition.LocomotiveRepository;
+import fi.livi.rata.avoindata.common.dao.composition.WagonRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
@@ -8,22 +28,10 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.Assert.*;
 
 public class CompositionServiceIntegrationTest extends BaseTest {
-
-    public static final int AMOUNT_OF_COMPOSITIONS = 671;
     public static final long TEST_TRAIN_NUMBER = 263;
-    public static final int AMOUNT_OF_WAGONS = 12;
+
     @Autowired
     private CompositionService compositionService;
 
@@ -44,39 +52,13 @@ public class CompositionServiceIntegrationTest extends BaseTest {
 
     @Test
     @Transactional
-    public void testAddCompositions() throws Exception {
-        testDataService.createCompositions();
-
-        final List<Composition> compositions = compositionService.findCompositions();
-        assertEquals(String.format("Should contain %d individual compositions", AMOUNT_OF_COMPOSITIONS),
-                AMOUNT_OF_COMPOSITIONS, compositions.size());
-
-        final Map<Long, List<Composition>> compositionsByTrainNumber = compositions.stream().collect(Collectors.groupingBy(
-                x -> x.id.trainNumber));
-
-        compositionsByTrainNumber.values().forEach(x -> assertEquals("Only one composition for each train number per day", 1, x.size()));
-
-        final Composition composition263 = compositions.stream().filter(x -> x.id.trainNumber == TEST_TRAIN_NUMBER).findFirst().get();
-        final JourneySection journeySectionOL = composition263.journeySections.stream().filter(x -> "OL".equals(
-                x.beginTimeTableRow.station.stationShortCode)).findFirst().get();
-        assertEquals("Shuld have two locomotives", 2, journeySectionOL.locomotives.size());
-        assertEquals(String.format("Should have %d wagons", AMOUNT_OF_WAGONS), AMOUNT_OF_WAGONS, journeySectionOL.wagons.size());
-    }
-
-    @Test
-    @Transactional
     public void journeySectionsShouldBeOrderedByScheduleTest() throws Exception {
         testDataService.createSingleTrainComposition();
         final Composition composition = compositionRepository.findAll().get(0);
 
         final List<JourneySection> journeySections = new ArrayList<>(composition.journeySections);
 
-        Collections.sort(journeySections, new Comparator<JourneySection>() {
-            @Override
-            public int compare(final JourneySection o1, final JourneySection o2) {
-                return o1.beginTimeTableRow.scheduledTime.compareTo(o2.beginTimeTableRow.scheduledTime);
-            }
-        });
+        Collections.sort(journeySections, Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime));
 
         assertThat("Journey sections should be ordered according to scheduled time",
                 composition.journeySections, contains(journeySections.toArray()));
@@ -123,7 +105,9 @@ public class CompositionServiceIntegrationTest extends BaseTest {
     @Test
     @Transactional
     public void testRemoveCompositionsCascadesToChildren() throws Exception {
-        testDataService.createCompositions();
+        testDataService.createOvernightComposition();
+
+        final int AMOUNT_OF_COMPOSITIONS = 1;
 
         assertEquals(String.format("Should contain %d individual compositions", AMOUNT_OF_COMPOSITIONS),
                 AMOUNT_OF_COMPOSITIONS, compositionService.findCompositions().size());
