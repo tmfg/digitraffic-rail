@@ -18,7 +18,7 @@ public class LocalTrackWorkNotificationService {
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
     @Transactional(readOnly = true)
-    public List<LocalTrackWorkNotificationStatus> getLocalTrackWorkNotifications(Set<Integer> ids) {
+    public List<LocalTrackWorkNotificationStatus> getLocalTrackWorkNotifications(Set<Long> ids) {
         return trackWorkNotificationRepository.findIdsAndVersions(ids)
                 .stream()
                 .collect(Collectors.groupingBy(TrackWorkNotificationIdAndVersion::getId, Collectors.mapping(TrackWorkNotificationIdAndVersion::getVersion, Collectors.toList())))

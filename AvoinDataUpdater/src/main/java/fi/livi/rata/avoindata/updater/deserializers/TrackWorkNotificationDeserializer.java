@@ -31,7 +31,7 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
 
     private TrackWorkNotification deserializeTrackWorkNotifications(JsonNode node) {
         final TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
-        trackWorkNotification.id = new TrackWorkNotification.TrackWorkNotificationId(node.get("id").asInt(), node.get("version").asInt());
+        trackWorkNotification.id = new TrackWorkNotification.TrackWorkNotificationId(node.get("id").asLong(), node.get("version").asLong());
         trackWorkNotification.state = getState(getStringFromNode(node, "state"));
         trackWorkNotification.organization = getStringFromNode(node, "organization");
         trackWorkNotification.speedLimitPlan = getNullableBoolean(node, "nopeusrajoitusSuunnitelma");

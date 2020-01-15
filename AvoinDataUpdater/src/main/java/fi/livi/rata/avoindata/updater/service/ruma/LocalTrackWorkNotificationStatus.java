@@ -5,17 +5,17 @@ import java.util.List;
 
 public class LocalTrackWorkNotificationStatus {
 
-    public final int id;
-    public final int minVersion;
-    public final int maxVersion;
+    public final long id;
+    public final long minVersion;
+    public final long maxVersion;
 
-    public LocalTrackWorkNotificationStatus(int id, List<Integer> versions) {
+    public LocalTrackWorkNotificationStatus(long id, List<Long> versions) {
         this.id = id;
         this.minVersion = Collections.min(versions);
         this.maxVersion = Collections.max(versions);
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 }

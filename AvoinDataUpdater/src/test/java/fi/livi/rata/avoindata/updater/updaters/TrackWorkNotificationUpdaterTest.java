@@ -20,7 +20,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 public class TrackWorkNotificationUpdaterTest extends BaseTest {
@@ -51,7 +51,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     public void addNew() {
         TrackWorkNotification twn = factory.create(1).get(0);
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.id.version)});
-        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyInt(), any())).thenReturn(Collections.singletonList(twn));
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
 
@@ -68,14 +68,14 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         repository.save(twn);
 
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twnV2.getVersion())});
-        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyInt(), any())).thenReturn(Collections.singletonList(twnV2));
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twnV2));
 
         updater.update();
 
         List<TrackWorkNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
         assertEquals(2, idsAndVersions.size());
-        assertEquals( twn.id.version.intValue(), idsAndVersions.get(0).getVersion().intValue());
-        assertEquals( twnV2.id.version.intValue(), idsAndVersions.get(1).getVersion().intValue());
+        assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
+        assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
     }
 
     @Test
@@ -88,14 +88,14 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         repository.save(twnV2);
 
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twnV2.getVersion())});
-        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyInt(), any())).thenReturn(Collections.singletonList(twn));
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
 
         List<TrackWorkNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
         assertEquals(2, idsAndVersions.size());
-        assertEquals( twn.id.version.intValue(), idsAndVersions.get(0).getVersion().intValue());
-        assertEquals( twnV2.id.version.intValue(), idsAndVersions.get(1).getVersion().intValue());
+        assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
+        assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
     }
 
 }

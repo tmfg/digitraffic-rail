@@ -74,27 +74,27 @@ public class TrackWorkNotification {
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 
     @ApiModelProperty("Id")
-    public Integer getId() {
+    public Long getId() {
         return id.id;
     }
 
     @ApiModelProperty("Version")
-    public Integer getVersion() {
+    public Long getVersion() {
         return id.version;
     }
 
     @Embeddable
     public static class TrackWorkNotificationId implements Serializable {
         @Column(name = "id")
-        public Integer id;
+        public Long id;
         @Column(name = "version")
-        public Integer version;
+        public Long version;
 
         public TrackWorkNotificationId() {
             // for Hibernate
         }
 
-        public TrackWorkNotificationId(final Integer id, final Integer version) {
+        public TrackWorkNotificationId(final Long id, final Long version) {
             this.id = id;
             this.version = version;
         }

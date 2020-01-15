@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static java.util.function.Predicate.not;
 
@@ -33,17 +33,12 @@ public class TrackWorkNotificationUpdater {
         this.localTrackWorkNotificationService = localTrackWorkNotificationService;
     }
 
-    @PostConstruct
-    private void init() {
-        new SimpleAsyncTaskExecutor().execute(this::update);
-    }
-
-    @Scheduled(fixedDelay = 100000 * 30L)
+    @Scheduled(fixedDelay = 3600000) // hourly
     protected void update() {
         RemoteTrackWorkNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
-            Map<Integer, Integer> statuses = Arrays.stream(statusesResp)
+            Map<Long, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteTrackWorkNotificationStatus::getId, RemoteTrackWorkNotificationStatus::getVersion));
             log.info("Received {} track work notification statuses", statuses.size());
             List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
@@ -54,18 +49,18 @@ public class TrackWorkNotificationUpdater {
         }
     }
 
-    private void addNewTrackWorkNotifications(Map<Integer, Integer> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
-        Collection<Integer> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalTrackWorkNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
+    private void addNewTrackWorkNotifications(Map<Long, Long> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
+        Collection<Long> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalTrackWorkNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
 
-        for (Map.Entry<Integer, Integer> e : statuses.entrySet()) {
+        for (Map.Entry<Long, Long> e : statuses.entrySet()) {
             if (newTrackWorkNotifications.contains(e.getKey())) {
-                updateTrackWorkNotification(e.getKey(), new TreeSet<>(IntStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
+                updateTrackWorkNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
         }
         log.info("Added {} new track work notifications", newTrackWorkNotifications.size());
     }
 
-    private void updateTrackWorkNotifications(Map<Integer, Integer> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
+    private void updateTrackWorkNotifications(Map<Long, Long> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
         int updatedCount = localTrackWorkNotifications.stream()
                 .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
                 .filter(not(Boolean::booleanValue))
@@ -74,17 +69,17 @@ public class TrackWorkNotificationUpdater {
         log.info("Updated {} track work notifications", updatedCount);
     }
 
-    private boolean updateNotificationVersions(LocalTrackWorkNotificationStatus localTrackWorkNotification, Map<Integer, Integer> statuses) {
+    private boolean updateNotificationVersions(LocalTrackWorkNotificationStatus localTrackWorkNotification, Map<Long, Long> statuses) {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }
-        int remoteVersion = statuses.get(localTrackWorkNotification.id);
-        SortedSet<Integer> versions = new TreeSet<>();
+       long remoteVersion = statuses.get(localTrackWorkNotification.id);
+        SortedSet<Long> versions = new TreeSet<>();
         if (localTrackWorkNotification.minVersion > 1) {
-            IntStream.range(1, localTrackWorkNotification.minVersion).forEach(versions::add);
+            LongStream.range(1, localTrackWorkNotification.minVersion).forEach(versions::add);
         }
         if (remoteVersion > localTrackWorkNotification.maxVersion) {
-            IntStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
+            LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }
         if (!versions.isEmpty()) {
             updateTrackWorkNotification(localTrackWorkNotification.id, versions);
@@ -92,9 +87,9 @@ public class TrackWorkNotificationUpdater {
         return !versions.isEmpty();
     }
 
-    private void updateTrackWorkNotification(int id, SortedSet<Integer> versions) {
+    private void updateTrackWorkNotification(long id, SortedSet<Long> versions) {
         log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
-        List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToInt(Integer::intValue));
+        List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
         localTrackWorkNotificationService.saveAll(trackWorkNotificationVersions);
     }

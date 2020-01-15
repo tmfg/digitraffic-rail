@@ -4,21 +4,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RemoteTrackWorkNotificationStatus {
-    public int id;
-    public int version;
+    public long id;
+    public long version;
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public int getVersion() {
+    public long getVersion() {
         return version;
     }
 
     @JsonCreator
     public RemoteTrackWorkNotificationStatus(
-            @JsonProperty("id") int id,
-            @JsonProperty("version") int version)
+            @JsonProperty("id") long id,
+            @JsonProperty("version") long version)
     {
         this.id = id;
         this.version = version;

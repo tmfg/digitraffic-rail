@@ -13,6 +13,7 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 @Service
 public class RemoteTrackWorkNotificationService {
@@ -41,7 +42,7 @@ public class RemoteTrackWorkNotificationService {
         });
     }
 
-    public List<TrackWorkNotification> getTrackWorkNotificationVersions(int id, IntStream versions) {
+    public List<TrackWorkNotification> getTrackWorkNotificationVersions(long id, LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
             String fullUrl = liikeInterfaceUrl + String.format("/ruma/rti/%s/%s", id, v);
             log.info("Requesting TrackWorkNotification version from " + fullUrl);

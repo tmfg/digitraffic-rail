@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 @Component
 public class TrackWorkNotificationFactory {
@@ -31,9 +31,9 @@ public class TrackWorkNotificationFactory {
 
     @Transactional
     public List<TrackWorkNotification> create(int versions) {
-        int id = random.nextInt(99999);
-        return IntStream.rangeClosed(1, versions).mapToObj(v -> {
-            TrackWorkNotification trackWorkNotification = new TrackWorkNotification(
+        long id = random.nextInt(99999);
+        return LongStream.rangeClosed(1, versions).mapToObj(v ->
+            new TrackWorkNotification(
                     new TrackWorkNotification.TrackWorkNotificationId(id, v),
                     TrackWorkNotificationState.DRAFT,
                     UUID.randomUUID().toString(),
@@ -43,9 +43,8 @@ public class TrackWorkNotificationFactory {
                     random.nextBoolean(),
                     random.nextBoolean(),
                     random.nextBoolean(),
-                    random.nextBoolean());
-            return trackWorkNotification;
-        }).collect(Collectors.toList());
+                    random.nextBoolean())
+        ).collect(Collectors.toList());
     }
 
 }

@@ -1,7 +1,7 @@
 CREATE TABLE track_work_notification
 (
-  id INT UNSIGNED NOT NULL,
-  version INT UNSIGNED NOT NULL,
+  id BIGINT UNSIGNED NOT NULL,
+  version BIGINT UNSIGNED NOT NULL,
   state TINYINT UNSIGNED NOT NULL,
   organization VARCHAR(64) NOT NULL,
   created DATETIME NOT NULL,
@@ -31,8 +31,8 @@ CREATE TABLE track_work_part
     planned_working_gap TIME NULL,
     advance_notifications VARCHAR(4000),
     contains_fire_work BIT NOT NULL,
-    track_work_notification_id INT UNSIGNED NOT NULL,
-    track_work_notification_version INT UNSIGNED NOT NULL,
+    track_work_notification_id BIGINT UNSIGNED NOT NULL,
+    track_work_notification_version BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_track_work_notification_id
         FOREIGN KEY (track_work_notification_id, track_work_notification_version) REFERENCES track_work_notification (id, version)
             ON UPDATE CASCADE ON DELETE CASCADE
