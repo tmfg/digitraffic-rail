@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -28,6 +30,9 @@ public class TestDataService {
 
     @Autowired
     private HttpInputObjectMapper objectMapper;
+
+    @Autowired
+    private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
     @Modifying
     public void createCompositions() throws IOException {
@@ -63,6 +68,10 @@ public class TestDataService {
 
     public JourneyComposition[] getJourneyComposition() throws IOException {
         return objectMapper.readValue(new ClassPathResource("journeyComposition.json").getFile(), JourneyComposition[].class);
+    }
+
+    public void clearTrackWorkNotifications() {
+        trackWorkNotificationRepository.deleteAllInBatch();
     }
 
     public void clearCompositions() {

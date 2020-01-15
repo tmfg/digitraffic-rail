@@ -1,0 +1,65 @@
+{
+  "id": 359069,
+  "version": 5,
+  "state": "ACTIVE",
+  "nopeusrajoitusSuunnitelma": true,
+  "nopeusrajoituksenPoistosuunnitelma": false,
+  "jannitekatkoIlmoitus": false,
+  "jannitekatkoTunnus": null,
+  "jkiIds": [],
+  "ratatyovastaavienVuorolista": true,
+  "liikenneturvallisuusSuunnitelma": false,
+  "organization": "SomeOrganization",
+  "created": "2018-10-09T08:30:15Z",
+  "modified": "2019-09-09T11:46:14Z",
+  "tyonosat": [
+    {
+      "numero": 1,
+      "aloituspaiva": "2018-10-09",
+      "luvanMinimiPituus": "PT30M",
+      "suunniteltuTyorako": "09:25",
+      "sisaltaaTulityota": true,
+      "ennakkoilmoitukset": ["x.x.xxx.LIVI.ETJ2.81.104372"],
+      "kohteet": [
+        {
+          "type": "TYONKOHDE",
+          "liikennepaikkaId": "x.x.xxx.LIVI.INFRA.39.119274",
+          "liikennepaikkavaliId": null,
+          "tunnusvalit": [
+            {
+              "elementtiId": "x.x.xxx.LIVI.INFRA.24.118819",
+              "elementtipariId1": null,
+              "elementtipariId2": null,
+              "elementtivalit": [],
+              "nopeusrajoitus": null
+            }
+          ]
+        },
+        {
+          "type": "TULITYO",
+          "liikennepaikkaId": null,
+          "liikennepaikkavaliId": "x.x.xxx.LIVI.INFRA.40.119859620000000",
+          "tunnusvalit": [
+            {
+              "elementtiId": null,
+              "elementtipariId1": null,
+              "elementtipariId2": null,
+              "elementtivalit": [
+                {
+                  "elementtiId1": "x.x.xxx.LIVI.INFRA.14.206587",
+                  "elementtiId2": "x.x.xxx.LIVI.INFRA.13.2785888",
+                  "raideIds": [
+                    "x.x.xxx.LIVI.INFRA.44.196874"
+                  ],
+                  "tarkenteet": ["x.x.xxx.LIVI.INFRA.11.1062258"],
+                  "ratakmvali": null
+                }
+              ],
+              "nopeusrajoitus": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -85,5 +86,18 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
 
     protected String getStringFromNode(JsonNode node, String nodeName) {
         return node.get(nodeName).asText();
+    }
+
+    protected LocalTime getLocalTimeFromNode(final JsonNode node, final String nodeName) {
+        if (node == null) {
+            return null;
+        }
+
+        final JsonNode stringNode = node.get(nodeName);
+        if (stringNode == null || stringNode.asText() == null || stringNode.asText().equals("null")) {
+            return null;
+        }
+
+        return LocalTime.parse(stringNode.asText());
     }
 }
