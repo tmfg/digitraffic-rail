@@ -28,18 +28,18 @@ import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationSt
 @Service
 public class TrackWorkNotificationUpdater {
 
-    @Value("${updater.liikeinterface-url}")
-    protected String liikeInterfaceUrl;
-
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
     private LocalTrackWorkNotificationService localTrackWorkNotificationService;
+    private String liikeInterfaceUrl;
 
     public TrackWorkNotificationUpdater(
             RemoteTrackWorkNotificationService remoteTrackWorkNotificationService,
-            LocalTrackWorkNotificationService localTrackWorkNotificationService) {
+            LocalTrackWorkNotificationService localTrackWorkNotificationService,
+            @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
         this.remoteTrackWorkNotificationService = remoteTrackWorkNotificationService;
         this.localTrackWorkNotificationService = localTrackWorkNotificationService;
+        this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
     @Scheduled(fixedDelay = 3600000) // hourly

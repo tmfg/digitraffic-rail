@@ -38,7 +38,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
     @Before
     public void setUp() {
-        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService);
+        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService, "http://fake-url");
     }
 
     @After
