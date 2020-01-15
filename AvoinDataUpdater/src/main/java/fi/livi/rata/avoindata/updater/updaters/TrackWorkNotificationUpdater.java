@@ -1,26 +1,35 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import static java.util.function.Predicate.not;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationStatus;
-import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
-import static java.util.function.Predicate.not;
 
 @Service
 public class TrackWorkNotificationUpdater {
+
+    @Value("${updater.liikeinterface-url}")
+    protected String liikeInterfaceUrl;
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
@@ -35,6 +44,10 @@ public class TrackWorkNotificationUpdater {
 
     @Scheduled(fixedDelay = 3600000) // hourly
     protected void update() {
+        if (StringUtils.isEmpty(liikeInterfaceUrl)) {
+            return;
+        }
+
         RemoteTrackWorkNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
