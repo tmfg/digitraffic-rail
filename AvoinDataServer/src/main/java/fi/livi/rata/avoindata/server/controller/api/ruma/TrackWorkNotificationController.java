@@ -25,11 +25,9 @@ import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_
 
 @Api(tags = "track-work-notifications", description = "Returns track work notifications")
 @RestController
-@RequestMapping(WebConfig.CONTEXT_PATH + TrackWorkNotificationController.PATH)
+@RequestMapping(WebConfig.CONTEXT_PATH + "trackwork-notifications")
 @Transactional(timeout = 30, readOnly = true)
 public class TrackWorkNotificationController extends ADataController {
-
-    public static final String PATH = "track-work-notifications";
 
     private static final int MAX_RESULTS = 500;
     private static final int CACHE_MAX_AGE_SECONDS = 30;
