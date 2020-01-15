@@ -49,7 +49,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
             factory.createPersist(1 + random.nextInt(10));
         });
 
-        ResultActions ra = getJson("/trackwork-notifications");
+        ResultActions ra = getJson(TrackWorkNotificationController.PATH);
         ra.andExpect(jsonPath("$", hasSize(amount)));
     }
 
@@ -61,7 +61,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        ResultActions ra = getJson(TrackWorkNotificationController.PATH + "?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(after.id.id));
     }
@@ -74,7 +74,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        ResultActions ra = getJson(TrackWorkNotificationController.PATH + "?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(before.id.id));
     }
@@ -91,7 +91,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = end.plusMinutes(1);
         repository.saveAll(Arrays.asList(before, between, after));
 
-        ResultActions ra = getJson(String.format("/trackwork-notifications/?start=%s&end=%s",
+        ResultActions ra = getJson(String.format(TrackWorkNotificationController.PATH + "?start=%s&end=%s",
                 start.format(DateTimeFormatter.ISO_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -103,7 +103,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         List<TrackWorkNotification> twnVersions = factory.createPersist(1 + random.nextInt(10));
         TrackWorkNotification twn = twnVersions.get(0);
 
-        ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twn.id.id));
+        ResultActions ra = getJson(String.format(TrackWorkNotificationController.PATH + "/%s", twn.id.id));
 
         ra.andExpect(jsonPath("$.id").value(twn.id.id));
         for (TrackWorkNotification v : twnVersions) {
@@ -114,7 +114,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     @Test
     public void versions_empty() throws Exception {
         int twnId = random.nextInt(99999);
-        ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twnId));
+        ResultActions ra = getJson(String.format(TrackWorkNotificationController.PATH + "/%s", twnId));
 
         ra.andExpect(jsonPath("$.id").value(twnId));
         ra.andExpect(jsonPath("$.versions", empty()));
@@ -124,7 +124,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     public void singleVersion() throws Exception {
         TrackWorkNotification twn = factory.createPersist(1).get(0);
 
-        ResultActions ra = getJson(String.format("/trackwork-notifications/%s/%s", twn.id.id, twn.id.version));
+        ResultActions ra = getJson(String.format(TrackWorkNotificationController.PATH + "/%s/%s", twn.id.id, twn.id.version));
 
         ra.andExpect(jsonPath("$[0]id").value(twn.id.id));
         ra.andExpect(jsonPath("$[0]version").value(twn.id.version));
@@ -133,7 +133,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     @Test
     public void singleVersion_empty() throws Exception {
         int twnId = random.nextInt(99999);
-        ResultActions ra = getJson(String.format("/trackwork-notifications/%s/%s", twnId, random.nextInt(99999)));
+        ResultActions ra = getJson(String.format(TrackWorkNotificationController.PATH + "/%s/%s", twnId, random.nextInt(99999)));
 
         ra.andExpect(jsonPath("$", empty()));
     }
