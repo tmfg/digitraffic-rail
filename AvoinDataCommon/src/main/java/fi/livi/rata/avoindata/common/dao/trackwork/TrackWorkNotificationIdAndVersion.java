@@ -2,13 +2,17 @@ package fi.livi.rata.avoindata.common.dao.trackwork;
 
 import io.swagger.annotations.ApiModelProperty;
 
+import java.time.ZonedDateTime;
+
 public interface TrackWorkNotificationIdAndVersion {
 
-    @ApiModelProperty("Track work notification id")
+    @ApiModelProperty("Id")
     Long getId();
 
-    @ApiModelProperty("Track work notification version")
+    @ApiModelProperty("Version")
     Long getVersion();
 
+    @ApiModelProperty("Last modified")
+    ZonedDateTime getModified();
 }
 

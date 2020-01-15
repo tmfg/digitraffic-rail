@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,18 +32,21 @@ public class TrackWorkNotificationUpdater {
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
     private LocalTrackWorkNotificationService localTrackWorkNotificationService;
+    private LastUpdateService lastUpdateService;
     private String liikeInterfaceUrl;
 
     public TrackWorkNotificationUpdater(
             RemoteTrackWorkNotificationService remoteTrackWorkNotificationService,
             LocalTrackWorkNotificationService localTrackWorkNotificationService,
+            LastUpdateService lastUpdateService,
             @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
         this.remoteTrackWorkNotificationService = remoteTrackWorkNotificationService;
         this.localTrackWorkNotificationService = localTrackWorkNotificationService;
+        this.lastUpdateService = lastUpdateService;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
-    @Scheduled(fixedDelay = 3600000) // hourly
+    @Scheduled(fixedDelay = 300000) // every minute
     protected void update() {
         if (StringUtils.isEmpty(liikeInterfaceUrl)) {
             return;
@@ -57,6 +61,7 @@ public class TrackWorkNotificationUpdater {
             List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
         } else {
             log.error("Error retrieving track work notification statuses or received empty response");
         }
