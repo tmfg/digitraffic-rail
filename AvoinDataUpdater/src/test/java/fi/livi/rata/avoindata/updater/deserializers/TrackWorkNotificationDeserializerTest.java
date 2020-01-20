@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import fi.livi.rata.avoindata.updater.BaseTest;
@@ -27,6 +28,10 @@ public class TrackWorkNotificationDeserializerTest extends BaseTest {
         assertEquals("SomeOrganization", twn.organization);
         assertEquals(ZonedDateTime.parse("2018-10-09T08:30:15Z"), twn.created);
         assertEquals(ZonedDateTime.parse("2019-09-09T11:46:14Z"), twn.modified);
+        assertEquals(539718, ((Double)((Point) twn.locationMap).getX()).intValue());
+        assertEquals(7141962, ((Double)((Point) twn.locationMap).getY()).intValue());
+        assertEquals(539666, ((Double)((Point) twn.locationSchema).getX()).intValue());
+        assertEquals(7142004, ((Double)((Point) twn.locationSchema).getY()).intValue());
     }
 
 }

@@ -1,13 +1,13 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
+import com.vividsolutions.jts.geom.Geometry;
 import io.swagger.annotations.ApiModelProperty;
 
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.persistence.*;
 
 @Entity
 public class TrackWorkNotification {
@@ -42,6 +42,12 @@ public class TrackWorkNotification {
     @ApiModelProperty("Does the notification contain a plan for persons in charge")
     public Boolean personInChargePlan;
 
+    @ApiModelProperty("Approximate location on map")
+    public Geometry locationMap;
+
+    @ApiModelProperty("Approximate location in schema")
+    public Geometry locationSchema;
+
     public TrackWorkNotification(
             final TrackWorkNotificationId id,
             final TrackWorkNotificationState state,
@@ -52,7 +58,9 @@ public class TrackWorkNotification {
             final Boolean speedLimitPlan,
             final Boolean speedLimitRemovalPlan,
             final Boolean electricitySafetyPlan,
-            final Boolean personInChargePlan
+            final Boolean personInChargePlan,
+            final Geometry locationMap,
+            final Geometry locationSchema
     ) {
         this.id = id;
         this.state = state;
@@ -64,12 +72,15 @@ public class TrackWorkNotification {
         this.speedLimitRemovalPlan = speedLimitRemovalPlan;
         this.electricitySafetyPlan = electricitySafetyPlan;
         this.personInChargePlan = personInChargePlan;
+        this.locationMap = locationMap;
+        this.locationSchema = locationSchema;
     }
 
     public TrackWorkNotification() {
         // for Hibernate
     }
 
+    @OrderBy("part_index")
     @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 

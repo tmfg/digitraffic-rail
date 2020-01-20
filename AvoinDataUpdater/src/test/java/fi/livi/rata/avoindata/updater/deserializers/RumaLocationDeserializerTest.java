@@ -7,8 +7,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class RumaLocationDeserializerTest extends BaseTest {
 
@@ -34,6 +33,9 @@ public class RumaLocationDeserializerTest extends BaseTest {
         assertNull(loc1ir.elementPairId2);
         assertNull(loc1ir.speedLimit);
         assertEquals(0, loc1ir.elementRanges.size());
+        // assume that JTS deserializer works
+        assertNotNull(loc1ir.locationMap);
+        assertNotNull(loc1ir.locationSchema);
 
         RumaLocation loc2 = locs.get(1);
         assertEquals(LocationType.FIREWORK, loc2.locationType);

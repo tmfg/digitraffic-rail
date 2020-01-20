@@ -10,8 +10,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class IdentifierRangeDeserializerTest extends BaseTest {
 
@@ -30,6 +29,9 @@ public class IdentifierRangeDeserializerTest extends BaseTest {
         assertNull(loc2ir.elementPairId1);
         assertNull(loc2ir.elementPairId2);
         assertNull(loc2ir.speedLimit);
+        // assume that JTS deserializer works
+        assertNotNull(loc2ir.locationMap);
+        assertNotNull(loc2ir.locationSchema);
     }
 
 }

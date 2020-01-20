@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.factory;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
@@ -22,6 +24,8 @@ public class TrackWorkNotificationFactory {
     @Autowired
     private TrackWorkNotificationRepository repository;
 
+    private final GeometryFactory geometryFactory = new GeometryFactory();
+
     @Transactional
     public List<TrackWorkNotification> createPersist(int versions) {
         List<TrackWorkNotification> twns = create(versions);
@@ -29,7 +33,6 @@ public class TrackWorkNotificationFactory {
         return twns;
     }
 
-    @Transactional
     public List<TrackWorkNotification> create(int versions) {
         long id = random.nextInt(99999);
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
@@ -43,7 +46,9 @@ public class TrackWorkNotificationFactory {
                     random.nextBoolean(),
                     random.nextBoolean(),
                     random.nextBoolean(),
-                    random.nextBoolean())
+                    random.nextBoolean(),
+                    geometryFactory.createPoint(new Coordinate(328500.3, 6822410)),
+                    geometryFactory.createPoint(new Coordinate(328500.3,6822410)))
         ).collect(Collectors.toList());
     }
 

@@ -52,7 +52,7 @@ public class RumaAuthenticationTokenService {
     private String getTokenAsString() throws IOException {
         String rawData = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
         String type = "application/json";
-        URL u = new URL(liikeBaseUrl + rumaLoginUrl);
+        URL u = new URL(rumaLoginUrl);
         HttpURLConnection conn = (HttpURLConnection) u.openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("POST");

@@ -34,7 +34,7 @@ public class RumaRtIlmoitusController {
     @ResponseBody
     public Object getRtis() throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-        String fullUrl = liikeBaseUrl + rumaRtiStatusUrl + "?state=DRAFT&state=SENT&state=REJECTED&state=PASSIVE&state=ACTIVE&state=FINISHED&state=REMOVED";
+        String fullUrl = rumaRtiStatusUrl + "?state=DRAFT&state=SENT&state=REJECTED&state=PASSIVE&state=ACTIVE&state=FINISHED&state=REMOVED";
         log.info("Requesting rti status from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
@@ -43,7 +43,7 @@ public class RumaRtIlmoitusController {
     @ResponseBody
     public Object getRti(@PathVariable String id, @PathVariable long version) throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-        String fullUrl = liikeBaseUrl + String.format(rumaRtiDetailedUrl, id, version) ;
+        String fullUrl = String.format(rumaRtiDetailedUrl, id, version) ;
         log.info("Requesting rti version from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
