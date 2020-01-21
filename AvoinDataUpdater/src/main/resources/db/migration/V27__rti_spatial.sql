@@ -1,3 +1,5 @@
+DELETE FROM track_work_notification;
+
 ALTER TABLE track_work_notification
     ADD location_map GEOMETRY,
     ADD location_schema GEOMETRY
