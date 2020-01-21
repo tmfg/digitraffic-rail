@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.vividsolutions.jts.geom.Geometry;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
@@ -23,11 +24,17 @@ public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> 
         rumaLocation.operatingPointId = operatingPointNode.isNull() ? null : operatingPointNode.asText();
         JsonNode sectionBetweenOperatingPointsNode = locationNode.get("liikennepaikkavaliId");
         rumaLocation.sectionBetweenOperatingPointsId = sectionBetweenOperatingPointsNode.isNull() ? null : sectionBetweenOperatingPointsNode.asText();
+        rumaLocation.locationMap = deserializeGeometry(locationNode.get("sijainti"), jsonParser);
+        rumaLocation.locationSchema = deserializeGeometry(locationNode.get("kaaviosijainti"), jsonParser);
         rumaLocation.identifierRanges = deserializeIdentifierRanges(locationNode.get("tunnusvalit"), jsonParser);
         for (IdentifierRange ir : rumaLocation.identifierRanges) {
             ir.location = rumaLocation;
         }
         return rumaLocation;
+    }
+
+    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
+        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
     }
 
     private Set<IdentifierRange> deserializeIdentifierRanges(JsonNode irNode, JsonParser jsonParser) throws IOException {

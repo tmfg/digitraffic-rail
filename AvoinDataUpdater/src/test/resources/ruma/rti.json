@@ -12,6 +12,20 @@
   "organization": "SomeOrganization",
   "created": "2018-10-09T08:30:15Z",
   "modified": "2019-09-09T11:46:14Z",
+  "karttapiste": {
+    "type": "Point",
+    "coordinates": [
+      539718,
+      7141962
+    ]
+  },
+  "kaaviopiste": {
+    "type": "Point",
+    "coordinates": [
+      539666,
+      7142004
+    ]
+  },
   "tyonosat": [
     {
       "numero": 1,
@@ -25,13 +39,29 @@
           "type": "TYONKOHDE",
           "liikennepaikkaId": "x.x.xxx.LIVI.INFRA.39.119274",
           "liikennepaikkavaliId": null,
+          "sijainti": null,
+          "kaaviosijainti": null,
           "tunnusvalit": [
             {
               "elementtiId": "x.x.xxx.LIVI.INFRA.24.118819",
               "elementtipariId1": null,
               "elementtipariId2": null,
               "elementtivalit": [],
-              "nopeusrajoitus": null
+              "nopeusrajoitus": null,
+              "sijainti": {
+                "type": "Point",
+                "coordinates": [
+                  328500.3,
+                  6822410
+                ]
+              },
+              "kaaviosijainti": {
+                "type": "Point",
+                "coordinates": [
+                  328500.3,
+                  6822410
+                ]
+              }
             }
           ]
         },
@@ -39,11 +69,203 @@
           "type": "TULITYO",
           "liikennepaikkaId": null,
           "liikennepaikkavaliId": "x.x.xxx.LIVI.INFRA.40.119859620000000",
+          "sijainti": null,
+          "kaaviosijainti": null,
           "tunnusvalit": [
             {
               "elementtiId": null,
               "elementtipariId1": null,
               "elementtipariId2": null,
+              "sijainti": {
+                "type": "MultiLineString",
+                "coordinates": [
+                  [
+                    [
+                      328500.3,
+                      6822415
+                    ],
+                    [
+                      328500.3,
+                      6822420.3
+                    ],
+                    [
+                      328500.3,
+                      6822440
+                    ],
+                    [
+                      328500.3,
+                      6822450
+                    ],
+                    [
+                      328500.5,
+                      6822460
+                    ],
+                    [
+                      540754.9,
+                      7142079.4
+                    ],
+                    [
+                      540754.7,
+                      7142078.5
+                    ],
+                    [
+                      540754.3,
+                      7142077.6
+                    ],
+                    [
+                      540753.8,
+                      7142076.8
+                    ],
+                    [
+                      540753.1,
+                      7142076.2
+                    ],
+                    [
+                      540752.3,
+                      7142075.7
+                    ],
+                    [
+                      540751.4,
+                      7142075.3
+                    ],
+                    [
+                      540750.5,
+                      7142075.1
+                    ],
+                    [
+                      540210.5,
+                      7142025
+                    ],
+                    [
+                      540020.5,
+                      7142005
+                    ],
+                    [
+                      540020,
+                      7142005
+                    ],
+                    [
+                      539770,
+                      7142005
+                    ],
+                    [
+                      539460,
+                      7142004.8
+                    ],
+                    [
+                      539460,
+                      7142004.8
+                    ],
+                    [
+                      539390,
+                      7142005
+                    ],
+                    [
+                      539389.5,
+                      7142005
+                    ],
+                    [
+                      538659.9,
+                      7142075.1
+                    ]
+                  ]
+                ]
+              },
+              "kaaviosijainti": {
+                "type": "MultiLineString",
+                "coordinates": [
+                  [
+                    [
+                      328500.3,
+                      6822415
+                    ],
+                    [
+                      328500.3,
+                      6822420.3
+                    ],
+                    [
+                      328500.3,
+                      6822440
+                    ],
+                    [
+                      328500.3,
+                      6822450
+                    ],
+                    [
+                      328500.5,
+                      6822460
+                    ],
+                    [
+                      540754.9,
+                      7142079.4
+                    ],
+                    [
+                      540754.7,
+                      7142078.5
+                    ],
+                    [
+                      540754.3,
+                      7142077.6
+                    ],
+                    [
+                      540753.8,
+                      7142076.8
+                    ],
+                    [
+                      540753.1,
+                      7142076.2
+                    ],
+                    [
+                      540752.3,
+                      7142075.7
+                    ],
+                    [
+                      540751.4,
+                      7142075.3
+                    ],
+                    [
+                      540750.5,
+                      7142075.1
+                    ],
+                    [
+                      540210.5,
+                      7142025
+                    ],
+                    [
+                      540020.5,
+                      7142005
+                    ],
+                    [
+                      540020,
+                      7142005
+                    ],
+                    [
+                      539770,
+                      7142005
+                    ],
+                    [
+                      539460,
+                      7142004.8
+                    ],
+                    [
+                      539460,
+                      7142004.8
+                    ],
+                    [
+                      539390,
+                      7142005
+                    ],
+                    [
+                      539389.5,
+                      7142005
+                    ],
+                    [
+                      538659.9,
+                      7142075.1
+                    ]
+                  ]
+                ]
+              },
               "elementtivalit": [
                 {
                   "elementtiId1": "x.x.xxx.LIVI.INFRA.14.206587",

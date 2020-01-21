@@ -10,6 +10,7 @@ import java.util.List;
 public class ElementRange {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore
     public Long id;
 
     public String elementId1;

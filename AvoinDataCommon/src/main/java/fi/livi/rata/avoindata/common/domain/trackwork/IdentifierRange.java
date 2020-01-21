@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vividsolutions.jts.geom.Geometry;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -10,11 +11,14 @@ import java.util.Set;
 public class IdentifierRange {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore
     public Long id;
 
     public String elementId;
     public String elementPairId1;
     public String elementPairId2;
+    public Geometry locationMap;
+    public Geometry locationSchema;
 
     @Embedded
     public SpeedLimit speedLimit;

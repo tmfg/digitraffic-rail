@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.vividsolutions.jts.geom.Geometry;
 import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
@@ -24,6 +25,8 @@ public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierR
         identifierRange.elementPairId1 = elementPairNode1.isNull() ? null : elementPairNode1.asText();
         JsonNode elementPairNode2 = identifierRangeNode.get("elementtipariId2");
         identifierRange.elementPairId2 = elementPairNode2.isNull() ? null : elementPairNode2.asText();
+        identifierRange.locationMap = deserializeGeometry(identifierRangeNode.get("sijainti"), jsonParser);
+        identifierRange.locationSchema = deserializeGeometry(identifierRangeNode.get("kaaviosijainti"), jsonParser);
         identifierRange.speedLimit = deserializeSpeedLimit(identifierRangeNode.get("nopeusrajoitus"));
         identifierRange.elementRanges = deserializeElementRanges(identifierRangeNode.get("elementtivalit"), jsonParser);
         for (ElementRange elementRange : identifierRange.elementRanges) {
@@ -34,6 +37,10 @@ public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierR
 
     private Set<ElementRange> deserializeElementRanges(JsonNode erNode, JsonParser jsonParser) throws IOException {
         return Set.of(jsonParser.getCodec().readValue(erNode.traverse(jsonParser.getCodec()), ElementRange[].class));
+    }
+
+    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
+        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
     }
 
     private SpeedLimit deserializeSpeedLimit(JsonNode speedLimitNode) {
