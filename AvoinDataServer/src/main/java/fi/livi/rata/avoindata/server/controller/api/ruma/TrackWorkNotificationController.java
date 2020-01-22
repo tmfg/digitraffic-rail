@@ -24,10 +24,10 @@ import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_
 
 @Api(tags = "track-work-notifications", description = "Returns track work notifications")
 @RestController
-@RequestMapping(WebConfig.CONTEXT_PATH + "trackwork-notifications")
 @Transactional(timeout = 30, readOnly = true)
 public class TrackWorkNotificationController extends ADataController {
 
+    public static final String PATH = WebConfig.CONTEXT_PATH + "trackwork-notifications";
     private static final int MAX_RESULTS = 500;
     private static final int CACHE_MAX_AGE_SECONDS = 30;
     private static final ZonedDateTime START_OF_TIME = ZonedDateTime.parse("2000-01-01T00:00:00Z");
@@ -42,7 +42,7 @@ public class TrackWorkNotificationController extends ADataController {
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
     @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
-    @RequestMapping(method = RequestMethod.GET, path = "/status")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
     public List<TrackWorkNotificationIdAndVersion> findAll(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
@@ -52,7 +52,7 @@ public class TrackWorkNotificationController extends ADataController {
     }
 
     @ApiOperation("Returns all versions of a trackwork notification or an empty list if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = "/{id}")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrackWorkNotificationWithVersions get(
             @PathVariable final int id,
             HttpServletResponse response) {
@@ -62,7 +62,7 @@ public class TrackWorkNotificationController extends ADataController {
     }
 
     @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = "/{id}/{version}")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<TrackWorkNotification> getVersion(
             @PathVariable final int id,
             @PathVariable final int version,
@@ -77,7 +77,7 @@ public class TrackWorkNotificationController extends ADataController {
         }
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "foo.json", produces = "application/json")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     public List<SpatialTrackWorkNotificationDto> getByStateJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
         final List<TrackWorkNotification> twns = getByState(state);
         return twns.stream().map(this::toTwnDto).collect(Collectors.toList());
