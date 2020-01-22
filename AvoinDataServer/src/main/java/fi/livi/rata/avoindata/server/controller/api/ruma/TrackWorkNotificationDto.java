@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.spatial.Geometry;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import io.swagger.annotations.ApiModelProperty;
@@ -38,12 +37,6 @@ public class TrackWorkNotificationDto {
     @ApiModelProperty("Does the notification contain a plan for persons in charge")
     public final Boolean personInChargePlan;
 
-    @ApiModelProperty("Approximate location on map")
-    public final Geometry<?> locationMap;
-
-    @ApiModelProperty("Approximate location in schema")
-    public final Geometry<?> locationSchema;
-
     @ApiModelProperty("Work parts")
     public final List<TrackWorkPartDto> workParts;
 
@@ -58,8 +51,6 @@ public class TrackWorkNotificationDto {
             final Boolean speedLimitRemovalPlan,
             final Boolean electricitySafetyPlan,
             final Boolean personInChargePlan,
-            final Geometry<?> locationMap,
-            final Geometry<?> locationSchema,
             final List<TrackWorkPartDto> workParts)
     {
         this.id = id;
@@ -72,8 +63,6 @@ public class TrackWorkNotificationDto {
         this.speedLimitRemovalPlan = speedLimitRemovalPlan;
         this.electricitySafetyPlan = electricitySafetyPlan;
         this.personInChargePlan = personInChargePlan;
-        this.locationMap = locationMap;
-        this.locationSchema = locationSchema;
         this.workParts = workParts;
     }
 

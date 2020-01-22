@@ -1,13 +1,9 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryUtils;
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
@@ -19,7 +15,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -83,7 +78,7 @@ public class TrackWorkNotificationController extends ADataController {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "foo.json", produces = "application/json")
-    public List<TrackWorkNotificationDto> getByStateJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) throws Exception {
+    public List<SpatialTrackWorkNotificationDto> getByStateJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
         final List<TrackWorkNotification> twns = getByState(state);
         return twns.stream().map(this::toTwnDto).collect(Collectors.toList());
     }
@@ -93,8 +88,8 @@ public class TrackWorkNotificationController extends ADataController {
         return trackWorkNotificationRepository.findByState(states);
     }
 
-    private TrackWorkNotificationDto toTwnDto(TrackWorkNotification twn) {
-        return new TrackWorkNotificationDto(twn.id,
+    private SpatialTrackWorkNotificationDto toTwnDto(TrackWorkNotification twn) {
+        return new SpatialTrackWorkNotificationDto(twn.id,
                 twn.state,
                 twn.organization,
                 twn.created,
@@ -119,12 +114,30 @@ public class TrackWorkNotificationController extends ADataController {
                 twp.locations.stream().map(this::toLocationDto).collect(Collectors.toSet()));
     }
 
-    private RumaLocationDto toLocationDto(RumaLocation r) {
-        return new RumaLocationDto(r.locationType,
+    private SpatialRumaLocationDto toLocationDto(RumaLocation r) {
+        return new SpatialRumaLocationDto(r.locationType,
                 r.operatingPointId,
                 r.sectionBetweenOperatingPointsId,
+                r.identifierRanges.stream().map(this::toIdentifierRangeDto).collect(Collectors.toSet()),
                 r.locationMap != null ? GeometryUtils.fromJtsGeometry(r.locationMap) : null,
                 r.locationSchema != null ? GeometryUtils.fromJtsGeometry(r.locationSchema) : null);
+    }
+
+    private SpatialIdentifierRangeDto toIdentifierRangeDto(IdentifierRange ir) {
+        return new SpatialIdentifierRangeDto(ir.elementId,
+                ir.elementPairId1,
+                ir.elementPairId2,
+                ir.elementRanges.stream().map(this::toElementRangeDto).collect(Collectors.toSet()),
+                GeometryUtils.fromJtsGeometry(ir.locationMap),
+                GeometryUtils.fromJtsGeometry(ir.locationSchema));
+    }
+
+    private ElementRangeDto toElementRangeDto(ElementRange er) {
+        return new ElementRangeDto(er.elementId1,
+                er.elementId2,
+                er.trackKilometerRange,
+                er.trackIds,
+                er.specifiers);
     }
 
 }

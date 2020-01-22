@@ -15,7 +15,7 @@ public class ElementRange {
 
     public String elementId1;
     public String elementId2;
-    private String trackKilometerRange;
+    public String trackKilometerRange;
 
     @JoinColumn(name = "identifier_range_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
