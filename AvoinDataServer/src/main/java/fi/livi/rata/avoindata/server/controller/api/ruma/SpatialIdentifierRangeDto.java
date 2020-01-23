@@ -13,6 +13,9 @@ public class SpatialIdentifierRangeDto extends IdentifierRangeDto {
     @ApiModelProperty("Location in schema")
     public final Geometry<?> locationSchema;
 
+    @ApiModelProperty("Element ranges")
+    public final Set<ElementRangeDto> elementRanges;
+
     public SpatialIdentifierRangeDto(
             final String elementId,
             final String elementPairId1,
@@ -21,8 +24,9 @@ public class SpatialIdentifierRangeDto extends IdentifierRangeDto {
             final Geometry<?> locationMap,
             final Geometry<?> locationSchema)
     {
-        super(elementId, elementPairId1, elementPairId2, elementRanges);
+        super(elementId, elementPairId1, elementPairId2);
         this.locationMap = locationMap;
         this.locationSchema = locationSchema;
+        this.elementRanges = elementRanges;
     }
 }

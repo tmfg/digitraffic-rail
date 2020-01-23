@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.common.domain.spatial;
+package fi.livi.rata.avoindata.server.controller.api.geojson;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

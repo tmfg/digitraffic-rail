@@ -1,9 +1,10 @@
 package fi.livi.rata.avoindata.server.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
-import fi.livi.rata.avoindata.server.controller.api.geojson.GeoJsonResponse;
-import fi.livi.rata.avoindata.server.controller.api.geojson.Geometry;
+import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +18,10 @@ public class GeoJsonFormatter {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public <E> GeoJsonResponse wrapAsGeoJson(List<E> entities, Function<E, Double[]> coordinateProvider) {
-        GeoJsonResponse geoJsonResponse = new GeoJsonResponse();
-        geoJsonResponse.type = "FeatureCollection";
-        geoJsonResponse.features = createFeatureCollection(entities, coordinateProvider);
+    private static final GeometryFactory geometryFactory = new GeometryFactory();
 
-        return geoJsonResponse;
+    public <E> FeatureCollection wrapAsGeoJson(List<E> entities, Function<E, Double[]> coordinateProvider) {
+        return new FeatureCollection(createFeatureCollection(entities, coordinateProvider));
     }
 
     private <E> List<Feature> createFeatureCollection(List<E> entities, Function<E, Double[]> coordinateProvider) {
@@ -34,19 +33,13 @@ public class GeoJsonFormatter {
     }
 
     private <E> Feature createFeature(Function<E, Double[]> coordinateProvider, E entity) {
-        Feature feature = new Feature();
-        feature.type = "Feature";
-
-        Geometry geometry = new Geometry();
-        geometry.type = "Point";
-        geometry.coordinates = coordinateProvider.apply(entity);
-        feature.geometry = geometry;
-
         Map propertyMap = objectMapper.convertValue(entity, Map.class);
         propertyMap.remove("location");
         propertyMap.remove("longitude");
         propertyMap.remove("latitude");
-        feature.properties = propertyMap;
-        return feature;
+
+        Double[] coords = coordinateProvider.apply(entity);
+
+        return new Feature(geometryFactory.createPoint(new Coordinate(coords[0], coords[1])), propertyMap);
     }
 }

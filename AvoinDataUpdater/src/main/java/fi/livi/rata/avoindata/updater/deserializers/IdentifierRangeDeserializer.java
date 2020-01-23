@@ -39,10 +39,6 @@ public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierR
         return Set.of(jsonParser.getCodec().readValue(erNode.traverse(jsonParser.getCodec()), ElementRange[].class));
     }
 
-    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
-        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
-    }
-
     private SpeedLimit deserializeSpeedLimit(JsonNode speedLimitNode) {
         final JsonNode speedNode = speedLimitNode.get("nopeus");
         final JsonNode signsNode = speedLimitNode.get("merkit");

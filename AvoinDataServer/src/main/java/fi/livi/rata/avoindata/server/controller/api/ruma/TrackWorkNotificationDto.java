@@ -4,7 +4,6 @@ import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import io.swagger.annotations.ApiModelProperty;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 public class TrackWorkNotificationDto {
 
@@ -37,9 +36,6 @@ public class TrackWorkNotificationDto {
     @ApiModelProperty("Does the notification contain a plan for persons in charge")
     public final Boolean personInChargePlan;
 
-    @ApiModelProperty("Work parts")
-    public final List<TrackWorkPartDto> workParts;
-
     public TrackWorkNotificationDto(
             final TrackWorkNotification.TrackWorkNotificationId id,
             final TrackWorkNotificationState state,
@@ -50,8 +46,7 @@ public class TrackWorkNotificationDto {
             final Boolean speedLimitPlan,
             final Boolean speedLimitRemovalPlan,
             final Boolean electricitySafetyPlan,
-            final Boolean personInChargePlan,
-            final List<TrackWorkPartDto> workParts)
+            final Boolean personInChargePlan)
     {
         this.id = id;
         this.state = state;
@@ -63,7 +58,6 @@ public class TrackWorkNotificationDto {
         this.speedLimitRemovalPlan = speedLimitRemovalPlan;
         this.electricitySafetyPlan = electricitySafetyPlan;
         this.personInChargePlan = personInChargePlan;
-        this.workParts = workParts;
     }
 
     @ApiModelProperty("Id")

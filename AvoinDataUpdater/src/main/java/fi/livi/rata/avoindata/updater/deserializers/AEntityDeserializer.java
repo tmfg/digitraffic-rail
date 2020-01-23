@@ -4,6 +4,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.vividsolutions.jts.geom.Geometry;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -99,5 +100,9 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         }
 
         return LocalTime.parse(stringNode.asText());
+    }
+
+    protected Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
+        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
     }
 }

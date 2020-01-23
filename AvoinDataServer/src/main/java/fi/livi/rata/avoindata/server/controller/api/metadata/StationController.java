@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.server.controller.api.metadata;
 
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.server.controller.api.geojson.GeoJsonResponse;
+import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.services.GeoJsonFormatter;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class StationController extends AMetadataController {
 
     @ApiOperation("Returns list of stations in geojson format")
     @RequestMapping(value = "stations.geojson", method = RequestMethod.GET, produces = "application/vnd.geo+json")
-    public GeoJsonResponse getStationsAsGeoJson(HttpServletResponse response) {
+    public FeatureCollection getStationsAsGeoJson(HttpServletResponse response) {
         return geoJsonFormatter.wrapAsGeoJson(this.getStations(response), converter);
     }
 }

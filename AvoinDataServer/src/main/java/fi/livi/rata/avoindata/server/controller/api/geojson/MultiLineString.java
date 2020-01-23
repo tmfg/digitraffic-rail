@@ -1,13 +1,13 @@
-package fi.livi.rata.avoindata.common.domain.spatial;
+package fi.livi.rata.avoindata.server.controller.api.geojson;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class Polygon implements Geometry<List<List<List<Double>>>> {
+public final class MultiLineString implements Geometry<List<List<List<Double>>>> {
 
     private final List<LineString> lines;
 
-    public Polygon(final List<LineString> lines) {
+    public MultiLineString(final List<LineString> lines) {
         this.lines = lines;
     }
 
@@ -18,6 +18,6 @@ public final class Polygon implements Geometry<List<List<List<Double>>>> {
 
     @Override
     public String getType() {
-        return "Polygon";
+        return "MultiLineString";
     }
 }

@@ -47,10 +47,6 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         return trackWorkNotification;
     }
 
-    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
-        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
-    }
-
     private TrackWorkNotificationState getState(String state) {
         switch (state) {
             case "ACTIVE":

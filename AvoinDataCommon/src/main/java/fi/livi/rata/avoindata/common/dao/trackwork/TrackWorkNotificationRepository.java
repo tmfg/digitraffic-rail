@@ -31,5 +31,5 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.state IN (:states) AND (t.id.id, t.id.version) IN " +
              "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 GROUP BY t2.id.id) " +
            "ORDER BY t.id.id ASC, t.id.version ASC")
-    List<TrackWorkNotification> findByState(@Param("states") Set<TrackWorkNotificationState> states);
+    List<TrackWorkNotification> findByState(@Param("states") Set<TrackWorkNotificationState> states, Pageable pageable);
 }

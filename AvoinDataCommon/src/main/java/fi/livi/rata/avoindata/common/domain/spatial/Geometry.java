@@ -9,4 +9,5 @@ public interface Geometry<T extends List<?>> {
     @JsonValue
     T getCoordinates();
 
+    String getType();
 }

@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.common.domain.spatial;
+package fi.livi.rata.avoindata.server.controller.api.geojson;
 
 import java.util.List;
 import java.util.stream.Collectors;

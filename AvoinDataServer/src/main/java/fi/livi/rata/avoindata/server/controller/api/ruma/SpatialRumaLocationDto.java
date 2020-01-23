@@ -14,6 +14,9 @@ public class SpatialRumaLocationDto extends RumaLocationDto {
     @ApiModelProperty("Location in schema if no identifer ranges are present")
     public final Geometry<?> locationSchema;
 
+    @ApiModelProperty("Identifier ranges")
+    public final Set<IdentifierRangeDto> identifierRanges;
+
     public SpatialRumaLocationDto(
             final LocationType locationType,
             final String operatingPointId,
@@ -22,8 +25,9 @@ public class SpatialRumaLocationDto extends RumaLocationDto {
             final Geometry<?> locationMap,
             final Geometry<?> locationSchema)
     {
-        super(locationType, operatingPointId, sectionBetweenOperatingPointsId, identifierRanges);
+        super(locationType, operatingPointId, sectionBetweenOperatingPointsId);
         this.locationMap = locationMap;
         this.locationSchema = locationSchema;
+        this.identifierRanges = identifierRanges;
     }
 }

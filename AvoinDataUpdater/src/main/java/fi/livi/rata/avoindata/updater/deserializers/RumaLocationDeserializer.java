@@ -33,10 +33,6 @@ public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> 
         return rumaLocation;
     }
 
-    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
-        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
-    }
-
     private Set<IdentifierRange> deserializeIdentifierRanges(JsonNode irNode, JsonParser jsonParser) throws IOException {
         return Set.of(jsonParser.getCodec().readValue(irNode.traverse(jsonParser.getCodec()), IdentifierRange[].class));
     }

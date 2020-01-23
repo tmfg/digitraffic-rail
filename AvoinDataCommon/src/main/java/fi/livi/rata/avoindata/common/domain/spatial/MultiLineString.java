@@ -15,4 +15,9 @@ public final class MultiLineString implements Geometry<List<List<List<Double>>>>
     public List<List<List<Double>>> getCoordinates() {
         return lines.stream().map(LineString::getCoordinates).collect(Collectors.toList());
     }
+
+    @Override
+    public String getType() {
+        return "MultiLineString";
+    }
 }

@@ -16,6 +16,9 @@ public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
     @ApiModelProperty("Approximate location in schema")
     public final Geometry<?> locationSchema;
 
+    @ApiModelProperty("Work parts")
+    public final List<TrackWorkPartDto> workParts;
+
     public SpatialTrackWorkNotificationDto(
             final TrackWorkNotification.TrackWorkNotificationId id,
             final TrackWorkNotificationState state,
@@ -31,9 +34,10 @@ public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
             final Geometry<?> locationSchema,
             final List<TrackWorkPartDto> workParts)
     {
-        super(id, state, organization, created, modified, trafficSafetyPlan, speedLimitPlan, speedLimitRemovalPlan, electricitySafetyPlan, personInChargePlan, workParts);
+        super(id, state, organization, created, modified, trafficSafetyPlan, speedLimitPlan, speedLimitRemovalPlan, electricitySafetyPlan, personInChargePlan);
         this.locationMap = locationMap;
         this.locationSchema = locationSchema;
+        this.workParts = workParts;
     }
 
 }
