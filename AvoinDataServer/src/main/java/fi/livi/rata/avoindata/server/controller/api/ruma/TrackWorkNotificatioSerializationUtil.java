@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import com.vividsolutions.jts.geom.Geometry;
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryUtils;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 
 public final class TrackWorkNotificatioSerializationUtil {
 
-    public static SpatialTrackWorkNotificationDto toTwnDto(TrackWorkNotification twn) {
+    public static SpatialTrackWorkNotificationDto toTwnDto(TrackWorkNotification twn, boolean schema) {
         return new SpatialTrackWorkNotificationDto(twn.id,
                 twn.state,
                 twn.organization,
@@ -25,43 +26,48 @@ public final class TrackWorkNotificatioSerializationUtil {
                 twn.speedLimitRemovalPlan,
                 twn.electricitySafetyPlan,
                 twn.personInChargePlan,
-                GeometryUtils.fromJtsGeometry(twn.locationMap),
-                GeometryUtils.fromJtsGeometry(twn.locationSchema),
+                GeometryUtils.fromJtsGeometry(schema ? twn.locationSchema : twn.locationMap),
                 twn.trackWorkParts.stream().map(twp ->
-                        new TrackWorkPartDto(twp.partIndex,
+                        new TrackWorkPartDto(
+                                twp.partIndex,
                                 twp.startDay,
                                 twp.permissionMinimumDuration,
                                 twp.containsFireWork,
                                 twp.plannedWorkingGap,
                                 twp.advanceNotifications,
-                                twp.locations.stream().map(r ->
-                                        new SpatialRumaLocationDto(r.locationType,
-                                                r.operatingPointId,
-                                                r.sectionBetweenOperatingPointsId,
-                                                r.identifierRanges.stream().map(ir ->
-                                                        new SpatialIdentifierRangeDto(ir.elementId,
-                                                                ir.elementPairId1,
-                                                                ir.elementPairId2,
-                                                                ir.elementRanges.stream().map(er ->
-                                                                        new ElementRangeDto(er.elementId1,
-                                                                                er.elementId2,
-                                                                                er.trackKilometerRange,
-                                                                                er.trackIds,
-                                                                                er.specifiers)
-                                                                ).collect(Collectors.toSet()),
-                                                                GeometryUtils.fromJtsGeometry(ir.locationMap),
-                                                                GeometryUtils.fromJtsGeometry(ir.locationSchema))
-                                                ).collect(Collectors.toSet()),
-                                                r.locationMap != null ? GeometryUtils.fromJtsGeometry(r.locationMap) : null,
-                                                r.locationSchema != null ? GeometryUtils.fromJtsGeometry(r.locationSchema) : null)
+                                twp.locations.stream().map(r -> {
+                                    Geometry locationGeom = schema ? r.locationSchema : r.locationMap;
+                                    return new SpatialRumaLocationDto(
+                                            twn.id.id,
+                                            r.locationType,
+                                            r.operatingPointId,
+                                            r.sectionBetweenOperatingPointsId,
+                                            r.identifierRanges.stream().map(ir ->
+                                                    new SpatialIdentifierRangeDto(
+                                                            twn.id.id,
+                                                            ir.elementId,
+                                                            ir.elementPairId1,
+                                                            ir.elementPairId2,
+                                                            ir.elementRanges.stream().map(er ->
+                                                                    new ElementRangeDto(
+                                                                            er.elementId1,
+                                                                            er.elementId2,
+                                                                            er.trackKilometerRange,
+                                                                            er.trackIds,
+                                                                            er.specifiers)
+                                                            ).collect(Collectors.toSet()),
+                                                            GeometryUtils.fromJtsGeometry(schema ? ir.locationSchema : ir.locationMap))
+                                            ).collect(Collectors.toSet()),
+                                            locationGeom != null ? GeometryUtils.fromJtsGeometry(locationGeom) : null);
+                                        }
                                 ).collect(Collectors.toSet()))
                 ).collect(Collectors.toList()));
     }
 
-    public static Stream<Feature> toFeatures(TrackWorkNotification twn) {
+    public static Stream<Feature> toFeatures(TrackWorkNotification twn, boolean schema) {
         List<Feature> features = new ArrayList<>();
 
-        features.add(new Feature(twn.locationMap, new TrackWorkNotificationDto(twn.id,
+        features.add(new Feature(schema ? twn.locationSchema : twn.locationMap, new TrackWorkNotificationDto(twn.id,
                 twn.state,
                 twn.organization,
                 twn.created,
@@ -75,23 +81,31 @@ public final class TrackWorkNotificatioSerializationUtil {
         for (TrackWorkPart twp : twn.trackWorkParts) {
 
             for (RumaLocation rl : twp.locations) {
-                if (rl.locationMap != null) {
-                    features.add(new Feature(rl.locationMap, new RumaLocationDto(rl.locationType,
-                            rl.operatingPointId,
-                            rl.sectionBetweenOperatingPointsId)));
+                Geometry locationGeom = schema ? rl.locationSchema : rl.locationMap;
+                if (locationGeom != null) {
+                    features.add(new Feature(
+                            locationGeom,
+                            new RumaLocationDto(
+                                    twn.id.id,
+                                    rl.locationType,
+                                    rl.operatingPointId,
+                                    rl.sectionBetweenOperatingPointsId)));
                 }
 
                 for (IdentifierRange ir : rl.identifierRanges) {
-                    features.add(new Feature(ir.locationMap, new IdentifierRangeDto(ir.elementId,
-                            ir.elementPairId1,
-                            ir.elementPairId2,
-                            ir.elementRanges.stream().map(er ->
-                                    new ElementRangeDto(er.elementId1,
-                                            er.elementId2,
-                                            er.trackKilometerRange,
-                                            er.trackIds,
-                                            er.specifiers)
-                            ).collect(Collectors.toSet()))));
+                    features.add(new Feature(schema ? ir.locationSchema : ir.locationMap,
+                            new IdentifierRangeDto(
+                                    twn.id.id,
+                                    ir.elementId,
+                                    ir.elementPairId1,
+                                    ir.elementPairId2,
+                                    ir.elementRanges.stream().map(er ->
+                                            new ElementRangeDto(er.elementId1,
+                                                    er.elementId2,
+                                                    er.trackKilometerRange,
+                                                    er.trackIds,
+                                                    er.specifiers)
+                                    ).collect(Collectors.toSet()))));
                 }
 
             }

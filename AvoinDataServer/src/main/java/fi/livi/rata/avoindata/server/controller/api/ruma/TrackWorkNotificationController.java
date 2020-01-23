@@ -1,12 +1,12 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
-import fi.livi.rata.avoindata.common.domain.spatial.GeometryUtils;
-import fi.livi.rata.avoindata.common.domain.trackwork.*;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
-import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
@@ -21,10 +21,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
 
 @Api(tags = "track-work-notifications", description = "Returns track work notifications")
 @RestController
@@ -83,22 +82,29 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns newest versions of trackwork notifications by state, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
-    public List<SpatialTrackWorkNotificationDto> getByStateJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
+    @JsonView(RumaJsonViews.PlainJsonView.class)
+    public List<SpatialTrackWorkNotificationDto> getByStateJson(
+            @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
+            @RequestParam(value = "schema", required = false) final Boolean schema)
+    {
         final List<TrackWorkNotification> twns = getByState(state);
-        return twns.stream().map(TrackWorkNotificatioSerializationUtil::toTwnDto).collect(Collectors.toList());
+        return twns.stream().map(t -> TrackWorkNotificatioSerializationUtil.toTwnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
     }
 
     @ApiOperation("Returns newest versions of trackwork notifications by state, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
-    public FeatureCollection getByStateGeoJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
+    @JsonView(RumaJsonViews.GeoJsonView.class)
+    public FeatureCollection getByStateGeoJson(
+            @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
+            @RequestParam(value = "schema", required = false) final Boolean schema)
+    {
         final List<TrackWorkNotification> twns = getByState(state);
-        return new FeatureCollection(twns.stream().flatMap(TrackWorkNotificatioSerializationUtil::toFeatures).collect(Collectors.toList()));
+        return new FeatureCollection(twns.stream().flatMap(t -> TrackWorkNotificatioSerializationUtil.toFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state) {
         Set<TrackWorkNotificationState> states = state != null ? state : DEFAULT_STATES;
         return trackWorkNotificationRepository.findByState(states, PageRequest.of(0, MAX_RESULTS));
     }
-
 
 }

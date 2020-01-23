@@ -7,22 +7,18 @@ import java.util.Set;
 
 public class SpatialIdentifierRangeDto extends IdentifierRangeDto {
 
-    @ApiModelProperty("Location on map")
-    public final Geometry<?> locationMap;
-
-    @ApiModelProperty("Location in schema")
-    public final Geometry<?> locationSchema;
+    @ApiModelProperty("Location")
+    public final Geometry<?> location;
 
     public SpatialIdentifierRangeDto(
+            final long trackWorkNotificationId,
             final String elementId,
             final String elementPairId1,
             final String elementPairId2,
             final Set<ElementRangeDto> elementRanges,
-            final Geometry<?> locationMap,
-            final Geometry<?> locationSchema)
+            final Geometry<?> location)
     {
-        super(elementId, elementPairId1, elementPairId2, elementRanges);
-        this.locationMap = locationMap;
-        this.locationSchema = locationSchema;
+        super(trackWorkNotificationId, elementId, elementPairId1, elementPairId2, elementRanges);
+        this.location = location;
     }
 }

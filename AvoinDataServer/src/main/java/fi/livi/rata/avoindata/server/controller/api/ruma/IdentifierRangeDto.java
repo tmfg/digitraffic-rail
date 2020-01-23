@@ -1,10 +1,15 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Set;
 
 public class IdentifierRangeDto {
+
+    @ApiModelProperty("Track work notification identifier")
+    @JsonView(RumaJsonViews.GeoJsonView.class)
+    public final long trackWorkNotificationId;
 
     @ApiModelProperty("Identifier of element")
     public final String elementId;
@@ -19,11 +24,13 @@ public class IdentifierRangeDto {
     public final Set<ElementRangeDto> elementRanges;
 
     public IdentifierRangeDto(
+            final long trackWorkNotificationId,
             final String elementId,
             final String elementPairId1,
             final String elementPairId2,
             final Set<ElementRangeDto> elementRanges)
     {
+        this.trackWorkNotificationId = trackWorkNotificationId;
         this.elementId = elementId;
         this.elementPairId1 = elementPairId1;
         this.elementPairId2 = elementPairId2;

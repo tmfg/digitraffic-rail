@@ -8,26 +8,22 @@ import java.util.Set;
 
 public class SpatialRumaLocationDto extends RumaLocationDto {
 
-    @ApiModelProperty("Location on map if no identifer ranges are present")
-    public final Geometry<?> locationMap;
-
-    @ApiModelProperty("Location in schema if no identifer ranges are present")
-    public final Geometry<?> locationSchema;
+    @ApiModelProperty("Location if no identifer ranges are present")
+    public final Geometry<?> location;
 
     @ApiModelProperty("Identifier ranges")
     public final Set<IdentifierRangeDto> identifierRanges;
 
     public SpatialRumaLocationDto(
+            final long trackWorkNotificationId,
             final LocationType locationType,
             final String operatingPointId,
             final String sectionBetweenOperatingPointsId,
             final Set<IdentifierRangeDto> identifierRanges,
-            final Geometry<?> locationMap,
-            final Geometry<?> locationSchema)
+            final Geometry<?> location)
     {
-        super(locationType, operatingPointId, sectionBetweenOperatingPointsId);
-        this.locationMap = locationMap;
-        this.locationSchema = locationSchema;
+        super(trackWorkNotificationId, locationType, operatingPointId, sectionBetweenOperatingPointsId);
+        this.location = location;
         this.identifierRanges = identifierRanges;
     }
 }

@@ -10,11 +10,8 @@ import java.util.List;
 
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
-    @ApiModelProperty("Approximate location on map")
-    public final Geometry<?> locationMap;
-
-    @ApiModelProperty("Approximate location in schema")
-    public final Geometry<?> locationSchema;
+    @ApiModelProperty("Approximate location")
+    public final Geometry<?> location;
 
     @ApiModelProperty("Work parts")
     public final List<TrackWorkPartDto> workParts;
@@ -30,13 +27,11 @@ public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
             final Boolean speedLimitRemovalPlan,
             final Boolean electricitySafetyPlan,
             final Boolean personInChargePlan,
-            final Geometry<?> locationMap,
-            final Geometry<?> locationSchema,
+            final Geometry<?> location,
             final List<TrackWorkPartDto> workParts)
     {
         super(id, state, organization, created, modified, trafficSafetyPlan, speedLimitPlan, speedLimitRemovalPlan, electricitySafetyPlan, personInChargePlan);
-        this.locationMap = locationMap;
-        this.locationSchema = locationSchema;
+        this.location = location;
         this.workParts = workParts;
     }
 
