@@ -85,14 +85,14 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     public List<SpatialTrackWorkNotificationDto> getByStateJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
         final List<TrackWorkNotification> twns = getByState(state);
-        return twns.stream().map(this::toTwnDto).collect(Collectors.toList());
+        return twns.stream().map(TrackWorkNotificatioSerializationUtil::toTwnDto).collect(Collectors.toList());
     }
 
     @ApiOperation("Returns newest versions of trackwork notifications by state, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     public FeatureCollection getByStateGeoJson(@RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state) {
         final List<TrackWorkNotification> twns = getByState(state);
-        return new FeatureCollection(twns.stream().flatMap(this::toFeatures).collect(Collectors.toList()));
+        return new FeatureCollection(twns.stream().flatMap(TrackWorkNotificatioSerializationUtil::toFeatures).collect(Collectors.toList()));
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state) {
@@ -100,83 +100,5 @@ public class TrackWorkNotificationController extends ADataController {
         return trackWorkNotificationRepository.findByState(states, PageRequest.of(0, MAX_RESULTS));
     }
 
-    private SpatialTrackWorkNotificationDto toTwnDto(TrackWorkNotification twn) {
-        return new SpatialTrackWorkNotificationDto(twn.id,
-                twn.state,
-                twn.organization,
-                twn.created,
-                twn.modified,
-                twn.trafficSafetyPlan,
-                twn.speedLimitPlan,
-                twn.speedLimitRemovalPlan,
-                twn.electricitySafetyPlan,
-                twn.personInChargePlan,
-                GeometryUtils.fromJtsGeometry(twn.locationMap),
-                GeometryUtils.fromJtsGeometry(twn.locationSchema),
-                twn.trackWorkParts.stream().map(twp ->
-                        new TrackWorkPartDto(twp.partIndex,
-                                twp.startDay,
-                                twp.permissionMinimumDuration,
-                                twp.containsFireWork,
-                                twp.plannedWorkingGap,
-                                twp.advanceNotifications,
-                                twp.locations.stream().map(r ->
-                                        new SpatialRumaLocationDto(r.locationType,
-                                                r.operatingPointId,
-                                                r.sectionBetweenOperatingPointsId,
-                                                r.identifierRanges.stream().map(ir ->
-                                                        new SpatialIdentifierRangeDto(ir.elementId,
-                                                                ir.elementPairId1,
-                                                                ir.elementPairId2,
-                                                                ir.elementRanges.stream().map(er ->
-                                                                        new ElementRangeDto(er.elementId1,
-                                                                                er.elementId2,
-                                                                                er.trackKilometerRange,
-                                                                                er.trackIds,
-                                                                                er.specifiers)
-                                                                ).collect(Collectors.toSet()),
-                                                                GeometryUtils.fromJtsGeometry(ir.locationMap),
-                                                                GeometryUtils.fromJtsGeometry(ir.locationSchema))
-                                                ).collect(Collectors.toSet()),
-                                                r.locationMap != null ? GeometryUtils.fromJtsGeometry(r.locationMap) : null,
-                                                r.locationSchema != null ? GeometryUtils.fromJtsGeometry(r.locationSchema) : null)
-                                ).collect(Collectors.toSet()))
-                ).collect(Collectors.toList()));
-    }
 
-    private Stream<Feature> toFeatures(TrackWorkNotification twn) {
-        List<Feature> features = new ArrayList<>();
-
-        features.add(new Feature(twn.locationMap, new TrackWorkNotificationDto(twn.id,
-                twn.state,
-                twn.organization,
-                twn.created,
-                twn.modified,
-                twn.trafficSafetyPlan,
-                twn.speedLimitPlan,
-                twn.speedLimitRemovalPlan,
-                twn.electricitySafetyPlan,
-                twn.personInChargePlan)));
-
-        for (TrackWorkPart twp : twn.trackWorkParts) {
-
-            for (RumaLocation rl : twp.locations) {
-                if (rl.locationMap != null) {
-                    features.add(new Feature(rl.locationMap, new RumaLocationDto(rl.locationType,
-                            rl.operatingPointId,
-                            rl.sectionBetweenOperatingPointsId)));
-                }
-
-                for (IdentifierRange ir : rl.identifierRanges) {
-                    features.add(new Feature(ir.locationMap, new IdentifierRangeDto(ir.elementId,
-                            ir.elementPairId1,
-                            ir.elementPairId2)));
-                }
-
-            }
-
-        }
-
-        return features.stream();
-    }
 }

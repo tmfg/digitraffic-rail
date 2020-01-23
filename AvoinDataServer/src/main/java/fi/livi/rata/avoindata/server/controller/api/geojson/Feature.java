@@ -1,5 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api.geojson;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"type", "geometry", "properties"})
 public class Feature implements GeoJsonObject {
 
     public com.vividsolutions.jts.geom.Geometry geometry;
