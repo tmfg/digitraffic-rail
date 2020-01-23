@@ -11,6 +11,11 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import com.vividsolutions.jts.geom.Point;
+import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -29,20 +34,24 @@ import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationSt
 @Service
 public class TrackWorkNotificationUpdater {
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
-    private RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
-    private LocalTrackWorkNotificationService localTrackWorkNotificationService;
-    private LastUpdateService lastUpdateService;
-    private String liikeInterfaceUrl;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private final RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
+    private final LocalTrackWorkNotificationService localTrackWorkNotificationService;
+    private final LastUpdateService lastUpdateService;
+    private final Wgs84ConversionService wgs84ConversionService;
+    private final String liikeInterfaceUrl;
 
     public TrackWorkNotificationUpdater(
-            RemoteTrackWorkNotificationService remoteTrackWorkNotificationService,
-            LocalTrackWorkNotificationService localTrackWorkNotificationService,
-            LastUpdateService lastUpdateService,
-            @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
+            final RemoteTrackWorkNotificationService remoteTrackWorkNotificationService,
+            final LocalTrackWorkNotificationService localTrackWorkNotificationService,
+            final LastUpdateService lastUpdateService,
+            final Wgs84ConversionService wgs84ConversionService,
+            final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
         this.remoteTrackWorkNotificationService = remoteTrackWorkNotificationService;
         this.localTrackWorkNotificationService = localTrackWorkNotificationService;
         this.lastUpdateService = lastUpdateService;
+        this.wgs84ConversionService = wgs84ConversionService;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
@@ -109,6 +118,32 @@ public class TrackWorkNotificationUpdater {
         log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
         List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
+
+        for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+            twn.locationMap = wgs84ConversionService.liviToWgs84Jts(twn.locationMap);
+            twn.locationSchema = wgs84ConversionService.liviToWgs84Jts(twn.locationSchema);
+
+            for (TrackWorkPart twp : twn.trackWorkParts) {
+
+                for (RumaLocation rl : twp.locations) {
+                    if (rl.locationMap != null) {
+                        rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
+                    }
+                    if (rl.locationSchema != null) {
+                        rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
+                    }
+
+                    for (IdentifierRange ir : rl.identifierRanges) {
+                        ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                        ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                    }
+
+                }
+
+            }
+
+        }
+
         localTrackWorkNotificationService.saveAll(trackWorkNotificationVersions);
     }
 

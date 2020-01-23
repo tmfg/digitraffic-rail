@@ -5,6 +5,7 @@ import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationReposito
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
@@ -38,10 +39,12 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     private RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
     @MockBean
     private LastUpdateService lastUpdateService;
+    @Autowired
+    private Wgs84ConversionService wgs84ConversionService;
 
     @Before
     public void setUp() {
-        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService, lastUpdateService,"http://fake-url");
+        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService, lastUpdateService,wgs84ConversionService, "http://fake-url");
     }
 
     @After
