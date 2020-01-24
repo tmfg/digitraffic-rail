@@ -112,6 +112,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     }
 
     @Test
+    @Transactional
     public void coordinateReprojection() {
         TrackWorkNotification twn = factory.create(1).get(0);
         TrackWorkPart twp = factory.createTrackWorkPart();
