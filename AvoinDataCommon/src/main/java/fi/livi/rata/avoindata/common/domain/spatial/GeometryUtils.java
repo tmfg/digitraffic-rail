@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// Logic based on com.bedatadriven.jackson.datatype.jts.serialization.GeometrySerializer
 public final class GeometryUtils {
 
     public static Geometry<?> fromJtsGeometry(com.vividsolutions.jts.geom.Geometry jtsGeometry) {
