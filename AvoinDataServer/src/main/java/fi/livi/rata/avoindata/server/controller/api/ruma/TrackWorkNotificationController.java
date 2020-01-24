@@ -92,7 +92,7 @@ public class TrackWorkNotificationController extends ADataController {
             @ApiParam(value = "End time. If missing, end of time is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
     {
         final List<TrackWorkNotification> twns = getByState(state, start, end);
-        return twns.stream().map(t -> TrackWorkNotificatioSerializationUtil.toTwnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
+        return twns.stream().map(t -> TrackWorkNotificationSerializationUtil.toTwnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
     }
 
     @ApiOperation("Returns newest versions of trackwork notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
@@ -105,7 +105,7 @@ public class TrackWorkNotificationController extends ADataController {
             @ApiParam(value = "End time. If missing, end of time is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
     {
         final List<TrackWorkNotification> twns = getByState(state, start, end);
-        return new FeatureCollection(twns.stream().flatMap(t -> TrackWorkNotificatioSerializationUtil.toFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
+        return new FeatureCollection(twns.stream().flatMap(t -> TrackWorkNotificationSerializationUtil.toFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state, ZonedDateTime start, ZonedDateTime end) {

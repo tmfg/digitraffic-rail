@@ -33,23 +33,22 @@ public class TrackWorkNotificationFactory {
         return twns;
     }
 
-    @Transactional
     public List<TrackWorkNotification> create(int versions) {
         long id = random.nextInt(99999);
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
-            new TrackWorkNotification(
-                    new TrackWorkNotification.TrackWorkNotificationId(id, v),
-                    TrackWorkNotificationState.DRAFT,
-                    UUID.randomUUID().toString(),
-                    ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),
-                    ZonedDateTime.now().withNano(0),
-                    random.nextBoolean(),
-                    random.nextBoolean(),
-                    random.nextBoolean(),
-                    random.nextBoolean(),
-                    random.nextBoolean(),
-                    geometryFactory.createPoint(new Coordinate(328500.3, 6822410)),
-                    geometryFactory.createPoint(new Coordinate(328500.3,6822410)))
+                new TrackWorkNotification(
+                        new TrackWorkNotification.TrackWorkNotificationId(id, v),
+                        TrackWorkNotificationState.DRAFT,
+                        UUID.randomUUID().toString(),
+                        ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),
+                        ZonedDateTime.now().withNano(0),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        random.nextBoolean(),
+                        geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong())),
+                        geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong())))
         ).collect(Collectors.toList());
     }
 

@@ -1,8 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
@@ -36,11 +33,6 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     private TrackWorkNotificationRepository repository;
 
     private static final Random random = new Random(System.nanoTime());
-
-    private final GeometryFactory geometryFactory = new GeometryFactory();
-
-    private final Point POINT_MAP = geometryFactory.createPoint(new Coordinate(328500.3, 6822410));
-    private final Point POINT_SCHEMA = geometryFactory.createPoint(new Coordinate(328509, 6822419));
 
     @Before
     public void setUp() {
@@ -217,55 +209,13 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
-    public void byState_map() throws Exception {
+    public void geoJson() throws Exception {
         TrackWorkNotification twn = factory.create(1).get(0);
-        twn.locationMap = POINT_MAP;
-        twn.locationSchema = POINT_SCHEMA;
-        repository.save(twn);
-
-        ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s", twn.state.name()));
-
-        ra.andExpect(jsonPath("$[0].location[0]").value(POINT_MAP.getX()));
-        ra.andExpect(jsonPath("$[0].location[1]").value(POINT_MAP.getY()));
-    }
-
-    @Test
-    public void byState_schema() throws Exception {
-        TrackWorkNotification twn = factory.create(1).get(0);
-        twn.locationMap = POINT_MAP;
-        twn.locationSchema = POINT_SCHEMA;
-        repository.save(twn);
-
-        ResultActions ra = getJson(String.format("/trackwork-notifications.json?schema=true&state=%s", twn.state.name()));
-
-        ra.andExpect(jsonPath("$[0].location[0]").value(POINT_SCHEMA.getX()));
-        ra.andExpect(jsonPath("$[0].location[1]").value(POINT_SCHEMA.getY()));
-    }
-
-    @Test
-    public void geoJson_map() throws Exception {
-        TrackWorkNotification twn = factory.create(1).get(0);
-        twn.locationMap = POINT_MAP;
-        twn.locationSchema = POINT_SCHEMA;
         repository.save(twn);
 
         ResultActions ra = getGeoJson(String.format("/trackwork-notifications.geojson?state=%s", twn.state.name()));
 
-        ra.andExpect(jsonPath("$.features[0].geometry.coordinates[0]").value(POINT_MAP.getX()));
-        ra.andExpect(jsonPath("$.features[0].geometry.coordinates[1]").value(POINT_MAP.getY()));
-    }
-
-    @Test
-    public void geoJson_schema() throws Exception {
-        TrackWorkNotification twn = factory.create(1).get(0);
-        twn.locationMap = POINT_MAP;
-        twn.locationSchema = POINT_SCHEMA;
-        repository.save(twn);
-
-        ResultActions ra = getGeoJson(String.format("/trackwork-notifications.geojson?state=%s", twn.state.name()));
-
-        ra.andExpect(jsonPath("$.features[0].geometry.coordinates[0]").value(POINT_SCHEMA.getX()));
-        ra.andExpect(jsonPath("$.features[0].geometry.coordinates[1]").value(POINT_MAP.getY()));
+        ra.andExpect(jsonPath("$.features", hasSize(1)));
     }
 
     @Transactional
