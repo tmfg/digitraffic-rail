@@ -17,6 +17,7 @@ public class Wgs84ConversionService {
     private CoordinateTransform transformer;
     private CoordinateTransform reverseTransformer;
     private GeometryFactory geometryFactory;
+    private final int WGS84_SRID = 4326;
 
     @PostConstruct
     private void setup() {
@@ -43,19 +44,29 @@ public class Wgs84ConversionService {
     }
 
     public Geometry liviToWgs84Jts(Geometry tm35FinGeometry) {
+        Geometry reprojectedGeometry = null;
         switch (tm35FinGeometry.getGeometryType()) {
             case "Point":
-                return transformJtsPoint((Point) tm35FinGeometry);
+                reprojectedGeometry = transformJtsPoint((Point) tm35FinGeometry);
+                break;
             case "LineString":
-                return transformJtsLineString((LineString) tm35FinGeometry);
+                reprojectedGeometry = transformJtsLineString((LineString) tm35FinGeometry);
+                break;
             case "MultiLineString":
-                return transformJtsMultiLineString((MultiLineString) tm35FinGeometry);
+                reprojectedGeometry = transformJtsMultiLineString((MultiLineString) tm35FinGeometry);
+                break;
             case "Polygon":
-                return transformJtsPolygon((Polygon) tm35FinGeometry);
+                reprojectedGeometry = transformJtsPolygon((Polygon) tm35FinGeometry);
+                break;
             case "GeometryCollection":
-                return transformJtsGeometryCollection((GeometryCollection) tm35FinGeometry);
+                reprojectedGeometry = transformJtsGeometryCollection((GeometryCollection) tm35FinGeometry);
+                break;
         }
-        throw new IllegalArgumentException("Unknown geometry type: " + tm35FinGeometry.getGeometryType());
+        if (reprojectedGeometry == null) {
+            throw new IllegalArgumentException("Unknown geometry type: " + tm35FinGeometry.getGeometryType());
+        }
+        reprojectedGeometry.setSRID(WGS84_SRID);
+        return reprojectedGeometry;
     }
 
     private Geometry transformJtsGeometryCollection(GeometryCollection tm35FinGeometry) {
