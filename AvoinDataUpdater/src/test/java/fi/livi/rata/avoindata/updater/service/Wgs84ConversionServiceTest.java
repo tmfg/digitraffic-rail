@@ -5,6 +5,7 @@ import fi.livi.rata.avoindata.updater.BaseTest;
 import org.junit.Test;
 import org.osgeo.proj4j.ProjCoordinate;
 import org.springframework.beans.factory.annotation.Autowired;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -14,21 +15,6 @@ public class Wgs84ConversionServiceTest extends BaseTest {
     private Wgs84ConversionService service;
 
     private final GeometryFactory gf = new GeometryFactory();
-
-    private final double TAMPERE_WGS84_X = 23.774862;
-    private final double TAMPERE_WGS84_Y = 61.486365;
-    private final double TAMPERE_TM35FIN_X = 328288.5;
-    private final double TAMPERE_TM35FIN_Y = 6821211;
-
-    private final double VUOSAARI_WGS84_X = 25.167955;
-    private final double VUOSAARI_WGS84_Y = 60.227507;
-    private final double VUOSAARI_TM35FIN_X = 398524;
-    private final double VUOSAARI_TM35FIN_Y = 6678157;
-
-    private final double NAANTALI_WGS84_X = 22.040037;
-    private final double NAANTALI_WGS84_Y = 60.469929;
-    private final double NAANTALI_TM35FIN_X = 227453;
-    private final double NAANTALI_TM35FIN_Y = 6714022;
 
     private final double ALLOWED_DELTA = 0.1;
 

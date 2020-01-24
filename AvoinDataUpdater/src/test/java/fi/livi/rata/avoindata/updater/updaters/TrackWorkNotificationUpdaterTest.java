@@ -1,8 +1,12 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.vividsolutions.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
@@ -19,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +46,8 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     private LastUpdateService lastUpdateService;
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
+
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Before
     public void setUp() {
@@ -104,4 +111,31 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
     }
 
+    @Test
+    public void coordinateReprojection() {
+        TrackWorkNotification twn = factory.create(1).get(0);
+        TrackWorkPart twp = factory.createTrackWorkPart();
+        RumaLocation loc = factory.createRumaLocation();
+        IdentifierRange ir = factory.createIdentifierRange();
+        twn.trackWorkParts = Set.of(twp);
+        twp.locations = Set.of(loc);
+        twp.trackWorkNotification = twn;
+        loc.identifierRanges = Set.of(ir);
+        loc.trackWorkPart = twp;
+        ir.location = loc;
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.getVersion())});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
+
+        updater.update();
+        TrackWorkNotification savedTwn = repository.getOne(twn.id);
+        RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
+        IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
+
+        assertEquals(twn.locationMap, savedTwn.locationMap);
+        assertEquals(twn.locationSchema, savedTwn.locationSchema);
+        assertEquals(loc.locationMap, savedLoc.locationMap);
+        assertEquals(loc.locationSchema, savedLoc.locationSchema);
+        assertEquals(ir.locationMap, savedIr.locationMap);
+        assertEquals(ir.locationSchema, savedIr.locationSchema);
+    }
 }

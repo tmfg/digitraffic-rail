@@ -56,7 +56,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     @Test
     public void dto_rumaLocation_map() {
         TrackWorkNotification twn = factory.create(1).get(0);
-        RumaLocation rl = createRumaLocation();
+        RumaLocation rl = factory.createRumaLocation();
 
         SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, false);
         fi.livi.rata.avoindata.common.domain.spatial.LineString rlDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.LineString) rlDto.location;
@@ -70,7 +70,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     @Test
     public void dto_rumaLocation_schema() {
         TrackWorkNotification twn = factory.create(1).get(0);
-        RumaLocation rl = createRumaLocation();
+        RumaLocation rl = factory.createRumaLocation();
 
         SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, true);
         fi.livi.rata.avoindata.common.domain.spatial.LineString rlDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.LineString) rlDto.location;
@@ -84,7 +84,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     @Test
     public void dto_identifierRange_map() {
         TrackWorkNotification twn = factory.create(1).get(0);
-        IdentifierRange ir = createIdentifierRange();
+        IdentifierRange ir = factory.createIdentifierRange();
 
         SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, false);
         Point irLocation = (Point) ir.locationMap;
@@ -97,7 +97,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     @Test
     public void dto_identifierRange_schema() {
         TrackWorkNotification twn = factory.create(1).get(0);
-        IdentifierRange ir = createIdentifierRange();
+        IdentifierRange ir = factory.createIdentifierRange();
 
         SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, true);
         Point irLocation = (Point) ir.locationSchema;
@@ -118,7 +118,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     public void geoJson_featureAmount_rumaLocation() {
         TrackWorkNotification twn = factory.create(1).get(0);
         TrackWorkPart twp = new TrackWorkPart();
-        twp.locations = Set.of(createRumaLocation());
+        twp.locations = Set.of(factory.createRumaLocation());
         twn.trackWorkParts = Set.of(twp);
 
         assertEquals(2, toFeatures(twn, false).count());
@@ -128,8 +128,8 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     public void geoJson_featureAmount_identifierRange() {
         TrackWorkNotification twn = factory.create(1).get(0);
         TrackWorkPart twp = new TrackWorkPart();
-        RumaLocation loc = createRumaLocation();
-        IdentifierRange ir = createIdentifierRange();
+        RumaLocation loc = factory.createRumaLocation();
+        IdentifierRange ir = factory.createIdentifierRange();
         loc.identifierRanges = Set.of(ir);
         twp.locations = Set.of(loc);
         twn.trackWorkParts = Set.of(twp);
@@ -155,23 +155,4 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         assertEquals(twn.locationSchema.getCoordinate(), f.geometry.getCoordinate());
     }
 
-    private RumaLocation createRumaLocation() {
-        RumaLocation loc = new RumaLocation();
-        loc.locationType = LocationType.WORK;
-        loc.operatingPointId = UUID.randomUUID().toString();
-        loc.identifierRanges = Collections.emptySet();
-        loc.locationMap = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
-        loc.locationSchema = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
-        return loc;
-    }
-
-    private IdentifierRange createIdentifierRange() {
-        IdentifierRange ir = new IdentifierRange();
-        ir.elementRanges = Collections.emptySet();
-        ir.speedLimit = null;
-        ir.elementId = UUID.randomUUID().toString();
-        ir.locationMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
-        ir.locationSchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
-        return ir;
-    }
 }
