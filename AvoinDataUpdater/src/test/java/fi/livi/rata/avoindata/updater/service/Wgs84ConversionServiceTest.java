@@ -1,8 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.*;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import org.junit.Test;
 import org.osgeo.proj4j.ProjCoordinate;
@@ -19,31 +17,94 @@ public class Wgs84ConversionServiceTest extends BaseTest {
 
     private final double TAMPERE_WGS84_X = 23.774862;
     private final double TAMPERE_WGS84_Y = 61.486365;
-
     private final double TAMPERE_TM35FIN_X = 328288.5;
     private final double TAMPERE_TM35FIN_Y = 6821211;
-    
+
+    private final double VUOSAARI_WGS84_X = 25.167955;
+    private final double VUOSAARI_WGS84_Y = 60.227507;
+    private final double VUOSAARI_TM35FIN_X = 398524;
+    private final double VUOSAARI_TM35FIN_Y = 6678157;
+
+    private final double NAANTALI_WGS84_X = 22.040037;
+    private final double NAANTALI_WGS84_Y = 60.469929;
+    private final double NAANTALI_TM35FIN_X = 227453;
+    private final double NAANTALI_TM35FIN_Y = 6714022;
+
     private final double ALLOWED_DELTA = 0.1;
 
     @Test
     public void wgs84ToLivi() {
-        ProjCoordinate c = service.wgs84Tolivi(TAMPERE_WGS84_X, TAMPERE_WGS84_Y);
+        final ProjCoordinate c = service.wgs84Tolivi(TAMPERE_WGS84_X, TAMPERE_WGS84_Y);
         assertEquals(TAMPERE_TM35FIN_X, c.x, ALLOWED_DELTA);
         assertEquals(TAMPERE_TM35FIN_Y, c.y, ALLOWED_DELTA);
     }
 
     @Test
     public void liviToWgs84() {
-        ProjCoordinate c = service.liviToWgs84(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y);
+        final ProjCoordinate c = service.liviToWgs84(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y);
         assertEquals(TAMPERE_WGS84_X, c.x, ALLOWED_DELTA);
         assertEquals(TAMPERE_WGS84_Y, c.y, ALLOWED_DELTA);
     }
 
     @Test
-    public void liviToWgs84_geometry() {
-        Point p = (Point) service.liviToWgs84Jts(gf.createPoint(new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y)));
+    public void liviToWgs84_point() {
+        final Point p = (Point) service.liviToWgs84Jts(gf.createPoint(new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y)));
         assertEquals(TAMPERE_WGS84_X, p.getX(), ALLOWED_DELTA);
         assertEquals(TAMPERE_WGS84_Y, p.getY(), ALLOWED_DELTA);
+    }
+
+    @Test
+    public void liviToWgs84_lineString() {
+        final LineString ls = (LineString) service.liviToWgs84Jts(createLineString());
+        checkLineString(ls);
+    }
+
+    @Test
+    public void liviToWgs84_multiLineString() {
+        final MultiLineString mls = (MultiLineString) service.liviToWgs84Jts(gf.createMultiLineString(new LineString[]{createLineString()}));
+        checkLineString((LineString) mls.getGeometryN(0));
+    }
+
+    @Test
+    public void liviToWgs84_polygon() {
+        final Polygon p = (Polygon) service.liviToWgs84Jts(gf.createPolygon(gf.createLinearRing(new Coordinate[]{
+                new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y),
+                new Coordinate(VUOSAARI_TM35FIN_X, VUOSAARI_TM35FIN_Y),
+                new Coordinate(NAANTALI_TM35FIN_X, NAANTALI_TM35FIN_Y),
+                new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y)
+        })));
+        final LineString ls = p.getExteriorRing();
+        assertEquals(TAMPERE_WGS84_X, ls.getCoordinates()[0].x, ALLOWED_DELTA);
+        assertEquals(TAMPERE_WGS84_Y, ls.getCoordinates()[0].y, ALLOWED_DELTA);
+        assertEquals(VUOSAARI_WGS84_X, ls.getCoordinates()[1].x, ALLOWED_DELTA);
+        assertEquals(VUOSAARI_WGS84_Y, ls.getCoordinates()[1].y, ALLOWED_DELTA);
+        assertEquals(NAANTALI_WGS84_X, ls.getCoordinates()[2].x, ALLOWED_DELTA);
+        assertEquals(NAANTALI_WGS84_Y, ls.getCoordinates()[2].y, ALLOWED_DELTA);
+        assertEquals(TAMPERE_WGS84_X, ls.getCoordinates()[3].x, ALLOWED_DELTA);
+        assertEquals(TAMPERE_WGS84_Y, ls.getCoordinates()[3].y, ALLOWED_DELTA);
+    }
+
+    @Test
+    public void liviToWgs84_geometryCollection() {
+        final Point p = gf.createPoint(new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y));
+        final Geometry gc = service.liviToWgs84Jts(gf.createGeometryCollection(new Geometry[]{p}));
+        Point reprojectedPoint = (Point) gc.getGeometryN(0);
+        assertEquals(TAMPERE_WGS84_X, reprojectedPoint.getX(), ALLOWED_DELTA);
+        assertEquals(TAMPERE_WGS84_Y, reprojectedPoint.getY(), ALLOWED_DELTA);
+    }
+
+    private void checkLineString(LineString ls) {
+        assertEquals(TAMPERE_WGS84_X, ls.getCoordinates()[0].x, ALLOWED_DELTA);
+        assertEquals(TAMPERE_WGS84_Y, ls.getCoordinates()[0].y, ALLOWED_DELTA);
+        assertEquals(VUOSAARI_WGS84_X, ls.getCoordinates()[1].x, ALLOWED_DELTA);
+        assertEquals(VUOSAARI_WGS84_Y, ls.getCoordinates()[1].y, ALLOWED_DELTA);
+    }
+
+    private LineString createLineString() {
+        return gf.createLineString(new Coordinate[]{
+                new Coordinate(TAMPERE_TM35FIN_X, TAMPERE_TM35FIN_Y),
+                new Coordinate(VUOSAARI_TM35FIN_X, VUOSAARI_TM35FIN_Y)
+        });
     }
 
 }
