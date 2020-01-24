@@ -29,7 +29,11 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     List<TrackWorkNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);
 
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.state IN (:states) AND (t.id.id, t.id.version) IN " +
-             "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 GROUP BY t2.id.id) " +
-           "ORDER BY t.id.id ASC, t.id.version ASC")
-    List<TrackWorkNotification> findByState(@Param("states") Set<TrackWorkNotificationState> states, Pageable pageable);
+             "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
+           "ORDER BY t.modified ASC, t.id.id ASC")
+    List<TrackWorkNotification> findByState(
+            @Param("states") Set<TrackWorkNotificationState> states,
+            @Param("start") ZonedDateTime start,
+            @Param("end") ZonedDateTime end,
+            Pageable pageable);
 }
