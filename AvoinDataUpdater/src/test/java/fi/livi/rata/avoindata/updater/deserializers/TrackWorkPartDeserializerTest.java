@@ -26,7 +26,7 @@ public class TrackWorkPartDeserializerTest extends BaseTest {
         assertEquals(Duration.parse("PT30M"), twp.permissionMinimumDuration);
         assertEquals(LocalTime.parse("09:25"), twp.plannedWorkingGap);
         assertEquals(true, twp.containsFireWork);
-        assertEquals(Collections.singletonList("x.x.xxx.LIVI.ETJ2.81.104372"), twp.advanceNotifications);
+        assertEquals(Collections.singletonList("1.2.246.586.2.81.104372"), twp.advanceNotifications);
     }
 
 }

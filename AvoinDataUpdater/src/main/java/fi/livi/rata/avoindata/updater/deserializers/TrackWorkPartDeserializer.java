@@ -27,7 +27,7 @@ public class TrackWorkPartDeserializer extends AEntityDeserializer<TrackWorkPart
         trackWorkpart.containsFireWork = getNullableBoolean(trackWorkPartNode, "sisaltaaTulityota");
         final List<String> advanceNotifications = new ArrayList<>();
         for (final JsonNode advanceNotificationNode : trackWorkPartNode.get("ennakkoilmoitukset")) {
-            advanceNotifications.add(advanceNotificationNode.textValue());
+            advanceNotifications.add(normalizeJetiOid(advanceNotificationNode.textValue()));
         }
         trackWorkpart.advanceNotifications = advanceNotifications;
         trackWorkpart.locations = deserializeRumaLocations(trackWorkPartNode.get("kohteet"), jsonParser);

@@ -20,11 +20,11 @@ public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierR
         final JsonNode identifierRangeNode = jsonParser.getCodec().readTree(jsonParser);
         final IdentifierRange identifierRange = new IdentifierRange();
         JsonNode elementNode = identifierRangeNode.get("elementtiId");
-        identifierRange.elementId = elementNode.isNull() ? null : elementNode.asText();
+        identifierRange.elementId = elementNode.isNull() ? null : normalizeTrakediaInfraOid(elementNode.asText());
         JsonNode elementPairNode1 = identifierRangeNode.get("elementtipariId1");
-        identifierRange.elementPairId1 = elementPairNode1.isNull() ? null : elementPairNode1.asText();
+        identifierRange.elementPairId1 = elementPairNode1.isNull() ? null : normalizeTrakediaInfraOid(elementPairNode1.asText());
         JsonNode elementPairNode2 = identifierRangeNode.get("elementtipariId2");
-        identifierRange.elementPairId2 = elementPairNode2.isNull() ? null : elementPairNode2.asText();
+        identifierRange.elementPairId2 = elementPairNode2.isNull() ? null : normalizeTrakediaInfraOid(elementPairNode2.asText());
         identifierRange.locationMap = deserializeGeometry(identifierRangeNode.get("sijainti"), jsonParser);
         identifierRange.locationSchema = deserializeGeometry(identifierRangeNode.get("kaaviosijainti"), jsonParser);
         identifierRange.speedLimit = deserializeSpeedLimit(identifierRangeNode.get("nopeusrajoitus"));
