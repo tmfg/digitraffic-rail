@@ -3,17 +3,17 @@ package fi.livi.rata.avoindata.common.domain.spatial;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class MultiLineString implements Geometry<List<List<List<Double>>>> {
+public final class MultiLineStringDto implements GeometryDto<List<List<List<Double>>>> {
 
-    private final List<LineString> lines;
+    private final List<LineStringDto> lines;
 
-    public MultiLineString(final List<LineString> lines) {
+    public MultiLineStringDto(final List<LineStringDto> lines) {
         this.lines = lines;
     }
 
     @Override
     public List<List<List<Double>>> getCoordinates() {
-        return lines.stream().map(LineString::getCoordinates).collect(Collectors.toList());
+        return lines.stream().map(LineStringDto::getCoordinates).collect(Collectors.toList());
     }
 
     @Override

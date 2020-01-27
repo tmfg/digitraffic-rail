@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.spatial.Geometry;
+import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import io.swagger.annotations.ApiModelProperty;
@@ -11,7 +11,7 @@ import java.util.List;
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
     @ApiModelProperty("Approximate location")
-    public final Geometry<?> location;
+    public final GeometryDto<?> location;
 
     @ApiModelProperty("Work parts")
     public final List<TrackWorkPartDto> workParts;
@@ -27,7 +27,7 @@ public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
             final Boolean speedLimitRemovalPlan,
             final Boolean electricitySafetyPlan,
             final Boolean personInChargePlan,
-            final Geometry<?> location,
+            final GeometryDto<?> location,
             final List<TrackWorkPartDto> workParts)
     {
         super(id, state, organization, created, modified, trafficSafetyPlan, speedLimitPlan, speedLimitRemovalPlan, electricitySafetyPlan, personInChargePlan);

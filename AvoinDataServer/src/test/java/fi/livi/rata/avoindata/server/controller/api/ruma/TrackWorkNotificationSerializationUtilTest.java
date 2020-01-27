@@ -1,8 +1,9 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import fi.livi.rata.avoindata.common.domain.spatial.LineStringDto;
+import fi.livi.rata.avoindata.common.domain.spatial.PointDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.server.BaseTest;
 import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
@@ -10,10 +11,8 @@ import fi.livi.rata.avoindata.server.factory.TrackWorkNotificationFactory;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static fi.livi.rata.avoindata.server.controller.api.ruma.TrackWorkNotificationSerializationUtil.*;
@@ -35,7 +34,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
 
         SpatialTrackWorkNotificationDto twnDto = toTwnDto(twn, false);
         Point twnLocation = (Point) twn.locationMap;
-        fi.livi.rata.avoindata.common.domain.spatial.Point twnDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.Point) twnDto.location;
+        PointDto twnDtoLocation = (PointDto) twnDto.location;
 
         assertEquals(twnLocation.getX(), twnDtoLocation.longitude, ALLOWED_DELTA);
         assertEquals(twnLocation.getY(), twnDtoLocation.latitude, ALLOWED_DELTA);
@@ -47,7 +46,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
 
         SpatialTrackWorkNotificationDto twnDto = toTwnDto(twn, true);
         Point twnLocation = (Point) twn.locationSchema;
-        fi.livi.rata.avoindata.common.domain.spatial.Point twnDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.Point) twnDto.location;
+        PointDto twnDtoLocation = (PointDto) twnDto.location;
 
         assertEquals(twnLocation.getX(), twnDtoLocation.longitude, ALLOWED_DELTA);
         assertEquals(twnLocation.getY(), twnDtoLocation.latitude, ALLOWED_DELTA);
@@ -59,7 +58,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         RumaLocation rl = factory.createRumaLocation();
 
         SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, false);
-        fi.livi.rata.avoindata.common.domain.spatial.LineString rlDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.LineString) rlDto.location;
+        LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationMap.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);
         assertEquals(rl.locationMap.getCoordinates()[0].y, rlDtoLocation.getCoordinates().get(0).get(1), ALLOWED_DELTA);
@@ -73,7 +72,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         RumaLocation rl = factory.createRumaLocation();
 
         SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, true);
-        fi.livi.rata.avoindata.common.domain.spatial.LineString rlDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.LineString) rlDto.location;
+        LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationSchema.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);
         assertEquals(rl.locationSchema.getCoordinates()[0].y, rlDtoLocation.getCoordinates().get(0).get(1), ALLOWED_DELTA);
@@ -88,7 +87,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
 
         SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, false);
         Point irLocation = (Point) ir.locationMap;
-        fi.livi.rata.avoindata.common.domain.spatial.Point irDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.Point) irDto.location;
+        PointDto irDtoLocation = (PointDto) irDto.location;
 
         assertEquals(irLocation.getX(), irDtoLocation.longitude, ALLOWED_DELTA);
         assertEquals(irLocation.getY(), irDtoLocation.latitude, ALLOWED_DELTA);
@@ -101,7 +100,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
 
         SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, true);
         Point irLocation = (Point) ir.locationSchema;
-        fi.livi.rata.avoindata.common.domain.spatial.Point irDtoLocation = (fi.livi.rata.avoindata.common.domain.spatial.Point) irDto.location;
+        PointDto irDtoLocation = (PointDto) irDto.location;
 
         assertEquals(irLocation.getX(), irDtoLocation.longitude, ALLOWED_DELTA);
         assertEquals(irLocation.getY(), irDtoLocation.latitude, ALLOWED_DELTA);

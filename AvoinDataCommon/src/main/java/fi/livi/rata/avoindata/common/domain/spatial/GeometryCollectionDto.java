@@ -5,18 +5,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class GeometryCollection implements Geometry<List<?>> {
+public final class GeometryCollectionDto implements GeometryDto<List<?>> {
 
     @JsonIgnore
-    public final List<Geometry<?>> geometries;
+    public final List<GeometryDto<?>> geometries;
 
-    public GeometryCollection(List<Geometry<?>> geometries) {
+    public GeometryCollectionDto(List<GeometryDto<?>> geometries) {
         this.geometries = geometries;
     }
 
     @Override
     public List<?> getCoordinates() {
-        return geometries.stream().map(Geometry::getCoordinates).collect(Collectors.toList());
+        return geometries.stream().map(GeometryDto::getCoordinates).collect(Collectors.toList());
     }
 
     @Override
