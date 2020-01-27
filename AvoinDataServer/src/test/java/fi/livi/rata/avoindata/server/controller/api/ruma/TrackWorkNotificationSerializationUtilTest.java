@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.spatial.LineStringDto;
 import fi.livi.rata.avoindata.common.domain.spatial.PointDto;
@@ -11,7 +10,6 @@ import fi.livi.rata.avoindata.server.factory.TrackWorkNotificationFactory;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,9 +20,6 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
 
     @Autowired
     private TrackWorkNotificationFactory factory;
-
-    private static final Random random = new Random(System.nanoTime());
-    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     private final double ALLOWED_DELTA = 0.0;
 

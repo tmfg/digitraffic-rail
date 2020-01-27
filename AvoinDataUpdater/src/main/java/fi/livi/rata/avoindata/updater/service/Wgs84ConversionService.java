@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service;
 
 import com.vividsolutions.jts.geom.*;
+import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import org.osgeo.proj4j.*;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,6 @@ public class Wgs84ConversionService {
     private CoordinateTransform transformer;
     private CoordinateTransform reverseTransformer;
     private GeometryFactory geometryFactory;
-    private final int WGS84_SRID = 4326;
 
     @PostConstruct
     private void setup() {
@@ -65,7 +65,7 @@ public class Wgs84ConversionService {
         if (reprojectedGeometry == null) {
             throw new IllegalArgumentException("Unknown geometry type: " + tm35FinGeometry.getGeometryType());
         }
-        reprojectedGeometry.setSRID(WGS84_SRID);
+        reprojectedGeometry.setSRID(SpatialConstants.WGS84_SRID);
         return reprojectedGeometry;
     }
 

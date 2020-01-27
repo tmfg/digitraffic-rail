@@ -2,7 +2,10 @@ package fi.livi.rata.avoindata.server.factory;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -37,6 +40,10 @@ public class TrackWorkNotificationFactory {
     }
 
     public List<TrackWorkNotification> create(int versions) {
+        Point geometryMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        Point geometrySchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        geometryMap.setSRID(SpatialConstants.WGS84_SRID);
+        geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
         final long id = random.nextInt(99999);
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrackWorkNotification(
@@ -50,38 +57,36 @@ public class TrackWorkNotificationFactory {
                         random.nextBoolean(),
                         random.nextBoolean(),
                         random.nextBoolean(),
-                        geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong())),
-                        geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong())))
+                        geometryMap,
+                        geometrySchema)
         ).collect(Collectors.toList());
     }
 
-    public TrackWorkPart createTrackWorkPart() {
-        final TrackWorkPart twp = new TrackWorkPart();
-        twp.startDay = LocalDate.now();
-        twp.partIndex = (long) random.nextInt(50);
-        twp.permissionMinimumDuration = Duration.ofMinutes(random.nextLong());
-        twp.plannedWorkingGap = LocalTime.now();
-        twp.containsFireWork = false;
-        return twp;
-    }
-
     public RumaLocation createRumaLocation() {
+        LineString geometryMap = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
+        LineString geometrySchema = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
+        geometryMap.setSRID(SpatialConstants.WGS84_SRID);
+        geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
         final RumaLocation loc = new RumaLocation();
         loc.locationType = LocationType.WORK;
         loc.operatingPointId = UUID.randomUUID().toString();
         loc.identifierRanges = Collections.emptySet();
-        loc.locationMap = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
-        loc.locationSchema = geometryFactory.createLineString(new Coordinate[]{new Coordinate(random.nextLong(), random.nextLong()), new Coordinate(random.nextLong(), random.nextLong())});
+        loc.locationMap = geometryMap;
+        loc.locationSchema = geometrySchema;
         return loc;
     }
 
     public IdentifierRange createIdentifierRange() {
+        Point geometryMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        Point geometrySchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        geometryMap.setSRID(SpatialConstants.WGS84_SRID);
+        geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
         final IdentifierRange ir = new IdentifierRange();
         ir.elementRanges = Collections.emptySet();
         ir.speedLimit = null;
         ir.elementId = UUID.randomUUID().toString();
-        ir.locationMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
-        ir.locationSchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        ir.locationMap = geometryMap;
+        ir.locationSchema = geometrySchema;
         return ir;
     }
 

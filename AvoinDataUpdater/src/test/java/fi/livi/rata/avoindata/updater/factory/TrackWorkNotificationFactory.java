@@ -2,7 +2,9 @@ package fi.livi.rata.avoindata.updater.factory;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,6 +40,10 @@ public class TrackWorkNotificationFactory {
     }
 
     public List<TrackWorkNotification> create(int versions) {
+        Point geometryMap = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN);
+        Point geometrySchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
+        geometryMap.setSRID(SpatialConstants.WGS84_SRID);
+        geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
         final long id = random.nextInt(99999);
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrackWorkNotification(
@@ -51,8 +57,8 @@ public class TrackWorkNotificationFactory {
                         random.nextBoolean(),
                         random.nextBoolean(),
                         random.nextBoolean(),
-                        geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN),
-                        geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED))
+                        geometryMap,
+                        geometrySchema)
         ).collect(Collectors.toList());
     }
 
@@ -73,6 +79,8 @@ public class TrackWorkNotificationFactory {
         loc.identifierRanges = Collections.emptySet();
         loc.locationMap = geometryFactory.createLineString(new Coordinate[]{TAMPERE_COORDINATE_TM35FIN, VUOSAARI_COORDINATE_TM35FIN});
         loc.locationSchema = geometryFactory.createLineString(new Coordinate[]{TAMPERE_COORDINATE_TM35FIN_DEVIATED, VUOSAARI_COORDINATE_TM35FIN_DEVIATED});
+        loc.locationMap.setSRID(SpatialConstants.WGS84_SRID);
+        loc.locationSchema.setSRID(SpatialConstants.WGS84_SRID);
         return loc;
     }
 
@@ -83,6 +91,8 @@ public class TrackWorkNotificationFactory {
         ir.elementId = UUID.randomUUID().toString();
         ir.locationMap = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN);
         ir.locationSchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
+        ir.locationMap.setSRID(SpatialConstants.WGS84_SRID);
+        ir.locationSchema.setSRID(SpatialConstants.WGS84_SRID);
         return ir;
     }
 
