@@ -24,10 +24,10 @@ public class ElementRangeDeserializerTest extends BaseTest {
 
         assertEquals(1, locir.elementRanges.size());
         ElementRange loc2er = locir.elementRanges.iterator().next();
-        assertEquals("x.x.xxx.LIVI.INFRA.14.206587", loc2er.elementId1);
-        assertEquals("x.x.xxx.LIVI.INFRA.13.2785888", loc2er.elementId2);
-        assertEquals(Collections.singletonList("x.x.xxx.LIVI.INFRA.44.196874"), loc2er.trackIds);
-        assertEquals(Collections.singletonList("x.x.xxx.LIVI.INFRA.11.1062258"), loc2er.specifiers);
+        assertEquals("1.2.246.586.1.14.206587", loc2er.elementId1);
+        assertEquals("1.2.246.586.1.13.2785888", loc2er.elementId2);
+        assertEquals(Collections.singletonList("1.2.246.586.1.44.196874"), loc2er.trackIds);
+        assertEquals(Collections.singletonList("1.2.246.586.1.11.1062258"), loc2er.specifiers);
     }
 
 }

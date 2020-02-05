@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vividsolutions.jts.geom.Geometry;
 
 import javax.persistence.*;
@@ -11,7 +10,6 @@ import java.util.Set;
 public class RumaLocation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     public Long id;
 
     public LocationType locationType;
@@ -22,7 +20,6 @@ public class RumaLocation {
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
-    @JsonIgnore
     public TrackWorkPart trackWorkPart;
 
     @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })

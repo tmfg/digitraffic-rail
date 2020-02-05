@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import fi.livi.rata.avoindata.common.converter.StringListConverter;
 
 import javax.persistence.*;
@@ -15,7 +14,6 @@ import java.util.Set;
 public class TrackWorkPart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     public Long id;
 
     public Long partIndex;
@@ -32,7 +30,6 @@ public class TrackWorkPart {
             @JoinColumn(name = "track_work_notification_version", referencedColumnName = "version", nullable = false)
     })
     @ManyToOne(optional = false)
-    @JsonIgnore
     public TrackWorkNotification trackWorkNotification;
 
     @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })

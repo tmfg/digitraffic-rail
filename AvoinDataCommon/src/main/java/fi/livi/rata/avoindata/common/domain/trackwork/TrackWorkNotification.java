@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
 import com.vividsolutions.jts.geom.Geometry;
-import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -15,37 +14,16 @@ public class TrackWorkNotification {
     @EmbeddedId
     public TrackWorkNotificationId id;
 
-    @ApiModelProperty("State")
     public TrackWorkNotificationState state;
-
-    @ApiModelProperty("Which organization created this notification")
     public String organization;
-
-    @ApiModelProperty("When this notification was created")
     public ZonedDateTime created;
-
-    @ApiModelProperty("When this notification last modified")
     public ZonedDateTime modified;
-
-    @ApiModelProperty("Does the notification contain a traffic safety plan")
     public Boolean trafficSafetyPlan;
-
-    @ApiModelProperty("Does the notification contain a speed limit removal plan")
     public Boolean speedLimitRemovalPlan;
-
-    @ApiModelProperty("Does the notification contain a electricity safety plan")
     public Boolean electricitySafetyPlan;
-
-    @ApiModelProperty("Does the notification contain a speed limit plan")
     public Boolean speedLimitPlan;
-
-    @ApiModelProperty("Does the notification contain a plan for persons in charge")
     public Boolean personInChargePlan;
-
-    @ApiModelProperty("Approximate location on map")
     public Geometry locationMap;
-
-    @ApiModelProperty("Approximate location in schema")
     public Geometry locationSchema;
 
     public TrackWorkNotification(
@@ -84,12 +62,10 @@ public class TrackWorkNotification {
     @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 
-    @ApiModelProperty("Id")
     public Long getId() {
         return id.id;
     }
 
-    @ApiModelProperty("Version")
     public Long getVersion() {
         return id.version;
     }

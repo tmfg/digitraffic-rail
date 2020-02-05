@@ -21,9 +21,9 @@ public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> 
         RumaLocation rumaLocation = new RumaLocation();
         rumaLocation.locationType = LocationType.fromKohdeType(locationNode.get("type").asText());
         JsonNode operatingPointNode = locationNode.get("liikennepaikkaId");
-        rumaLocation.operatingPointId = operatingPointNode.isNull() ? null : operatingPointNode.asText();
+        rumaLocation.operatingPointId = operatingPointNode.isNull() ? null :normalizeTrakediaInfraOid(operatingPointNode.asText());
         JsonNode sectionBetweenOperatingPointsNode = locationNode.get("liikennepaikkavaliId");
-        rumaLocation.sectionBetweenOperatingPointsId = sectionBetweenOperatingPointsNode.isNull() ? null : sectionBetweenOperatingPointsNode.asText();
+        rumaLocation.sectionBetweenOperatingPointsId = sectionBetweenOperatingPointsNode.isNull() ? null : normalizeTrakediaInfraOid(sectionBetweenOperatingPointsNode.asText());
         rumaLocation.locationMap = deserializeGeometry(locationNode.get("sijainti"), jsonParser);
         rumaLocation.locationSchema = deserializeGeometry(locationNode.get("kaaviosijainti"), jsonParser);
         rumaLocation.identifierRanges = deserializeIdentifierRanges(locationNode.get("tunnusvalit"), jsonParser);
@@ -31,10 +31,6 @@ public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> 
             ir.location = rumaLocation;
         }
         return rumaLocation;
-    }
-
-    private Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
-        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
     }
 
     private Set<IdentifierRange> deserializeIdentifierRanges(JsonNode irNode, JsonParser jsonParser) throws IOException {

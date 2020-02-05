@@ -31,9 +31,9 @@ public class LocalTrackWorkNotificationServiceTest extends BaseTest {
 
     @Test
     public void getLocalTrackWorkNotifications() {
-        int twnCount = random.nextInt(10);
+        int twnCount = 1 + random.nextInt(10);
         IntStream.rangeClosed(0, twnCount).forEach(i -> {
-            int maxVersion = random.nextInt(50);
+            int maxVersion = 1 + random.nextInt(49);
             List<TrackWorkNotification> twns = factory.createPersist(maxVersion);
 
             List<LocalTrackWorkNotificationStatus> localTwns = service.getLocalTrackWorkNotifications(Collections.singleton(twns.get(0).id.id));

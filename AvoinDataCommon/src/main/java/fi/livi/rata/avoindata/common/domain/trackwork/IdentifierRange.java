@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vividsolutions.jts.geom.Geometry;
 
 import javax.persistence.*;
@@ -11,7 +10,6 @@ import java.util.Set;
 public class IdentifierRange {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     public Long id;
 
     public String elementId;
@@ -25,7 +23,6 @@ public class IdentifierRange {
 
     @JoinColumn(name = "ruma_location_id", referencedColumnName = "id")
     @ManyToOne(optional = false)
-    @JsonIgnore
     public RumaLocation location;
 
     @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })

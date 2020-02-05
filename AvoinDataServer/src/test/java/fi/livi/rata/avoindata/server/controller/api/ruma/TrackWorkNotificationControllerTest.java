@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrackWorkNotificationFactory;
 import org.junit.After;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -49,7 +51,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
             factory.createPersist(1 + random.nextInt(10));
         });
 
-        ResultActions ra = getJson("/trackwork-notifications");
+        ResultActions ra = getJson("/trackwork-notifications/status");
         ra.andExpect(jsonPath("$", hasSize(amount)));
     }
 
@@ -61,7 +63,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        ResultActions ra = getJson("/trackwork-notifications/status?start=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(after.id.id));
     }
@@ -74,7 +76,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().plusMinutes(1);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trackwork-notifications/?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        ResultActions ra = getJson("/trackwork-notifications/status?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(before.id.id));
     }
@@ -91,7 +93,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = end.plusMinutes(1);
         repository.saveAll(Arrays.asList(before, between, after));
 
-        ResultActions ra = getJson(String.format("/trackwork-notifications/?start=%s&end=%s",
+        ResultActions ra = getJson(String.format("/trackwork-notifications/status?start=%s&end=%s",
                 start.format(DateTimeFormatter.ISO_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -138,9 +140,92 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         ra.andExpect(jsonPath("$", empty()));
     }
 
+    @Test
+    public void byState() throws Exception {
+        TrackWorkNotification twn = factory.create(1).get(0);
+        twn.state = randomState();
+        repository.save(twn);
+
+        ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s", twn.state.name()));
+
+        ra.andExpect(jsonPath("$[0]id").value(twn.id.id));
+    }
+
+    @Test
+    public void byState_after() throws Exception {
+        TrackWorkNotification before = factory.create(1).get(0);
+        before.state = TrackWorkNotificationState.DRAFT;
+        before.modified = ZonedDateTime.now().minusMinutes(1);
+        TrackWorkNotification after = factory.create(1).get(0);
+        after.state = TrackWorkNotificationState.DRAFT;
+        after.modified = ZonedDateTime.now().plusMinutes(1);
+        repository.saveAll(Arrays.asList(before, after));
+
+        ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s&start=%s",
+                TrackWorkNotificationState.DRAFT.name(),
+                ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)));
+        ra.andExpect(jsonPath("$", hasSize(1)));
+        ra.andExpect(jsonPath("$[0].id").value(after.id.id));
+    }
+
+    @Test
+    public void byState_before() throws Exception {
+        TrackWorkNotification before = factory.create(1).get(0);
+        before.state = TrackWorkNotificationState.DRAFT;
+        before.modified = ZonedDateTime.now().minusMinutes(1);
+        TrackWorkNotification after = factory.create(1).get(0);
+        after.state = TrackWorkNotificationState.DRAFT;
+        after.modified = ZonedDateTime.now().plusMinutes(1);
+        repository.saveAll(Arrays.asList(before, after));
+
+        ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s&end=%s",
+                TrackWorkNotificationState.DRAFT.name(),
+                ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)));
+        ra.andExpect(jsonPath("$", hasSize(1)));
+        ra.andExpect(jsonPath("$[0].id").value(before.id.id));
+    }
+
+    @Test
+    public void byState_between() throws Exception {
+        ZonedDateTime start = ZonedDateTime.now().minusHours(1);
+        ZonedDateTime end = ZonedDateTime.now().plusHours(1);
+        TrackWorkNotification before = factory.create(1).get(0);
+        before.state = TrackWorkNotificationState.DRAFT;
+        before.modified = start.minusMinutes(1);
+        TrackWorkNotification between = factory.create(1).get(0);
+        between.state = TrackWorkNotificationState.DRAFT;
+        between.modified = ZonedDateTime.now();
+        TrackWorkNotification after = factory.create(1).get(0);
+        after.state = TrackWorkNotificationState.DRAFT;
+        after.modified = end.plusMinutes(1);
+        repository.saveAll(Arrays.asList(before, between, after));
+
+        ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s&start=%s&end=%s",
+                TrackWorkNotificationState.DRAFT,
+                start.format(DateTimeFormatter.ISO_DATE_TIME),
+                end.format(DateTimeFormatter.ISO_DATE_TIME)));
+        ra.andExpect(jsonPath("$", hasSize(1)));
+        ra.andExpect(jsonPath("$[0].id").value(between.id.id));
+    }
+
+    @Test
+    public void geoJson() throws Exception {
+        TrackWorkNotification twn = factory.create(1).get(0);
+        repository.save(twn);
+
+        ResultActions ra = getGeoJson(String.format("/trackwork-notifications.geojson?state=%s", twn.state.name()));
+
+        ra.andExpect(jsonPath("$.features", hasSize(1)));
+    }
+
     @Transactional
     void clearTwns() {
         repository.deleteAllInBatch();
     }
 
+    private TrackWorkNotificationState randomState() {
+        List<TrackWorkNotificationState> states = Arrays.asList(TrackWorkNotificationState.values());
+        Collections.shuffle(states);
+        return states.get(0);
+    }
 }
