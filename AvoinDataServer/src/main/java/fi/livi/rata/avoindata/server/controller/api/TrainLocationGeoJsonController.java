@@ -64,7 +64,7 @@ public class TrainLocationGeoJsonController extends ADataController {
     }
 
     private void validateBBox(List<Double> bbox) {
-        if (bbox != null && bbox.size() != 0 && bbox.size() != 2) {
+        if (bbox != null && bbox.size() != 4) {
             throw new IllegalArgumentException("Invalid bbox");
         }
     }

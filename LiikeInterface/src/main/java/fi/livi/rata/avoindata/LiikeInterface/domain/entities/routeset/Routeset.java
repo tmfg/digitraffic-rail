@@ -1,14 +1,21 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities.routeset;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.BaseEntity;
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.hibernate.annotations.Type;
-
-import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Transient;
+import javax.persistence.Version;
+
+import org.hibernate.annotations.Type;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import fi.livi.rata.avoindata.LiikeInterface.domain.BaseEntity;
 
 @Entity
 public class Routeset extends BaseEntity {
