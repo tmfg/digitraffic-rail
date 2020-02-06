@@ -2,19 +2,12 @@ package fi.livi.rata.avoindata.updater.updaters;
 
 import static java.util.function.Predicate.not;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import com.vividsolutions.jts.geom.Point;
-import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -25,7 +18,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
@@ -119,7 +111,21 @@ public class TrackWorkNotificationUpdater {
         List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
 
+        List<TrackWorkNotification> versionsToBeSaved = new ArrayList<>();
+
         for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+
+            if (twn.state == TrackWorkNotificationState.DRAFT) {
+                continue;
+            }
+
+            if (twn.state == TrackWorkNotificationState.FINISHED) {
+                boolean previousVersionIsDraft = previousVersionIsDraft(twn.id, trackWorkNotificationVersions);
+                if (previousVersionIsDraft) {
+                    continue;
+                }
+            }
+
             twn.locationMap = wgs84ConversionService.liviToWgs84Jts(twn.locationMap);
             twn.locationSchema = wgs84ConversionService.liviToWgs84Jts(twn.locationSchema);
 
@@ -142,9 +148,24 @@ public class TrackWorkNotificationUpdater {
 
             }
 
+            versionsToBeSaved.add(twn);
         }
 
-        localTrackWorkNotificationService.saveAll(trackWorkNotificationVersions);
+        if (!versionsToBeSaved.isEmpty()) {
+            localTrackWorkNotificationService.saveAll(versionsToBeSaved);
+        }
+    }
+
+    private boolean previousVersionIsDraft(TrackWorkNotification.TrackWorkNotificationId id, List<TrackWorkNotification> trackWorkNotificationVersions) {
+        long previousVersion = id.version - 1;
+
+        for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+            if (twn.id.id.equals(id.id) && twn.id.version.equals(previousVersion) && twn.state == TrackWorkNotificationState.DRAFT) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

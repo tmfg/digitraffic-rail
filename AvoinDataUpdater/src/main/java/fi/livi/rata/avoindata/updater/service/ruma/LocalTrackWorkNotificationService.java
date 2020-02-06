@@ -28,6 +28,11 @@ public class LocalTrackWorkNotificationService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<TrackWorkNotification> getById(long id) {
+        return trackWorkNotificationRepository.findByTwnId(id);
+    }
+
     @Transactional
     public void saveAll(List<TrackWorkNotification> trackWorkNotifications) {
         trackWorkNotificationRepository.saveAll(trackWorkNotifications);

@@ -3,10 +3,7 @@ package fi.livi.rata.avoindata.updater.updaters;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
-import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
@@ -16,6 +13,7 @@ import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationSe
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationStatus;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -138,5 +137,50 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         assertEquals(loc.locationSchema, savedLoc.locationSchema);
         assertEquals(ir.locationMap, savedIr.locationMap);
         assertEquals(ir.locationSchema, savedIr.locationSchema);
+    }
+
+    @Test
+    @Transactional
+    public void draftsAreNotPersisted() {
+        TrackWorkNotification twn = factory.create(1).get(0);
+        twn.state = TrackWorkNotificationState.DRAFT;
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.id.version)});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
+
+        updater.update();
+
+        assertTrue(repository.findAll().isEmpty());
+    }
+
+    @Test
+    @Transactional
+    public void finishedWithPreviousDraftIsNotPersisted() {
+        List<TrackWorkNotification> twns = factory.create(2);
+        TrackWorkNotification draft = twns.get(0);
+        TrackWorkNotification finished = twns.get(1);
+        draft.state = TrackWorkNotificationState.DRAFT;
+        finished.state = TrackWorkNotificationState.FINISHED;
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(List.of(draft, finished));
+
+        updater.update();
+
+        assertTrue(repository.findAll().isEmpty());
+    }
+
+    @Test
+    @Transactional
+    public void finishedWithPreviousSentIsPersisted() {
+        List<TrackWorkNotification> twns = factory.create(2);
+        TrackWorkNotification sent = twns.get(0);
+        TrackWorkNotification finished = twns.get(1);
+        sent.state = TrackWorkNotificationState.SENT;
+        finished.state = TrackWorkNotificationState.FINISHED;
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(List.of(sent, finished));
+
+        updater.update();
+
+        assertEquals(2, repository.findAll().size());
     }
 }

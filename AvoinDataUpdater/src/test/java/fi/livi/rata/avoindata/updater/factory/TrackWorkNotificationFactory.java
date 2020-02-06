@@ -48,7 +48,7 @@ public class TrackWorkNotificationFactory {
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrackWorkNotification(
                         new TrackWorkNotification.TrackWorkNotificationId(id, v),
-                        TrackWorkNotificationState.DRAFT,
+                        TrackWorkNotificationState.SENT,
                         UUID.randomUUID().toString(),
                         ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),
                         ZonedDateTime.now().withNano(0),
