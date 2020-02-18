@@ -79,7 +79,12 @@ public class IsUpToDateService {
             Duration alarmLimit = alarmLimits.get(value);
             if (lastUpdated != null && alarmLimit != null) {
                 Duration between = Duration.between(lastUpdated, now);
-                result.put(value, new IsToUpToDateDto(lastUpdated, alarmLimit, between));
+                IsToUpToDateDto upToDate = new IsToUpToDateDto(lastUpdated, alarmLimit, between);
+                result.put(value, upToDate);
+
+                if (!upToDate.isUpToDate) {
+                    log.error("{} was not up to date. Last updated: {}, limit: {}, between: {}", value, lastUpdated, alarmLimit, between);
+                }
             }
         }
 
