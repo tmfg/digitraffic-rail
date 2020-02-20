@@ -6,7 +6,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -14,14 +13,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
 
 @Service
 public class TrackWorkNotificationUpdater {
@@ -47,19 +45,19 @@ public class TrackWorkNotificationUpdater {
         this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
-    @Scheduled(fixedDelay = 300000) // every minute
+    //@Scheduled(fixedDelay = 300000) // every minute
     protected void update() {
         if (StringUtils.isEmpty(liikeInterfaceUrl)) {
             return;
         }
 
-        RemoteTrackWorkNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
+        RemoteRumaNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
             Map<Long, Long> statuses = Arrays.stream(statusesResp)
-                    .collect(Collectors.toMap(RemoteTrackWorkNotificationStatus::getId, RemoteTrackWorkNotificationStatus::getVersion));
+                    .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             log.info("Received {} track work notification statuses", statuses.size());
-            List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
+            List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
@@ -68,8 +66,8 @@ public class TrackWorkNotificationUpdater {
         }
     }
 
-    private void addNewTrackWorkNotifications(Map<Long, Long> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
-        Collection<Long> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalTrackWorkNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
+    private void addNewTrackWorkNotifications(Map<Long, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
+        Collection<Long> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
 
         for (Map.Entry<Long, Long> e : statuses.entrySet()) {
             if (newTrackWorkNotifications.contains(e.getKey())) {
@@ -79,7 +77,7 @@ public class TrackWorkNotificationUpdater {
         log.info("Added {} new track work notifications", newTrackWorkNotifications.size());
     }
 
-    private void updateTrackWorkNotifications(Map<Long, Long> statuses, List<LocalTrackWorkNotificationStatus> localTrackWorkNotifications) {
+    private void updateTrackWorkNotifications(Map<Long, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
         int updatedCount = localTrackWorkNotifications.stream()
                 .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
                 .filter(not(Boolean::booleanValue))
@@ -88,7 +86,7 @@ public class TrackWorkNotificationUpdater {
         log.info("Updated {} track work notifications", updatedCount);
     }
 
-    private boolean updateNotificationVersions(LocalTrackWorkNotificationStatus localTrackWorkNotification, Map<Long, Long> statuses) {
+    private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrackWorkNotification, Map<Long, Long> statuses) {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }

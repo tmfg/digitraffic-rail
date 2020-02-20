@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.ruma;
 
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
-import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,14 +12,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class LocalTrackWorkNotificationService {
+public class LocalTrafficRestrictionNotificationService {
 
     @Autowired
-    private TrackWorkNotificationRepository trackWorkNotificationRepository;
+    private TrafficRestrictionNotificationRepository trafficRestrictionNotificationRepository;
 
     @Transactional(readOnly = true)
-    public List<LocalRumaNotificationStatus> getLocalTrackWorkNotifications(Set<Long> ids) {
-        return trackWorkNotificationRepository.findIdsAndVersions(ids)
+    public List<LocalRumaNotificationStatus> getLocalTrafficRestrictionNotifications(Set<Long> ids) {
+        return trafficRestrictionNotificationRepository.findIdsAndVersions(ids)
                 .stream()
                 .collect(Collectors.groupingBy(RumaNotificationIdAndVersion::getId, Collectors.mapping(RumaNotificationIdAndVersion::getVersion, Collectors.toList())))
                 .entrySet()
@@ -29,12 +29,12 @@ public class LocalTrackWorkNotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<TrackWorkNotification> getById(long id) {
-        return trackWorkNotificationRepository.findByTwnId(id);
+    public List<TrafficRestrictionNotification> getById(long id) {
+        return trafficRestrictionNotificationRepository.findByTrnId(id);
     }
 
     @Transactional
-    public void saveAll(List<TrackWorkNotification> trackWorkNotifications) {
-        trackWorkNotificationRepository.saveAll(trackWorkNotifications);
+    public void saveAll(List<TrafficRestrictionNotification> trafficRestrictionNotifications) {
+        trafficRestrictionNotificationRepository.saveAll(trafficRestrictionNotifications);
     }
 }

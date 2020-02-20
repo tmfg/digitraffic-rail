@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import javax.annotation.PostConstruct;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.updater.deserializers.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -158,6 +159,9 @@ public class HttpInputObjectMapper extends ObjectMapper {
     private TrackWorkNotificationDeserializer trackWorkNotificationDeserializer;
 
     @Autowired
+    private TrafficRestrictionNotificationDeserializer trafficRestrictionNotificationDeserializer;
+
+    @Autowired
     private TrackWorkPartDeserializer trackWorkPartDeserializer;
 
     @Autowired
@@ -215,6 +219,7 @@ public class HttpInputObjectMapper extends ObjectMapper {
         module.addDeserializer(TimeTablePeriodChangeDate.class, timeTablePeriodChangeDateDeserializer);
 
         module.addDeserializer(TrackWorkNotification.class, trackWorkNotificationDeserializer);
+        module.addDeserializer(TrafficRestrictionNotification.class, trafficRestrictionNotificationDeserializer);
         module.addDeserializer(TrackWorkPart.class, trackWorkPartDeserializer);
         module.addDeserializer(RumaLocation.class, rumaLocationDeserializer);
         module.addDeserializer(IdentifierRange.class, identifierRangeDeserializer);

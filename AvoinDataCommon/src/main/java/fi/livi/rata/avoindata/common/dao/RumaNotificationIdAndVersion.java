@@ -1,10 +1,10 @@
-package fi.livi.rata.avoindata.common.dao.trackwork;
+package fi.livi.rata.avoindata.common.dao;
 
 import io.swagger.annotations.ApiModelProperty;
 
 import java.time.ZonedDateTime;
 
-public interface TrackWorkNotificationIdAndVersion {
+public interface RumaNotificationIdAndVersion {
 
     @ApiModelProperty("Id")
     Long getId();

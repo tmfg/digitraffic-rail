@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
+import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
@@ -47,7 +47,7 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
-    public List<TrackWorkNotificationIdAndVersion> findAll(
+    public List<RumaNotificationIdAndVersion> findAll(
             @ApiParam(value = "Start time. If missing, start of time is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @ApiParam(value = "End time. If missing, end of time is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trackWorkNotificationRepository.findByModifiedBetween(

@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import com.vividsolutions.jts.geom.GeometryFactory;
-import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationIdAndVersion;
+import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.BaseTest;
@@ -10,10 +10,9 @@ import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -62,7 +61,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Transactional
     public void addNew() {
         TrackWorkNotification twn = factory.create(1).get(0);
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.id.version)});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
@@ -79,12 +78,12 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         TrackWorkNotification twnV2 = twnVersions.get(1);
         repository.save(twn);
 
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twnV2.getVersion())});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twnV2.getVersion())});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twnV2));
 
         updater.update();
 
-        List<TrackWorkNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
+        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
         assertEquals(2, idsAndVersions.size());
         assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
         assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
@@ -99,12 +98,12 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         TrackWorkNotification twnV2 = twnVersions.get(1);
         repository.save(twnV2);
 
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twnV2.getVersion())});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twnV2.getVersion())});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
 
-        List<TrackWorkNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
+        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
         assertEquals(2, idsAndVersions.size());
         assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
         assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
@@ -123,7 +122,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         loc.identifierRanges = Set.of(ir);
         loc.trackWorkPart = twp;
         ir.location = loc;
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.getVersion())});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.getVersion())});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
@@ -144,7 +143,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     public void draftsAreNotPersisted() {
         TrackWorkNotification twn = factory.create(1).get(0);
         twn.state = TrackWorkNotificationState.DRAFT;
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(twn.id.id, twn.id.version)});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
@@ -160,7 +159,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         TrackWorkNotification finished = twns.get(1);
         draft.state = TrackWorkNotificationState.DRAFT;
         finished.state = TrackWorkNotificationState.FINISHED;
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(List.of(draft, finished));
 
         updater.update();
@@ -176,7 +175,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         TrackWorkNotification finished = twns.get(1);
         sent.state = TrackWorkNotificationState.SENT;
         finished.state = TrackWorkNotificationState.FINISHED;
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteTrackWorkNotificationStatus[]{new RemoteTrackWorkNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(List.of(sent, finished));
 
         updater.update();

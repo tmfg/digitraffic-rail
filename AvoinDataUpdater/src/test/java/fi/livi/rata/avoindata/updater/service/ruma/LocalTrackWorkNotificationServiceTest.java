@@ -36,10 +36,10 @@ public class LocalTrackWorkNotificationServiceTest extends BaseTest {
             int maxVersion = 1 + random.nextInt(49);
             List<TrackWorkNotification> twns = factory.createPersist(maxVersion);
 
-            List<LocalTrackWorkNotificationStatus> localTwns = service.getLocalTrackWorkNotifications(Collections.singleton(twns.get(0).id.id));
+            List<LocalRumaNotificationStatus> localTwns = service.getLocalTrackWorkNotifications(Collections.singleton(twns.get(0).id.id));
 
             assertEquals(1, localTwns.size());
-            LocalTrackWorkNotificationStatus localTwn = localTwns.get(0);
+            LocalRumaNotificationStatus localTwn = localTwns.get(0);
             assertEquals(1, localTwn.minVersion);
             assertEquals(maxVersion, localTwn.maxVersion);
         });

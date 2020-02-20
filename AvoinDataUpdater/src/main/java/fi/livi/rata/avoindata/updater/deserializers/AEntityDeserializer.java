@@ -79,13 +79,26 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return stringNode.asBoolean();
     }
 
+    protected Double getNullableDouble(final JsonNode node, final String nodeName) {
+        if (node == null) {
+            return null;
+        }
+
+        final JsonNode doubleNode = node.get(nodeName);
+        if (doubleNode == null || doubleNode.isNull()) {
+            return null;
+        }
+
+        return doubleNode.asDouble();
+    }
+
     protected String getNullableString(final JsonNode node, final String nodeName) {
         if (node == null) {
             return null;
         }
 
         final JsonNode stringNode = node.get(nodeName);
-        if (stringNode == null) {
+        if (stringNode == null || stringNode.isNull()) {
             return null;
         }
 
