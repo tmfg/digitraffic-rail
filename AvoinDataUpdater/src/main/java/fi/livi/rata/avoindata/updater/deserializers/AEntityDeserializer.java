@@ -53,7 +53,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
     }
 
     protected ZonedDateTime getNodeAsDateTime(final JsonNode node) {
-        if (node == null) {
+        if (node == null || node.isNull()) {
             return null;
         }
         return ZonedDateTime.parse(node.asText());

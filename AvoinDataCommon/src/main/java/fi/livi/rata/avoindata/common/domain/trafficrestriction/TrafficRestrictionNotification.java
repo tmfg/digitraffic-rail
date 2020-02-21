@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.trafficrestriction;
 
+import com.vividsolutions.jts.geom.Geometry;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.EmbeddedId;
@@ -20,49 +22,13 @@ public class TrafficRestrictionNotification {
     public TrafficRestrictionType limitation;
     public String limitationDescription;
     public String extraInfo;
+    public String twnId;
     public Double axleWeightMax;
     public ZonedDateTime startDate;
     public ZonedDateTime endDate;
-
-    /*
-
-
-        @Description("Rajoite")
-        val rajoite: ApiRajoiteDto,
-
-        @Description("LR-ilmoituksen lisätiedot")
-        val lisatiedot: String,
-
-        @Description("Ratatyöilmoituksen ID, jos pohjautuu sellaiseen")
-        val ratatyoilmoitusId: RtiId?,
-
-        @Description("Kohteet rakenteellisessa muodossa")
-        val kohteet: List<OpenKohdeDto>,
-
-        @Description("Rajoitteen päättymispäivä")
-        val finished: Instant?
-
-
-
-        data class ApiRajoiteDto(
-
-        @Description("Rajoitteen tyyppi")
-        val tyyppi: fi.livi.ruma.core.lri.RajoiteTyyppi,
-
-        @Description("Rajoitteen nimi")
-        val nimi: String,
-
-        @Description("Rajoitteen kuvaus")
-        val rajoiteKuvaus: String?,
-
-        @Description("Akselipaino maksimi tonnia (sallii desimaalit)")
-        val akselipainoMaxFloat: Float?
-) {
-        // TODO can be removed once all old clients are deprecated
-        @Description("Akselipaino maksimi tonnia")
-        val akselipainoMax: Int? = akselipainoMaxFloat?.toInt()
-}
-     */
+    public ZonedDateTime finished;
+    public Geometry locationMap;
+    public Geometry locationSchema;
 
     public TrafficRestrictionNotification(
             final TrafficRestrictionNotificationId id,
@@ -73,9 +39,13 @@ public class TrafficRestrictionNotification {
             final TrafficRestrictionType limitation,
             final String limitationDescription,
             final String extraInfo,
+            final String twnId,
             final Double axleWeightMax,
             final ZonedDateTime startDate,
-            final ZonedDateTime endDate
+            final ZonedDateTime endDate,
+            final ZonedDateTime finished,
+            final Geometry locationMap,
+            final Geometry locationSchema
     ) {
         this.id = id;
         this.state = state;
@@ -85,9 +55,13 @@ public class TrafficRestrictionNotification {
         this.limitation = limitation;
         this.limitationDescription = limitationDescription;
         this.extraInfo = extraInfo;
+        this.twnId = twnId;
         this.axleWeightMax = axleWeightMax;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.finished = finished;
+        this.locationMap = locationMap;
+        this.locationSchema = locationSchema;
     }
 
     public TrafficRestrictionNotification() {

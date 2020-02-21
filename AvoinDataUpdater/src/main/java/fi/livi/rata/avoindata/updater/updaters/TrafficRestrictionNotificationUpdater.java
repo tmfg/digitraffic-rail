@@ -126,8 +126,8 @@ public class TrafficRestrictionNotificationUpdater {
                 }
             }
 
-            //trn.locationMap = wgs84ConversionService.liviToWgs84Jts(trn.locationMap);
-            //trn.locationSchema = wgs84ConversionService.liviToWgs84Jts(trn.locationSchema);
+            trn.locationMap = wgs84ConversionService.liviToWgs84Jts(trn.locationMap);
+            trn.locationSchema = wgs84ConversionService.liviToWgs84Jts(trn.locationSchema);
 /*
             for (RumaLocation rl : twp.locations) {
                 if (rl.locationMap != null) {

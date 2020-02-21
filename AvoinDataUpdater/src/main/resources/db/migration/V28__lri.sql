@@ -14,8 +14,16 @@ CREATE TABLE traffic_restriction_notification
     axle_weight_max DECIMAL (15,2),
     start_date DATETIME,
     end_date DATETIME,
+    twn_id VARCHAR(64),
+    finished DATETIME,
+    location_map GEOMETRY,
+    location_schema GEOMETRY,
     PRIMARY KEY (id, version)
 );
+
+ALTER TABLE traffic_restriction_notification
+    CHANGE COLUMN location_map location_map GEOMETRY NOT NULL,
+    CHANGE COLUMN location_schema location_schema GEOMETRY NOT NULL;
 
 ALTER TABLE ruma_location ADD trn_id BIGINT UNSIGNED;
 ALTER TABLE ruma_location ADD trn_version BIGINT UNSIGNED;

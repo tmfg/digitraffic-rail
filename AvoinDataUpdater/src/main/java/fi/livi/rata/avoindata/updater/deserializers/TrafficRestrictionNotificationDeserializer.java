@@ -9,7 +9,6 @@ import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictio
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.ZonedDateTime;
 
 @Component
 public class TrafficRestrictionNotificationDeserializer extends AEntityDeserializer<TrafficRestrictionNotification> {
@@ -17,16 +16,23 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
     @Override
     public TrafficRestrictionNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-        return deserializeTrafficRestrictionNotifications(node);
+        return deserializeTrafficRestrictionNotifications(node, jsonParser);
     }
 
-    private TrafficRestrictionNotification deserializeTrafficRestrictionNotifications(JsonNode node) throws IOException {
+    private TrafficRestrictionNotification deserializeTrafficRestrictionNotifications(JsonNode node, JsonParser jsonParser) throws IOException {
         final TrafficRestrictionNotification trafficRestrictionNotification = new TrafficRestrictionNotification();
         trafficRestrictionNotification.id = new TrafficRestrictionNotification.TrafficRestrictionNotificationId(node.get("id").asLong(), node.get("version").asLong());
         trafficRestrictionNotification.state = getState(getStringFromNode(node, "state"));
         trafficRestrictionNotification.organization = getStringFromNode(node, "organization");
         trafficRestrictionNotification.created = getNodeAsDateTime(node.get("created"));
         trafficRestrictionNotification.modified = getNodeAsDateTime(node.get("modified"));
+        trafficRestrictionNotification.extraInfo = getNullableString(node, "lisatiedot");
+        trafficRestrictionNotification.twnId = getNullableString(node, "ratatyoilmoitusId");
+        trafficRestrictionNotification.finished = getNodeAsDateTime(node.get("finished"));
+        trafficRestrictionNotification.startDate = getNodeAsDateTime(node.get("voimassaAlku"));
+        trafficRestrictionNotification.endDate = getNodeAsDateTime(node.get("voimassaLoppu"));
+        trafficRestrictionNotification.locationMap = deserializeGeometry(node.get("karttapiste"), jsonParser);
+        trafficRestrictionNotification.locationSchema = deserializeGeometry(node.get("kaaviopiste"), jsonParser);
         JsonNode rajoiteNode = node.get("rajoite");
         trafficRestrictionNotification.limitation = getType(rajoiteNode.get("tyyppi").textValue());
         trafficRestrictionNotification.limitationDescription = getNullableString(rajoiteNode, "rajoiteKuvaus");
@@ -40,13 +46,13 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
             case "SULJETTU_LIIKENNOINNILTA":
                 return TrafficRestrictionType.CLOSED_FROM_TRAFFIC;
             case "SULJETTU_SAHKOVETOKALUSTOLTA":
-                return TrafficRestrictionType.CLOSED_FROM_ELECTRIC_LOCOMOTIVES;
+                return TrafficRestrictionType.CLOSED_FROM_ELECTRIC_ROLLING_STOCK;
             case "TILAPAINEN_NOPEUSRAJOITUS":
                 return TrafficRestrictionType.TEMPORARY_SPEED_LIMIT;
             case "AKSELIPAINO_MAX":
                 return TrafficRestrictionType.AXLE_WEIGHT_MAX;
             case "JKV_RAKENNUSALUE":
-                return TrafficRestrictionType.ATC_CONSTRUCTION_ZONE;
+                return TrafficRestrictionType.ATP_CONSTRUCTION_ZONE;
             case "VAIHTEEN_LUKITUS":
                 return TrafficRestrictionType.SWITCH_LOCKED;
             case "TULITYON_VAARA_ALUE":
