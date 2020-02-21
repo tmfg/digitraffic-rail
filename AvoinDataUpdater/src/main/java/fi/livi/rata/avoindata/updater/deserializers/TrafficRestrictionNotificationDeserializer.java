@@ -3,12 +3,14 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 public class TrafficRestrictionNotificationDeserializer extends AEntityDeserializer<TrafficRestrictionNotification> {
@@ -33,12 +35,22 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
         trafficRestrictionNotification.endDate = getNodeAsDateTime(node.get("voimassaLoppu"));
         trafficRestrictionNotification.locationMap = deserializeGeometry(node.get("karttapiste"), jsonParser);
         trafficRestrictionNotification.locationSchema = deserializeGeometry(node.get("kaaviopiste"), jsonParser);
+
         JsonNode rajoiteNode = node.get("rajoite");
         trafficRestrictionNotification.limitation = getType(rajoiteNode.get("tyyppi").textValue());
         trafficRestrictionNotification.limitationDescription = getNullableString(rajoiteNode, "rajoiteKuvaus");
         trafficRestrictionNotification.axleWeightMax = getNullableDouble(rajoiteNode, "akselipainoMaxFloat");
 
+        trafficRestrictionNotification.locations = deserializeRumaLocations(node.get("kohteet"), jsonParser);
+        for (RumaLocation location : trafficRestrictionNotification.locations) {
+            location.trafficRestrictionNotification = trafficRestrictionNotification;
+        }
+
         return trafficRestrictionNotification;
+    }
+
+    private Set<RumaLocation> deserializeRumaLocations(JsonNode rumaLocationsNode, JsonParser jsonParser) throws IOException {
+        return Set.of(jsonParser.getCodec().readValue(rumaLocationsNode.traverse(jsonParser.getCodec()), RumaLocation[].class));
     }
 
     private TrafficRestrictionType getType(String type) {

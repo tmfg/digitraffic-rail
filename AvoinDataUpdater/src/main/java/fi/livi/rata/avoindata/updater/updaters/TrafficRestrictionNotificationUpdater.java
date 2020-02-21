@@ -107,9 +107,9 @@ public class TrafficRestrictionNotificationUpdater {
     }
 
     private void updateTrafficRestrictionNotification(long id, SortedSet<Long> versions) {
-        log.debug("Updating TrafficRestrictionNotification {}, required versions {}", id, versions);
+        log.info("Updating TrafficRestrictionNotification {}, required versions {}", id, versions);
         List<TrafficRestrictionNotification> trackWorkNotificationVersions = remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
-        log.debug("Got {} versions for TrafficRestrictionNotification {}", trackWorkNotificationVersions.size(), id);
+        log.info("Got {} versions for TrafficRestrictionNotification {}", trackWorkNotificationVersions.size(), id);
 
         List<TrafficRestrictionNotification> versionsToBeSaved = new ArrayList<>();
 
@@ -128,8 +128,8 @@ public class TrafficRestrictionNotificationUpdater {
 
             trn.locationMap = wgs84ConversionService.liviToWgs84Jts(trn.locationMap);
             trn.locationSchema = wgs84ConversionService.liviToWgs84Jts(trn.locationSchema);
-/*
-            for (RumaLocation rl : twp.locations) {
+
+            for (RumaLocation rl : trn.locations) {
                 if (rl.locationMap != null) {
                     rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
                 }
@@ -143,7 +143,7 @@ public class TrafficRestrictionNotificationUpdater {
                 }
 
             }
-*/
+
             versionsToBeSaved.add(trn);
         }
 

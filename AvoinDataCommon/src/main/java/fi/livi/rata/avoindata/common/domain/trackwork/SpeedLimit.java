@@ -14,4 +14,8 @@ public class SpeedLimit {
         this.signs = signs;
         this.balises = balises;
     }
+
+    public SpeedLimit() {
+        // for Hibernate
+    }
 }
