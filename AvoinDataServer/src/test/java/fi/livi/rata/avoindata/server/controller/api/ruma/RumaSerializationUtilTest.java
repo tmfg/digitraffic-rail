@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static fi.livi.rata.avoindata.server.controller.api.ruma.TrackWorkNotificationSerializationUtil.*;
+import static fi.livi.rata.avoindata.server.controller.api.ruma.RumaSerializationUtil.*;
 import static org.junit.Assert.assertEquals;
 
-public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
+public class RumaSerializationUtilTest extends BaseTest {
 
     @Autowired
     private TrackWorkNotificationFactory factory;
@@ -52,7 +52,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         TrackWorkNotification twn = factory.create(1).get(0);
         RumaLocation rl = factory.createRumaLocation();
 
-        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, false);
+        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, rl, false);
         LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationMap.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);
@@ -66,7 +66,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         TrackWorkNotification twn = factory.create(1).get(0);
         RumaLocation rl = factory.createRumaLocation();
 
-        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn, rl, true);
+        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, rl, true);
         LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationSchema.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);
@@ -80,7 +80,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         TrackWorkNotification twn = factory.create(1).get(0);
         IdentifierRange ir = factory.createIdentifierRange();
 
-        SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, false);
+        SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn.id.id, ir, false);
         Point irLocation = (Point) ir.locationMap;
         PointDto irDtoLocation = (PointDto) irDto.location;
 
@@ -93,7 +93,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         TrackWorkNotification twn = factory.create(1).get(0);
         IdentifierRange ir = factory.createIdentifierRange();
 
-        SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn, ir, true);
+        SpatialIdentifierRangeDto irDto = toIdentifierRangeDto(twn.id.id, ir, true);
         Point irLocation = (Point) ir.locationSchema;
         PointDto irDtoLocation = (PointDto) irDto.location;
 
@@ -105,7 +105,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     public void geoJson_featureAmount_twn() {
         TrackWorkNotification twn = factory.create(1).get(0);
 
-        assertEquals(1, toFeatures(twn, false).count());
+        assertEquals(1, toTwnFeatures(twn, false).count());
     }
 
     @Test
@@ -115,7 +115,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         twp.locations = Set.of(factory.createRumaLocation());
         twn.trackWorkParts = Set.of(twp);
 
-        assertEquals(2, toFeatures(twn, false).count());
+        assertEquals(2, toTwnFeatures(twn, false).count());
     }
 
     @Test
@@ -128,14 +128,14 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
         twp.locations = Set.of(loc);
         twn.trackWorkParts = Set.of(twp);
 
-        assertEquals(2, toFeatures(twn, false).count());
+        assertEquals(2, toTwnFeatures(twn, false).count());
     }
 
     @Test
     public void geoJson_twn_map() {
         TrackWorkNotification twn = factory.create(1).get(0);
 
-        Feature f = toFeatures(twn, false).collect(Collectors.toList()).get(0);
+        Feature f = toTwnFeatures(twn, false).collect(Collectors.toList()).get(0);
 
         assertEquals(twn.locationMap.getCoordinate(), f.geometry.getCoordinate());
     }
@@ -144,7 +144,7 @@ public class TrackWorkNotificationSerializationUtilTest extends BaseTest {
     public void geoJson_twn_schema() {
         TrackWorkNotification twn = factory.create(1).get(0);
 
-        Feature f = toFeatures(twn, true).collect(Collectors.toList()).get(0);
+        Feature f = toTwnFeatures(twn, true).collect(Collectors.toList()).get(0);
 
         assertEquals(twn.locationSchema.getCoordinate(), f.geometry.getCoordinate());
     }

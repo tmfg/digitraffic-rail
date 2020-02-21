@@ -45,7 +45,7 @@ public class TrackWorkNotificationUpdater {
         this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
-    //@Scheduled(fixedDelay = 300000) // every minute
+    @Scheduled(fixedDelay = 300000) // every minute
     protected void update() {
         if (StringUtils.isEmpty(liikeInterfaceUrl)) {
             return;
