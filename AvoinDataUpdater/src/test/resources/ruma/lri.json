@@ -1,0 +1,307 @@
+{
+  "id": 837023,
+  "version": 2,
+  "state": "SENT",
+  "created": "2020-02-19T07:20:18Z",
+  "modified": "2020-02-19T07:25:22Z",
+  "rajoite": {
+    "tyyppi": "TILAPAINEN_NOPEUSRAJOITUS",
+    "nimi": "Tilapäinen nopeusrajoitus",
+    "rajoiteKuvaus": "kuvaus",
+    "akselipainoMaxFloat": null,
+    "akselipainoMax": null
+  },
+  "voimassaAlku": "2020-02-19T07:00:00Z",
+  "voimassaLoppu": "2020-02-19T10:00:00Z",
+  "organization": "Org Oy",
+  "lisatiedot": "testausta",
+  "ratatyoilmoitusId": "123",
+  "kohteet": [
+    {
+      "type": "NOPEUSRAJOITUS",
+      "liikennepaikkaId": "x.x.xxx.LIVI.INFRA.39.119274",
+      "liikennepaikkavaliId": null,
+      "sijainti": null,
+      "kaaviosijainti": null,
+      "tunnusvalit": [
+        {
+          "elementtiId": null,
+          "elementtipariId1": null,
+          "elementtipariId2": null,
+          "elementtivalit": [
+            {
+              "elementtiId1": "x.x.xxx.LIVI.INFRA.14.919632",
+              "elementtiId2": "x.x.xxx.LIVI.INFRA.14.919785",
+              "raideIds": [
+                "x.x.xxx.LIVI.INFRA.44.122130"
+              ],
+              "tarkenteet": [],
+              "ratakmvali": {
+                "ratanumero": "003",
+                "alku": {
+                  "ratakm": 187,
+                  "etaisyys": 127
+                },
+                "loppu": {
+                  "ratakm": 187,
+                  "etaisyys": 683
+                }
+              }
+            }
+          ],
+          "nopeusrajoitus": {
+            "nopeus": 20,
+            "merkit": false,
+            "baliisit": false
+          },
+          "sijainti": {
+            "type": "MultiLineString",
+            "coordinates": [
+              [
+                [
+                  328290,
+                  6822305.7
+                ],
+                [
+                  328290.1,
+                  6822310.3
+                ],
+                [
+                  328290.2,
+                  6822314.9
+                ],
+                [
+                  328290.3,
+                  6822316.7
+                ],
+                [
+                  328293,
+                  6822407.3
+                ],
+                [
+                  328295.2,
+                  6822477.2
+                ],
+                [
+                  328301.3,
+                  6822668.5
+                ],
+                [
+                  328304.5,
+                  6822768.5
+                ],
+                [
+                  328305.7,
+                  6822803.6
+                ],
+                [
+                  328306.7,
+                  6822833.9
+                ],
+                [
+                  328307.6,
+                  6822850.3
+                ],
+                [
+                  328307.8,
+                  6822856
+                ]
+              ]
+            ]
+          },
+          "kaaviosijainti": {
+            "type": "MultiLineString",
+            "coordinates": [
+              [
+                [
+                  328360,
+                  6822451.5
+                ],
+                [
+                  328360,
+                  6822460
+                ],
+                [
+                  328360,
+                  6822464
+                ],
+                [
+                  328360,
+                  6822470
+                ],
+                [
+                  328360.3,
+                  6822510
+                ],
+                [
+                  328360,
+                  6822549.8
+                ],
+                [
+                  328359.8,
+                  6822670
+                ],
+                [
+                  328360,
+                  6822690
+                ],
+                [
+                  328360.3,
+                  6822770
+                ],
+                [
+                  328360,
+                  6822850
+                ],
+                [
+                  328360,
+                  6822910
+                ],
+                [
+                  328360,
+                  6822920
+                ],
+                [
+                  328360,
+                  6822930
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "elementtiId": null,
+          "elementtipariId1": null,
+          "elementtipariId2": null,
+          "elementtivalit": [
+            {
+              "elementtiId1": "x.x.xxx.LIVI.INFRA.14.919643",
+              "elementtiId2": "x.x.xxx.LIVI.INFRA.14.919774",
+              "raideIds": [
+                "x.x.xxx.LIVI.INFRA.44.122536"
+              ],
+              "tarkenteet": [],
+              "ratakmvali": {
+                "ratanumero": "003",
+                "alku": {
+                  "ratakm": 187,
+                  "etaisyys": 200
+                },
+                "loppu": {
+                  "ratakm": 187,
+                  "etaisyys": 500
+                }
+              }
+            }
+          ],
+          "nopeusrajoitus": {
+            "nopeus": 5,
+            "merkit": true,
+            "baliisit": true
+          },
+          "sijainti": {
+            "type": "MultiLineString",
+            "coordinates": [
+              [
+                [
+                  328297.5,
+                  6822385.9
+                ],
+                [
+                  328298.2,
+                  6822407.3
+                ],
+                [
+                  328299.4,
+                  6822443.4
+                ],
+                [
+                  328299.4,
+                  6822444.7
+                ],
+                [
+                  328299.4,
+                  6822446.2
+                ],
+                [
+                  328300.5,
+                  6822477.6
+                ],
+                [
+                  328304.5,
+                  6822604.9
+                ],
+                [
+                  328306.5,
+                  6822668.5
+                ],
+                [
+                  328307,
+                  6822688.5
+                ]
+              ]
+            ]
+          },
+          "kaaviosijainti": {
+            "type": "MultiLineString",
+            "coordinates": [
+              [
+                [
+                  328380,
+                  6822500.4
+                ],
+                [
+                  328380,
+                  6822509.8
+                ],
+                [
+                  328380,
+                  6822520
+                ],
+                [
+                  328380,
+                  6822530
+                ],
+                [
+                  328380,
+                  6822540
+                ],
+                [
+                  328380,
+                  6822549.8
+                ],
+                [
+                  328380.5,
+                  6822610
+                ],
+                [
+                  328380.3,
+                  6822670
+                ],
+                [
+                  328380,
+                  6822690
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "finished": "2020-02-19T07:25:22Z",
+  "karttapiste": {
+    "type": "Point",
+    "coordinates": [
+      328298,
+      6822565
+    ]
+  },
+  "kaaviopiste": {
+    "type": "Point",
+    "coordinates": [
+      328359,
+      6822663
+    ]
+  }
+}

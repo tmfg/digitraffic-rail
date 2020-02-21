@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.repository.Modifying;
@@ -34,6 +35,9 @@ public class TestDataService {
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
+    @Autowired
+    private TrafficRestrictionNotificationRepository trafficRestrictionNotificationRepository;
+
     @Modifying
     public void createSingleTrainComposition() throws IOException {
         compositionService.addCompositions(getSingleTrainJourneyCompositions());
@@ -62,6 +66,10 @@ public class TestDataService {
 
     public void clearTrackWorkNotifications() {
         trackWorkNotificationRepository.deleteAllInBatch();
+    }
+
+    public void clearTrafficRestrictionNotifications() {
+        trafficRestrictionNotificationRepository.deleteAllInBatch();
     }
 
     @Modifying
