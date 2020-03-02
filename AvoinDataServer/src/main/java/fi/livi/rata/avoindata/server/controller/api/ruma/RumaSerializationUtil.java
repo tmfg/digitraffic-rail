@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 public final class RumaSerializationUtil {
 
-    public static SpatialTrackWorkNotificationDto toTwnDto(TrackWorkNotification twn, boolean schema) {
+    public static SpatialTrackWorkNotificationDto toTwnDto(final TrackWorkNotification twn, final boolean schema) {
         return new SpatialTrackWorkNotificationDto(twn.id,
                 twn.state,
                 twn.organization,
@@ -41,7 +41,7 @@ public final class RumaSerializationUtil {
                 ).collect(Collectors.toList()));
     }
 
-    public static SpatialTrafficRestrictionNotificationDto toTrnDto(TrafficRestrictionNotification trn, boolean schema) {
+    public static SpatialTrafficRestrictionNotificationDto toTrnDto(final TrafficRestrictionNotification trn, final boolean schema) {
         return new SpatialTrafficRestrictionNotificationDto(trn.id,
                 trn.state,
                 trn.organization,
@@ -59,8 +59,8 @@ public final class RumaSerializationUtil {
                 trn.locations.stream().map(r -> toRumaLocationDto(trn.id.id, r, schema)).collect(Collectors.toSet()));
     }
 
-    protected static SpatialRumaLocationDto toRumaLocationDto(final long notificationId , RumaLocation r, boolean schema) {
-        Geometry locationGeom = schema ? r.locationSchema : r.locationMap;
+    protected static SpatialRumaLocationDto toRumaLocationDto(final long notificationId, final RumaLocation r, final boolean schema) {
+        final Geometry locationGeom = schema ? r.locationSchema : r.locationMap;
         return new SpatialRumaLocationDto(
                 notificationId,
                 r.locationType,
@@ -70,7 +70,7 @@ public final class RumaSerializationUtil {
                 locationGeom != null ? GeometryUtils.fromJtsGeometry(locationGeom) : null);
     }
 
-    protected static SpatialIdentifierRangeDto toIdentifierRangeDto(final long notificationId, IdentifierRange ir, boolean schema) {
+    protected static SpatialIdentifierRangeDto toIdentifierRangeDto(final long notificationId, final IdentifierRange ir, final boolean schema) {
         return new SpatialIdentifierRangeDto(
                 notificationId,
                 ir.elementId,
@@ -88,7 +88,7 @@ public final class RumaSerializationUtil {
     }
 
     public static Stream<Feature> toTwnFeatures(final TrackWorkNotification twn, final boolean schema) {
-        List<Feature> features = new ArrayList<>();
+        final List<Feature> features = new ArrayList<>();
 
         features.add(new Feature(schema ? twn.locationSchema : twn.locationMap, new TrackWorkNotificationDto(twn.id,
                 twn.state,
@@ -101,8 +101,8 @@ public final class RumaSerializationUtil {
                 twn.electricitySafetyPlan,
                 twn.personInChargePlan)));
 
-        for (TrackWorkPart twp : twn.trackWorkParts) {
-            List<Feature> locationFeatures = extractLocationFeatures(twp.id, twp.locations, schema);
+        for (final TrackWorkPart twp : twn.trackWorkParts) {
+            final List<Feature> locationFeatures = extractLocationFeatures(twp.id, twp.locations, schema);
             features.addAll(locationFeatures);
         }
 
@@ -110,7 +110,7 @@ public final class RumaSerializationUtil {
     }
 
     public static Stream<Feature> toTrnFeatures(final TrafficRestrictionNotification trn, final boolean schema) {
-        List<Feature> features = new ArrayList<>();
+        final List<Feature> features = new ArrayList<>();
 
         features.add(new Feature(schema ? trn.locationSchema : trn.locationMap, new TrafficRestrictionNotificationDto(trn.id,
                 trn.state,
@@ -135,12 +135,12 @@ public final class RumaSerializationUtil {
             final long notificationIdentifier,
             final Set<RumaLocation> locations,
             final Boolean schema) {
-        List<Feature> features = new ArrayList<>();
+        final List<Feature> features = new ArrayList<>();
 
-        for (RumaLocation rl : locations) {
+        for (final RumaLocation rl : locations) {
 
             if (rl.identifierRanges.isEmpty()) {
-                Geometry locationGeom = schema ? rl.locationSchema : rl.locationMap;
+                final Geometry locationGeom = schema ? rl.locationSchema : rl.locationMap;
                 if (locationGeom != null) {
                     features.add(new Feature(
                             locationGeom,
@@ -151,7 +151,7 @@ public final class RumaSerializationUtil {
                                     rl.sectionBetweenOperatingPointsId)));
                 }
             } else {
-                for (IdentifierRange ir : rl.identifierRanges) {
+                for (final IdentifierRange ir : rl.identifierRanges) {
                     features.add(new Feature(schema ? ir.locationSchema : ir.locationMap,
                             new IdentifierRangeDto(
                                     notificationIdentifier,
