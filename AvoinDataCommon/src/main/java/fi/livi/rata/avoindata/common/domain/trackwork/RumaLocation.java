@@ -20,7 +20,7 @@ public class RumaLocation {
     public Geometry locationMap;
     public Geometry locationSchema;
 
-    @ManyToOne(optional = true)
+    @ManyToOne
     @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
     @JsonIgnore
     public TrackWorkPart trackWorkPart;
@@ -29,7 +29,7 @@ public class RumaLocation {
             @JoinColumn(name = "trn_id", referencedColumnName = "id", nullable = false),
             @JoinColumn(name = "trn_version", referencedColumnName = "version", nullable = false)
     })
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JsonIgnore
     public TrafficRestrictionNotification trafficRestrictionNotification;
 
