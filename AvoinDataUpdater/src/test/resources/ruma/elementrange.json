@@ -1,0 +1,19 @@
+{
+  "elementtiId1": "1.2.246.LIVI.INFRA.14.206587",
+  "elementtiId2": "1.2.246.LIVI.INFRA.13.2785888",
+  "raideIds": [
+    "1.2.246.LIVI.INFRA.44.196874"
+  ],
+  "tarkenteet": ["1.2.246.LIVI.INFRA.11.1062258"],
+  "ratakmvali": {
+    "ratanumero": "001",
+    "alku": {
+      "ratakm": 53,
+      "etaisyys": 403
+    },
+    "loppu": {
+      "ratakm": 343,
+      "etaisyys": 82
+    }
+  }
+}

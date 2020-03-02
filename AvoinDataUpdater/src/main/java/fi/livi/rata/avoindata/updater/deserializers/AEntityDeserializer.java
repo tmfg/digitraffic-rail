@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
 
@@ -103,6 +104,36 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         }
 
         return stringNode.asText();
+    }
+
+    protected String getNullableRumaRatakmvali(final JsonNode node, final String nodeName) {
+        if (node == null) {
+            return null;
+        }
+
+        final JsonNode ratakmvaliNode = node.get(nodeName);
+        if (ratakmvaliNode == null || ratakmvaliNode.isNull()) {
+            return null;
+        }
+
+        final String ratanumero = ratakmvaliNode.get("ratanumero").asText();
+        final JsonNode alkuNode = ratakmvaliNode.get("alku");
+        final int alkuRatakm = alkuNode.get("ratakm").asInt();
+        final int alkuEtaisyys = alkuNode.get("etaisyys").asInt();
+        final JsonNode loppuNode = ratakmvaliNode.get("loppu");
+        final int loppuRatakm = loppuNode.get("ratakm").asInt();
+        final int loppuEtaisyys = loppuNode.get("etaisyys").asInt();
+
+        return ratakmvaliToString(ratanumero, alkuRatakm, alkuEtaisyys, loppuRatakm, loppuEtaisyys);
+    }
+
+    protected static String ratakmvaliToString(
+            final String ratanumero,
+            final int alkuRatakm,
+            final int alkuEtaisyys,
+            final int loppuRatakm,
+            final int loppuEtaisyys) {
+        return String.format(Locale.ROOT, "(%s) %d+%04d > %d+%04d", ratanumero, alkuRatakm, alkuEtaisyys, loppuRatakm, loppuEtaisyys);
     }
 
     protected String getStringFromNode(JsonNode node, String nodeName) {

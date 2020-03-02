@@ -60,7 +60,7 @@ public class TrainLocationUpdater {
 
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION = new DecimalFormat("#.000000");
 
-    //@Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 1000)
     @Transactional
     public synchronized void trainLocation() {
             try {

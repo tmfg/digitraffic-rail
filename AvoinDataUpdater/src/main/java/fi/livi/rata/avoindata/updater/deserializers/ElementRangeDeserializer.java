@@ -29,6 +29,7 @@ public class ElementRangeDeserializer extends AEntityDeserializer<ElementRange> 
             specifiers.add(normalizeTrakediaInfraOid(specifierNode.textValue()));
         }
         elementRange.specifiers = specifiers;
+        elementRange.trackKilometerRange = getNullableRumaRatakmvali(elementRangeNode, "ratakmvali");
         return elementRange;
     }
 

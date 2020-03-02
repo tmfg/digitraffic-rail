@@ -2,11 +2,16 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import org.junit.Test;
 
+import java.util.Random;
+import java.util.UUID;
+
 import static fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class AEntityDeserializerTest {
+
+    private static final Random random = new Random(System.nanoTime());
 
     @Test
     public void oldInfraOidIsConvertedToNew() {
@@ -36,5 +41,16 @@ public class AEntityDeserializerTest {
     @Test
     public void nullJetiOidReturnsNull() {
         assertNull(normalizeJetiOid(null));
+    }
+
+    @Test
+    public void rkmvaliToString() {
+        final String ratanumero = "001";
+        final int alkuRatakm = 50;
+        final int alkuEtaisyys = 534;
+        final int loppuRatakm = 304;
+        final int loppuEtaisyys = 24;
+
+        assertEquals("(001) 50+0534 > 304+0024", ratakmvaliToString(ratanumero, alkuRatakm, alkuEtaisyys, loppuRatakm, loppuEtaisyys));
     }
 }
