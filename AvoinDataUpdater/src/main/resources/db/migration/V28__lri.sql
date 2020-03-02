@@ -12,7 +12,7 @@ CREATE TABLE traffic_restriction_notification
     limitation_description VARCHAR(500),
     extra_info VARCHAR(1000),
     axle_weight_max DECIMAL (15,2),
-    start_date DATETIME,
+    start_date DATETIME NOT NULL,
     end_date DATETIME,
     twn_id VARCHAR(64),
     finished DATETIME,
