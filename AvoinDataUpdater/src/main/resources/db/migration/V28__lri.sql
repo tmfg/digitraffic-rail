@@ -20,6 +20,12 @@ CREATE TABLE traffic_restriction_notification
     location_schema GEOMETRY,
     PRIMARY KEY (id, version)
 );
+CREATE INDEX traffic_restriction_notification_modified_id_version_idx ON traffic_restriction_notification
+    (
+     modified,
+     id asc,
+     version asc
+);
 
 ALTER TABLE traffic_restriction_notification
     CHANGE COLUMN location_map location_map GEOMETRY NOT NULL,
@@ -30,3 +36,5 @@ ALTER TABLE ruma_location ADD trn_version BIGINT UNSIGNED;
 ALTER TABLE ruma_location ADD CONSTRAINT FK_lri_id
         FOREIGN KEY (trn_id, trn_version) REFERENCES traffic_restriction_notification (id, version)
             ON UPDATE CASCADE ON DELETE CASCADE;
+CREATE INDEX FK_trn_id_version_idx
+    ON ruma_location (trn_id, trn_version);
