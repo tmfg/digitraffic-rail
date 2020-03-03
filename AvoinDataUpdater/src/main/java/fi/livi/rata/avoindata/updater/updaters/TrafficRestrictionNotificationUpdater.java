@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
@@ -108,44 +107,40 @@ public class TrafficRestrictionNotificationUpdater {
 
     private void updateTrafficRestrictionNotification(long id, SortedSet<Long> versions) {
         log.info("Updating TrafficRestrictionNotification {}, required versions {}", id, versions);
-        List<TrafficRestrictionNotification> trackWorkNotificationVersions = remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
+        final List<TrafficRestrictionNotification> trackWorkNotificationVersions = remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.info("Got {} versions for TrafficRestrictionNotification {}", trackWorkNotificationVersions.size(), id);
 
-        List<TrafficRestrictionNotification> versionsToBeSaved = new ArrayList<>();
+        final List<TrafficRestrictionNotification> versionsToBeSaved = trackWorkNotificationVersions.stream()
+                .filter(trn -> {
+                    if (trn.state == TrafficRestrictionNotificationState.DRAFT) {
+                        return false;
+                    }
 
-        for (TrafficRestrictionNotification trn : trackWorkNotificationVersions) {
+                    if (trn.state == TrafficRestrictionNotificationState.FINISHED) {
+                        boolean previousVersionIsDraft = previousVersionIsDraft(trn.id, trackWorkNotificationVersions);
+                        return !previousVersionIsDraft;
+                    }
 
-            if (trn.state == TrafficRestrictionNotificationState.DRAFT) {
-                continue;
-            }
+                    return true;
+                })
+                .peek(trn -> {
+                    trn.locationMap = wgs84ConversionService.liviToWgs84Jts(trn.locationMap);
+                    trn.locationSchema = wgs84ConversionService.liviToWgs84Jts(trn.locationSchema);
 
-            if (trn.state == TrafficRestrictionNotificationState.FINISHED) {
-                boolean previousVersionIsDraft = previousVersionIsDraft(trn.id, trackWorkNotificationVersions);
-                if (previousVersionIsDraft) {
-                    continue;
-                }
-            }
+                    trn.locations.forEach(rl -> {
+                        if (rl.locationMap != null) {
+                            rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
+                        }
+                        if (rl.locationSchema != null) {
+                            rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
+                        }
 
-            trn.locationMap = wgs84ConversionService.liviToWgs84Jts(trn.locationMap);
-            trn.locationSchema = wgs84ConversionService.liviToWgs84Jts(trn.locationSchema);
-
-            for (RumaLocation rl : trn.locations) {
-                if (rl.locationMap != null) {
-                    rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
-                }
-                if (rl.locationSchema != null) {
-                    rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
-                }
-
-                for (IdentifierRange ir : rl.identifierRanges) {
-                    ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
-                    ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
-                }
-
-            }
-
-            versionsToBeSaved.add(trn);
-        }
+                        for (IdentifierRange ir : rl.identifierRanges) {
+                            ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                            ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                        }
+                    });
+                }).collect(Collectors.toList());
 
         if (!versionsToBeSaved.isEmpty()) {
             localTrafficRestrictionNotificationService.saveAll(versionsToBeSaved);

@@ -35,7 +35,7 @@ public class RemoteTrafficRestrictionNotificationService {
 
     public RemoteRumaNotificationStatus[] getStatuses() {
         return retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + "/ruma/lri";
+            final String fullUrl = liikeInterfaceUrl + "/ruma/lri";
             log.info("Requesting TrafficRestrictionNotification statuses from " + fullUrl);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
@@ -43,7 +43,7 @@ public class RemoteTrafficRestrictionNotificationService {
 
     public List<TrafficRestrictionNotification> getTrafficRestrictionNotificationVersions(long id, LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + String.format("/ruma/lri/%s/%s", id, v);
+            final String fullUrl = liikeInterfaceUrl + String.format("/ruma/lri/%s/%s", id, v);
             log.info("Requesting TrafficRestrictionNotification version from " + fullUrl);
             return restTemplate.getForObject(fullUrl, TrafficRestrictionNotification.class);
         })).collect(Collectors.toList());
