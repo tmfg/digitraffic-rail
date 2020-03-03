@@ -54,7 +54,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
     }
 
     protected ZonedDateTime getNodeAsDateTime(final JsonNode node) {
-        if (node == null || node.isNull()) {
+        if (isNodeNull(node)) {
             return null;
         }
         return ZonedDateTime.parse(node.asText());
@@ -86,7 +86,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         }
 
         final JsonNode doubleNode = node.get(nodeName);
-        if (doubleNode == null || doubleNode.isNull()) {
+        if (isNodeNull(doubleNode)) {
             return null;
         }
 
@@ -99,7 +99,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         }
 
         final JsonNode stringNode = node.get(nodeName);
-        if (stringNode == null || stringNode.isNull()) {
+        if (isNodeNull(stringNode)) {
             return null;
         }
 
@@ -112,7 +112,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         }
 
         final JsonNode ratakmvaliNode = node.get(nodeName);
-        if (ratakmvaliNode == null || ratakmvaliNode.isNull()) {
+        if (isNodeNull(ratakmvaliNode)) {
             return null;
         }
 
