@@ -51,12 +51,12 @@ public class TrafficRestrictionNotificationUpdater {
         }
 
         RemoteRumaNotificationStatus[] statusesResp = remoteTrafficRestrictionNotificationService.getStatuses();
-        log.info("Received {} LRI statuses", statusesResp.length);
+        log.info("Received {} traffic restriction notification statuses", statusesResp.length);
 
         if (statusesResp != null && statusesResp.length > 0) {
             Map<Long, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
-            log.info("Received {} track work notification statuses", statuses.size());
+            log.info("Received {} traffic restriction notification statuses", statuses.size());
             List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications = localTrafficRestrictionNotificationService.getLocalTrafficRestrictionNotifications(statuses.keySet());
             addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
@@ -75,7 +75,7 @@ public class TrafficRestrictionNotificationUpdater {
                 updateTrafficRestrictionNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
         }
-        log.info("Added {} new track work notifications", newTrafficRestrictionNotifications.size());
+        log.info("Added {} new traffic restriction notifications", newTrafficRestrictionNotifications.size());
     }
 
     private void updateTrafficRestrictionNotifications(Map<Long, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
@@ -84,7 +84,7 @@ public class TrafficRestrictionNotificationUpdater {
                 .filter(not(Boolean::booleanValue))
                 .mapToInt(x -> 1)
                 .sum();
-        log.info("Updated {} track work notifications", updatedCount);
+        log.info("Updated {} traffic restriction notifications", updatedCount);
     }
 
     private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrafficRestrictionNotification, Map<Long, Long> statuses) {

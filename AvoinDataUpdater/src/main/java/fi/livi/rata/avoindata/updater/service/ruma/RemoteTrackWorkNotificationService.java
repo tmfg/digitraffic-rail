@@ -28,6 +28,8 @@ public class RemoteTrackWorkNotificationService {
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
+    private static final String rumaUrlFragment = "/ruma/rti";
+
     @PostConstruct
     private void init() {
         retryTemplate.setLogger(log);
@@ -35,7 +37,7 @@ public class RemoteTrackWorkNotificationService {
 
     public RemoteRumaNotificationStatus[] getStatuses() {
         return retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + "/ruma/rti";
+            String fullUrl = liikeInterfaceUrl + rumaUrlFragment;
             log.info("Requesting TrackWorkNotification statuses from " + fullUrl);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
@@ -43,7 +45,7 @@ public class RemoteTrackWorkNotificationService {
 
     public List<TrackWorkNotification> getTrackWorkNotificationVersions(long id, LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + String.format("/ruma/rti/%s/%s", id, v);
+            String fullUrl = liikeInterfaceUrl + String.format(rumaUrlFragment + "/%s/%s", id, v);
             log.info("Requesting TrackWorkNotification version from " + fullUrl);
             return restTemplate.getForObject(fullUrl, TrackWorkNotification.class);
         })).collect(Collectors.toList());
