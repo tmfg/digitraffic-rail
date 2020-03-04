@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Set;
 
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTrakediaInfraOid;
+
 @Component
 public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> {
 

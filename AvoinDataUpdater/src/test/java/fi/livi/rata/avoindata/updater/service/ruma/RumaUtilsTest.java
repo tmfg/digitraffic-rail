@@ -1,15 +1,14 @@
-package fi.livi.rata.avoindata.updater.deserializers;
+package fi.livi.rata.avoindata.updater.service.ruma;
 
 import org.junit.Test;
 
 import java.util.Random;
-import java.util.UUID;
 
-import static fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer.*;
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class AEntityDeserializerTest {
+public class RumaUtilsTest {
 
     private static final Random random = new Random(System.nanoTime());
 

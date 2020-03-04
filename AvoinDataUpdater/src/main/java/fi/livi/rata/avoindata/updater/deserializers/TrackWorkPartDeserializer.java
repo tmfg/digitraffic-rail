@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeJetiOid;
+
 @Component
 public class TrackWorkPartDeserializer extends AEntityDeserializer<TrackWorkPart> {
 

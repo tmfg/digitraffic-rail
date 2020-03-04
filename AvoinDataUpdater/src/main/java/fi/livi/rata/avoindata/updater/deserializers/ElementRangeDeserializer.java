@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTrakediaInfraOid;
+
 @Component
 public class ElementRangeDeserializer extends AEntityDeserializer<ElementRange> {
 
