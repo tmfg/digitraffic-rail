@@ -21,8 +21,6 @@ public class TrafficRestrictionNotification {
     public ZonedDateTime created;
     public ZonedDateTime modified;
     public TrafficRestrictionType limitation;
-    public String limitationDescription;
-    public String extraInfo;
     public String twnId;
     public Double axleWeightMax;
     public ZonedDateTime startDate;
@@ -38,8 +36,6 @@ public class TrafficRestrictionNotification {
             final ZonedDateTime created,
             final ZonedDateTime modified,
             final TrafficRestrictionType limitation,
-            final String limitationDescription,
-            final String extraInfo,
             final String twnId,
             final Double axleWeightMax,
             final ZonedDateTime startDate,
@@ -54,8 +50,6 @@ public class TrafficRestrictionNotification {
         this.created = created;
         this.modified = modified;
         this.limitation = limitation;
-        this.limitationDescription = limitationDescription;
-        this.extraInfo = extraInfo;
         this.twnId = twnId;
         this.axleWeightMax = axleWeightMax;
         this.startDate = startDate;

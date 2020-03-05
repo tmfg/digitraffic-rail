@@ -27,12 +27,6 @@ public class TrafficRestrictionNotificationDto {
     @ApiModelProperty("Limitation type")
     public final TrafficRestrictionType limitation;
 
-    @ApiModelProperty("Limitation description")
-    public final String limitationDescription;
-
-    @ApiModelProperty("Extra information")
-    public final String extraInfo;
-
     @ApiModelProperty("Track work notification identifier")
     public final String twnId;
 
@@ -55,8 +49,6 @@ public class TrafficRestrictionNotificationDto {
             final ZonedDateTime created,
             final ZonedDateTime modified,
             final TrafficRestrictionType limitation,
-            final String limitationDescription,
-            final String extraInfo,
             final String twnId,
             final Double axleWeightMax,
             final ZonedDateTime startDate,
@@ -69,8 +61,6 @@ public class TrafficRestrictionNotificationDto {
         this.created = created;
         this.modified = modified;
         this.limitation = limitation;
-        this.limitationDescription = limitationDescription;
-        this.extraInfo = extraInfo;
         this.twnId = twnId;
         this.axleWeightMax = axleWeightMax;
         this.startDate = startDate;

@@ -52,8 +52,6 @@ public class TrafficRestrictionNotificationFactory {
                         ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),
                         ZonedDateTime.now().withNano(0),
                         types.get(0),
-                        UUID.randomUUID().toString(),
-                        UUID.randomUUID().toString(),
                         random.nextBoolean() ? UUID.randomUUID().toString() : null,
                         random.nextBoolean() ? random.nextDouble() : null,
                         random.nextBoolean() ? ZonedDateTime.now().withNano(0) : null,

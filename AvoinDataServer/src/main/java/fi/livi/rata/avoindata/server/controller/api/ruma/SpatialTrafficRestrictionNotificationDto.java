@@ -24,8 +24,6 @@ public class SpatialTrafficRestrictionNotificationDto extends TrafficRestriction
             final ZonedDateTime created,
             final ZonedDateTime modified,
             final TrafficRestrictionType limitation,
-            final String limitationDescription,
-            final String extraInfo,
             final String twnId,
             final Double axleWeightMax,
             final ZonedDateTime startDate,
@@ -34,7 +32,7 @@ public class SpatialTrafficRestrictionNotificationDto extends TrafficRestriction
             final GeometryDto<?> location,
             final Set<SpatialRumaLocationDto> locations)
     {
-        super(id, state, organization, created, modified, limitation, limitationDescription, extraInfo, twnId, axleWeightMax, startDate, endDate, finished);
+        super(id, state, organization, created, modified, limitation, twnId, axleWeightMax, startDate, endDate, finished);
         this.location = location;
         this.locations = locations;
     }
