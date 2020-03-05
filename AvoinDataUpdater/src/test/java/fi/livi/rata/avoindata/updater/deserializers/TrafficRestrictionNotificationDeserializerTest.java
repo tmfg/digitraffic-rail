@@ -33,7 +33,6 @@ public class TrafficRestrictionNotificationDeserializerTest extends BaseTest {
         assertEquals(ZonedDateTime.parse("2020-02-19T10:00:00Z"), trn.endDate);
         assertEquals(TrafficRestrictionType.TEMPORARY_SPEED_LIMIT, trn.limitation);
         assertEquals("kuvaus", trn.limitationDescription);
-        assertEquals("testausta", trn.extraInfo) ;
     }
 
 }

@@ -28,7 +28,6 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
         trafficRestrictionNotification.organization = getStringFromNode(node, "organization");
         trafficRestrictionNotification.created = getNodeAsDateTime(node.get("created"));
         trafficRestrictionNotification.modified = getNodeAsDateTime(node.get("modified"));
-        trafficRestrictionNotification.extraInfo = getNullableString(node, "lisatiedot");
         trafficRestrictionNotification.twnId = getNullableString(node, "ratatyoilmoitusId");
         trafficRestrictionNotification.finished = getNodeAsDateTime(node.get("finished"));
         trafficRestrictionNotification.startDate = getNodeAsDateTime(node.get("voimassaAlku"));
