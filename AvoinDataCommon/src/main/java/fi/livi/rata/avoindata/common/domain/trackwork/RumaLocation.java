@@ -19,9 +19,9 @@ public class RumaLocation {
     public String sectionBetweenOperatingPointsId;
     public Geometry locationMap;
     public Geometry locationSchema;
-
+/*
     @ManyToOne
-    @JoinColumn(name = "track_work_part_id", referencedColumnName = "id")
+    @JoinColumn(name = "track_work_part_id", referencedColumnName = "id", nullable = false)
     @JsonIgnore
     public TrackWorkPart trackWorkPart;
 
@@ -32,7 +32,7 @@ public class RumaLocation {
     @ManyToOne
     @JsonIgnore
     public TrafficRestrictionNotification trafficRestrictionNotification;
-
+*/
     @OneToMany(mappedBy = "location", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
     public Set<IdentifierRange> identifierRanges = new HashSet<>();
 }

@@ -33,9 +33,6 @@ public class TrackWorkPartDeserializer extends AEntityDeserializer<TrackWorkPart
         }
         trackWorkpart.advanceNotifications = advanceNotifications;
         trackWorkpart.locations = deserializeRumaLocations(trackWorkPartNode.get("kohteet"), jsonParser);
-        for (RumaLocation location : trackWorkpart.locations) {
-            location.trackWorkPart = trackWorkpart;
-        }
         return trackWorkpart;
     }
 

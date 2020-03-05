@@ -54,7 +54,7 @@ public class TrafficRestrictionNotificationFactory {
                         types.get(0),
                         random.nextBoolean() ? UUID.randomUUID().toString() : null,
                         random.nextBoolean() ? random.nextDouble() : null,
-                        random.nextBoolean() ? ZonedDateTime.now().withNano(0) : null,
+                        ZonedDateTime.now().withNano(0),
                         random.nextBoolean() ? ZonedDateTime.now().withNano(0) : null,
                         random.nextBoolean() ? ZonedDateTime.now().withNano(0) : null,
                         geometryMap,

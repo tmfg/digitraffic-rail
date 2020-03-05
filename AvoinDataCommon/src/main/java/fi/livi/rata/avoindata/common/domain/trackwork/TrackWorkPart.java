@@ -34,6 +34,7 @@ public class TrackWorkPart {
     @JsonIgnore
     public TrackWorkNotification trackWorkNotification;
 
-    @OneToMany(mappedBy = "trackWorkPart", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
+    @OneToMany(fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
+    @JoinColumn(name = "track_work_part_id", referencedColumnName = "id", nullable = false)
     public Set<RumaLocation> locations = new HashSet<>();
 }

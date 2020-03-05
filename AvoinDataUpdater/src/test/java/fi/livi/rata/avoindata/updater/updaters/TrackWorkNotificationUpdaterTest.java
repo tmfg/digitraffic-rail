@@ -120,7 +120,6 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         twp.locations = Set.of(loc);
         twp.trackWorkNotification = twn;
         loc.identifierRanges = Set.of(ir);
-        loc.trackWorkPart = twp;
         ir.location = loc;
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.getVersion())});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyLong(), any())).thenReturn(Collections.singletonList(twn));

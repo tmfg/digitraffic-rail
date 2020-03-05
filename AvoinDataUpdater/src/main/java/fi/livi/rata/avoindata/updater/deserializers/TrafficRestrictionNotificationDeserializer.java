@@ -40,9 +40,6 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
         trafficRestrictionNotification.axleWeightMax = getNullableDouble(rajoiteNode, "akselipainoMaxFloat");
 
         trafficRestrictionNotification.locations = deserializeRumaLocations(node.get("kohteet"), jsonParser);
-        for (RumaLocation location : trafficRestrictionNotification.locations) {
-            location.trafficRestrictionNotification = trafficRestrictionNotification;
-        }
 
         return trafficRestrictionNotification;
     }

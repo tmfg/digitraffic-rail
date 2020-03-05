@@ -71,7 +71,11 @@ public class TrafficRestrictionNotification {
         return id.version;
     }
 
-    @OneToMany(mappedBy = "trafficRestrictionNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumns({
+            @JoinColumn(name = "trn_id", referencedColumnName = "id", nullable = false),
+            @JoinColumn(name = "trn_version", referencedColumnName = "version", nullable = false)
+    })
     public Set<RumaLocation> locations = new HashSet<>();
 
     @Embeddable
