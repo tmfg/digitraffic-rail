@@ -37,7 +37,6 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
 
         JsonNode rajoiteNode = node.get("rajoite");
         trafficRestrictionNotification.limitation = getType(rajoiteNode.get("tyyppi").textValue());
-        trafficRestrictionNotification.limitationDescription = getNullableString(rajoiteNode, "rajoiteKuvaus");
         trafficRestrictionNotification.axleWeightMax = getNullableDouble(rajoiteNode, "akselipainoMaxFloat");
 
         trafficRestrictionNotification.locations = deserializeRumaLocations(node.get("kohteet"), jsonParser);
