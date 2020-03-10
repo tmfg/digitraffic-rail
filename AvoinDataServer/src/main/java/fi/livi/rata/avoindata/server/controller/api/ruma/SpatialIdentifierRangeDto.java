@@ -11,7 +11,7 @@ public class SpatialIdentifierRangeDto extends IdentifierRangeDto {
     public final GeometryDto<?> location;
 
     public SpatialIdentifierRangeDto(
-            final long trackWorkNotificationId,
+            final String trackWorkNotificationId,
             final String elementId,
             final String elementPairId1,
             final String elementPairId2,

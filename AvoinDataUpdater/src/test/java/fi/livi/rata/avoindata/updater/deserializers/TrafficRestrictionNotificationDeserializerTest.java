@@ -18,7 +18,7 @@ public class TrafficRestrictionNotificationDeserializerTest extends BaseTest {
         final TrafficRestrictionNotification trn = testDataService.parseEntity("ruma/lri.json",
                 TrafficRestrictionNotification.class);
 
-        assertEquals(837023, trn.id.id.longValue());
+        assertEquals("1.2.246.586.7.2.837023", trn.id.id);
         assertEquals(2L, trn.id.version.longValue());
         assertEquals(TrafficRestrictionNotificationState.SENT, trn.state);
         assertEquals("Org Oy", trn.organization);

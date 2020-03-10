@@ -15,14 +15,15 @@ public class SpatialRumaLocationDto extends RumaLocationDto {
     public final Set<IdentifierRangeDto> identifierRanges;
 
     public SpatialRumaLocationDto(
-            final long trackWorkNotificationId,
+            final String notificationId,
+            final Long workPartIndex,
             final LocationType locationType,
             final String operatingPointId,
             final String sectionBetweenOperatingPointsId,
             final Set<IdentifierRangeDto> identifierRanges,
             final GeometryDto<?> location)
     {
-        super(trackWorkNotificationId, locationType, operatingPointId, sectionBetweenOperatingPointsId);
+        super(notificationId, workPartIndex, locationType, operatingPointId, sectionBetweenOperatingPointsId);
         this.location = location;
         this.identifierRanges = identifierRanges;
     }

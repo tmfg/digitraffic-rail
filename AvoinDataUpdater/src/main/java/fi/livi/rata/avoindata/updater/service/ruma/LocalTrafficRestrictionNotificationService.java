@@ -18,7 +18,7 @@ public class LocalTrafficRestrictionNotificationService {
     private TrafficRestrictionNotificationRepository trafficRestrictionNotificationRepository;
 
     @Transactional(readOnly = true)
-    public List<LocalRumaNotificationStatus> getLocalTrafficRestrictionNotifications(Set<Long> ids) {
+    public List<LocalRumaNotificationStatus> getLocalTrafficRestrictionNotifications(Set<String> ids) {
         return trafficRestrictionNotificationRepository.findIdsAndVersions(ids)
                 .stream()
                 .collect(Collectors.groupingBy(RumaNotificationIdAndVersion::getId, Collectors.mapping(RumaNotificationIdAndVersion::getVersion, Collectors.toList())))
@@ -29,7 +29,7 @@ public class LocalTrafficRestrictionNotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<TrafficRestrictionNotification> getById(long id) {
+    public List<TrafficRestrictionNotification> getById(String id) {
         return trafficRestrictionNotificationRepository.findByTrnId(id);
     }
 

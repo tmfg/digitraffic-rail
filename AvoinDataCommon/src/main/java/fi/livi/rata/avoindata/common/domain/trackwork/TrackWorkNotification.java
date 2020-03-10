@@ -62,7 +62,7 @@ public class TrackWorkNotification {
     @OneToMany(mappedBy = "trackWorkNotification", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     public Set<TrackWorkPart> trackWorkParts = new HashSet<>();
 
-    public Long getId() {
+    public String getId() {
         return id.id;
     }
 
@@ -73,7 +73,7 @@ public class TrackWorkNotification {
     @Embeddable
     public static class TrackWorkNotificationId implements Serializable {
         @Column(name = "id")
-        public Long id;
+        public String id;
         @Column(name = "version")
         public Long version;
 
@@ -81,7 +81,7 @@ public class TrackWorkNotification {
             // for Hibernate
         }
 
-        public TrackWorkNotificationId(final Long id, final Long version) {
+        public TrackWorkNotificationId(final String id, final Long version) {
             this.id = id;
             this.version = version;
         }

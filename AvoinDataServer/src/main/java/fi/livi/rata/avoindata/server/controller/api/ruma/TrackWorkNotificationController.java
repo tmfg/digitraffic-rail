@@ -59,7 +59,7 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns all versions of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrackWorkNotificationWithVersions get(
-            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final int id,
+            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             HttpServletResponse response) {
         final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -69,8 +69,8 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<TrackWorkNotification> getVersion(
-            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final int id,
-            @ApiParam(value = "Track work notification version", required = true) @PathVariable final int version,
+            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(value = "Track work notification version", required = true) @PathVariable final long version,
             HttpServletResponse response) {
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdAndVersion(id, version);
         if (trackWorkNotification.isEmpty()) {

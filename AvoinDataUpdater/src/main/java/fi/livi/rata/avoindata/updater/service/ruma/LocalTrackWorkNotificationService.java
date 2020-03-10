@@ -18,7 +18,7 @@ public class LocalTrackWorkNotificationService {
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
     @Transactional(readOnly = true)
-    public List<LocalRumaNotificationStatus> getLocalTrackWorkNotifications(Set<Long> ids) {
+    public List<LocalRumaNotificationStatus> getLocalTrackWorkNotifications(Set<String> ids) {
         return trackWorkNotificationRepository.findIdsAndVersions(ids)
                 .stream()
                 .collect(Collectors.groupingBy(RumaNotificationIdAndVersion::getId, Collectors.mapping(RumaNotificationIdAndVersion::getVersion, Collectors.toList())))
@@ -29,7 +29,7 @@ public class LocalTrackWorkNotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<TrackWorkNotification> getById(long id) {
+    public List<TrackWorkNotification> getById(String id) {
         return trackWorkNotificationRepository.findByTwnId(id);
     }
 

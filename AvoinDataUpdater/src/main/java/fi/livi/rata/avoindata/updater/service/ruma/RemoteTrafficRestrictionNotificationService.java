@@ -43,7 +43,7 @@ public class RemoteTrafficRestrictionNotificationService {
         });
     }
 
-    public List<TrafficRestrictionNotification> getTrafficRestrictionNotificationVersions(long id, LongStream versions) {
+    public List<TrafficRestrictionNotification> getTrafficRestrictionNotificationVersions(String id, LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
             final String fullUrl = liikeInterfaceUrl + String.format(rumaUrlFragment + "/%s/%s", id, v);
             log.info("Requesting TrafficRestrictionNotification version from " + fullUrl);

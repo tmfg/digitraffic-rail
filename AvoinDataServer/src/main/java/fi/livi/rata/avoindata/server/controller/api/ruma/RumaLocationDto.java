@@ -6,9 +6,12 @@ import io.swagger.annotations.ApiModelProperty;
 
 public class RumaLocationDto {
 
-    @ApiModelProperty("Track work notification identifier")
+    @ApiModelProperty("Notification identifier")
     @JsonView(RumaJsonViews.GeoJsonView.class)
-    public final long trackWorkNotificationId;
+    public final String notificationId;
+
+    @ApiModelProperty("Track work part index")
+    public final Long workPartIndex;
 
     @ApiModelProperty("Type")
     public final LocationType locationType;
@@ -20,12 +23,14 @@ public class RumaLocationDto {
     public final String sectionBetweenOperatingPointsId;
 
     public RumaLocationDto(
-            final long trackWorkNotificationId,
+            final String notificationId,
+            final Long workPartIndex,
             final LocationType locationType,
             final String operatingPointId,
             final String sectionBetweenOperatingPointsId)
     {
-        this.trackWorkNotificationId = trackWorkNotificationId;
+        this.notificationId = notificationId;
+        this.workPartIndex = workPartIndex;
         this.locationType = locationType;
         this.operatingPointId = operatingPointId;
         this.sectionBetweenOperatingPointsId = sectionBetweenOperatingPointsId;

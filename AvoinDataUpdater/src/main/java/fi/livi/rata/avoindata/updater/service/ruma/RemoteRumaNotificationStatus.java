@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RemoteRumaNotificationStatus {
-    public long id;
+    public String id;
     public long version;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
@@ -17,7 +17,7 @@ public class RemoteRumaNotificationStatus {
 
     @JsonCreator
     public RemoteRumaNotificationStatus(
-            @JsonProperty("id") long id,
+            @JsonProperty("id") String id,
             @JsonProperty("version") long version)
     {
         this.id = id;

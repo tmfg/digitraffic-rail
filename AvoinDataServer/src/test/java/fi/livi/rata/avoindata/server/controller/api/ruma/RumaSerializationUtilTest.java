@@ -53,9 +53,10 @@ public class RumaSerializationUtilTest extends BaseTest {
     @Test
     public void dto_rumaLocation_map() {
         TrackWorkNotification twn = factory.create(1).get(0);
+        TrackWorkPart twp = factory.createWorkPart();
         RumaLocation rl = factory.createRumaLocation();
 
-        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, rl, false);
+        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, twp.partIndex, rl, false);
         LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationMap.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);
@@ -67,9 +68,10 @@ public class RumaSerializationUtilTest extends BaseTest {
     @Test
     public void dto_rumaLocation_schema() {
         TrackWorkNotification twn = factory.create(1).get(0);
+        TrackWorkPart twp = factory.createWorkPart();
         RumaLocation rl = factory.createRumaLocation();
 
-        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, rl, true);
+        SpatialRumaLocationDto rlDto = toRumaLocationDto(twn.id.id, twp.partIndex, rl, true);
         LineStringDto rlDtoLocation = (LineStringDto) rlDto.location;
 
         assertEquals(rl.locationSchema.getCoordinates()[0].x, rlDtoLocation.getCoordinates().get(0).get(0), ALLOWED_DELTA);

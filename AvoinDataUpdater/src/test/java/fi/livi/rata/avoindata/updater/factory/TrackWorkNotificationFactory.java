@@ -40,11 +40,11 @@ public class TrackWorkNotificationFactory {
     }
 
     public List<TrackWorkNotification> create(int versions) {
-        Point geometryMap = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN);
-        Point geometrySchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
+        final Point geometryMap = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN);
+        final Point geometrySchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
         geometryMap.setSRID(SpatialConstants.WGS84_SRID);
         geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
-        final long id = random.nextInt(99999);
+        final String id = UUID.randomUUID().toString();
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrackWorkNotification(
                         new TrackWorkNotification.TrackWorkNotificationId(id, v),

@@ -44,7 +44,7 @@ public class TrackWorkNotificationFactory {
         Point geometrySchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
         geometryMap.setSRID(SpatialConstants.WGS84_SRID);
         geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
-        final long id = random.nextInt(99999);
+        final String id = UUID.randomUUID().toString();
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrackWorkNotification(
                         new TrackWorkNotification.TrackWorkNotificationId(id, v),
@@ -60,6 +60,17 @@ public class TrackWorkNotificationFactory {
                         geometryMap,
                         geometrySchema)
         ).collect(Collectors.toList());
+    }
+
+    public TrackWorkPart createWorkPart() {
+        final TrackWorkPart twp = new TrackWorkPart();
+        twp.locations = Collections.emptySet();
+        twp.containsFireWork = random.nextBoolean();
+        twp.partIndex = (long) (1 + random.nextInt(49));
+        twp.permissionMinimumDuration = Duration.ofMinutes(random.nextInt(600));
+        twp.plannedWorkingGap = LocalTime.now();
+        twp.startDay = LocalDate.now();
+        return twp;
     }
 
     public RumaLocation createRumaLocation() {

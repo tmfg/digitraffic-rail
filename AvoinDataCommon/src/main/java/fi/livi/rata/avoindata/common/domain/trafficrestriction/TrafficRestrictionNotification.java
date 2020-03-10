@@ -63,7 +63,7 @@ public class TrafficRestrictionNotification {
         // for Hibernate
     }
 
-    public Long getId() {
+    public String getId() {
         return id.id;
     }
 
@@ -81,7 +81,7 @@ public class TrafficRestrictionNotification {
     @Embeddable
     public static class TrafficRestrictionNotificationId implements Serializable {
         @Column(name = "id")
-        public Long id;
+        public String id;
         @Column(name = "version")
         public Long version;
 
@@ -89,7 +89,7 @@ public class TrafficRestrictionNotification {
             // for Hibernate
         }
 
-        public TrafficRestrictionNotificationId(final Long id, final Long version) {
+        public TrafficRestrictionNotificationId(final String id, final Long version) {
             this.id = id;
             this.version = version;
         }

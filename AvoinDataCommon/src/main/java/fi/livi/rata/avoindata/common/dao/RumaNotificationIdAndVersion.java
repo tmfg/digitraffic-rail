@@ -7,7 +7,7 @@ import java.time.ZonedDateTime;
 public interface RumaNotificationIdAndVersion {
 
     @ApiModelProperty("Id")
-    Long getId();
+    String getId();
 
     @ApiModelProperty("Version")
     Long getVersion();

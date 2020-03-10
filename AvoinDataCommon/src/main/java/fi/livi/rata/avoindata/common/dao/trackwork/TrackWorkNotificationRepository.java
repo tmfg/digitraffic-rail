@@ -18,13 +18,13 @@ import java.util.Set;
 public interface TrackWorkNotificationRepository extends CustomGeneralRepository<TrackWorkNotification, TrackWorkNotification.TrackWorkNotificationId> {
 
     @Query("SELECT t.id.id AS id, t.id.version AS version FROM TrackWorkNotification t WHERE t.id.id IN (:ids) ORDER by id, version ASC")
-    List<RumaNotificationIdAndVersion> findIdsAndVersions(@Param("ids") Set<Long> ids);
+    List<RumaNotificationIdAndVersion> findIdsAndVersions(@Param("ids") Set<String> ids);
 
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id ORDER by id, version ASC")
-    List<TrackWorkNotification> findByTwnId(@Param("id") long id);
+    List<TrackWorkNotification> findByTwnId(@Param("id") String id);
 
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id AND t.id.version = :version")
-    Optional<TrackWorkNotification> findByTwnIdAndVersion(@Param("id") long id, @Param("version") long version);
+    Optional<TrackWorkNotification> findByTwnIdAndVersion(@Param("id") String id, @Param("version") long version);
 
     @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrackWorkNotification t WHERE t.modified BETWEEN :start AND :end GROUP BY t.id.id ORDER BY modified ASC, id ASC")
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);

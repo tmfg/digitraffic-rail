@@ -55,7 +55,7 @@ public class TrackWorkNotificationUpdater {
         RemoteRumaNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
-            Map<Long, Long> statuses = Arrays.stream(statusesResp)
+            Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             log.info("Received {} track work notification statuses", statuses.size());
             List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
@@ -67,10 +67,10 @@ public class TrackWorkNotificationUpdater {
         }
     }
 
-    private void addNewTrackWorkNotifications(Map<Long, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
-        Collection<Long> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
+    private void addNewTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
+        Collection<String> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
 
-        for (Map.Entry<Long, Long> e : statuses.entrySet()) {
+        for (Map.Entry<String, Long> e : statuses.entrySet()) {
             if (newTrackWorkNotifications.contains(e.getKey())) {
                 updateTrackWorkNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
@@ -78,7 +78,7 @@ public class TrackWorkNotificationUpdater {
         log.info("Added {} new track work notifications", newTrackWorkNotifications.size());
     }
 
-    private void updateTrackWorkNotifications(Map<Long, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
+    private void updateTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
         int updatedCount = localTrackWorkNotifications.stream()
                 .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
                 .filter(not(Boolean::booleanValue))
@@ -87,7 +87,7 @@ public class TrackWorkNotificationUpdater {
         log.info("Updated {} track work notifications", updatedCount);
     }
 
-    private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrackWorkNotification, Map<Long, Long> statuses) {
+    private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrackWorkNotification, Map<String, Long> statuses) {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }
@@ -105,7 +105,7 @@ public class TrackWorkNotificationUpdater {
         return !versions.isEmpty();
     }
 
-    private void updateTrackWorkNotification(long id, SortedSet<Long> versions) {
+    private void updateTrackWorkNotification(String id, SortedSet<Long> versions) {
         log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
         List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);

@@ -1,6 +1,6 @@
 CREATE TABLE track_work_notification
 (
-  id BIGINT UNSIGNED NOT NULL,
+  id VARCHAR(64) NOT NULL,
   version BIGINT UNSIGNED NOT NULL,
   state TINYINT UNSIGNED NOT NULL,
   organization VARCHAR(64) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE track_work_notification
 
 CREATE INDEX track_work_notification_modified_id_version_idx ON track_work_notification
 (
-    modified,
+    modified asc,
     id asc,
     version asc
 );
@@ -31,7 +31,7 @@ CREATE TABLE track_work_part
     planned_working_gap TIME NULL,
     advance_notifications VARCHAR(4000),
     contains_fire_work BIT NOT NULL,
-    track_work_notification_id BIGINT UNSIGNED NOT NULL,
+    track_work_notification_id VARCHAR(64) NOT NULL,
     track_work_notification_version BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_track_work_notification_id
         FOREIGN KEY (track_work_notification_id, track_work_notification_version) REFERENCES track_work_notification (id, version)

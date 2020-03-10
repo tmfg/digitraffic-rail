@@ -41,10 +41,9 @@ public class TrafficRestrictionNotificationFactory {
         geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
         List<TrafficRestrictionType> types = Arrays.asList(TrafficRestrictionType.values());
         Collections.shuffle(types);
-        final long id = random.nextInt(99999);
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrafficRestrictionNotification(
-                        new TrafficRestrictionNotification.TrafficRestrictionNotificationId(id, v),
+                        new TrafficRestrictionNotification.TrafficRestrictionNotificationId(UUID.randomUUID().toString(), v),
                         TrafficRestrictionNotificationState.SENT,
                         UUID.randomUUID().toString(),
                         ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),

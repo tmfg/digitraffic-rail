@@ -23,7 +23,7 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
 
     private TrafficRestrictionNotification deserializeTrafficRestrictionNotifications(JsonNode node, JsonParser jsonParser) throws IOException {
         final TrafficRestrictionNotification trafficRestrictionNotification = new TrafficRestrictionNotification();
-        trafficRestrictionNotification.id = new TrafficRestrictionNotification.TrafficRestrictionNotificationId(node.get("id").asLong(), node.get("version").asLong());
+        trafficRestrictionNotification.id = new TrafficRestrictionNotification.TrafficRestrictionNotificationId(node.get("id").textValue(), node.get("version").asLong());
         trafficRestrictionNotification.state = getState(getStringFromNode(node, "state"));
         trafficRestrictionNotification.organization = getStringFromNode(node, "organization");
         trafficRestrictionNotification.created = getNodeAsDateTime(node.get("created"));

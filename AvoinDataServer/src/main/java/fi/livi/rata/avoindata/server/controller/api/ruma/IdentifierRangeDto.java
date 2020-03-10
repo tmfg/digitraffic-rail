@@ -9,7 +9,7 @@ public class IdentifierRangeDto {
 
     @ApiModelProperty("Notification identifier")
     @JsonView(RumaJsonViews.GeoJsonView.class)
-    public final long notificationId;
+    public final String notificationId;
 
     @ApiModelProperty("Identifier of element")
     public final String elementId;
@@ -24,7 +24,7 @@ public class IdentifierRangeDto {
     public final Set<ElementRangeDto> elementRanges;
 
     public IdentifierRangeDto(
-            final long notificationId,
+            final String notificationId,
             final String elementId,
             final String elementPairId1,
             final String elementPairId2,

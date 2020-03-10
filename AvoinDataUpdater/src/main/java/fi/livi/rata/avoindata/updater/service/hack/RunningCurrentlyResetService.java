@@ -27,7 +27,7 @@ public class RunningCurrentlyResetService {
     private DateProvider dateProvider;
 
 
-    @Scheduled(cron = "${updater.running-currently-reset-cron}", zone = "Europe/Helsinki")
+//    @Scheduled(cron = "${updater.running-currently-reset-cron}", zone = "Europe/Helsinki")
     public void resetOldRunningTrains() {
         LocalDate maxDepartureDate = dateProvider.dateInHelsinki().minusDays(2);
         trainLockExecutor.executeInLock(() -> {

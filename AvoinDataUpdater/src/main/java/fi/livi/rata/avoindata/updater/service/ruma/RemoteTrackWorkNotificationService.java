@@ -38,15 +38,13 @@ public class RemoteTrackWorkNotificationService {
     public RemoteRumaNotificationStatus[] getStatuses() {
         return retryTemplate.execute(context -> {
             String fullUrl = liikeInterfaceUrl + rumaUrlFragment;
-            log.info("Requesting TrackWorkNotification statuses from " + fullUrl);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
     }
 
-    public List<TrackWorkNotification> getTrackWorkNotificationVersions(long id, LongStream versions) {
+    public List<TrackWorkNotification> getTrackWorkNotificationVersions(String id, LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
             String fullUrl = liikeInterfaceUrl + String.format(rumaUrlFragment + "/%s/%s", id, v);
-            log.info("Requesting TrackWorkNotification version from " + fullUrl);
             return restTemplate.getForObject(fullUrl, TrackWorkNotification.class);
         })).collect(Collectors.toList());
     }

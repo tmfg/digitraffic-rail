@@ -61,7 +61,7 @@ public class TrackWorkNotificationDto {
     }
 
     @ApiModelProperty("Id")
-    public Long getId() {
+    public String getId() {
         return id.id;
     }
 

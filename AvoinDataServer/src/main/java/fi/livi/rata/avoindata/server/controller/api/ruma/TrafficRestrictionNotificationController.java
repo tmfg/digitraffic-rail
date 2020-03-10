@@ -58,7 +58,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @ApiOperation("Returns all versions of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrafficRestrictionNotificationWithVersions get(
-            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final int id,
+            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             HttpServletResponse response) {
         final List<TrafficRestrictionNotification> versions = trafficRestrictionNotificationRepository.findByTrnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -68,8 +68,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @ApiOperation("Returns a specific version of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<TrafficRestrictionNotification> getVersion(
-            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final int id,
-            @ApiParam(value = "Traffic restriction notification version", required = true) @PathVariable final int version,
+            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(value = "Traffic restriction notification version", required = true) @PathVariable final long version,
             HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdAndVersion(id, version);
         if (trafficRestrictionNotification.isEmpty()) {

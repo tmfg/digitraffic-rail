@@ -17,7 +17,7 @@ public class TrackWorkNotificationDeserializerTest extends BaseTest {
         final TrackWorkNotification twn = testDataService.parseEntity("ruma/rti.json",
                 TrackWorkNotification.class);
 
-        assertEquals(359069L, twn.id.id.longValue());
+        assertEquals("1.2.246.586.7.1.359069", twn.id.id);
         assertEquals(5L, twn.id.version.longValue());
         assertEquals(TrackWorkNotificationState.ACTIVE, twn.state);
         assertEquals(true, twn.speedLimitPlan);
