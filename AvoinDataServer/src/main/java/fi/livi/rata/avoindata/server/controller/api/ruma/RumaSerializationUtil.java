@@ -79,6 +79,7 @@ public final class RumaSerializationUtil {
                 ir.elementId,
                 ir.elementPairId1,
                 ir.elementPairId2,
+                ir.speedLimit,
                 ir.elementRanges.stream().map(er ->
                         new ElementRangeDto(
                                 er.elementId1,
@@ -161,6 +162,7 @@ public final class RumaSerializationUtil {
                                     ir.elementId,
                                     ir.elementPairId1,
                                     ir.elementPairId2,
+                                    ir.speedLimit,
                                     ir.elementRanges.stream().map(er ->
                                             new ElementRangeDto(er.elementId1,
                                                     er.elementId2,
