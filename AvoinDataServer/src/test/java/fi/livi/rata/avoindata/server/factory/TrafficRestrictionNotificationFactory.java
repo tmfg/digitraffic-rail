@@ -35,15 +35,16 @@ public class TrafficRestrictionNotificationFactory {
     }
 
     public List<TrafficRestrictionNotification> create(int versions) {
-        Point geometryMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
-        Point geometrySchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        final Point geometryMap = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
+        final Point geometrySchema = geometryFactory.createPoint(new Coordinate(random.nextLong(), random.nextLong()));
         geometryMap.setSRID(SpatialConstants.WGS84_SRID);
         geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
-        List<TrafficRestrictionType> types = Arrays.asList(TrafficRestrictionType.values());
+        final List<TrafficRestrictionType> types = Arrays.asList(TrafficRestrictionType.values());
         Collections.shuffle(types);
+        final String id = UUID.randomUUID().toString();
         return LongStream.rangeClosed(1, versions).mapToObj(v ->
                 new TrafficRestrictionNotification(
-                        new TrafficRestrictionNotification.TrafficRestrictionNotificationId(UUID.randomUUID().toString(), v),
+                        new TrafficRestrictionNotification.TrafficRestrictionNotificationId(id, v),
                         TrafficRestrictionNotificationState.SENT,
                         UUID.randomUUID().toString(),
                         ZonedDateTime.now().minusHours(random.nextInt(100)).withNano(0),
