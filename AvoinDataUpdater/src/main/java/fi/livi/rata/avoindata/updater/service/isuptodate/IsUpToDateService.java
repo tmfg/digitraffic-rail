@@ -61,8 +61,8 @@ public class IsUpToDateService {
         alarmLimits.put(TRAIN_RUNNING_MESSAGE_RULES, Duration.ofHours(25));
         alarmLimits.put(TRACKSECTIONS, Duration.ofHours(25));
         alarmLimits.put(GTFS, Duration.ofHours(25));
-        alarmLimits.put(FUTURE_TRAINS, Duration.ofHours(25));
-        alarmLimits.put(OLD_TRAINS, Duration.ofHours(25));
+        alarmLimits.put(FUTURE_TRAINS, Duration.ofHours(36));
+        alarmLimits.put(OLD_TRAINS, Duration.ofHours(36));
         alarmLimits.put(STATIONS, Duration.ofHours(25));
         alarmLimits.put(CATEGORY_CODES, Duration.ofHours(25));
     }
