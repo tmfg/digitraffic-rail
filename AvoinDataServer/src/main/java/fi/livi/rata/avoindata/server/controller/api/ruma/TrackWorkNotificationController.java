@@ -46,8 +46,8 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
     public List<RumaNotificationIdAndVersion> findAll(
-            @ApiParam(value = "Start time. If missing, start of time is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, end of time is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
+            @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
+            @ApiParam(value = "End time. If missing, current date is used", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trackWorkNotificationRepository.findByModifiedBetween(
                 getStartTime(start),
                 getEndTime(end),
@@ -87,7 +87,7 @@ public class TrackWorkNotificationController extends ADataController {
             @ApiParam(defaultValue = "ACTIVE", value = "State of track work notification") @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
+            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
     {
         final List<TrackWorkNotification> twns = getByState(state, start, end);
         return twns.stream().map(t -> RumaSerializationUtil.toTwnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
