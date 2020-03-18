@@ -28,13 +28,8 @@ public class LocalTrafficRestrictionNotificationService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<TrafficRestrictionNotification> getById(String id) {
-        return trafficRestrictionNotificationRepository.findByTrnId(id);
-    }
-
     @Transactional
     public void saveAll(List<TrafficRestrictionNotification> trafficRestrictionNotifications) {
-        trafficRestrictionNotificationRepository.saveAll(trafficRestrictionNotifications);
+        trafficRestrictionNotificationRepository.persist(trafficRestrictionNotifications);
     }
 }
