@@ -58,17 +58,20 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrafficRestrictionNotificationWithVersions get(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             HttpServletResponse response) {
         final List<TrafficRestrictionNotification> versions = trafficRestrictionNotificationRepository.findByTrnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-        return new TrafficRestrictionNotificationWithVersions(id, versions);
+        return new TrafficRestrictionNotificationWithVersions(id,
+                versions.stream().map(trn -> RumaSerializationUtil.toTrnDto(trn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
     @ApiOperation("Returns a specific version of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
-    public Collection<TrafficRestrictionNotification> getVersion(
+    public Collection<SpatialTrafficRestrictionNotificationDto> getVersion(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @ApiParam(value = "Traffic restriction notification version", required = true) @PathVariable final long version,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdAndVersion(id, version);
         if (trafficRestrictionNotification.isEmpty()) {
@@ -76,7 +79,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             return emptyList();
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return Collections.singleton(trafficRestrictionNotification.get());
+            return Collections.singleton(RumaSerializationUtil.toTrnDto(trafficRestrictionNotification.get(), schema != null ? schema : false));
         }
     }
 

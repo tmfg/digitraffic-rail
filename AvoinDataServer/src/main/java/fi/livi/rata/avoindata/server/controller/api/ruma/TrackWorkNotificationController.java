@@ -59,16 +59,19 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrackWorkNotificationWithVersions get(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             HttpServletResponse response) {
         final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-        return new TrackWorkNotificationWithVersions(id, versions);
+        return new TrackWorkNotificationWithVersions(id,
+                versions.stream().map(twn -> RumaSerializationUtil.toTwnDto(twn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
     @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
-    public Collection<TrackWorkNotification> getVersion(
+    public Collection<SpatialTrackWorkNotificationDto> getVersion(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Track work notification version", required = true) @PathVariable final long version,
             HttpServletResponse response) {
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdAndVersion(id, version);
@@ -77,7 +80,7 @@ public class TrackWorkNotificationController extends ADataController {
             return emptyList();
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return Collections.singleton(trackWorkNotification.get());
+            return Collections.singleton(RumaSerializationUtil.toTwnDto(trackWorkNotification.get(), schema != null ? schema : false));
         }
     }
 

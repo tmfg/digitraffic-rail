@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
@@ -11,9 +10,9 @@ public class TrackWorkNotificationWithVersions {
     public final String id;
 
     @ApiModelProperty("Track work notification versions")
-    public final List<TrackWorkNotification> versions;
+    public final List<SpatialTrackWorkNotificationDto> versions;
 
-    public TrackWorkNotificationWithVersions(String id, final List<TrackWorkNotification> versions) {
+    public TrackWorkNotificationWithVersions(String id, final List<SpatialTrackWorkNotificationDto> versions) {
         this.id = id;
         this.versions = versions;
     }

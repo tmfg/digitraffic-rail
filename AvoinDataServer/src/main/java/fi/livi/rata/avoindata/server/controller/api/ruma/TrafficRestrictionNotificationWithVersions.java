@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
@@ -11,9 +10,9 @@ public class TrafficRestrictionNotificationWithVersions {
     public final String id;
 
     @ApiModelProperty("Traffic resctriction notification versions")
-    public final List<TrafficRestrictionNotification> versions;
+    public final List<SpatialTrafficRestrictionNotificationDto> versions;
 
-    public TrafficRestrictionNotificationWithVersions(String id, final List<TrafficRestrictionNotification> versions) {
+    public TrafficRestrictionNotificationWithVersions(String id, final List<SpatialTrafficRestrictionNotificationDto> versions) {
         this.id = id;
         this.versions = versions;
     }
