@@ -44,7 +44,7 @@ public class TrafficRestrictionNotificationUpdater {
         this.liikeInterfaceUrl = liikeInterfaceUrl;
     }
 
-    @Scheduled(fixedDelay = 300000) // every minute
+    @Scheduled(fixedDelay = 300000) // every 5 minutes
     protected void update() {
         if (StringUtils.isEmpty(liikeInterfaceUrl)) {
             return;

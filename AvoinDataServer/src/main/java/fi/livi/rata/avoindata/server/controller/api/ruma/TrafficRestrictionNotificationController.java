@@ -34,6 +34,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
     public static final String PATH = WebConfig.CONTEXT_PATH + "trafficrestriction-notifications";
     private static final int MAX_RESULTS = 500;
     private static final int CACHE_MAX_AGE_SECONDS = 30;
+    private static final int CACHE_UPDATE_CYCLE = 5 * 60;
     private static final Set<TrafficRestrictionNotificationState> DEFAULT_STATES = Set.of(
             TrafficRestrictionNotificationState.SENT,
             TrafficRestrictionNotificationState.FINISHED
@@ -86,10 +87,15 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @ApiParam(defaultValue = "SENT", value = "State of traffic restriction notification") @RequestParam(value = "state", required = false) final Set<TrafficRestrictionNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
+            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            final HttpServletResponse response)
     {
-        final List<TrafficRestrictionNotification> twns = getByState(state, start, end);
-        return twns.stream().map(t -> RumaSerializationUtil.toTrnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
+        final List<SpatialTrafficRestrictionNotificationDto> twns = getByState(state, start, end)
+                .stream()
+                .map(t -> RumaSerializationUtil.toTrnDto(t, schema != null ? schema : false))
+                .collect(Collectors.toList());
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_UPDATE_CYCLE);
+        return twns;
     }
 
     @ApiOperation("Returns newest versions of trafficrestriction notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
@@ -99,10 +105,15 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @ApiParam(defaultValue = "SENT", value = "State of traffic restriction notification") @RequestParam(value = "state", required = false) final Set<TrafficRestrictionNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
+            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            final HttpServletResponse response)
     {
-        final List<TrafficRestrictionNotification> twns = getByState(state, start, end);
-        return new FeatureCollection(twns.stream().flatMap(t -> RumaSerializationUtil.toTrnFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
+        final FeatureCollection features = new FeatureCollection(getByState(state, start, end)
+                .stream()
+                .flatMap(t -> RumaSerializationUtil.toTrnFeatures(t, schema != null ? schema : false))
+                .collect(Collectors.toList()));
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_UPDATE_CYCLE);
+        return features;
     }
 
     private List<TrafficRestrictionNotification> getByState(final Set<TrafficRestrictionNotificationState> state, ZonedDateTime start, ZonedDateTime end) {

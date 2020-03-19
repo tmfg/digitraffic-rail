@@ -34,6 +34,7 @@ public class TrackWorkNotificationController extends ADataController {
     public static final String PATH = WebConfig.CONTEXT_PATH + "trackwork-notifications";
     private static final int MAX_RESULTS = 500;
     private static final int CACHE_MAX_AGE_SECONDS = 30;
+    private static final int CACHE_UPDATE_CYCLE = 5 * 60;
     private static final Set<TrackWorkNotificationState> DEFAULT_STATES = Set.of(
             TrackWorkNotificationState.SENT,
             TrackWorkNotificationState.ACTIVE,
@@ -87,10 +88,15 @@ public class TrackWorkNotificationController extends ADataController {
             @ApiParam(defaultValue = "ACTIVE", value = "State of track work notification") @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
+            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            final HttpServletResponse response)
     {
-        final List<TrackWorkNotification> twns = getByState(state, start, end);
-        return twns.stream().map(t -> RumaSerializationUtil.toTwnDto(t, schema != null ? schema : false)).collect(Collectors.toList());
+        final List<SpatialTrackWorkNotificationDto> twns = getByState(state, start, end)
+                .stream()
+                .map(t -> RumaSerializationUtil.toTwnDto(t, schema != null ? schema : false))
+                .collect(Collectors.toList());
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_UPDATE_CYCLE);
+        return twns;
     }
 
     @ApiOperation("Returns newest versions of trackwork notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
@@ -100,10 +106,12 @@ public class TrackWorkNotificationController extends ADataController {
             @ApiParam(defaultValue = "ACTIVE", value = "State of track work notification") @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end)
+            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            final HttpServletResponse response)
     {
-        final List<TrackWorkNotification> twns = getByState(state, start, end);
-        return new FeatureCollection(twns.stream().flatMap(t -> RumaSerializationUtil.toTwnFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
+        final FeatureCollection features = new FeatureCollection(getByState(state, start, end).stream().flatMap(t -> RumaSerializationUtil.toTwnFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_UPDATE_CYCLE);
+        return features;
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
