@@ -6,6 +6,8 @@ import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNo
 import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
+import static fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.*;
+
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.FIREWORK_DANGER_ZONE;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN_DEVIATED;
 
@@ -41,7 +44,14 @@ public class TrafficRestrictionNotificationFactory {
         final Point geometrySchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
         geometryMap.setSRID(SpatialConstants.WGS84_SRID);
         geometrySchema.setSRID(SpatialConstants.WGS84_SRID);
-        final List<TrafficRestrictionType> types = Arrays.asList(TrafficRestrictionType.values());
+        final List<TrafficRestrictionType> types = Arrays.asList(
+                CLOSED_FROM_TRAFFIC,
+                CLOSED_FROM_ELECTRIC_ROLLING_STOCK,
+                TEMPORARY_SPEED_LIMIT,
+                AXLE_WEIGHT_MAX,
+                ATP_CONSTRUCTION_ZONE,
+                SWITCH_LOCKED,
+                FIREWORK_DANGER_ZONE);
         Collections.shuffle(types);
         final String id = UUID.randomUUID().toString();
         return LongStream.rangeClosed(1, versions).mapToObj(v ->

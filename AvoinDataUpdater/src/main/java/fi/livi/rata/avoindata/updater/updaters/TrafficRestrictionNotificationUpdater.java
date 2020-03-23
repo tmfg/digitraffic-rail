@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.updaters;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.ruma.*;
@@ -113,6 +114,10 @@ public class TrafficRestrictionNotificationUpdater {
         final List<TrafficRestrictionNotification> versionsToBeSaved = trackWorkNotificationVersions.stream()
                 .filter(trn -> {
                     if (trn.state == TrafficRestrictionNotificationState.DRAFT) {
+                        return false;
+                    }
+
+                    if (trn.limitation == TrafficRestrictionType.OTHER) {
                         return false;
                     }
 
