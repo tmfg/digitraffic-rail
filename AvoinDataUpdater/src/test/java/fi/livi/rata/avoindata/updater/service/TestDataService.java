@@ -1,20 +1,23 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
-import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
+import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
 @Transactional
@@ -29,15 +32,11 @@ public class TestDataService {
     @Autowired
     private HttpInputObjectMapper objectMapper;
 
-    @Modifying
-    public void createCompositions() throws IOException {
-        createCompositionsFromResourcePath("compositions.json");
-    }
+    @Autowired
+    private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
-    @Modifying
-    public void createCompositionsFromResourcePath(final String resourcePath) throws IOException {
-        compositionService.addCompositions(getJourneyCompositions(resourcePath));
-    }
+    @Autowired
+    private TrafficRestrictionNotificationRepository trafficRestrictionNotificationRepository;
 
     @Modifying
     public void createSingleTrainComposition() throws IOException {
@@ -61,17 +60,16 @@ public class TestDataService {
         return getJourneyCompositions("compositionOvernight.json");
     }
 
-    public JourneyComposition[] getJourneyComposition() throws IOException {
-        return objectMapper.readValue(new ClassPathResource("journeyComposition.json").getFile(), JourneyComposition[].class);
+    public List<JourneyComposition> getJourneyComposition() throws IOException {
+        return getJourneyCompositions("journeyComposition.json");
     }
 
-    public void clearCompositions() {
-        compositionService.clearCompositions();
+    public void clearTrackWorkNotifications() {
+        trackWorkNotificationRepository.deleteAllInBatch();
     }
 
-    @Modifying
-    public void createTrains() throws IOException {
-        createTrainsFromResource("trains.json");
+    public void clearTrafficRestrictionNotifications() {
+        trafficRestrictionNotificationRepository.deleteAllInBatch();
     }
 
     @Modifying

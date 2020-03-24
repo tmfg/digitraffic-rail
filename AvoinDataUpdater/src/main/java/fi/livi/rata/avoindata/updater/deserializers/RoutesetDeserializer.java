@@ -41,7 +41,7 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
             routeset.version = versionNode.asLong();
         } else {
             routeset.version = routesetRepository.getMaxVersion() + 1;
-            log.info("Made up version for {}/{}/{}, version:{} ", trainNumber, departureDate, routeset.id, routeset.version);
+            log.debug("Made up version for {}/{}/{}, version:{} ", trainNumber, departureDate, routeset.id, routeset.version);
         }
         routeset.messageId = node.get("messageId").asText();
         routeset.messageTime = this.getNodeAsDateTime(node.get("messageTime"));
