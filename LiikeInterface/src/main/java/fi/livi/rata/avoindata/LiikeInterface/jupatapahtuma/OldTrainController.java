@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -55,12 +56,13 @@ public class OldTrainController {
     }
 
     private List<JunapaivaVersionKey> getJunapaivaVersions(Set<String> junanumeros, LocalDate departureDate) {
+        Collector<JunapaivaVersionKey, ?, Map<String, JunapaivaVersionKey>> junapaivaVersionKeyMapCollector = Collectors.toMap(s -> String.format("%s_%s", s.trainNumber, s.departureDate), s -> s);
         final Map<String, JunapaivaVersionKey> junapaivaVersions = junapaivaRepository.findMaxVersions(departureDate, junanumeros).stream()
                 .map(s -> new JunapaivaVersionKey(s))
-                .collect(Collectors.toMap(s -> String.format("%s_%s", s.trainNumber, s.departureDate), s -> s));
+                .collect(junapaivaVersionKeyMapCollector);
         final Map<String, JunapaivaVersionKey> syytietoVersions = syytietoRepository.findMaxVersions(departureDate, junanumeros).stream()
                 .map(s -> new JunapaivaVersionKey(s))
-                .collect(Collectors.toMap(s -> String.format("%s_%s", s.trainNumber, s.departureDate), s -> s));
+                .collect(junapaivaVersionKeyMapCollector);
 
         List<JunapaivaVersionKey> output = new ArrayList<>();
         for (String key : junapaivaVersions.keySet()) {
