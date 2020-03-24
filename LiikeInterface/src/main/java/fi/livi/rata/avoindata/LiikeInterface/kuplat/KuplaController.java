@@ -50,7 +50,7 @@ public class KuplaController {
             if (s.get("sijainti") != null && s.get("sijainti").get("latitude") != null) {
                 return true;
             } else {
-                log.info("Filtered train location because location is null {}", s);
+                log.trace("Filtered train location because location is null {}", s);
                 return false;
             }
         });
