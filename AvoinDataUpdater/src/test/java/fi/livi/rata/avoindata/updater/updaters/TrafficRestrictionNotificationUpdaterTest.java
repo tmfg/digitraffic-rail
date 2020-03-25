@@ -5,7 +5,6 @@ import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrafficRestrictionNotificationFactory;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
@@ -112,20 +111,6 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     public void draftsAreNotPersisted() {
         TrafficRestrictionNotification trn = factory.create(1).get(0);
         trn.state = TrafficRestrictionNotificationState.DRAFT;
-        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
-        when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
-
-        updater.update();
-
-        assertTrue(repository.findAll().isEmpty());
-    }
-
-    @Test
-    @Transactional
-    public void typeOtherAreNotPersisted() {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
-        trn.state = TrafficRestrictionNotificationState.SENT;
-        trn.limitation = TrafficRestrictionType.OTHER;
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
 

@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrafficRestrictionNotificationFactory;
 import org.junit.After;
@@ -53,6 +54,16 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
         ResultActions ra = getJson("/trafficrestriction-notifications/status");
         ra.andExpect(jsonPath("$", hasSize(amount)));
+    }
+
+    @Test
+    public void typeOtherAreNotReturned() throws Exception {
+        final List<TrafficRestrictionNotification> trn = factory.create(1);
+        trn.get(0).limitation = TrafficRestrictionType.OTHER;
+        repository.saveAll(trn);
+
+        ResultActions ra = getJson("/trafficrestriction-notifications/status");
+        ra.andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test

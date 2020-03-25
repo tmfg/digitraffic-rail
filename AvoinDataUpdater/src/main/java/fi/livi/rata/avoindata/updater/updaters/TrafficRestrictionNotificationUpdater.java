@@ -114,10 +114,6 @@ public class TrafficRestrictionNotificationUpdater {
                         return false;
                     }
 
-                    if (trn.limitation == TrafficRestrictionType.OTHER) {
-                        return false;
-                    }
-
                     if (trn.state == TrafficRestrictionNotificationState.FINISHED) {
                         boolean previousVersionIsDraft = previousVersionIsDraft(trn.id, trackWorkNotificationVersions);
                         return !previousVersionIsDraft;
