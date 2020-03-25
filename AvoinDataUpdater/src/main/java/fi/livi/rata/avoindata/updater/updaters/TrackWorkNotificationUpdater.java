@@ -106,52 +106,61 @@ public class TrackWorkNotificationUpdater {
     }
 
     private void updateTrackWorkNotification(String id, SortedSet<Long> versions) {
-        log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
-        List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
-        log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
+        try {
+            log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
+            List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
+            log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
 
-        List<TrackWorkNotification> versionsToBeSaved = new ArrayList<>();
+            List<TrackWorkNotification> versionsToBeSaved = new ArrayList<>();
 
-        for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+            for (TrackWorkNotification twn : trackWorkNotificationVersions) {
 
-            if (twn.state == TrackWorkNotificationState.DRAFT) {
-                continue;
-            }
-
-            if (twn.state == TrackWorkNotificationState.FINISHED) {
-                boolean previousVersionIsDraft = previousVersionIsDraft(twn.id, trackWorkNotificationVersions);
-                if (previousVersionIsDraft) {
+                if (twn.state == TrackWorkNotificationState.DRAFT) {
                     continue;
                 }
-            }
 
-            twn.locationMap = wgs84ConversionService.liviToWgs84Jts(twn.locationMap);
-            twn.locationSchema = wgs84ConversionService.liviToWgs84Jts(twn.locationSchema);
-
-            for (TrackWorkPart twp : twn.trackWorkParts) {
-
-                for (RumaLocation rl : twp.locations) {
-                    if (rl.locationMap != null) {
-                        rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
+                if (twn.state == TrackWorkNotificationState.FINISHED) {
+                    boolean previousVersionIsDraft = previousVersionIsDraft(twn.id, trackWorkNotificationVersions);
+                    if (previousVersionIsDraft) {
+                        continue;
                     }
-                    if (rl.locationSchema != null) {
-                        rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
-                    }
+                }
 
-                    for (IdentifierRange ir : rl.identifierRanges) {
-                        ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
-                        ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                twn.locationMap = wgs84ConversionService.liviToWgs84Jts(twn.locationMap);
+                twn.locationSchema = wgs84ConversionService.liviToWgs84Jts(twn.locationSchema);
+
+                for (TrackWorkPart twp : twn.trackWorkParts) {
+
+                    for (RumaLocation rl : twp.locations) {
+                        try {
+                            if (rl.locationMap != null) {
+                                rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
+                            }
+                            if (rl.locationSchema != null) {
+                                rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
+                            }
+                        } catch (Exception e) {
+                            String operatingpointOrSectionId = rl.operatingPointId != null ? rl.operatingPointId : rl.sectionBetweenOperatingPointsId;
+                            log.error("Error while converting coordinates for operating point or section " + operatingpointOrSectionId, e);
+                            throw e;
+                        }
+                        for (IdentifierRange ir : rl.identifierRanges) {
+                            ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                            ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                        }
+
                     }
 
                 }
 
+                versionsToBeSaved.add(twn);
             }
 
-            versionsToBeSaved.add(twn);
-        }
-
-        if (!versionsToBeSaved.isEmpty()) {
-            localTrackWorkNotificationService.saveAll(versionsToBeSaved);
+            if (!versionsToBeSaved.isEmpty()) {
+                localTrackWorkNotificationService.saveAll(versionsToBeSaved);
+            }
+        } catch (Exception e) {
+            log.error("Could not update track work notification " + id, e);
         }
     }
 
