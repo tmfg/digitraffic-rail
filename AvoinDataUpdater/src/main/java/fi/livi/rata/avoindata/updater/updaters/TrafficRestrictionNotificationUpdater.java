@@ -3,10 +3,12 @@ package fi.livi.rata.avoindata.updater.updaters;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import fi.livi.rata.avoindata.updater.service.ruma.*;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalTrafficRestrictionNotificationService;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotificationService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +20,6 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-
-import static java.util.function.Predicate.not;
 
 @Service
 public class TrafficRestrictionNotificationUpdater {
@@ -61,7 +61,7 @@ public class TrafficRestrictionNotificationUpdater {
             List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications = localTrafficRestrictionNotificationService.getLocalTrafficRestrictionNotifications(statuses.keySet());
             addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
-            lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
         } else {
             log.error("Error retrieving traffic restriction notification statuses or received empty response");
         }
@@ -82,7 +82,7 @@ public class TrafficRestrictionNotificationUpdater {
     private void updateTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
         int updatedCount = localTrafficRestrictionNotifications.stream()
                 .map(localTrafficRestrictionNotification -> updateNotificationVersions(localTrafficRestrictionNotification, statuses))
-                .filter(not(Boolean::booleanValue))
+                .filter(Boolean::booleanValue)
                 .mapToInt(x -> 1)
                 .sum();
         log.info("Updated {} traffic restriction notifications", updatedCount);
@@ -98,12 +98,12 @@ public class TrafficRestrictionNotificationUpdater {
             LongStream.rangeClosed(localTrafficRestrictionNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }
         if (!versions.isEmpty()) {
-            updateTrafficRestrictionNotification(localTrafficRestrictionNotification.id, versions);
+            return updateTrafficRestrictionNotification(localTrafficRestrictionNotification.id, versions);
         }
-        return !versions.isEmpty();
+        return false;
     }
 
-    private void updateTrafficRestrictionNotification(String id, SortedSet<Long> versions) {
+    private boolean updateTrafficRestrictionNotification(String id, SortedSet<Long> versions) {
         log.info("Updating TrafficRestrictionNotification {}, required versions {}", id, versions);
         final List<TrafficRestrictionNotification> trackWorkNotificationVersions = remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
         log.info("Got {} versions for TrafficRestrictionNotification {}", trackWorkNotificationVersions.size(), id);
@@ -142,7 +142,9 @@ public class TrafficRestrictionNotificationUpdater {
 
         if (!versionsToBeSaved.isEmpty()) {
             localTrafficRestrictionNotificationService.saveAll(versionsToBeSaved);
+            return true;
         }
+        return false;
     }
 
     private boolean previousVersionIsDraft(TrafficRestrictionNotification.TrafficRestrictionNotificationId id, List<TrafficRestrictionNotification> trackWorkNotificationVersions) {

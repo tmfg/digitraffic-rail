@@ -1,14 +1,12 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import static java.util.function.Predicate.not;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +15,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 @Service
 public class TrackWorkNotificationUpdater {
@@ -81,7 +78,7 @@ public class TrackWorkNotificationUpdater {
     private void updateTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
         int updatedCount = localTrackWorkNotifications.stream()
                 .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
-                .filter(not(Boolean::booleanValue))
+                .filter(Boolean::booleanValue)
                 .mapToInt(x -> 1)
                 .sum();
         log.info("Updated {} track work notifications", updatedCount);
@@ -97,12 +94,12 @@ public class TrackWorkNotificationUpdater {
             LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }
         if (!versions.isEmpty()) {
-            updateTrackWorkNotification(localTrackWorkNotification.id, versions);
+            return updateTrackWorkNotification(localTrackWorkNotification.id, versions);
         }
-        return !versions.isEmpty();
+        return false;
     }
 
-    private void updateTrackWorkNotification(String id, SortedSet<Long> versions) {
+    private boolean updateTrackWorkNotification(String id, SortedSet<Long> versions) {
         try {
             log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
             List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
@@ -160,10 +157,12 @@ public class TrackWorkNotificationUpdater {
 
             if (!versionsToBeSaved.isEmpty()) {
                 localTrackWorkNotificationService.saveAll(versionsToBeSaved);
+                return true;
             }
         } catch (Exception e) {
             log.error("Could not update track work notification " + id, e);
         }
+        return false;
     }
 
     private boolean previousVersionIsDraft(TrackWorkNotification.TrackWorkNotificationId id, List<TrackWorkNotification> trackWorkNotificationVersions) {
