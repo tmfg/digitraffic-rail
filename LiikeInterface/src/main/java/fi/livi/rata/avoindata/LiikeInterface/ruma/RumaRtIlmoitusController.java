@@ -34,7 +34,7 @@ public class RumaRtIlmoitusController extends AbstractRumaController {
     @ResponseBody
     public Object getRtis() throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-        String fullUrl = liikeBaseUrl + rumaRtiStatusUrl + "?state=DRAFT&state=SENT&state=PASSIVE&state=ACTIVE&state=FINISHED";
+        String fullUrl = liikeBaseUrl + rumaRtiStatusUrl + "?state=SENT&state=PASSIVE&state=ACTIVE&state=FINISHED";
         log.info("Requesting rti status from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
