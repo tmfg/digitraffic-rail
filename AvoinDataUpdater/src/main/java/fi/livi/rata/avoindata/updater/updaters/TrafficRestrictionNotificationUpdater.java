@@ -94,9 +94,6 @@ public class TrafficRestrictionNotificationUpdater {
         }
        long remoteVersion = statuses.get(localTrafficRestrictionNotification.id);
         SortedSet<Long> versions = new TreeSet<>();
-        if (localTrafficRestrictionNotification.minVersion > 1) {
-            LongStream.range(1, localTrafficRestrictionNotification.minVersion).forEach(versions::add);
-        }
         if (remoteVersion > localTrafficRestrictionNotification.maxVersion) {
             LongStream.rangeClosed(localTrafficRestrictionNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }

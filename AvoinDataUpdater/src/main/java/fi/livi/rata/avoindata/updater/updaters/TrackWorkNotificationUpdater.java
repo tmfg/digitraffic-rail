@@ -93,9 +93,6 @@ public class TrackWorkNotificationUpdater {
         }
        long remoteVersion = statuses.get(localTrackWorkNotification.id);
         SortedSet<Long> versions = new TreeSet<>();
-        if (localTrackWorkNotification.minVersion > 1) {
-            LongStream.range(1, localTrackWorkNotification.minVersion).forEach(versions::add);
-        }
         if (remoteVersion > localTrackWorkNotification.maxVersion) {
             LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }

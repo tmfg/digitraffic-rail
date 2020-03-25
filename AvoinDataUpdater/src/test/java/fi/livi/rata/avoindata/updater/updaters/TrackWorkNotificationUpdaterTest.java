@@ -8,8 +8,8 @@ import fi.livi.rata.avoindata.updater.factory.TrackWorkNotificationFactory;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,6 +68,23 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
     @Test
     @Transactional
+    public void addNewMultipleVersions() {
+        final List<TrackWorkNotification> twns = factory.create(2);
+        final TrackWorkNotification twn = twns.get(0);
+        final TrackWorkNotification twn2 = twns.get(1);
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn2.id.version)});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(List.of(twn, twn2));
+
+        updater.update();
+
+        List<TrackWorkNotification> savedTwns = repository.findAll();
+        assertEquals(2, savedTwns.size());
+        assertEquals(twn.id, savedTwns.get(0).id);
+        assertEquals(twn2.id, savedTwns.get(1).id);
+    }
+
+    @Test
+    @Transactional
     public void updateExistingForwards() {
         // only persist version 1
         List<TrackWorkNotification> twnVersions = factory.create(2);
@@ -77,26 +94,6 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twnV2.getVersion())});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twnV2));
-
-        updater.update();
-
-        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
-        assertEquals(2, idsAndVersions.size());
-        assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
-        assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
-    }
-
-    @Test
-    @Transactional
-    public void updateExistingBackwards() {
-        // only persist version 2
-        List<TrackWorkNotification> twnVersions = factory.create(2);
-        TrackWorkNotification twn = twnVersions.get(0);
-        TrackWorkNotification twnV2 = twnVersions.get(1);
-        repository.save(twnV2);
-
-        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twnV2.getVersion())});
-        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
 

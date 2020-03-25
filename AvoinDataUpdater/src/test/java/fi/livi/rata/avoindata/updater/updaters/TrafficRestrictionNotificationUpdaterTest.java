@@ -72,6 +72,23 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
     @Test
     @Transactional
+    public void addNewMultipleVersions() {
+        final List<TrafficRestrictionNotification> trns = factory.create(2);
+        TrafficRestrictionNotification trn = trns.get(0);
+        TrafficRestrictionNotification trn2 = trns.get(1);
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn2.id.id, trn2.id.version),});
+        when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(List.of(trn, trn2));
+
+        updater.update();
+
+        List<TrafficRestrictionNotification> savedTrns = repository.findAll();
+        assertEquals(2, savedTrns.size());
+        assertEquals(trn.id, savedTrns.get(0).id);
+        assertEquals(trn2.id, savedTrns.get(1).id);
+    }
+
+    @Test
+    @Transactional
     public void updateExistingForwards() {
         // only persist version 1
         List<TrafficRestrictionNotification> trnVersions = factory.create(2);
@@ -81,26 +98,6 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trnV2.getVersion())});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trnV2));
-
-        updater.update();
-
-        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(trn.id.id));
-        assertEquals(2, idsAndVersions.size());
-        assertEquals( trn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
-        assertEquals( trnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
-    }
-
-    @Test
-    @Transactional
-    public void updateExistingBackwards() {
-        // only persist version 2
-        List<TrafficRestrictionNotification> trnVersions = factory.create(2);
-        TrafficRestrictionNotification trn = trnVersions.get(0);
-        TrafficRestrictionNotification trnV2 = trnVersions.get(1);
-        repository.save(trnV2);
-
-        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trnV2.getVersion())});
-        when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
 
         updater.update();
 
