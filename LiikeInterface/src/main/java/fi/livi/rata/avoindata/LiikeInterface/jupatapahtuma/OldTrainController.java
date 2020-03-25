@@ -46,21 +46,21 @@ public class OldTrainController {
     public List<Junapaiva> getChangedJunapaivas(@RequestBody HashMap<String, Object> input) {
         Map<String, Long> versions = (Map<String, Long>) input.get("versions");
 
-        Set<String> junanumeros = versions.keySet();
+        Set<String> trainNumbers = versions.keySet();
         LocalDate departureDate = LocalDate.parse(input.get("date").toString());
 
-        List<JunapaivaVersionKey> junapaivaVersions = getJunapaivaVersions(junanumeros, departureDate);
+        List<JunapaivaVersionKey> junapaivaVersions = getJunapaivaVersions(trainNumbers, departureDate);
         List<JunapaivaPrimaryKey> junapaivaKeys = getChangedJunapaivaIds(versions, junapaivaVersions);
 
         return getJunapaivas(junapaivaKeys);
     }
 
-    private List<JunapaivaVersionKey> getJunapaivaVersions(Set<String> junanumeros, LocalDate departureDate) {
+    private List<JunapaivaVersionKey> getJunapaivaVersions(Set<String> trainNumbers, LocalDate departureDate) {
         Collector<JunapaivaVersionKey, ?, Map<String, JunapaivaVersionKey>> junapaivaVersionKeyMapCollector = Collectors.toMap(s -> String.format("%s_%s", s.trainNumber, s.departureDate), s -> s);
-        final Map<String, JunapaivaVersionKey> junapaivaVersions = junapaivaRepository.findMaxVersions(departureDate, junanumeros).stream()
+        final Map<String, JunapaivaVersionKey> junapaivaVersions = junapaivaRepository.findMaxVersions(departureDate, trainNumbers).stream()
                 .map(s -> new JunapaivaVersionKey(s))
                 .collect(junapaivaVersionKeyMapCollector);
-        final Map<String, JunapaivaVersionKey> syytietoVersions = syytietoRepository.findMaxVersions(departureDate, junanumeros).stream()
+        final Map<String, JunapaivaVersionKey> syytietoVersions = syytietoRepository.findMaxVersions(departureDate, trainNumbers).stream()
                 .map(s -> new JunapaivaVersionKey(s))
                 .collect(junapaivaVersionKeyMapCollector);
 
