@@ -28,4 +28,11 @@ public class ElementRange {
     @Convert(converter = StringListConverter.class)
     public List<String> specifiers;
 
+    @Override
+    public String toString() {
+        return "ElementRange{" +
+                "elementId1='" + elementId1 + '\'' +
+                ", elementId2='" + elementId2 + '\'' +
+                '}';
+    }
 }

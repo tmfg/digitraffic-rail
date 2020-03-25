@@ -145,8 +145,13 @@ public class TrackWorkNotificationUpdater {
                             throw e;
                         }
                         for (IdentifierRange ir : rl.identifierRanges) {
-                            ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
-                            ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                            try {
+                                ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                                ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
+                            } catch (Exception e) {
+                                log.error("Error while converting coordinates for identifier range: " + ir.toString(), e);
+                                throw e;
+                            }
                         }
 
                     }

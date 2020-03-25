@@ -30,4 +30,11 @@ public class IdentifierRange {
     @OneToMany(mappedBy = "identifierRange", fetch = FetchType.EAGER, cascade = { CascadeType.REMOVE, CascadeType.ALL })
     public Set<ElementRange> elementRanges = new HashSet<>();
 
+    @Override
+    public String toString() {
+        return "IdentifierRange{" +
+                "elementId='" + elementId + '\'' +
+                ", elementRanges=" + elementRanges +
+                '}';
+    }
 }
