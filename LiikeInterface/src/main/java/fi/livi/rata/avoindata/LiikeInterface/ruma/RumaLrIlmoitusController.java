@@ -31,7 +31,7 @@ public class RumaLrIlmoitusController extends AbstractRumaController {
     @ResponseBody
     public Object getLris() throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-        String fullUrl = liikeBaseUrl + rumaLriStatusUrl + "?state=DRAFT&state=SENT&state=FINISHED";
+        String fullUrl = liikeBaseUrl + rumaLriStatusUrl + "?state=SENT&state=FINISHED";
         log.info("Requesting lri status from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
