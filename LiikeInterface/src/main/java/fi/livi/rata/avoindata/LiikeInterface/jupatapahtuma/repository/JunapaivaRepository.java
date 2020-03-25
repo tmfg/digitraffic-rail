@@ -1,15 +1,16 @@
 package fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
 
 @Repository
 public interface JunapaivaRepository extends CrudRepository<Junapaiva, JunapaivaPrimaryKey> {
@@ -37,7 +38,7 @@ public interface JunapaivaRepository extends CrudRepository<Junapaiva, Junapaiva
             "where jt.id.lahtopvm = ?1 " +
             "and jt.id.junanumero in ?2 " +
             "group by jt.id.junanumero,jt.id.lahtopvm")
-    List<Object[]> findJunapaivaVersions(LocalDate start, Collection<String> junanumeros);
+    List<Object[]> findMaxVersions(LocalDate start, Collection<String> junanumeros);
 
     @Query(value = "with tapahtumat as" +
             " (SELECT jupat.junanumero, jupat.lahtopvm, ora_rowscn" +

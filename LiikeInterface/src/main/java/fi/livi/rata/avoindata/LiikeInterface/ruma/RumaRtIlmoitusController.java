@@ -1,9 +1,6 @@
 package fi.livi.rata.avoindata.LiikeInterface.ruma;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.Charset;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +41,7 @@ public class RumaRtIlmoitusController extends AbstractRumaController {
     public Object getRti(@PathVariable String id, @PathVariable long version) throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
         String fullUrl = liikeBaseUrl + String.format(rumaRtiDetailedUrl, id, version) ;
-        log.info("Requesting rti version from {}", fullUrl);
+        log.trace("Requesting rti version from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
 
