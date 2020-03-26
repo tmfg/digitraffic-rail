@@ -9,6 +9,8 @@ import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateServic
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.STATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TIME_TABLE_PERIODS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACKSECTIONS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES;
 
 import java.time.Duration;
@@ -54,7 +56,8 @@ public class IsUpToDateService {
             alarmLimits.put(value, Duration.ofMinutes(5));
         }
 
-        //once a day
+        alarmLimits.put(TRACK_WORK_NOTIFICATIONS, Duration.ofMinutes(10));
+        alarmLimits.put(TRAFFIC_RESTRICTION_NOTIFICATIONS, Duration.ofMinutes(10));
         alarmLimits.put(LOCALIZATIONS, Duration.ofHours(25));
         alarmLimits.put(OPERATORS, Duration.ofHours(25));
         alarmLimits.put(TIME_TABLE_PERIODS, Duration.ofHours(25));
