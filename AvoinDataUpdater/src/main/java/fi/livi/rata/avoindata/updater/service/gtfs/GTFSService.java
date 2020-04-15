@@ -89,7 +89,7 @@ public class GTFSService {
                     trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
                 }
             } else {
-                log.error("Encountered trip without stoptimes");
+                log.error("Encountered trip without stoptimes: {}", trip);
             }
         }
 
