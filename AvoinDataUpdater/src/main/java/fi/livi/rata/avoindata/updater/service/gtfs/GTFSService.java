@@ -84,8 +84,12 @@ public class GTFSService {
         }
 
         for (Trip trip : vrGtfsDto.trips) {
-            if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
-                trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
+            if (trip.stopTimes != null) {
+                if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
+                    trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
+                }
+            } else {
+                log.error("Encountered trip without stoptimes");
             }
         }
 
