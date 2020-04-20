@@ -19,6 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotificationService.RUMA_API_PAGE_SIZE;
+
 @Service
 public class TrackWorkNotificationUpdater {
 
@@ -49,9 +51,23 @@ public class TrackWorkNotificationUpdater {
             return;
         }
 
-        RemoteRumaNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
+        RemoteRumaNotificationStatus[] statusesResp;
+        int from = 0;
+        do {
+            statusesResp = remoteTrackWorkNotificationService.getStatuses(from);
 
-        if (statusesResp != null && statusesResp.length > 0) {
+            if (statusesResp == null) {
+                log.error("Error retrieving traffic restriction notification statuses or received empty response");
+                return;
+            }
+            if (statusesResp.length == 0) {
+                log.info("Reached end of traffic restriction notification paging, discontinuing");
+                return;
+            } else {
+                log.info("Received {} traffic restriction notification statuses", statusesResp.length);
+            }
+
+            from += RUMA_API_PAGE_SIZE;
             Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             log.info("Received {} track work notification statuses", statuses.size());
@@ -59,9 +75,7 @@ public class TrackWorkNotificationUpdater {
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
-        } else {
-            log.error("Error retrieving track work notification statuses or received empty response");
-        }
+        } while (statusesResp.length > 0);
     }
 
     private void addNewTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
@@ -88,7 +102,7 @@ public class TrackWorkNotificationUpdater {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }
-       long remoteVersion = statuses.get(localTrackWorkNotification.id);
+        long remoteVersion = statuses.get(localTrackWorkNotification.id);
         SortedSet<Long> versions = new TreeSet<>();
         if (remoteVersion > localTrackWorkNotification.maxVersion) {
             LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);

@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotificationService.RUMA_API_PAGE_SIZE;
+
 @Service
 public class TrafficRestrictionNotificationUpdater {
 
@@ -51,10 +53,23 @@ public class TrafficRestrictionNotificationUpdater {
             return;
         }
 
-        RemoteRumaNotificationStatus[] statusesResp = remoteTrafficRestrictionNotificationService.getStatuses();
-        log.info("Received {} traffic restriction notification statuses", statusesResp.length);
+        RemoteRumaNotificationStatus[] statusesResp;
+        int from = 0;
+        do {
+            statusesResp = remoteTrafficRestrictionNotificationService.getStatuses(from);
 
-        if (statusesResp != null && statusesResp.length > 0) {
+            if (statusesResp == null) {
+                log.error("Error retrieving traffic restriction notification statuses or received empty response");
+                return;
+            }
+            if (statusesResp.length == 0) {
+                log.info("Reached end of traffic restriction notification paging, discontinuing");
+                return;
+            } else {
+                log.info("Received {} traffic restriction notification statuses", statusesResp.length);
+            }
+
+            from += RUMA_API_PAGE_SIZE;
             Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             log.info("Received {} traffic restriction notification statuses", statuses.size());
@@ -62,10 +77,7 @@ public class TrafficRestrictionNotificationUpdater {
             addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
-        } else {
-            log.error("Error retrieving traffic restriction notification statuses or received empty response");
-        }
- 
+        } while (statusesResp.length > 0);
     }
 
     private void addNewTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
@@ -92,7 +104,7 @@ public class TrafficRestrictionNotificationUpdater {
         if (!statuses.containsKey(localTrafficRestrictionNotification.id)) {
             return false;
         }
-       long remoteVersion = statuses.get(localTrafficRestrictionNotification.id);
+        long remoteVersion = statuses.get(localTrafficRestrictionNotification.id);
         SortedSet<Long> versions = new TreeSet<>();
         if (remoteVersion > localTrafficRestrictionNotification.maxVersion) {
             LongStream.rangeClosed(localTrafficRestrictionNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
