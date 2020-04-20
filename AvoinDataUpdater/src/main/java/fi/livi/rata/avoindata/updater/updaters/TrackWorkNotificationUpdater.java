@@ -85,9 +85,9 @@ public class TrackWorkNotificationUpdater {
             List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
             int addedNewTrackWorkNotifications = addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             int updatedTrackWorkNotifications = updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
             log.info("Added {} new track work notifications, updated {} track work notifications", addedNewTrackWorkNotifications, updatedTrackWorkNotifications);
         } while (statusesResp.length > 0);
-        lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
     }
 
     private int addNewTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
