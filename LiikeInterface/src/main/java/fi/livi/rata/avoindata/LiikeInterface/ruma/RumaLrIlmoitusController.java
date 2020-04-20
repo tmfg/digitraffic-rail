@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
@@ -29,9 +30,11 @@ public class RumaLrIlmoitusController extends AbstractRumaController {
 
     @RequestMapping(value = "/avoin/ruma/lri", produces = "application/json")
     @ResponseBody
-    public Object getLris() throws IOException {
+    public Object getLris(
+            @RequestParam final int from
+    ) throws IOException {
         String authenticationToken = rumaAuthenticationTokenService.getAuthenticationToken();
-        String fullUrl = liikeBaseUrl + rumaLriStatusUrl + "?state=SENT&state=FINISHED";
+        String fullUrl = liikeBaseUrl + rumaLriStatusUrl + "?state=SENT&state=FINISHED&size=1000&from=" + from;
         log.info("Requesting lri status from {}", fullUrl);
         return getFromRumaWithToken(fullUrl, authenticationToken);
     }
