@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.ruma;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+
+import static fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper.ISO_FIXED_FORMAT;
 
 @Service
 public class RemoteTrackWorkNotificationService {
@@ -27,6 +31,9 @@ public class RemoteTrackWorkNotificationService {
     @Autowired
     protected RestTemplate restTemplate;
 
+    @Autowired
+    protected LastUpdateService lastUpdateService;
+
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
@@ -38,8 +45,10 @@ public class RemoteTrackWorkNotificationService {
     }
 
     public RemoteRumaNotificationStatus[] getStatuses(final int from) {
+        final ZonedDateTime lastUpdate = lastUpdateService.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
         return retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + rumaUrlFragment + "?from=" + from;
+            final ZonedDateTime lastUpdateOrNow = lastUpdate != null ? lastUpdate : ZonedDateTime.now().minusDays(7); // if no previous update is found, update from 1 week backwards
+            final String fullUrl = liikeInterfaceUrl + rumaUrlFragment + "?from=" + from + "&lastupdate=" + ISO_FIXED_FORMAT.format(lastUpdateOrNow);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
     }

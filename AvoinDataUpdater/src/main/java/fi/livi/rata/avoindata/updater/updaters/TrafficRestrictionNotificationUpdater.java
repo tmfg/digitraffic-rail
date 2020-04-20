@@ -82,9 +82,9 @@ public class TrafficRestrictionNotificationUpdater {
             List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications = localTrafficRestrictionNotificationService.getLocalTrafficRestrictionNotifications(statuses.keySet());
             int addedNewTrafficRestrictionNotifications = addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             int updatedTrafficRestrictionNotifications = updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
-            lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
             log.info("Added {} new traffic restriction notifications, updated {} traffic restriction notifications", addedNewTrafficRestrictionNotifications, updatedTrafficRestrictionNotifications);
         } while (statusesResp.length > 0);
+        lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
     }
 
     private int addNewTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
