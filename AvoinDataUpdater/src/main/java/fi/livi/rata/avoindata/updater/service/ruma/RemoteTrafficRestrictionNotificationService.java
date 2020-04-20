@@ -30,7 +30,7 @@ public class RemoteTrafficRestrictionNotificationService {
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
-    private static final String rumaUrlFragment = "/ruma/lri?from=";
+    private static final String rumaUrlFragment = "/ruma/lri";
 
     @PostConstruct
     private void init() {
@@ -39,7 +39,7 @@ public class RemoteTrafficRestrictionNotificationService {
 
     public RemoteRumaNotificationStatus[] getStatuses(final int from) {
         return retryTemplate.execute(context -> {
-            final String fullUrl = liikeInterfaceUrl + rumaUrlFragment + from;
+            final String fullUrl = liikeInterfaceUrl + rumaUrlFragment + "?from=" + from;
             log.info("Requesting TrafficRestrictionNotification statuses from " + fullUrl);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
