@@ -1,17 +1,17 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
-import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
-import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-import fi.livi.rata.avoindata.updater.service.TrainPublishingService;
-import fi.livi.rata.avoindata.updater.service.routeset.TimeTableRowByRoutesetUpdateService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.RoutesetPersistService;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.routeset.TimeTableRowByRoutesetUpdateService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.RoutesetPersistService;
 
 @Service
 public class RoutesetInitializerService extends AbstractDatabaseInitializer<Routeset> {
@@ -25,9 +25,6 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
     @Autowired
     private TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
-
-    @Autowired
-    private TrainPublishingService trainPublishingService;
 
     @Override
     public String getPrefix() {

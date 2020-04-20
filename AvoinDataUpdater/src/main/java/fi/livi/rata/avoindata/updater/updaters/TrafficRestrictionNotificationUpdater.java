@@ -1,5 +1,22 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
@@ -9,17 +26,6 @@ import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrafficRestrictionNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotificationService;
-import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotificationService.RUMA_API_PAGE_SIZE;
 
@@ -74,13 +80,14 @@ public class TrafficRestrictionNotificationUpdater {
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             log.info("Received {} traffic restriction notification statuses", statuses.size());
             List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications = localTrafficRestrictionNotificationService.getLocalTrafficRestrictionNotifications(statuses.keySet());
-            addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
-            updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
+            int addedNewTrafficRestrictionNotifications = addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
+            int updatedTrafficRestrictionNotifications = updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
+            log.info("Added {} new traffic restriction notifications, updated {} traffic restriction notifications", addedNewTrafficRestrictionNotifications, updatedTrafficRestrictionNotifications);
         } while (statusesResp.length > 0);
     }
 
-    private void addNewTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
+    private int addNewTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
         Collection<String> newTrafficRestrictionNotifications = CollectionUtils.disjunction(localTrafficRestrictionNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
 
         for (Map.Entry<String, Long> e : statuses.entrySet()) {
@@ -88,16 +95,17 @@ public class TrafficRestrictionNotificationUpdater {
                 updateTrafficRestrictionNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
         }
-        log.info("Added {} new traffic restriction notifications", newTrafficRestrictionNotifications.size());
+
+        return newTrafficRestrictionNotifications.size();
     }
 
-    private void updateTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
+    private int updateTrafficRestrictionNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications) {
         int updatedCount = localTrafficRestrictionNotifications.stream()
                 .map(localTrafficRestrictionNotification -> updateNotificationVersions(localTrafficRestrictionNotification, statuses))
                 .filter(Boolean::booleanValue)
                 .mapToInt(x -> 1)
                 .sum();
-        log.info("Updated {} traffic restriction notifications", updatedCount);
+        return updatedCount;
     }
 
     private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrafficRestrictionNotification, Map<String, Long> statuses) {

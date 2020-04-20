@@ -19,6 +19,8 @@ public class RemoteTrackWorkNotificationService {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
+    public static final int RUMA_API_PAGE_SIZE = 1000;
+
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
 
