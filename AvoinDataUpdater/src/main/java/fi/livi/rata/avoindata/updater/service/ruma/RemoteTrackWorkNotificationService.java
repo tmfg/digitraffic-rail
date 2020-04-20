@@ -30,7 +30,7 @@ public class RemoteTrackWorkNotificationService {
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
-    private static final String rumaUrlFragment = "/ruma/rti";
+    private static final String rumaUrlFragment = "/ruma/rti?from=";
 
     @PostConstruct
     private void init() {
@@ -39,7 +39,7 @@ public class RemoteTrackWorkNotificationService {
 
     public RemoteRumaNotificationStatus[] getStatuses(final int from) {
         return retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + rumaUrlFragment + "?from=" + from;
+            String fullUrl = liikeInterfaceUrl + rumaUrlFragment + from;
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });
     }
