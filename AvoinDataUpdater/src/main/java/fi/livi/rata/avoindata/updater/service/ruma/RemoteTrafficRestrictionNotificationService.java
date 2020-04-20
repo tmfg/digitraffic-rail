@@ -19,8 +19,6 @@ public class RemoteTrafficRestrictionNotificationService {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    public static final int RUMA_API_PAGE_SIZE = 1000;
-
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
 
@@ -30,16 +28,16 @@ public class RemoteTrafficRestrictionNotificationService {
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
-    private static final String rumaUrlFragment = "/ruma/lri?from=";
+    private static final String rumaUrlFragment = "/ruma/lri";
 
     @PostConstruct
     private void init() {
         retryTemplate.setLogger(log);
     }
 
-    public RemoteRumaNotificationStatus[] getStatuses(final int from) {
+    public RemoteRumaNotificationStatus[] getStatuses() {
         return retryTemplate.execute(context -> {
-            final String fullUrl = liikeInterfaceUrl + rumaUrlFragment + from;
+            final String fullUrl = liikeInterfaceUrl + rumaUrlFragment;
             log.info("Requesting TrafficRestrictionNotification statuses from " + fullUrl);
             return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
         });

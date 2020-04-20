@@ -15,21 +15,12 @@ import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrafficRestrictionNotif
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,6 +31,8 @@ import static org.mockito.Mockito.when;
 public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
     private TrafficRestrictionNotificationUpdater updater;
+
+    private GeometryFactory geometryFactory = new GeometryFactory();
 
     @Autowired
     private TrafficRestrictionNotificationRepository repository;
@@ -53,9 +46,6 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     private LastUpdateService lastUpdateService;
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Before
     public void setUp() {
@@ -71,7 +61,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Transactional
     public void addNew() {
         TrafficRestrictionNotification trn = factory.create(1).get(0);
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
 
         updater.update();
@@ -81,37 +71,11 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
     @Test
     @Transactional
-    public void paging() {
-        List<TrafficRestrictionNotification> trns = IntStream.rangeClosed(0, 999).mapToObj(i -> factory.create(1).get(0)).collect(Collectors.toList());
-        List<TrafficRestrictionNotification> trns2 = IntStream.rangeClosed(0, 499).mapToObj(i -> factory.create(1).get(0)).collect(Collectors.toList());
-        List<TrafficRestrictionNotification> bothTrns = new ArrayList<>();
-        bothTrns.addAll(trns);
-        bothTrns.addAll(trns2);
-        RemoteRumaNotificationStatus[] trnStatuses = trns.stream().map(trn -> new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)).toArray(RemoteRumaNotificationStatus[]::new);
-        RemoteRumaNotificationStatus[] trnStatuses2 = trns2.stream().map(trn -> new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)).toArray(RemoteRumaNotificationStatus[]::new);
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(trnStatuses);
-        when(remoteTrafficRestrictionNotificationService.getStatuses(1000)).thenReturn(trnStatuses2);
-        final AtomicInteger invocation = new AtomicInteger(-1);
-        when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).then(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return List.of(bothTrns.get(invocation.incrementAndGet()));
-            }
-        });
-
-        updater.update();
-
-        BigInteger count = (BigInteger) entityManager.createNativeQuery("SELECT count(*) FROM traffic_restriction_notification").getSingleResult();
-        assertEquals(bothTrns.size(), count.intValue());
-    }
-
-    @Test
-    @Transactional
     public void addNewMultipleVersions() {
         final List<TrafficRestrictionNotification> trns = factory.create(2);
         TrafficRestrictionNotification trn = trns.get(0);
         TrafficRestrictionNotification trn2 = trns.get(1);
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn2.id.id, trn2.id.version),});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn2.id.id, trn2.id.version),});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(List.of(trn, trn2));
 
         updater.update();
@@ -131,7 +95,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
         TrafficRestrictionNotification trnV2 = trnVersions.get(1);
         repository.save(trn);
 
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trnV2.getVersion())});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trnV2.getVersion())});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trnV2));
 
         updater.update();
@@ -147,7 +111,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     public void draftsAreNotPersisted() {
         TrafficRestrictionNotification trn = factory.create(1).get(0);
         trn.state = TrafficRestrictionNotificationState.DRAFT;
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
 
         updater.update();
@@ -163,7 +127,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
         TrafficRestrictionNotification finished = trns.get(1);
         draft.state = TrafficRestrictionNotificationState.DRAFT;
         finished.state = TrafficRestrictionNotificationState.FINISHED;
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(List.of(draft, finished));
 
         updater.update();
@@ -179,7 +143,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
         TrafficRestrictionNotification finished = trns.get(1);
         sent.state = TrafficRestrictionNotificationState.SENT;
         finished.state = TrafficRestrictionNotificationState.FINISHED;
-        when(remoteTrafficRestrictionNotificationService.getStatuses(0)).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(List.of(sent, finished));
 
         updater.update();
