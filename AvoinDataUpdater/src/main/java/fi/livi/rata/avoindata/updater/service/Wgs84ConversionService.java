@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.service;
 import com.vividsolutions.jts.geom.*;
 import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import org.osgeo.proj4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -18,6 +20,7 @@ public class Wgs84ConversionService {
     private CoordinateTransform transformer;
     private CoordinateTransform reverseTransformer;
     private GeometryFactory geometryFactory;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
     private void setup() {
@@ -79,7 +82,12 @@ public class Wgs84ConversionService {
 
     // only exterior ring supported, no holes
     private Geometry transformJtsPolygon(Polygon tm35FinGeometry) {
-        return geometryFactory.createPolygon(geometryFactory.createLinearRing(Arrays.stream(tm35FinGeometry.getExteriorRing().getCoordinates()).map(this::transformJtsCoordinate).toArray(Coordinate[]::new)));
+        try {
+            return geometryFactory.createPolygon(geometryFactory.createLinearRing(Arrays.stream(tm35FinGeometry.getExteriorRing().getCoordinates()).map(this::transformJtsCoordinate).toArray(Coordinate[]::new)));
+        } catch (Exception e) {
+            log.error("Failed trying to create polygon from " + tm35FinGeometry);
+            throw e;
+        }
     }
 
     private Geometry transformJtsMultiLineString(MultiLineString tm35FinGeometry) {
