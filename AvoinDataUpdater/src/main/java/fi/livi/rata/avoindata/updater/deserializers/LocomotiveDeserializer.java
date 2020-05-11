@@ -24,17 +24,9 @@ public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
         locomotive.location = node.get("sijainti").asInt();
         locomotive.powerTypeAbbreviation = node.get("vetovoimalajilyhenne").asText();
         locomotive.locomotiveType = node.get("tyyppi").asText();
-
-        final JsonNode kalustoyksikko = node.get("kalustoyksikko");
-        if (!isNodeNull(kalustoyksikko)) {
-            String sarjatunnus = kalustoyksikko.get("sarjatunnus").asText();
-
-            JsonNode kalustoyksikkonroNode = kalustoyksikko.get("kalustoyksikkonro");
-            if (!isNodeNull(kalustoyksikkonroNode) && typesForVehicleNumberPublishinIsAllowed.contains(sarjatunnus)) {
-                locomotive.vehicleNumber = kalustoyksikkonroNode.asText();
-            }
+        if (typesForVehicleNumberPublishinIsAllowed.contains(locomotive.locomotiveType)) {
+            locomotive.vehicleNumber = getStringFromNode(node, "tunniste");
         }
-
         return locomotive;
     }
 }
