@@ -14,7 +14,7 @@ import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 @Component
 public class WagonDeserializer extends AEntityDeserializer<Wagon> {
     @Value("#{'${updater.typesForVehicleNumberPublishinIsAllowed}'.split(',')}")
-    private Set<String> typesForVehicleNumberPublishinIsAllowed;
+    private Set<String> typesForWhichVehicleNumberPublishingIsAllowed;
 
     @Override
     public Wagon deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
@@ -38,7 +38,7 @@ public class WagonDeserializer extends AEntityDeserializer<Wagon> {
             wagon.wagonType = sarjatunnus;
 
             JsonNode kalustoyksikkonroNode = kalustoyksikko.get("kalustoyksikkonro");
-            if (!isNodeNull(kalustoyksikkonroNode) && typesForVehicleNumberPublishinIsAllowed.contains(sarjatunnus)) {
+            if (!isNodeNull(kalustoyksikkonroNode) && typesForWhichVehicleNumberPublishingIsAllowed.contains(sarjatunnus)) {
                 wagon.vehicleNumber = kalustoyksikkonroNode.asText();
             }
         }

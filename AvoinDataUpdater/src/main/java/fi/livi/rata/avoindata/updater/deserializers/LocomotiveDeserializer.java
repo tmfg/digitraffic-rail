@@ -14,7 +14,7 @@ import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 @Component
 public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
     @Value("#{'${updater.typesForVehicleNumberPublishinIsAllowed}'.split(',')}")
-    private Set<String> typesForVehicleNumberPublishinIsAllowed;
+    private Set<String> typesForWhichVehicleNumberPublishingIsAllowed;
 
     @Override
     public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
@@ -24,7 +24,7 @@ public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
         locomotive.location = node.get("sijainti").asInt();
         locomotive.powerTypeAbbreviation = node.get("vetovoimalajilyhenne").asText();
         locomotive.locomotiveType = node.get("tyyppi").asText();
-        if (typesForVehicleNumberPublishinIsAllowed.contains(locomotive.locomotiveType)) {
+        if (typesForWhichVehicleNumberPublishingIsAllowed.contains(locomotive.locomotiveType)) {
             locomotive.vehicleNumber = getStringFromNode(node, "tunniste");
         }
         return locomotive;
