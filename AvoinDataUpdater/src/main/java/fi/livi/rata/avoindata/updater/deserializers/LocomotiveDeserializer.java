@@ -25,7 +25,7 @@ public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
         locomotive.powerTypeAbbreviation = node.get("vetovoimalajilyhenne").asText();
         locomotive.locomotiveType = node.get("tyyppi").asText();
         if (typesForWhichVehicleNumberPublishingIsAllowed.contains(locomotive.locomotiveType)) {
-            locomotive.vehicleNumber = getStringFromNode(node, "tunniste");
+            locomotive.vehicleNumber = getNullableString(node, "tunniste");
         }
         return locomotive;
     }
