@@ -53,6 +53,7 @@ public class Locomotive {
         location = locomotive.location;
         locomotiveType = locomotive.locomotiveType;
         powerTypeAbbreviation = locomotive.powerTypeAbbreviation;
+        vehicleNumber = locomotive.vehicleNumber;
         this.journeysection = journeysection;
     }
 }
