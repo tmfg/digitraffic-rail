@@ -1,10 +1,17 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
-
-import javax.persistence.*;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -29,6 +36,10 @@ public class Locomotive {
     @Transient
     @ApiModelProperty(example = "S")
     public String powerType;
+
+    @ApiModelProperty(example = "Sm2")
+    @Column
+    public String vehicleNumber;
 
     @ManyToOne
     @JoinColumn(name = "journeysection", nullable = false)

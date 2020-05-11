@@ -1,16 +1,21 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
+import java.io.IOException;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 
 @Component
-public class LocomotiveDeserializer extends JsonDeserializer<Locomotive> {
+public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
+    @Value("#{'${updater.typesForVehicleNumberPublishinIsAllowed}'.split(',')}")
+    private Set<String> typesForVehicleNumberPublishinIsAllowed;
+
     @Override
     public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
         final JsonNode node = jp.getCodec().readTree(jp);
@@ -19,6 +24,17 @@ public class LocomotiveDeserializer extends JsonDeserializer<Locomotive> {
         locomotive.location = node.get("sijainti").asInt();
         locomotive.powerTypeAbbreviation = node.get("vetovoimalajilyhenne").asText();
         locomotive.locomotiveType = node.get("tyyppi").asText();
+
+        final JsonNode kalustoyksikko = node.get("kalustoyksikko");
+        if (!isNodeNull(kalustoyksikko)) {
+            String sarjatunnus = kalustoyksikko.get("sarjatunnus").asText();
+
+            JsonNode kalustoyksikkonroNode = kalustoyksikko.get("kalustoyksikkonro");
+            if (!isNodeNull(kalustoyksikkonroNode) && typesForVehicleNumberPublishinIsAllowed.contains(sarjatunnus)) {
+                locomotive.vehicleNumber = kalustoyksikkonroNode.asText();
+            }
+        }
+
         return locomotive;
     }
 }

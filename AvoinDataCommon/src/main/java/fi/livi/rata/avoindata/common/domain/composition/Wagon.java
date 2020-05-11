@@ -1,11 +1,17 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
-
-import javax.persistence.*;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -42,6 +48,9 @@ public class Wagon {
     public Boolean smoking;
     @Column
     public Boolean disabled;
+    @ApiModelProperty(example = "Sm2")
+    @Column
+    public String vehicleNumber;
     @ManyToOne
     @JoinColumn(name = "journeysection", nullable = false)
     @JsonIgnore
