@@ -48,7 +48,7 @@ public class Wagon {
     public Boolean smoking;
     @Column
     public Boolean disabled;
-    @ApiModelProperty(example = "Sm2")
+    @ApiModelProperty(example = "94102081010-2")
     @Column
     public String vehicleNumber;
     @ManyToOne

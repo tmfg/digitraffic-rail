@@ -37,7 +37,7 @@ public class Locomotive {
     @ApiModelProperty(example = "S")
     public String powerType;
 
-    @ApiModelProperty(example = "Sm2")
+    @ApiModelProperty(example = "94102081010-2")
     @Column
     public String vehicleNumber;
 
