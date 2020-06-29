@@ -1,19 +1,19 @@
-package fi.livi.rata.avoindata.server.controller.mvc;
+package fi.livi.rata.avoindata.server.controller.api;
 
 
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.api.TrainController;
-import fi.livi.rata.avoindata.server.factory.TrainFactory;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import java.time.LocalDate;
+
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.factory.TrainFactory;
 
 public class AllTrainsControllerTest extends MockMvcBaseTest {
     @Autowired

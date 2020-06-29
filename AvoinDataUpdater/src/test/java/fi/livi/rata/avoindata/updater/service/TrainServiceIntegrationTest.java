@@ -86,7 +86,7 @@ public class TrainServiceIntegrationTest extends BaseTest {
         originalTrain.timeTableRows.forEach(x -> x.actualTime = null);
         trainService.updateEntities(trains);
         final Train trainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
-                originalTrain.id.trainNumber);
+                originalTrain.id.trainNumber, false);
         Assert.assertEquals(1, trainRepository.count());
         List<TimeTableRow> timeTableRowsWithActualTime = trainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null)
                 .collect(Collectors.toList());
@@ -96,7 +96,7 @@ public class TrainServiceIntegrationTest extends BaseTest {
         trainService.updateEntities(trainsUpdated);
         Assert.assertEquals(1, trainRepository.count());
         final Train updatedTrainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
-                originalTrain.id.trainNumber);
+                originalTrain.id.trainNumber, false);
         timeTableRowsWithActualTime = updatedTrainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null).collect(
                 Collectors.toList());
         Assert.assertFalse(timeTableRowsWithActualTime.isEmpty());
