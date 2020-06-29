@@ -1,0 +1,4 @@
+ALTER TABLE locomotive
+    ADD COLUMN `vehicle_number` VARCHAR(13) NULL DEFAULT NULL;
+ALTER TABLE wagon
+    ADD COLUMN `vehicle_number` VARCHAR(13) NULL DEFAULT NULL;

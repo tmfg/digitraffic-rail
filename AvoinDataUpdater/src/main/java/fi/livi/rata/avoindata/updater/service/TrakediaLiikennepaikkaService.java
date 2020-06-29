@@ -1,27 +1,28 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
-
-import java.net.URL;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+
 @Component
 public class TrakediaLiikennepaikkaService {
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private RestTemplate restTemplate;
 
     private static Logger logger = LoggerFactory.getLogger(TrakediaLiikennepaikkaService.class);
 
@@ -38,11 +39,11 @@ public class TrakediaLiikennepaikkaService {
 
         try {
             String now = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            URL url = new URL(String.format(baseUrl, now, now));
+            URI url = new URI(String.format(baseUrl, now, now));
 
             logger.info("Fetching Trakedia data from {}", url);
 
-            final JsonNode jsonNode = objectMapper.readTree(url);
+            JsonNode jsonNode = restTemplate.getForObject(url, JsonNode.class);
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");

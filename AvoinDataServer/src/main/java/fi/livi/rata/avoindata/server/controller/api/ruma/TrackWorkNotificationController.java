@@ -1,5 +1,28 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
+import static java.util.Collections.emptyList;
+
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
@@ -12,19 +35,6 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
-import static java.util.Collections.emptyList;
 
 @Api(tags = "track-work-notifications", description = "Returns track work notifications")
 @RestController
@@ -46,7 +56,7 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
-    public List<RumaNotificationIdAndVersion> findAll(
+    public List<RumaNotificationIdAndVersion> getAllTrackWorkNotifications(
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @ApiParam(value = "End time. If missing, current date is used", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trackWorkNotificationRepository.findByModifiedBetween(
@@ -57,7 +67,7 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns all versions of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
-    public TrackWorkNotificationWithVersions get(
+    public TrackWorkNotificationWithVersions getTrackWorkNotificationsById(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             HttpServletResponse response) {
@@ -69,7 +79,7 @@ public class TrackWorkNotificationController extends ADataController {
 
     @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
-    public Collection<SpatialTrackWorkNotificationDto> getVersion(
+    public Collection<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByIdAndVersion(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Track work notification version", required = true) @PathVariable final long version,
@@ -87,13 +97,12 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns newest versions of trackwork notifications by state in JSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     @JsonView(RumaJsonViews.PlainJsonView.class)
-    public List<SpatialTrackWorkNotificationDto> getByStateJson(
+    public List<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByStateJson(
             @ApiParam(defaultValue = "ACTIVE", value = "State of track work notification") @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
-            final HttpServletResponse response)
-    {
+            final HttpServletResponse response) {
         final List<SpatialTrackWorkNotificationDto> twns = getByState(state, start, end)
                 .stream()
                 .map(t -> RumaSerializationUtil.toTwnDto(t, schema != null ? schema : false))
@@ -105,13 +114,12 @@ public class TrackWorkNotificationController extends ADataController {
     @ApiOperation("Returns newest versions of trackwork notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
-    public FeatureCollection getByStateGeoJson(
+    public FeatureCollection getTrackWorkNotificationsByStateGeoJson(
             @ApiParam(defaultValue = "ACTIVE", value = "State of track work notification") @RequestParam(value = "state", required = false) final Set<TrackWorkNotificationState> state,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
-            final HttpServletResponse response)
-    {
+            final HttpServletResponse response) {
         final FeatureCollection features = new FeatureCollection(getByState(state, start, end).stream().flatMap(t -> RumaSerializationUtil.toTwnFeatures(t, schema != null ? schema : false)).collect(Collectors.toList()));
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_UPDATE_CYCLE);
         return features;
