@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -82,9 +81,9 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
     @Test
     public void all_before() throws Exception {
         TrafficRestrictionNotification before = factory.create(1).get(0);
-        before.modified = ZonedDateTime.now().minusMinutes(1);
+        before.modified = ZonedDateTime.now().minusMinutes(5);
         TrafficRestrictionNotification after = factory.create(1).get(0);
-        after.modified = ZonedDateTime.now().plusMinutes(1);
+        after.modified = ZonedDateTime.now().plusMinutes(5);
         repository.saveAll(Arrays.asList(before, after));
 
         ResultActions ra = getJson("/trafficrestriction-notifications/status?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
@@ -154,7 +153,6 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
     @Test
     public void byState() throws Exception {
         TrafficRestrictionNotification trn = factory.create(1).get(0);
-        trn.state = randomState();
         repository.save(trn);
 
         ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s", trn.state.name()));
@@ -201,18 +199,18 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
         ZonedDateTime start = ZonedDateTime.now().minusHours(1);
         ZonedDateTime end = ZonedDateTime.now().plusHours(1);
         TrafficRestrictionNotification before = factory.create(1).get(0);
-        before.state = TrafficRestrictionNotificationState.DRAFT;
+        before.state = TrafficRestrictionNotificationState.SENT;
         before.modified = start.minusMinutes(1);
         TrafficRestrictionNotification between = factory.create(1).get(0);
-        between.state = TrafficRestrictionNotificationState.DRAFT;
+        between.state = TrafficRestrictionNotificationState.SENT;
         between.modified = ZonedDateTime.now();
         TrafficRestrictionNotification after = factory.create(1).get(0);
-        after.state = TrafficRestrictionNotificationState.DRAFT;
+        after.state = TrafficRestrictionNotificationState.SENT;
         after.modified = end.plusMinutes(1);
         repository.saveAll(Arrays.asList(before, between, after));
 
         ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&start=%s&end=%s",
-                TrafficRestrictionNotificationState.DRAFT,
+                TrafficRestrictionNotificationState.SENT,
                 start.format(DateTimeFormatter.ISO_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -234,9 +232,4 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
         repository.deleteAllInBatch();
     }
 
-    private TrafficRestrictionNotificationState randomState() {
-        List<TrafficRestrictionNotificationState> states = Arrays.asList(TrafficRestrictionNotificationState.values());
-        Collections.shuffle(states);
-        return states.get(0);
-    }
 }
