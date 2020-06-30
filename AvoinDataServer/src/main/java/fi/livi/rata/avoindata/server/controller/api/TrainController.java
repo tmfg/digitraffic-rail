@@ -100,7 +100,7 @@ public class TrainController extends ADataController {
     @RequestMapping(value = "/latest/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumber(@PathVariable final long train_number,
                                              @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
-        return this.getTrainByTrainNumberAndDepartureDate(train_number, null, version, response);
+        return this.getTrainByTrainNumberAndDepartureDate(train_number, null, false, version, response);
     }
 
     @ApiOperation("Returns a specific train")
@@ -108,14 +108,15 @@ public class TrainController extends ADataController {
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumberAndDepartureDate(@PathVariable final long train_number,
                                                              @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+                                                             @RequestParam(required = false, defaultValue = "false") boolean include_deleted,
                                                              @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
 
         List<Train> trains = new ArrayList<>();
 
         if (departure_date == null) {
-            trains = getTrainWithoutDepartureDate(train_number, version);
+            trains = getTrainWithoutDepartureDate(train_number, version, include_deleted);
         } else {
-            final Train train = trainRepository.findByDepartureDateAndTrainNumber(departure_date, train_number);
+            final Train train = trainRepository.findByDepartureDateAndTrainNumber(departure_date, train_number, include_deleted);
             if (train != null) {
                 trains = Arrays.asList(train);
             }
@@ -130,18 +131,18 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public Stream<Train> getTrainsByDepartureDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, HttpServletResponse response) {//
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {//
         CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
 
-        return trainStreamRepository.getTrainsByDepartureDate(departure_date);
+        return trainStreamRepository.getTrainsByDepartureDate(departure_date, include_deleted);
     }
 
-    private List<Train> getTrainWithoutDepartureDate(long train_number, long version) {
+    private List<Train> getTrainWithoutDepartureDate(long train_number, long version, Boolean include_deleted) {
         final List<Object[]> liveTrains = trainRepository.findLiveTrainByTrainNumber(train_number);
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return trainRepository.findTrains(trainsToRetrieve);
+            return trainRepository.findTrains(trainsToRetrieve, include_deleted);
         }
 
         return Collections.EMPTY_LIST;

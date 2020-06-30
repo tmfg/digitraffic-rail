@@ -1,4 +1,16 @@
-package fi.livi.rata.avoindata.server.controller.mvc;
+package fi.livi.rata.avoindata.server.controller.api;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.concurrent.Executors;
+
+import org.junit.Test;
+import org.mockito.internal.util.reflection.FieldSetter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
@@ -15,21 +27,9 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.api.LiveTrainController;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
-import org.junit.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.concurrent.Executors;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Autowired

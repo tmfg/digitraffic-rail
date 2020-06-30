@@ -1,5 +1,21 @@
 package fi.livi.rata.avoindata.updater.service.trainlocation;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.osgeo.proj4j.ProjCoordinate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.geo.Point;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.rtree.RTree;
@@ -9,19 +25,6 @@ import com.github.davidmoten.rtree.geometry.Rectangle;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.utils.PreviousAndNext;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
-import org.osgeo.proj4j.ProjCoordinate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.geo.Point;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 public class TrackBoundingBoxesService {
@@ -35,7 +38,10 @@ public class TrackBoundingBoxesService {
     private BoundingBoxService boundingBoxService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    protected RestTemplate restTemplate;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
 
     @Value("${infra-api.url}")
     private String infraApiUrl;
@@ -119,9 +125,8 @@ public class TrackBoundingBoxesService {
         return tree;
     }
 
-    private RTree<TrainBoundary, Geometry> createInfraApiTracks(RTree<TrainBoundary, Geometry> tree) throws IOException {
-        log.info("Fetching tracks from {}", infraApiUrl);
-        JsonNode trackNodes = objectMapper.readTree(new URL(infraApiUrl));
+    private RTree<TrainBoundary, Geometry> createInfraApiTracks(RTree<TrainBoundary, Geometry> tree) throws IOException, URISyntaxException {
+        JsonNode trackNodes = restTemplate.getForObject(new URI(infraApiUrl), JsonNode.class);
 
         for (final JsonNode featureNode : trackNodes.get("features")) {
             final JsonNode geometryNode = featureNode.get("geometry");
@@ -137,6 +142,9 @@ public class TrackBoundingBoxesService {
                 }
             }
         }
+
+        log.info("Created rtree with {} nodes from {}", tree.size(), infraApiUrl);
+
         return tree;
     }
 

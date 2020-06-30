@@ -1,20 +1,21 @@
 package fi.livi.rata.avoindata.common.dao.train;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
 
 @Repository
 @Transactional
@@ -125,6 +126,10 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             " ", nativeQuery = true)
     List<Object[]> findLiveTrains(long version, int minutes);
 
+    @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and (?2 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
+    @Transactional(readOnly = true)
+    List<Train> findTrains(Collection<TrainId> trainIds, Boolean include_deleted);
+
     @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and " + IS_NOT_DELETED + " " + BASE_TRAIN_ORDER)
     @Transactional(readOnly = true)
     List<Train> findTrains(Collection<TrainId> trainIds);
@@ -149,8 +154,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
                                                final TimeTableRow.TimeTableRowType arrival, ZonedDateTime scheduledStart, ZonedDateTime scheduledEnd,
                                                final LocalDate departureDateStart, final LocalDate departureDateEnd, final Boolean includeNonstopping);
 
-    @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and " + IS_NOT_DELETED + BASE_TRAIN_ORDER)
-    Train findByDepartureDateAndTrainNumber(LocalDate departureDate, Long trainNumber);
+    @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and (?3 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
+    Train findByDepartureDateAndTrainNumber(LocalDate departureDate, Long trainNumber, Boolean include_deleted);
 
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id in ?1")

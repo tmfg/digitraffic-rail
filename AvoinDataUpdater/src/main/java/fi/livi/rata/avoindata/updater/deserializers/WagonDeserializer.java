@@ -1,15 +1,21 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import java.io.IOException;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
-import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 @Component
 public class WagonDeserializer extends AEntityDeserializer<Wagon> {
+    @Value("#{'${updater.typesForVehicleNumberPublishinIsAllowed}'.split(',')}")
+    private Set<String> typesForWhichVehicleNumberPublishingIsAllowed;
+
     @Override
     public Wagon deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
@@ -28,7 +34,13 @@ public class WagonDeserializer extends AEntityDeserializer<Wagon> {
 
         final JsonNode kalustoyksikko = node.get("kalustoyksikko");
         if (!isNodeNull(kalustoyksikko)) {
-            wagon.wagonType = kalustoyksikko.get("sarjatunnus").asText();
+            String sarjatunnus = kalustoyksikko.get("sarjatunnus").asText();
+            wagon.wagonType = sarjatunnus;
+
+            JsonNode kalustoyksikkonroNode = kalustoyksikko.get("kalustoyksikkonro");
+            if (!isNodeNull(kalustoyksikkonroNode) && typesForWhichVehicleNumberPublishingIsAllowed.contains(sarjatunnus)) {
+                wagon.vehicleNumber = kalustoyksikkonroNode.asText();
+            }
         }
         return wagon;
     }

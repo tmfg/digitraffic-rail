@@ -1,22 +1,28 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Stream;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
-
-import javax.servlet.http.HttpServletResponse;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH)
@@ -68,14 +74,14 @@ public class RewriteController {
     @JsonView(TrainJsonView.LiveTrains.class)
     public Stream<Train> getTrains(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
                                    HttpServletResponse response) {
-        return trainController.getTrainsByDepartureDate(departure_date, response);
+        return trainController.getTrainsByDepartureDate(departure_date, false, response);
     }
 
     @RequestMapping(value = HISTORY_PREFIX + "/{train_number}", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public Collection<Train> getTrains(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
                                        @PathVariable final Long train_number, HttpServletResponse response) {
-        return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, 0, response);
+        return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, false, 0, response);
     }
 
     @RequestMapping(value = LIVE_TRAINS_PREFIX + "/{train_number}", method = RequestMethod.GET)
@@ -83,7 +89,7 @@ public class RewriteController {
     public List<Train> getSingleTrain(@PathVariable final long train_number,
                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
                                       @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
-        return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, version, response);
+        return trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, false, version, response);
     }
 
     @RequestMapping(path = LIVE_TRAINS_PREFIX, params = "station", method = RequestMethod.GET)
@@ -114,14 +120,14 @@ public class RewriteController {
     @JsonView(TrainJsonView.LiveTrains.class)
     public Stream<Train> getOldSchedules(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
                                          HttpServletResponse response) {
-        return trainController.getTrainsByDepartureDate(departure_date, response);
+        return trainController.getTrainsByDepartureDate(departure_date, false, response);
     }
 
     @RequestMapping(value = SCHEDULES_PREFIX + "/{train_number}", method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
     public Train getTrain(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
                           @PathVariable final Long train_number, HttpServletResponse response) {
-        final List<Train> trains = trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, 0, response);
+        final List<Train> trains = trainController.getTrainByTrainNumberAndDepartureDate(train_number, departure_date, false, 0, response);
         if (trains.isEmpty()) {
             return null;
         } else {

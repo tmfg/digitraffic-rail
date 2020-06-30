@@ -1,12 +1,12 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import io.swagger.annotations.ApiModelProperty;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+
+import io.swagger.annotations.ApiModelProperty;
 
 public class TrackWorkPartDto {
 
@@ -16,7 +16,7 @@ public class TrackWorkPartDto {
     @ApiModelProperty("Planned (not necessarily actual) start day")
     public final LocalDate startDay;
 
-    @ApiModelProperty("Requested minimum duration for work permission")
+    @ApiModelProperty(value = "Requested minimum duration for work permission", dataType = "fi.livi.rata.avoindata.server.dto.SwaggerObject")
     public final Duration permissionMinimumDuration;
 
     @ApiModelProperty("Contains fire work")
