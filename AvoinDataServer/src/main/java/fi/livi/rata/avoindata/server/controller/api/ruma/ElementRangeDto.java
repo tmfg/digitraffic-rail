@@ -1,24 +1,26 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
 
+@ApiModel(description = "Two consecutive elements in an identifier range")
 public class ElementRangeDto {
 
-    @ApiModelProperty("Identifier of element 1")
+    @ApiModelProperty(value = "Identifier of element 1", required = true)
     public final String elementId1;
 
-    @ApiModelProperty("Identifier of element 2")
+    @ApiModelProperty(value = "Identifier of element 2", required = true)
     public final String elementId2;
 
-    @ApiModelProperty("Track kilometer range")
+    @ApiModelProperty(value = "Track kilometer range, required if notification type is traffic restriction, e.g. (006) 754+0273 > 764+0771")
     public final String trackKilometerRange;
 
-    @ApiModelProperty("Track identifiers")
+    @ApiModelProperty(value = "Track identifiers", required = true)
     public final List<String> trackIds;
 
-    @ApiModelProperty("Specifiers")
+    @ApiModelProperty(value = "Specify a more detailed work area (track element)")
     public final List<String> specifiers;
 
     public ElementRangeDto(

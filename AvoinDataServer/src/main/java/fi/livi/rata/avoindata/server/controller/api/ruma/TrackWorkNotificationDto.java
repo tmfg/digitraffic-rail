@@ -2,38 +2,40 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.time.ZonedDateTime;
 
+@ApiModel(description = "Describes planned, in-progress or finished track work")
 public class TrackWorkNotificationDto {
 
     public TrackWorkNotification.TrackWorkNotificationId id;
 
-    @ApiModelProperty("State")
+    @ApiModelProperty(value = "State", required = true)
     public final TrackWorkNotificationState state;
 
-    @ApiModelProperty("Which organization created this notification")
+    @ApiModelProperty(value = "Which organization created this notification", required = true)
     public final String organization;
 
-    @ApiModelProperty("When this notification was created")
+    @ApiModelProperty(value = "When this notification was created", required = true)
     public final ZonedDateTime created;
 
-    @ApiModelProperty("When this notification last modified")
+    @ApiModelProperty(value = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @ApiModelProperty("Does the notification contain a traffic safety plan")
+    @ApiModelProperty(value = "Does the notification contain a traffic safety plan", required = true)
     public final Boolean trafficSafetyPlan;
 
-    @ApiModelProperty("Does the notification contain a speed limit removal plan")
+    @ApiModelProperty(value = "Does the notification contain a speed limit removal plan", required = true)
     public final Boolean speedLimitRemovalPlan;
 
-    @ApiModelProperty("Does the notification contain a electricity safety plan")
+    @ApiModelProperty(value = "Does the notification contain a electricity safety plan", required = true)
     public final Boolean electricitySafetyPlan;
 
-    @ApiModelProperty("Does the notification contain a speed limit plan")
+    @ApiModelProperty(value = "Does the notification contain a speed limit plan", required = true)
     public final Boolean speedLimitPlan;
 
-    @ApiModelProperty("Does the notification contain a plan for persons in charge")
+    @ApiModelProperty(value = "Does the notification contain a plan for persons in charge", required = true)
     public final Boolean personInChargePlan;
 
     public TrackWorkNotificationDto(
@@ -60,12 +62,12 @@ public class TrackWorkNotificationDto {
         this.personInChargePlan = personInChargePlan;
     }
 
-    @ApiModelProperty("Id")
+    @ApiModelProperty(value = "Id", required = true)
     public String getId() {
         return id.id;
     }
 
-    @ApiModelProperty("Version")
+    @ApiModelProperty(value = "Version", required = true)
     public Long getVersion() {
         return id.version;
     }

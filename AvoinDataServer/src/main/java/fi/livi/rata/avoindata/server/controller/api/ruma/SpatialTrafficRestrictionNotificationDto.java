@@ -11,10 +11,10 @@ import java.util.Set;
 
 public class SpatialTrafficRestrictionNotificationDto extends TrafficRestrictionNotificationDto {
 
-    @ApiModelProperty("Approximate location")
+    @ApiModelProperty(value = "Approximate location", required = true)
     public final GeometryDto<?> location;
 
-    @ApiModelProperty("Locations")
+    @ApiModelProperty(value = "Locations", required = true)
     public final Set<SpatialRumaLocationDto> locations;
 
     public SpatialTrafficRestrictionNotificationDto(

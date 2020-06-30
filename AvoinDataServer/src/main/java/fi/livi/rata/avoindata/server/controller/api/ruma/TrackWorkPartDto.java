@@ -6,29 +6,34 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+@ApiModel(description = "A logical part of a track work")
 public class TrackWorkPartDto {
 
-    @ApiModelProperty("Index number")
+    @ApiModelProperty(value = "Index number", required = true)
     public final Long partIndex;
 
-    @ApiModelProperty("Planned (not necessarily actual) start day")
+    @ApiModelProperty(value = "Planned (not necessarily actual) start day", required = true)
     public final LocalDate startDay;
 
-    @ApiModelProperty(value = "Requested minimum duration for work permission", dataType = "fi.livi.rata.avoindata.server.dto.SwaggerObject")
+    @ApiModelProperty(
+            value = "Requested minimum duration for work permission in ISO 8601 format, e.g. PT30M",
+            dataType = "java.lang.String",
+            required = true)
     public final Duration permissionMinimumDuration;
 
-    @ApiModelProperty("Contains fire work")
+    @ApiModelProperty(value = "Contains fire work", required = true)
     public final Boolean containsFireWork;
 
-    @ApiModelProperty("Planned working gap")
+    @ApiModelProperty(value = "Planned working gap")
     public final LocalTime plannedWorkingGap;
 
-    @ApiModelProperty("Related advance notifications")
+    @ApiModelProperty(value = "Related advance notifications")
     public final List<String> advanceNotifications;
 
-    @ApiModelProperty("Locations")
+    @ApiModelProperty(value = "Locations", required = true)
     public final Set<RumaLocationDto> locations;
 
     public TrackWorkPartDto(

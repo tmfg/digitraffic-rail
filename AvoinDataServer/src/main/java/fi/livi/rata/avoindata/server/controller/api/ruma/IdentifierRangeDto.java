@@ -2,29 +2,31 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Set;
 
+@ApiModel(description = "Place of work: between two track elements or a single track element")
 public class IdentifierRangeDto {
 
-    @ApiModelProperty("Notification identifier")
+    @ApiModelProperty(value = "Notification identifier", required = true)
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public final String notificationId;
 
-    @ApiModelProperty("Identifier of element")
+    @ApiModelProperty(value = "Identifier of element, required if element pair or ranges are not present")
     public final String elementId;
 
-    @ApiModelProperty("Identifier of element 1 in element pair")
+    @ApiModelProperty(value = "Identifier of element 1 in element pair, required if element or ranges are not present")
     public final String elementPairId1;
 
-    @ApiModelProperty("Identifier of element 2 in element pair")
+    @ApiModelProperty(value = "Identifier of element 2 in element pair, required if element or ranges are not present")
     public final String elementPairId2;
 
-    @ApiModelProperty("Speed limit")
+    @ApiModelProperty(value = "Speed limit, required if notification type is traffic restriction and it's type if speed limit")
     public final SpeedLimit speedLimit;
 
-    @ApiModelProperty("Element ranges")
+    @ApiModelProperty(value = "Element ranges, required if element or element pair is not present")
     public final Set<ElementRangeDto> elementRanges;
 
     public IdentifierRangeDto(
