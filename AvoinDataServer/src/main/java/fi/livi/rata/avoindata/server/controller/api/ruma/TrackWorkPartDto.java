@@ -27,7 +27,9 @@ public class TrackWorkPartDto {
     @ApiModelProperty(value = "Contains fire work", required = true)
     public final Boolean containsFireWork;
 
-    @ApiModelProperty(value = "Planned working gap")
+    @ApiModelProperty(
+            value = "Planned working gap in local time with no time zone, e.g. 11:43:00",
+            dataType = "java.lang.String")
     public final LocalTime plannedWorkingGap;
 
     @ApiModelProperty(value = "Related advance notifications")
