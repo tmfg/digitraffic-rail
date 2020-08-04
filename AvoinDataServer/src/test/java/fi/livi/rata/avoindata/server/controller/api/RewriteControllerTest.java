@@ -1,18 +1,15 @@
-package fi.livi.rata.avoindata.server.controller.mvc;
-
-import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.api.CompositionController;
-import fi.livi.rata.avoindata.server.controller.api.LiveTrainController;
-import fi.livi.rata.avoindata.server.controller.api.ScheduleController;
-import fi.livi.rata.avoindata.server.controller.api.TrainController;
-import org.junit.Test;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-
-import java.time.LocalDate;
+package fi.livi.rata.avoindata.server.controller.api;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
+
+import java.time.LocalDate;
+
+import org.junit.Test;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+
+import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 
 public class RewriteControllerTest extends MockMvcBaseTest {
     @SpyBean
@@ -39,13 +36,13 @@ public class RewriteControllerTest extends MockMvcBaseTest {
     @Test
     public void liveTrainsTransformationShouldBeOkay() throws Exception {
         getJson("/live-trains/1?departure_date=2017-01-01&version=10");
-        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(10L), any());
+        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(false), eq(10L), any());
 
         getJson("/live-trains/1?departure_date=2017-01-01");
-        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(0L), any());
+        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(false), eq(0L), any());
 
         getJson("/live-trains/1");
-        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(null), eq(0L), any());
+        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(null), eq(false), eq(0L), any());
 
         getJson("/live-trains?arrived_trains=1&arriving_trains=2&departed_trains=3&departing_trains=4&include_nonstopping=true&station" +
                 "=HKI&version=5");
@@ -85,10 +82,10 @@ public class RewriteControllerTest extends MockMvcBaseTest {
     @Test
     public void scheduleTransformShouldBeOkay() throws Exception {
         getJson("/schedules/1?departure_date=2017-01-01");
-        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), any(Long.class), any());
+        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(false), any(Long.class), any());
 
         getJson("/schedules?departure_date=2017-01-01");
-        verify(trainController).getTrainsByDepartureDate(eq(LocalDate.of(2017, 1, 1)), any());
+        verify(trainController).getTrainsByDepartureDate(eq(LocalDate.of(2017, 1, 1)), eq(false), any());
 
         getJson("/schedules?departure_date=2017-01-01&include_nonstopping=true&limit=100&departure_station=HKI&arrival_station=TPE");
         verify(scheduleController).getTrainsFromDepartureToArrivalStation(eq("HKI"), eq("TPE"), eq(LocalDate.of(2017, 1, 1)), eq(true),
@@ -112,10 +109,10 @@ public class RewriteControllerTest extends MockMvcBaseTest {
     @Test
     public void historyTransformationShouldBeOkay() throws Exception {
         getJson("/history/1?departure_date=2017-01-01");
-        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), any(Long.class), any());
+        verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(false), any(Long.class), any());
 
         getJson("/history?departure_date=2017-01-01");
-        verify(trainController).getTrainsByDepartureDate(eq(LocalDate.of(2017, 1, 1)), any());
+        verify(trainController).getTrainsByDepartureDate(eq(LocalDate.of(2017, 1, 1)), eq(false), any());
     }
 
 }

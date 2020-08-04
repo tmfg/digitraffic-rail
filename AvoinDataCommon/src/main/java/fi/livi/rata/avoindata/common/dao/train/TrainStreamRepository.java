@@ -1,19 +1,23 @@
 package fi.livi.rata.avoindata.common.dao.train;
 
-import fi.livi.rata.avoindata.common.dao.localization.TrainLocalizer;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import org.hibernate.jpa.QueryHints;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import static fi.livi.rata.avoindata.common.dao.train.TrainRepository.BASE_TRAIN_ORDER;
+import static fi.livi.rata.avoindata.common.dao.train.TrainRepository.BASE_TRAIN_SELECT;
+import static fi.livi.rata.avoindata.common.dao.train.TrainRepository.IS_NOT_DELETED;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import static fi.livi.rata.avoindata.common.dao.train.TrainRepository.*;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.hibernate.jpa.QueryHints;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import fi.livi.rata.avoindata.common.dao.localization.TrainLocalizer;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.train.Train;
 
 @Component
 public class TrainStreamRepository {
@@ -30,8 +34,8 @@ public class TrainStreamRepository {
         return getStream(jpql, trainIds);
     }
 
-    public Stream<Train> getTrainsByDepartureDate(LocalDate departureDate) {
-        String jpql = BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and " + IS_NOT_DELETED +
+    public Stream<Train> getTrainsByDepartureDate(LocalDate departureDate, Boolean include_deleted) {
+        String jpql = BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and " + (include_deleted ? "1 = 1" : IS_NOT_DELETED) +
                 BASE_TRAIN_ORDER;
 
 
