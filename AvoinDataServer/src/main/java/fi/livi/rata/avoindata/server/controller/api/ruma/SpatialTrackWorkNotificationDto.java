@@ -10,10 +10,10 @@ import java.util.List;
 
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
-    @ApiModelProperty("Approximate location")
+    @ApiModelProperty(value = "Approximate location", required = true)
     public final GeometryDto<?> location;
 
-    @ApiModelProperty("Work parts")
+    @ApiModelProperty(value = "Work parts", required = true)
     public final List<TrackWorkPartDto> workParts;
 
     public SpatialTrackWorkNotificationDto(

@@ -3,43 +3,45 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@ApiModel(description = "Describes a restriction affecting the use of a railway infrastructure part")
 public class TrafficRestrictionNotificationDto {
 
     public final TrafficRestrictionNotification.TrafficRestrictionNotificationId id;
 
-    @ApiModelProperty("State")
+    @ApiModelProperty(value = "State", required = true)
     public final TrafficRestrictionNotificationState state;
 
-    @ApiModelProperty("Which organization created this notification")
+    @ApiModelProperty(value = "Which organization created this notification", required = true)
     public final String organization;
 
-    @ApiModelProperty("When this notification was created")
+    @ApiModelProperty(value = "When this notification was created", required = true)
     public final ZonedDateTime created;
 
-    @ApiModelProperty("When this notification last modified")
+    @ApiModelProperty(value = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @ApiModelProperty("Limitation type")
+    @ApiModelProperty(value = "Limitation type", required = true)
     public final TrafficRestrictionType limitation;
 
-    @ApiModelProperty("Track work notification identifier")
+    @ApiModelProperty(value = "Track work notification identifier")
     public final String trackWorkNotificationId;
 
-    @ApiModelProperty("Max axle weight")
+    @ApiModelProperty(value = "Max axle weight, required if limitation type is max axle weight")
     public final Double axleWeightMax;
 
-    @ApiModelProperty("Start datetime")
+    @ApiModelProperty(value = "Start datetime", required = true)
     public final ZonedDateTime startDate;
 
-    @ApiModelProperty("End datetime")
+    @ApiModelProperty(value = "End datetime")
     public final ZonedDateTime endDate;
 
-    @ApiModelProperty("Finished datetime")
+    @ApiModelProperty(value = "Finished datetime, required if state is finished")
     public final ZonedDateTime finished;
 
     public TrafficRestrictionNotificationDto(
@@ -68,12 +70,12 @@ public class TrafficRestrictionNotificationDto {
         this.finished = finished;
     }
 
-    @ApiModelProperty("Id")
+    @ApiModelProperty(value = "Id", required = true)
     public String getId() {
         return id.id;
     }
 
-    @ApiModelProperty("Version")
+    @ApiModelProperty(value = "Version", required = true)
     public Long getVersion() {
         return id.version;
     }
