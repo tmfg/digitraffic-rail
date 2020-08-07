@@ -71,7 +71,7 @@ public class ScheduleToTrainConverter {
             timeTableRow.train = train;
         }
 
-        sortTimeTableRows(train.timeTableRows);
+        train.timeTableRows = sortTimeTableRows(train.timeTableRows);
 
         emptyCommercialTrackInTimeTableRows(train.timeTableRows);
 
