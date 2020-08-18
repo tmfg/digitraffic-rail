@@ -1,9 +1,16 @@
 package fi.livi.rata.avoindata.server.integration;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,11 +21,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Response;
 
 @Ignore
 public class StatusCodeTest {
@@ -220,7 +226,7 @@ public class StatusCodeTest {
         Map<String, Response> responses = new HashMap<>();
         for (final String url : urls) {
             logger.info("Testing: {}", url);
-            Future<Response> f = asyncHttpClient.prepareGet(url).execute();
+            Future<Response> f = asyncHttpClient.prepareGet(url).addHeader("accept-encoding", "gzip").execute();
             final Response response = f.get();
             responses.put(url, response);
         }
