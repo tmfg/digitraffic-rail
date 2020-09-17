@@ -1,15 +1,20 @@
 package fi.livi.rata.avoindata.server.factory;
 
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.composition.*;
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
+import fi.livi.rata.avoindata.common.domain.composition.CompositionTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.composition.JourneyCompositionRow;
+import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
+import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 @Component
 public class CompositionFactory {
@@ -25,7 +30,7 @@ public class CompositionFactory {
         CompositionTimeTableRow beginTimeTableRow = createCompositionTimeTableRow(composition, LocalDateTime.now(), "HKI", 1);
         CompositionTimeTableRow endTimeTableRow = createCompositionTimeTableRow(composition, LocalDateTime.now(), "TPE", 2);
 
-        JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition, 200, 1000);
+        JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition, 200, 1000, 0L, 0L);
 
         Locomotive locomotive = new Locomotive();
         locomotive.location = 1;

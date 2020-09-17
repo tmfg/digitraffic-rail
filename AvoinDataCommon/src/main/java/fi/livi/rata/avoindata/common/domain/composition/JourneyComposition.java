@@ -13,12 +13,15 @@ import fi.livi.rata.avoindata.common.domain.common.Operator;
 public class JourneyComposition {
     public final Operator operator;
     public final Long trainNumber;
-    @Type(type="org.hibernate.type.LocalDateType")
+    @Type(type = "org.hibernate.type.LocalDateType")
     public final LocalDate departureDate;
     public final long trainCategoryId;
     public final long trainTypeId;
     public final int totalLength;
     public final int maximumSpeed;
+
+    public final Long attapId;
+    public final Long saapAttapId;
 
     public final JourneyCompositionRow startStation;
     public final JourneyCompositionRow endStation;
@@ -32,7 +35,11 @@ public class JourneyComposition {
     public JourneyComposition(final Operator operator, final Long trainNumber, final LocalDate departureDate,
                               final long trainCategoryId, final long trainTypeId, final int totalLength, final int maximumSpeed, final long version,
                               final Collection<Wagon> wagons, final Collection<Locomotive> locomotives, JourneyCompositionRow startStation,
-                              JourneyCompositionRow endStation, long id) {
+                              JourneyCompositionRow endStation, long id,
+                              Long attapId,
+                              Long saapAttapId
+
+    ) {
         this.operator = operator;
         this.trainNumber = trainNumber;
         this.departureDate = departureDate;
@@ -48,5 +55,7 @@ public class JourneyComposition {
         this.endStation = endStation;
 
         this.id = id;
+        this.attapId = attapId;
+        this.saapAttapId = saapAttapId;
     }
 }

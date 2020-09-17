@@ -1,5 +1,16 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -10,16 +21,6 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneyCompositionRow;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 
 /**
  * Composition for one leg of journey
@@ -30,10 +31,11 @@ public class JourneyCompositionDeserializer extends JsonDeserializer<JourneyComp
 
     @Override
     public JourneyComposition deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
+                                          final DeserializationContext deserializationContext) throws IOException {
 
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         final long version = node.get("version").asLong();
+
 
         final JsonNode aikataulu = node.get("aikataulu");
         final Operator operator = new Operator();
@@ -53,10 +55,17 @@ public class JourneyCompositionDeserializer extends JsonDeserializer<JourneyComp
         final int totalLength = node.get("kokonaispituus").asInt();
         final int maximumSpeed = node.get("jarrupainonopeus").asInt();
 
-        final JourneyCompositionRow journeyCompositionStartStation = createJourneyCompositionRow(node.get("aikataulutapahtuma"));
+        JsonNode aikataulutapahtumaNode = node.get("aikataulutapahtuma");
+        JsonNode viimeinenAikataulutapahtumaNode = node.get("viimeinenAikataulutapahtuma");
+
+        Long saapAttapId = null;
+        final long attapId = aikataulutapahtumaNode.get("id").asLong();
+
+        final JourneyCompositionRow journeyCompositionStartStation = createJourneyCompositionRow(aikataulutapahtumaNode);
         final JourneyCompositionRow journeyCompositionEndStation;
-        if (node.get("viimeinenAikataulutapahtuma") != null) {
-            journeyCompositionEndStation = createJourneyCompositionRow(node.get("viimeinenAikataulutapahtuma"));
+        if (viimeinenAikataulutapahtumaNode != null) {
+            journeyCompositionEndStation = createJourneyCompositionRow(viimeinenAikataulutapahtumaNode);
+            saapAttapId = viimeinenAikataulutapahtumaNode.get("id").asLong();
         } else {
             log.error(String.format("JourneyCompositionRow is null, trainNumber %s departureDate %s", trainNumber, departureDate));
             journeyCompositionEndStation = null;
@@ -76,7 +85,7 @@ public class JourneyCompositionDeserializer extends JsonDeserializer<JourneyComp
         }
 
         return new JourneyComposition(operator, trainNumber, departureDate, trainCategoryId, trainTypeId, totalLength, maximumSpeed,
-                version, wagons, locomotives, journeyCompositionStartStation, journeyCompositionEndStation,id);
+                version, wagons, locomotives, journeyCompositionStartStation, journeyCompositionEndStation, id, attapId, saapAttapId);
     }
 
     private static JourneyCompositionRow createJourneyCompositionRow(final JsonNode aikataulutapahtuma) {

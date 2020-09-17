@@ -1,12 +1,24 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-import javax.persistence.*;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 @Entity
 @ApiModel(description = "Describes a leg where train's composition is in effect")
@@ -43,15 +55,20 @@ public class JourneySection {
     public int totalLength;
     public int maximumSpeed;
 
+    public Long attapId;
+    public Long saapAttapId;
+
     protected JourneySection() {
     }
 
     public JourneySection(final CompositionTimeTableRow beginTimeTableRow, final CompositionTimeTableRow endTimeTableRow,
-                          final Composition composition, final int maximumSpeed, final int totalLength) {
+                          final Composition composition, final int maximumSpeed, final int totalLength, final Long attapId, final Long saapAttapId) {
         this.beginTimeTableRow = beginTimeTableRow;
         this.endTimeTableRow = endTimeTableRow;
         this.composition = composition;
         this.maximumSpeed = maximumSpeed;
         this.totalLength = totalLength;
+        this.attapId = attapId;
+        this.saapAttapId = saapAttapId;
     }
 }

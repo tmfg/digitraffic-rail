@@ -152,7 +152,7 @@ public class CompositionService extends VersionedService<JourneyComposition> {
         }
 
         final JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition,
-                journeyComposition.maximumSpeed, journeyComposition.totalLength);
+                journeyComposition.maximumSpeed, journeyComposition.totalLength, journeyComposition.attapId, journeyComposition.saapAttapId);
         journeySection.locomotives = new LinkedHashSet<>(
                 journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection)).collect(Collectors.toList()));
 
