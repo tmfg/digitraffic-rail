@@ -126,7 +126,7 @@ public class TrackWorkNotificationController extends ADataController {
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
-        Set<TrackWorkNotificationState> states = state != null ? state : DEFAULT_STATES;
+        Set<TrackWorkNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
         return trackWorkNotificationRepository.findByState(states,
                 getStartTime(start),
                 getEndTime(end),

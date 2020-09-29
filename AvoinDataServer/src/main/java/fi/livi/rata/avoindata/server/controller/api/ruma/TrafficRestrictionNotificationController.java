@@ -128,7 +128,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
     }
 
     private List<TrafficRestrictionNotification> getByState(final Set<TrafficRestrictionNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
-        Set<TrafficRestrictionNotificationState> states = state != null ? state : DEFAULT_STATES;
+        Set<TrafficRestrictionNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
         return trafficRestrictionNotificationRepository.findByState(states,
                 getStartTime(start),
                 getEndTime(end),
