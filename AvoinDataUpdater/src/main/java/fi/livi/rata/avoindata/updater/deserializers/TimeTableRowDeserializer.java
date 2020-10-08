@@ -1,5 +1,15 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,15 +18,6 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TrainReady;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 @Component
 public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> {
@@ -66,9 +67,19 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
             trainReadies.add(trainReady);
         }
 
+        JsonNode aikatauluriviNode = node.get("aikataulutapahtuma").get("aikataulurivi");
+        ZonedDateTime commercialTrackChanged = null;
+        for (JsonNode raidemuutos : aikatauluriviNode.get("raidemuutos")) {
+            ZonedDateTime luontiPvm = getNodeAsDateTime(raidemuutos.get("luontiPvm"));
+            if (commercialTrackChanged == null || luontiPvm.isAfter(commercialTrackChanged)) {
+                commercialTrackChanged = luontiPvm;
+            }
+        }
+
+
         final TimeTableRow timeTableRow = new TimeTableRow(stationShortCode, stationcUICCode, countryCode, type, commercialTrack, cancelled,
                 scheduledTime, estimate, actualTime, differenceInMinutes, attapId, trainNumber, departureDate, commercialStop, version,
-                trainReadies, estimateSource);
+                trainReadies, estimateSource, commercialTrackChanged);
 
         if (trainReady != null) {
             trainReady.timeTableRow = timeTableRow;

@@ -1,20 +1,30 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities;
 
+import java.time.ZonedDateTime;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.Type;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.LiikeInterface.domain.BaseEntity;
 import fi.livi.rata.avoindata.LiikeInterface.domain.JunatapahtumaPrimaryKey;
-import org.hibernate.annotations.Type;
-
-import javax.persistence.*;
-import java.time.ZonedDateTime;
-import java.util.Set;
 
 @Entity
 @Table(name = "JUPA_TAPAHTUMA")
 public class JupaTapahtuma extends BaseEntity {
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime suunniteltuAika;
 
     @OneToMany(mappedBy = "jupaTapahtuma")
@@ -23,21 +33,21 @@ public class JupaTapahtuma extends BaseEntity {
     @EmbeddedId
     public JunatapahtumaPrimaryKey id;
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     @Column(name = "minimiennuste_aika")
     public ZonedDateTime automaattiennusteAika;
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime kasiennusteAika;
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime toteutunutAika;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
     @JsonIgnore
     public ZonedDateTime muokkausAika;
 
-    @Column(name="ATTAP_TYPE")
+    @Column(name = "ATTAP_TYPE")
     public String tyyppi;
 
     public String jupaTila;
@@ -49,7 +59,7 @@ public class JupaTapahtuma extends BaseEntity {
 
     public String lviTila;
     public String lviLahde;
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     public ZonedDateTime lviTilanMuokkausaika;
 
     @ManyToOne
@@ -60,6 +70,10 @@ public class JupaTapahtuma extends BaseEntity {
     @JoinColumn(name = LiikennepaikanRaide.KEY_NAME)
     @JsonUnwrapped
     public LiikennepaikanRaide liikennepaikanRaide;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = Aikataulutapahtuma.KEY_NAME, insertable = false, updatable = false)
+    public Aikataulutapahtuma aikataulutapahtuma;
 
     @ManyToOne
     @JoinColumns(value = {

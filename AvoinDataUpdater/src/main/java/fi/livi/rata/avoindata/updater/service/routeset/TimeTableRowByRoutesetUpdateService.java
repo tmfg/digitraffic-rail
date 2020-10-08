@@ -96,11 +96,11 @@ public class TimeTableRowByRoutesetUpdateService {
                     }
                     //Update a single time-table-row
                     else if (timeTableRowsToUpdate.size() == 1) {
-                        updateSingleStopTimeTableRow(maxVersion, train, routesection, timeTableRowsToUpdate);
+                        updateSingleStopTimeTableRow(maxVersion, train, routeset, routesection, timeTableRowsToUpdate);
                     }
                     //Update a two consecutive time-table-rows
                     else if (timeTableRowsToUpdate.size() == 2 && Math.abs(timeTableRowsToUpdate.get(0).index - timeTableRowsToUpdate.get(1).index) == 1) {
-                        updateSingleStopTimeTableRow(maxVersion, train, routesection, timeTableRowsToUpdate);
+                        updateSingleStopTimeTableRow(maxVersion, train, routeset, routesection, timeTableRowsToUpdate);
                     }
                     //Update multi-stop time-table-row. Match by scheduled time +- 30 minutes
                     else {
@@ -111,10 +111,10 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private void updateSingleStopTimeTableRow(Long maxVersion, Train train, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
+    private void updateSingleStopTimeTableRow(Long maxVersion, Train train, Routeset routeset, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
         for (TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowsToUpdate) {
             TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
-            if (isUpdatePossible(routesection, timeTableRow)) {
+            if (!isUpdatePossible(routeset, routesection, timeTableRow)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else {
                 setCommercialTrack(maxVersion, train, routesection, timeTableRow, timeTableRow.train);
@@ -122,8 +122,8 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private boolean isUpdatePossible(Routesection routesection, TimeTableRow timeTableRow) {
-        return routesection.commercialTrackId.equals(timeTableRow.commercialTrack);
+    private boolean isUpdatePossible(Routeset routeset, Routesection routesection, TimeTableRow timeTableRow) {
+        return !routesection.commercialTrackId.equals(timeTableRow.commercialTrack) && (timeTableRow.getCommercialTrackChanged() == null || timeTableRow.getCommercialTrackChanged().isBefore(routeset.messageTime));
     }
 
     private void setCommercialTrack(Long maxVersion, Train train, Routesection routesection, TimeTableRow timeTableRow, Train train2) {
@@ -150,7 +150,7 @@ public class TimeTableRowByRoutesetUpdateService {
 
 
         TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
-        if (isUpdatePossible(routesection, timeTableRow)) {
+        if (!isUpdatePossible(routeset, routesection, timeTableRow)) {
             //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
         } else if (getDifference(routeset, timeTableRow) > (30 * 60)) {
             //log.info("Not updating {} - {} because timestamps differ too much. {} vs {} ({})", train, timeTableRow, routeset.messageTime, timeTableRow.scheduledTime, Math.abs(Duration.between(timeTableRow.scheduledTime, routeset.messageTime).toMinutes()));

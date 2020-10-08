@@ -1,20 +1,21 @@
 package fi.livi.rata.avoindata.server.factory;
 
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+
+import org.springframework.stereotype.Component;
+
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
 
 @Component
 public class TimeTableRowFactory {
     public long attapId = 1L;
 
     public TimeTableRow create(Train train, ZonedDateTime scheduledTime, final ZonedDateTime actualTime, StationEmbeddable station,
-            final TimeTableRow.TimeTableRowType timeTableRowType) {
+                               final TimeTableRow.TimeTableRowType timeTableRowType) {
         final String stationShortCode = station.stationShortCode;
         final int stationcUICCode = station.stationUICCode;
         final String countryCode = station.countryCode;
@@ -32,7 +33,7 @@ public class TimeTableRowFactory {
         long version = 1L;
         final TimeTableRow timeTableRow = new TimeTableRow(stationShortCode, stationcUICCode, countryCode, type, commercialTrack, cancelled,
                 scheduledTime, liveEstimateTime, actualTime, differenceInMinutes, atappiId, trainNumber, departureDate, commercialStop,
-                version, null, null);
+                version, null, null, null);
 
         train.timeTableRows.add(timeTableRow);
         timeTableRow.train = train;

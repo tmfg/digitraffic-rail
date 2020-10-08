@@ -1,13 +1,20 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+import org.hibernate.annotations.Type;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.JunapaivaController;
 import fi.livi.rata.avoindata.LiikeInterface.purkaja.AikatauluController;
-import org.hibernate.annotations.Type;
-
-import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 public class Aikataulutapahtuma {
@@ -38,6 +45,5 @@ public class Aikataulutapahtuma {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = Aikataulurivi.KEY_NAME)
-    @JsonIgnore
     public Aikataulurivi aikataulurivi;
 }

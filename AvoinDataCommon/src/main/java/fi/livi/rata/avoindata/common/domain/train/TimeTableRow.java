@@ -1,6 +1,31 @@
 package fi.livi.rata.avoindata.common.domain.train;
 
-import com.fasterxml.jackson.annotation.*;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Index;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.Type;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.LazyInitializer;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonView;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
@@ -9,15 +34,7 @@ import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.Type;
-import org.hibernate.proxy.HibernateProxy;
-import org.hibernate.proxy.LazyInitializer;
-
-import javax.persistence.*;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import springfox.documentation.annotations.ApiIgnore;
 
 @Entity
 @Table(indexes = {
@@ -96,7 +113,7 @@ public class TimeTableRow {
     @Nullable
     @Column
     @JsonView(LiveTrains.class)
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @Type(type = "org.hibernate.type.ZonedDateTimeType")
     @ApiModelProperty("Actual time when train departured or arrived on the station")
     public ZonedDateTime actualTime;
 
@@ -104,6 +121,10 @@ public class TimeTableRow {
     @JsonView(LiveTrains.class)
     @ApiModelProperty(value = "Difference between schedule and actual time in minutes", example = "5")
     public Long differenceInMinutes;
+
+    @Column
+    @JsonIgnore
+    private ZonedDateTime commercialTrackChanged;
 
     @OneToMany(mappedBy = "timeTableRow", fetch = FetchType.LAZY)
     @JsonView(LiveTrains.class)
@@ -142,7 +163,7 @@ public class TimeTableRow {
     public TimeTableRow(final String stationShortCode, final int stationcUICCode, final String countryCode, final TimeTableRowType type,
                         final String commercialTrack, final boolean cancelled, final ZonedDateTime scheduledTime, final ZonedDateTime liveEstimateTime,
                         final ZonedDateTime actualTime, final Long differenceInMinutes, final long attapId, final long trainNumber,
-                        final LocalDate departureDate, final Boolean commercialStop, final long version, Set<TrainReady> trainReadies, EstimateSourceEnum estimateSource) {
+                        final LocalDate departureDate, final Boolean commercialStop, final long version, Set<TrainReady> trainReadies, EstimateSourceEnum estimateSource, ZonedDateTime commercialTrackChanged) {
         id = new TimeTableRowId(attapId, departureDate, trainNumber);
         this.station = new StationEmbeddable(stationShortCode, stationcUICCode, countryCode);
         this.type = type;
@@ -156,6 +177,7 @@ public class TimeTableRow {
         this.version = version;
         this.trainReadies = trainReadies;
         this.estimateSource = estimateSource;
+        this.commercialTrackChanged = commercialTrackChanged;
     }
 
     @Override
@@ -171,5 +193,14 @@ public class TimeTableRow {
             }
         }
         return timeTableRow.id;
+    }
+
+    @ApiIgnore
+    public ZonedDateTime getCommercialTrackChanged() {
+        return commercialTrackChanged;
+    }
+
+    public void setCommercialTrackChanged(ZonedDateTime value) {
+        commercialTrackChanged = value;
     }
 }

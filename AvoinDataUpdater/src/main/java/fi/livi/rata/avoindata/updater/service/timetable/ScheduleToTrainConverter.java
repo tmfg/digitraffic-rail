@@ -106,7 +106,7 @@ public class ScheduleToTrainConverter {
     }
 
     private TimeTableRow createTimeTableRow(final Schedule schedule, final LocalDate extractedDate, final ScheduleRow scheduleRow,
-            final ScheduleRowPart scheduleRowPart, final TimeTableRow.TimeTableRowType timeTableRowType) {
+                                            final ScheduleRowPart scheduleRowPart, final TimeTableRow.TimeTableRowType timeTableRowType) {
         boolean isCancelled = isScheduleRowPartCancelled(extractedDate, schedule, scheduleRowPart,
                 ScheduleCancellation.ScheduleCancellationType.PARTIALLY);
 
@@ -120,14 +120,14 @@ public class ScheduleToTrainConverter {
         TimeTableRow timeTableRow = new TimeTableRow(scheduleRow.station.stationShortCode, scheduleRow.station.stationUICCode,
                 scheduleRow.station.countryCode, timeTableRowType, null, isCancelled, timestamp, null, null, null, scheduleRowPart.id,
                 schedule.trainNumber, extractedDate, scheduleRowPart.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL, 0L,
-                new HashSet<>(), null);
+                new HashSet<>(), null, null);
 
         return timeTableRow;
     }
 
 
     private boolean isScheduleRowPartCancelled(final LocalDate extractedDate, final Schedule schedule,
-            final ScheduleRowPart scheduleRowPart, final ScheduleCancellation.ScheduleCancellationType cancellationType) {
+                                               final ScheduleRowPart scheduleRowPart, final ScheduleCancellation.ScheduleCancellationType cancellationType) {
         if (isScheduleCancelled(schedule, extractedDate)) {
             return true;
         }

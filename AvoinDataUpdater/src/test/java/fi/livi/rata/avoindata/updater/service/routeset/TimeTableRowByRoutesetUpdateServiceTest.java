@@ -1,5 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.routeset;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
@@ -12,20 +27,6 @@ import fi.livi.rata.avoindata.updater.factory.RoutesetFactory;
 import fi.livi.rata.avoindata.updater.factory.TimeTableRowFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.Callable;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 @Transactional
 public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
@@ -142,6 +143,41 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
         Assert.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
         Assert.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
+
+    @Test
+    public void commercialTrackChangeAfterRoutesetShouldNotUpdate() {
+        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        train.timeTableRows.get(0).setCommercialTrackChanged(ZonedDateTime.now());
+
+        Routeset routeset = routesetFactory.create();
+        routeset.messageTime = ZonedDateTime.now().minusDays(1);
+        routeset.routesections.get(0).stationCode = "HKI";
+        routeset.routesections.get(0).commercialTrackId = "UPD";
+
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+
+        Assert.assertEquals(1, trains.size());
+        Train returnedTrain = trains.get(0);
+        Assert.assertEquals("1", returnedTrain.timeTableRows.get(0).commercialTrack);
+    }
+
+    @Test
+    public void commercialTrackChangeBeforeRoutesetShouldUpdate() {
+        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        train.timeTableRows.get(0).setCommercialTrackChanged(ZonedDateTime.now().minusDays(1));
+
+        Routeset routeset = routesetFactory.create();
+        routeset.messageTime = ZonedDateTime.now();
+        routeset.routesections.get(0).stationCode = "HKI";
+        routeset.routesections.get(0).commercialTrackId = "UPD";
+
+        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+
+        Assert.assertEquals(1, trains.size());
+        Train returnedTrain = trains.get(0);
+        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
+    }
+
 
     private Train replaceLastRow() {
         Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
