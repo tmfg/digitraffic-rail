@@ -42,7 +42,7 @@ public interface AikatauluRepository extends CrudRepository<Aikataulu, Long> {
             "       a.aikataulupaatos in ('Hyväksytty','Hyväksytty muutoksin') and" +
             "       (atj.aikataulukausi.voimassaAlkuPvm >= ?1 or " +
             "       ?1 between atj.aikataulukausi.voimassaAlkuPvm and atj.aikataulukausi.voimassaLoppuPvm)" +
-            "   )" + WHERE_LPTYP + " and a_jn.junanumero = 781 Order by a.id")
+            "   )" + WHERE_LPTYP + " Order by a.id")
     List<Long> findRegularSchedulesAfterDate(LocalDate startDate);
 
     @Query("select distinct a.id from Aikataulu a " +
