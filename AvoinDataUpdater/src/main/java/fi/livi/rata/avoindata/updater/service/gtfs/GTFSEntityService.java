@@ -76,9 +76,10 @@ public class GTFSEntityService {
 
         for (final Long trainNumber : daysSchedulesByTrainNumber.columnKeySet()) {
             Map<List<LocalDate>, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
-            Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
+            Map<List<LocalDate>, Schedule> endCorrectedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
+            Map<List<LocalDate>, Schedule> startCorrectedTrainsScheduleIntervals = correctIntervalStarts(endCorrectedTrainsScheduleIntervals);
 
-            scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, correctedTrainsScheduleIntervals);
+            scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, startCorrectedTrainsScheduleIntervals);
         }
         return scheduleIntervals;
     }
@@ -114,6 +115,21 @@ public class GTFSEntityService {
             LocalDate scheduleEndDate = entry.getValue().endDate;
             if (scheduleEndDate != null && oldKey.get(1).isAfter(scheduleEndDate)) {
                 List<LocalDate> newKey = Lists.newArrayList(oldKey.get(0), scheduleEndDate);
+                correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
+            } else {
+                correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return correctedTrainsScheduleIntervals;
+    }
+
+    private Map<List<LocalDate>, Schedule> correctIntervalStarts(Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
+        Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            List<LocalDate> oldKey = entry.getKey();
+            LocalDate scheduleStartDate = entry.getValue().startDate;
+            if (scheduleStartDate != null && oldKey.get(0).isBefore(scheduleStartDate)) {
+                List<LocalDate> newKey = Lists.newArrayList(scheduleStartDate, oldKey.get(1));
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());

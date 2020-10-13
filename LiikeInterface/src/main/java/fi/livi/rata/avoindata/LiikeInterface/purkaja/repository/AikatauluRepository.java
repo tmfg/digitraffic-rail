@@ -1,12 +1,13 @@
 package fi.livi.rata.avoindata.LiikeInterface.purkaja.repository;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Aikataulu;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Aikataulu;
 
 @Repository
 public interface AikatauluRepository extends CrudRepository<Aikataulu, Long> {
@@ -41,7 +42,7 @@ public interface AikatauluRepository extends CrudRepository<Aikataulu, Long> {
             "       a.aikataulupaatos in ('Hyväksytty','Hyväksytty muutoksin') and" +
             "       (atj.aikataulukausi.voimassaAlkuPvm >= ?1 or " +
             "       ?1 between atj.aikataulukausi.voimassaAlkuPvm and atj.aikataulukausi.voimassaLoppuPvm)" +
-            "   )" + WHERE_LPTYP + " Order by a.id")
+            "   )" + WHERE_LPTYP + " and a_jn.junanumero = 781 Order by a.id")
     List<Long> findRegularSchedulesAfterDate(LocalDate startDate);
 
     @Query("select distinct a.id from Aikataulu a " +

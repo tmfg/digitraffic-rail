@@ -45,5 +45,6 @@ public class Aikataulutapahtuma {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = Aikataulurivi.KEY_NAME)
+    @JsonView(JunapaivaController.class)
     public Aikataulurivi aikataulurivi;
 }

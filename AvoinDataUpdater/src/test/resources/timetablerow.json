@@ -16,5 +16,10 @@
     "maakoodi": "FI",
     "uicKoodi": 1023
   },
-  "kaupallinenNro": "012"
+  "kaupallinenNro": "012",
+  "aikataulutapahtuma": {
+    "aikataulurivi": {
+      "raidemuutos": []
+    }
+  }
 }
