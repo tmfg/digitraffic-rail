@@ -12,11 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
@@ -36,10 +37,18 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     @Autowired
     private SingleDayScheduleExtractService singleDayScheduleExtractService;
 
+    @Autowired
+    private TrainRepository trainRepository;
+
     final LocalDate extractDate = LocalDate.of(2017, 1, 1);
 
+    @Before
+
+    public void clearTrains() {
+        trainRepository.deleteAll();
+    }
+
     @Test
-    @Transactional
     public void doubleCapacityIdShouldBeFine() {
         final Schedule schedule = scheduleFactory.create();
         schedule.capacityId = "1A";
@@ -57,7 +66,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void doubleCapacityIdShouldBeFine2() {
         final Schedule schedule = scheduleFactory.create();
         schedule.capacityId = "1A";
@@ -75,7 +83,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void exceptionDaysShouldDominate() {
         final Schedule schedule = scheduleFactory.create();
         schedule.runOnMonday = true;
@@ -108,7 +115,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void timesShouldBeOkayDuringSpring() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -163,7 +169,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void timesShouldBeOkayDuringSpring2() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -217,7 +222,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void timesShouldBeOkayDuringFall() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -272,7 +276,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void timesShouldBeOkayDuringFall2() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -331,7 +334,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void alreadyExtractedShouldNotBeReExtracted() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -340,7 +342,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void alreadySimilarExtractedShouldNotBeReExtracted() {
         final Schedule schedule = scheduleFactory.create();
         schedule.id = 1L;
@@ -357,7 +358,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void firstOkayThenUpdatedAdhocWithDifferentCapacityId() {
         final Schedule schedule = scheduleFactory.create();
         schedule.timetableType = Train.TimetableType.ADHOC;
@@ -378,7 +378,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void partCancellationShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
         schedule.id = 1L;
@@ -402,7 +401,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void firstOkayThenCancelledShouldResultInCancelled() {
         final Schedule schedule = scheduleFactory.create();
         schedule.version = 1L;
@@ -436,7 +434,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void firstCancelledThenOkayShouldResultInATrain() {
         final ScheduleCancellation scheduleCancellation = new ScheduleCancellation();
         scheduleCancellation.scheduleCancellationType = ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY;
@@ -456,7 +453,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void stationChangeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -484,7 +480,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void stopTypeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -502,7 +497,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void passtroughShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -520,7 +514,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void operatorChangeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -539,7 +532,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void trainCategoryChangeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -559,7 +551,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void trainTypeChangeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -579,7 +570,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void commuterLineChangeShouldUpdate() {
         final Schedule schedule = scheduleFactory.create();
         schedule.commuterLineId = null;
@@ -597,7 +587,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void simpleExtractShouldBeOkay() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -606,7 +595,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void newerAdhocShouldBeSelected() {
         final Schedule schedule1 = scheduleFactory.create();
         schedule1.timetableType = Train.TimetableType.ADHOC;
@@ -625,7 +613,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void firstBigScheduleThenSmallScheduleShouldReturnWholeRange() {
         final Schedule bigSchedule = scheduleFactory.create();
         bigSchedule.startDate = LocalDate.of(2017, 6, 1);
@@ -655,7 +642,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void firstOkayThenOfTypePShouldWork() {
         final Schedule firstSchedule = scheduleFactory.create();
         firstSchedule.startDate = LocalDate.of(2017, 3, 27);
@@ -683,7 +669,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void cancelledShouldReturnNoTrain() {
         final ScheduleCancellation scheduleCancellation = new ScheduleCancellation();
         scheduleCancellation.scheduleCancellationType = ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY;
@@ -697,7 +682,6 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void exceptionedShouldReturnNoTrain() {
         final ScheduleException scheduleException = new ScheduleException();
         scheduleException.isRun = false;

@@ -21,20 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import fi.livi.rata.avoindata.common.dao.train.ExtractedScheduleRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.train.ExtractedSchedule;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
 public class SingleDayScheduleExtractService {
-
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -47,12 +43,7 @@ public class SingleDayScheduleExtractService {
     private TrainRepository trainRepository;
 
     @Autowired
-    private ExtractedScheduleRepository extractedScheduleRepository;
-
-    @Autowired
     private TodaysScheduleService todaysScheduleService;
-    @Autowired
-    private DateProvider dp;
 
     @Autowired
     private TrainLockExecutor trainLockExecutor;
@@ -104,21 +95,9 @@ public class SingleDayScheduleExtractService {
         List<Train> allTrains = new ArrayList<>();
         allTrains.addAll(toBeAdded);
         allTrains.addAll(toBeUpdated);
-
-        log.info("Creating ExtractedSchedules for {}", date);
-        createExtractedSchedules(date, newTrains, allTrains);
-
         allTrains.addAll(toBeCancelled);
 
         return allTrains;
-    }
-
-    private void createExtractedSchedules(final LocalDate date, final Map<Train, Schedule> newTrains, final List<Train> allTrains) {
-        List<ExtractedSchedule> extractedSchedules = new ArrayList<>();
-        for (final Train train : allTrains) {
-            extractedSchedules.add(createExtractedSchedule(date, newTrains.get(train)));
-        }
-        extractedScheduleRepository.persist(extractedSchedules);
     }
 
     private void printChanges(final List<Train> toBeAdded, final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
@@ -291,16 +270,5 @@ public class SingleDayScheduleExtractService {
                 toBeCancelled.add(oldTrain);
             }
         }
-    }
-
-    private ExtractedSchedule createExtractedSchedule(final LocalDate date, final Schedule schedule) {
-        ExtractedSchedule extractedSchedule = new ExtractedSchedule();
-        extractedSchedule.scheduleId = schedule.id;
-        extractedSchedule.capacityId = schedule.capacityId;
-        extractedSchedule.trainId = new TrainId(schedule.trainNumber, date);
-        extractedSchedule.timestamp = dp.nowInHelsinki();
-        extractedSchedule.version = schedule.version;
-
-        return extractedSchedule;
     }
 }
