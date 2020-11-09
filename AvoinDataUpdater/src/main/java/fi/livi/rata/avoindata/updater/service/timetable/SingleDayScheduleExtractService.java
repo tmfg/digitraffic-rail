@@ -236,9 +236,9 @@ public class SingleDayScheduleExtractService {
         });
     }
 
-    private List<Train> persistTrainsAndFakeVersion(List<Train> trains, Consumer<List<Train>> persistFunction) {
+    private void persistTrainsAndFakeVersion(List<Train> trains, Consumer<List<Train>> persistFunction) {
         if (trains.isEmpty()) {
-            return trains;
+            return;
         }
 
         List<List<Train>> partitions = Lists.partition(trains, 100);
@@ -257,8 +257,6 @@ public class SingleDayScheduleExtractService {
                 return partition;
             });
         }
-
-        return trains;
     }
 
 
