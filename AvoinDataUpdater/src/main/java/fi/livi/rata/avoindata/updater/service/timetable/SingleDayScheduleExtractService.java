@@ -1,6 +1,25 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.dao.train.ExtractedScheduleRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -9,23 +28,9 @@ import fi.livi.rata.avoindata.common.domain.train.ExtractedSchedule;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class SingleDayScheduleExtractService {
@@ -48,11 +53,15 @@ public class SingleDayScheduleExtractService {
     private TodaysScheduleService todaysScheduleService;
     @Autowired
     private DateProvider dp;
+
+    @Autowired
+    private TrainLockExecutor trainLockExecutor;
+
     @PersistenceContext
     private EntityManager entityManager;
 
     @Transactional
-    public List<Train> extract(final List<Schedule> allSchedules, final LocalDate date, boolean shouldFakeVersions) {
+    public List<Train> extract(final List<Schedule> allSchedules, final LocalDate date) {
         List<Schedule> adhocSchedules = new ArrayList<>();
         List<Schedule> regularSchedules = new ArrayList<>();
 
@@ -87,7 +96,7 @@ public class SingleDayScheduleExtractService {
         printChanges(toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Persisting trains for {}", date);
-        persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);
+        persistTrains(toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Extracted trains for {}. Total: {}, Todays Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
                 allSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
@@ -212,62 +221,49 @@ public class SingleDayScheduleExtractService {
     }
 
 
-    private List<Train> persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
-            final List<Train> toBeCancelled, final boolean shouldFakeVersions) {
-        List<Train> changedtrains = new ArrayList<>();
-
-        final long fakeVersion = trainPersistService.getMaxVersion() + 1;
-        log.info("Using fakeVersion {}", fakeVersion);
-
-        if (!toBeAdded.isEmpty()) {
-            if (shouldFakeVersions) {
-                for (final Train train : toBeAdded) {
-                    train.version = fakeVersion;
-                }
-            }
-            changedtrains.addAll(toBeAdded);
-
-            trainPersistService.addEntities(toBeAdded);
-        }
-
-        if (!toBeUpdated.isEmpty()) {
-            if (shouldFakeVersions) {
-                for (final Train train : toBeUpdated) {
-                    train.version = fakeVersion;
-                }
-            }
-            changedtrains.addAll(toBeUpdated);
-
-            trainPersistService.updateEntities(toBeUpdated);
-        }
-
-        if (!toBeCancelled.isEmpty()) {
-            List<Train> trainsCancelled = new ArrayList<>();
-            for (final Train trainToBeCancelled : toBeCancelled) {
-                trainToBeCancelled.deleted = true;
-                trainToBeCancelled.cancelled = true;
-                for (final TimeTableRow timeTableRow : trainToBeCancelled.timeTableRows) {
+    private void persistTrains(final List<Train> toBeAdded, final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
+        persistTrainsAndFakeVersion(toBeAdded, trains -> trainPersistService.addEntities(trains));
+        persistTrainsAndFakeVersion(toBeUpdated, trains -> trainPersistService.updateEntities(trains));
+        persistTrainsAndFakeVersion(toBeCancelled, trains -> {
+            for (final Train train : trains) {
+                train.deleted = true;
+                train.cancelled = true;
+                for (final TimeTableRow timeTableRow : train.timeTableRows) {
                     timeTableRow.cancelled = true;
                 }
-                trainsCancelled.add(trainToBeCancelled);
             }
+            trainPersistService.updateEntities(trains);
+        });
+    }
 
-            if (shouldFakeVersions) {
-                for (final Train train : trainsCancelled) {
-                    train.version = fakeVersion;
-                }
-            }
-            changedtrains.addAll(trainsCancelled);
-
-            trainPersistService.updateEntities(trainsCancelled);
+    private List<Train> persistTrainsAndFakeVersion(List<Train> trains, Consumer<List<Train>> persistFunction) {
+        if (trains.isEmpty()) {
+            return trains;
         }
 
-        return changedtrains;
+        List<List<Train>> partitions = Lists.partition(trains, 100);
+
+        for (List<Train> partition : partitions) {
+            trainLockExecutor.executeInLock(() -> {
+                final long fakeVersion = trainPersistService.getMaxVersion() + 1;
+                log.info("Using fakeVersion {}", fakeVersion);
+
+                for (final Train train : partition) {
+                    train.version = fakeVersion;
+                }
+
+                persistFunction.accept(partition);
+
+                return partition;
+            });
+        }
+
+        return trains;
     }
 
 
     private void groupIntoLists(final Map<TrainId, Train> newTrainMap, final Map<TrainId, Train> oldTrainMap, final List<Train> toBeAdded,
-            final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
+                                final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
         for (final TrainId newTrainId : newTrainMap.keySet()) {
             final Train newTrain = newTrainMap.get(newTrainId);
             final Train oldTrain = oldTrainMap.get(newTrainId);
