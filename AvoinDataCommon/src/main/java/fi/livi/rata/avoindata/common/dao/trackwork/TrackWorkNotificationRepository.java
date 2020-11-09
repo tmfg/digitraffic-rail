@@ -23,6 +23,9 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id ORDER by id, version ASC")
     List<TrackWorkNotification> findByTwnId(@Param("id") String id);
 
+    @Query(value = "SELECT * FROM track_work_notification t WHERE t.id = :id ORDER by version DESC LIMIT 1", nativeQuery = true)
+    Optional<TrackWorkNotification> findByTwnIdLatest(@Param("id") String id);
+
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id AND t.id.version = :version")
     Optional<TrackWorkNotification> findByTwnIdAndVersion(@Param("id") String id, @Param("version") long version);
 

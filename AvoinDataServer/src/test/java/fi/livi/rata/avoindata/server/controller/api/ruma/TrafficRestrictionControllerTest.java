@@ -151,6 +151,27 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    public void latestVersion() throws Exception {
+        TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
+
+        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest", trn.id.id));
+
+        ra.andExpect(jsonPath("$[0]id").value(trn.id.id));
+        ra.andExpect(jsonPath("$[0]version").value(trn.id.version));
+    }
+
+    @Test
+    public void latestVersionGeoJson() throws Exception {
+        TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
+
+        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest.geojson", trn.id.id));
+
+        ra.andExpect(jsonPath("$.features", hasSize(1)));
+        ra.andExpect(jsonPath("$.features[0].properties.id").value(trn.id.id));
+        ra.andExpect(jsonPath("$.features[0].properties.version").value(trn.id.version));
+    }
+
+    @Test
     public void byState() throws Exception {
         TrafficRestrictionNotification trn = factory.create(1).get(0);
         repository.save(trn);

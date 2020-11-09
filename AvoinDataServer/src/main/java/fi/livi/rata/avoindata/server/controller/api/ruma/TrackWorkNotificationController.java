@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
@@ -75,6 +76,39 @@ public class TrackWorkNotificationController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
         return new TrackWorkNotificationWithVersions(id,
                 versions.stream().map(twn -> RumaSerializationUtil.toTwnDto(twn, schema != null ? schema : false)).collect(Collectors.toList()));
+    }
+
+    @ApiOperation("Returns the latest version of a trackwork notification or an empty list if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest")
+    public Collection<SpatialTrackWorkNotificationDto> getLatestTrackWorkNotificationById(
+            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
+            HttpServletResponse response) {
+        final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
+        if (trackWorkNotification.isEmpty()) {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+            return emptyList();
+        } else {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
+            return Collections.singleton(RumaSerializationUtil.toTwnDto(trackWorkNotification.get(), schema != null ? schema : false));
+        }
+    }
+
+    @ApiOperation("Returns the latest version of a trackwork notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
+    public FeatureCollection getLatestTrackWorkNotificationByIdGeoJson(
+            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
+            HttpServletResponse response) {
+
+        final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
+        if (trackWorkNotification.isEmpty()) {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+            return new FeatureCollection(emptyList());
+        } else {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
+            return new FeatureCollection(RumaSerializationUtil.toTwnFeatures(trackWorkNotification.get(), schema != null ? schema : false).collect(Collectors.toList()));
+        }
     }
 
     @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")

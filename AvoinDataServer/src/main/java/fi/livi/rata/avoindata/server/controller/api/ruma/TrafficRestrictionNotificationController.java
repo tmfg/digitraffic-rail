@@ -76,6 +76,38 @@ public class TrafficRestrictionNotificationController extends ADataController {
                 versions.stream().map(trn -> RumaSerializationUtil.toTrnDto(trn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
+    @ApiOperation("Returns the latest version of a trafficrestriction notification or an empty list if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest")
+    public Collection<SpatialTrafficRestrictionNotificationDto> getLatestTrafficRestrictionNotificationById(
+            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
+            HttpServletResponse response) {
+        final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
+        if (trafficRestrictionNotification.isEmpty()) {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+            return emptyList();
+        } else {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
+            return Collections.singleton(RumaSerializationUtil.toTrnDto(trafficRestrictionNotification.get(), schema != null ? schema : false));
+        }
+    }
+
+    @ApiOperation("Returns the latest version of a trafficrestriction notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
+    public FeatureCollection getLatestTrafficRestrictionNotificationByIdGeoJson(
+            @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
+            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
+            HttpServletResponse response) {
+        final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
+        if (trafficRestrictionNotification.isEmpty()) {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
+            return new FeatureCollection(emptyList());
+        } else {
+            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
+            return new FeatureCollection(RumaSerializationUtil.toTrnFeatures(trafficRestrictionNotification.get(), schema != null ? schema : false).collect(Collectors.toList()));
+        }
+    }
+
     @ApiOperation("Returns a specific version of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<SpatialTrafficRestrictionNotificationDto> getTrafficRestrictionNotificationsByVersion(

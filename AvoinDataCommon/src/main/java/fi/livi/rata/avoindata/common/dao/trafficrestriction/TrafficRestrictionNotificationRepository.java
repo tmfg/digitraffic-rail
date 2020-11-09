@@ -26,6 +26,9 @@ public interface TrafficRestrictionNotificationRepository extends CustomGeneralR
     @Query("SELECT t FROM TrafficRestrictionNotification t WHERE t.id.id = :id AND t.id.version = :version AND t.limitation <> fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.OTHER")
     Optional<TrafficRestrictionNotification> findByTrnIdAndVersion(@Param("id") String id, @Param("version") long version);
 
+    @Query(value = "SELECT * FROM traffic_restriction_notification t WHERE t.id = :id ORDER by version DESC LIMIT 1", nativeQuery = true)
+    Optional<TrafficRestrictionNotification> findByTrnIdLatest(@Param("id") String id);
+
     @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrafficRestrictionNotification t WHERE t.modified BETWEEN :start AND :end AND t.limitation <> fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.OTHER GROUP BY t.id.id ORDER BY modified ASC, id ASC")
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);
 
