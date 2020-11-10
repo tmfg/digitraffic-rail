@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -19,18 +18,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import fi.livi.rata.avoindata.common.dao.train.ExtractedScheduleRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.train.ExtractedSchedule;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
 public class SingleDayScheduleExtractService {
+
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -43,16 +44,17 @@ public class SingleDayScheduleExtractService {
     private TrainRepository trainRepository;
 
     @Autowired
-    private TodaysScheduleService todaysScheduleService;
+    private ExtractedScheduleRepository extractedScheduleRepository;
 
     @Autowired
-    private TrainLockExecutor trainLockExecutor;
-
+    private TodaysScheduleService todaysScheduleService;
+    @Autowired
+    private DateProvider dp;
     @PersistenceContext
     private EntityManager entityManager;
 
     @Transactional
-    public List<Train> extract(final List<Schedule> allSchedules, final LocalDate date) {
+    public List<Train> extract(final List<Schedule> allSchedules, final LocalDate date, boolean shouldFakeVersions) {
         List<Schedule> adhocSchedules = new ArrayList<>();
         List<Schedule> regularSchedules = new ArrayList<>();
 
@@ -87,7 +89,7 @@ public class SingleDayScheduleExtractService {
         printChanges(toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Persisting trains for {}", date);
-        persistTrains(toBeAdded, toBeUpdated, toBeCancelled);
+        persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);
 
         log.info("Extracted trains for {}. Total: {}, Todays Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
                 allSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
@@ -95,9 +97,21 @@ public class SingleDayScheduleExtractService {
         List<Train> allTrains = new ArrayList<>();
         allTrains.addAll(toBeAdded);
         allTrains.addAll(toBeUpdated);
+
+        log.info("Creating ExtractedSchedules for {}", date);
+        createExtractedSchedules(date, newTrains, allTrains);
+
         allTrains.addAll(toBeCancelled);
 
         return allTrains;
+    }
+
+    private void createExtractedSchedules(final LocalDate date, final Map<Train, Schedule> newTrains, final List<Train> allTrains) {
+        List<ExtractedSchedule> extractedSchedules = new ArrayList<>();
+        for (final Train train : allTrains) {
+            extractedSchedules.add(createExtractedSchedule(date, newTrains.get(train)));
+        }
+        extractedScheduleRepository.persist(extractedSchedules);
     }
 
     private void printChanges(final List<Train> toBeAdded, final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
@@ -200,42 +214,57 @@ public class SingleDayScheduleExtractService {
     }
 
 
-    private void persistTrains(final List<Train> toBeAdded, final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
-        persistTrainsAndFakeVersion(toBeAdded, trains -> trainPersistService.addEntities(trains));
-        persistTrainsAndFakeVersion(toBeUpdated, trains -> trainPersistService.updateEntities(trains));
-        persistTrainsAndFakeVersion(toBeCancelled, trains -> {
-            for (final Train train : trains) {
-                train.deleted = true;
-                train.cancelled = true;
-                for (final TimeTableRow timeTableRow : train.timeTableRows) {
-                    timeTableRow.cancelled = true;
-                }
-            }
-            trainPersistService.updateEntities(trains);
-        });
-    }
+    private List<Train> persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
+                                      final List<Train> toBeCancelled, final boolean shouldFakeVersions) {
+        List<Train> changedtrains = new ArrayList<>();
 
-    private void persistTrainsAndFakeVersion(List<Train> trains, Consumer<List<Train>> persistFunction) {
-        if (trains.isEmpty()) {
-            return;
-        }
+        final long fakeVersion = trainPersistService.getMaxVersion() + 1;
+        log.info("Using fakeVersion {}", fakeVersion);
 
-        List<List<Train>> partitions = Lists.partition(trains, 100);
-
-        for (List<Train> partition : partitions) {
-            trainLockExecutor.executeInLock(() -> {
-                final long fakeVersion = trainPersistService.getMaxVersion() + 1;
-                log.info("Using fakeVersion {}", fakeVersion);
-
-                for (final Train train : partition) {
+        if (!toBeAdded.isEmpty()) {
+            if (shouldFakeVersions) {
+                for (final Train train : toBeAdded) {
                     train.version = fakeVersion;
                 }
+            }
+            changedtrains.addAll(toBeAdded);
 
-                persistFunction.accept(partition);
-
-                return partition;
-            });
+            trainPersistService.addEntities(toBeAdded);
         }
+
+        if (!toBeUpdated.isEmpty()) {
+            if (shouldFakeVersions) {
+                for (final Train train : toBeUpdated) {
+                    train.version = fakeVersion;
+                }
+            }
+            changedtrains.addAll(toBeUpdated);
+
+            trainPersistService.updateEntities(toBeUpdated);
+        }
+
+        if (!toBeCancelled.isEmpty()) {
+            List<Train> trainsCancelled = new ArrayList<>();
+            for (final Train trainToBeCancelled : toBeCancelled) {
+                trainToBeCancelled.deleted = true;
+                trainToBeCancelled.cancelled = true;
+                for (final TimeTableRow timeTableRow : trainToBeCancelled.timeTableRows) {
+                    timeTableRow.cancelled = true;
+                }
+                trainsCancelled.add(trainToBeCancelled);
+            }
+
+            if (shouldFakeVersions) {
+                for (final Train train : trainsCancelled) {
+                    train.version = fakeVersion;
+                }
+            }
+            changedtrains.addAll(trainsCancelled);
+
+            trainPersistService.updateEntities(trainsCancelled);
+        }
+
+        return changedtrains;
     }
 
 
@@ -270,5 +299,16 @@ public class SingleDayScheduleExtractService {
                 toBeCancelled.add(oldTrain);
             }
         }
+    }
+
+    private ExtractedSchedule createExtractedSchedule(final LocalDate date, final Schedule schedule) {
+        ExtractedSchedule extractedSchedule = new ExtractedSchedule();
+        extractedSchedule.scheduleId = schedule.id;
+        extractedSchedule.capacityId = schedule.capacityId;
+        extractedSchedule.trainId = new TrainId(schedule.trainNumber, date);
+        extractedSchedule.timestamp = dp.nowInHelsinki();
+        extractedSchedule.version = schedule.version;
+
+        return extractedSchedule;
     }
 }

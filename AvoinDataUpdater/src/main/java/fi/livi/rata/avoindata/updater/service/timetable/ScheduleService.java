@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
@@ -31,6 +32,9 @@ public class ScheduleService {
 
     @Value("${updater.trains.numberOfFutureDaysToInitialize}")
     protected Integer numberOfFutureDaysToInitialize;
+
+    @Autowired
+    private TrainLockExecutor trainLockExecutor;
 
     @Autowired
     private DateProvider dp;
@@ -67,7 +71,8 @@ public class ScheduleService {
         allSchedules.addAll(regularSchedules);
 
         final LocalDate finalDate = date;
-        final List<Train> extractedTrains = singleDayScheduleExtractService.extract(allSchedules, finalDate);
+        final List<Train> extractedTrains = trainLockExecutor.executeInLock(
+                () -> singleDayScheduleExtractService.extract(allSchedules, finalDate, true));
 
         if (!extractedTrains.isEmpty()) {
             //Sleep for a while so clients do not choke on new json
