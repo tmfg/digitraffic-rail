@@ -76,8 +76,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
                 versions.stream().map(trn -> RumaSerializationUtil.toTrnDto(trn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
-    @ApiOperation("Returns the latest version of a trafficrestriction notification or an empty list if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest")
+    @ApiOperation("Returns the latest version of a trafficrestriction notification in JSON format or an empty list if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrafficRestrictionNotificationDto> getLatestTrafficRestrictionNotificationById(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,

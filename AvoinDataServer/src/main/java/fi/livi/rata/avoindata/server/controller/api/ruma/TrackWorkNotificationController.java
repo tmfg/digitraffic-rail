@@ -78,8 +78,8 @@ public class TrackWorkNotificationController extends ADataController {
                 versions.stream().map(twn -> RumaSerializationUtil.toTwnDto(twn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
-    @ApiOperation("Returns the latest version of a trackwork notification or an empty list if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest")
+    @ApiOperation("Returns the latest version of a trackwork notification in JSON format or an empty list if the notification does not exist")
+    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrackWorkNotificationDto> getLatestTrackWorkNotificationById(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,

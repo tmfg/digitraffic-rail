@@ -144,7 +144,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     public void latestVersion() throws Exception {
         TrackWorkNotification twn = factory.createPersist(10).get(9);
 
-        ResultActions ra = getJson(String.format("/trackwork-notifications/%s/latest", twn.id.id));
+        ResultActions ra = getJson(String.format("/trackwork-notifications/%s/latest.json", twn.id.id));
 
         ra.andExpect(jsonPath("$[0]id").value(twn.id.id));
         ra.andExpect(jsonPath("$[0]version").value(twn.id.version));
