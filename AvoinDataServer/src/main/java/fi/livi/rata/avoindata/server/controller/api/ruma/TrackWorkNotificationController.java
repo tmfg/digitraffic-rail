@@ -92,7 +92,7 @@ public class TrackWorkNotificationController extends ADataController {
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
         }
-        if (accept.toLowerCase().equals(ContentType.GEOJSON)) {
+        if (accept.toLowerCase().contains(ContentType.GEOJSON)) {
             response.setContentType(ContentType.GEOJSON);
             List<Feature> features = twn.isEmpty() ? emptyList() : RumaSerializationUtil.toTwnFeatures(twn.get(), schema != null ? schema : false).collect(Collectors.toList());
             return new FeatureCollection(features);
