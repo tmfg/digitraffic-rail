@@ -82,7 +82,7 @@ public class TrackWorkNotificationController extends ADataController {
     public Object getTrackWorkNotificationsByIdAndVersion(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
-            @ApiParam(value = "Track work notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
+            @ApiParam(defaultValue = "latest", value = "Track work notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
             @RequestHeader(defaultValue = ContentType.JSON, value = "Accept") final String accept,
             HttpServletResponse response) {
 

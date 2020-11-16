@@ -78,7 +78,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Object getTrafficRestrictionNotificationsByVersion(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
-            @ApiParam(value = "Traffic restriction notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
+            @ApiParam(defaultValue = "latest", value = "Traffic restriction notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
             @RequestHeader(defaultValue = ContentType.JSON, value = "Accept") final String accept,
             HttpServletResponse response) {
