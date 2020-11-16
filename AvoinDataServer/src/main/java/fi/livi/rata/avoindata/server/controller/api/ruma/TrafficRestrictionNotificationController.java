@@ -80,7 +80,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @ApiParam(value = "Traffic restriction notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
-            @RequestHeader("Accept") final String accept,
+            @RequestHeader(defaultValue = ContentType.JSON, value = "Accept") final String accept,
             HttpServletResponse response) {
 
         final Optional<TrafficRestrictionNotification> trn = version.toLowerCase().equals("latest") ? trafficRestrictionNotificationRepository.findByTrnIdLatest(id) : trafficRestrictionNotificationRepository.findByTrnIdAndVersion(id, Long.parseLong(version));
