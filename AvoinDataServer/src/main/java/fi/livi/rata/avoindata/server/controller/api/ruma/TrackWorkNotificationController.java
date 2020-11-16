@@ -14,15 +14,14 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
+import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
+import fi.livi.rata.avoindata.server.controller.utils.ContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
@@ -78,53 +77,28 @@ public class TrackWorkNotificationController extends ADataController {
                 versions.stream().map(twn -> RumaSerializationUtil.toTwnDto(twn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
-    @ApiOperation("Returns the latest version of a trackwork notification in JSON format or an empty list if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
-    public Collection<SpatialTrackWorkNotificationDto> getLatestTrackWorkNotificationById(
-            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
-            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
-            HttpServletResponse response) {
-        final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
-        if (trackWorkNotification.isEmpty()) {
-            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-            return emptyList();
-        } else {
-            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return Collections.singleton(RumaSerializationUtil.toTwnDto(trackWorkNotification.get(), schema != null ? schema : false));
-        }
-    }
-
-    @ApiOperation("Returns the latest version of a trackwork notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
-    @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
-    public FeatureCollection getLatestTrackWorkNotificationByIdGeoJson(
-            @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
-            @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
-            HttpServletResponse response) {
-
-        final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
-        if (trackWorkNotification.isEmpty()) {
-            CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-            return new FeatureCollection(emptyList());
-        } else {
-            CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return new FeatureCollection(RumaSerializationUtil.toTwnFeatures(trackWorkNotification.get(), schema != null ? schema : false).collect(Collectors.toList()));
-        }
-    }
-
-    @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
+    @ApiOperation("Returns a specific version of a trackwork notification. The default response content type is JSON, use Accept: application/vnd.geo+json to receive GeoJSON.")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
-    public Collection<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByIdAndVersion(
+    public Object getTrackWorkNotificationsByIdAndVersion(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
             @ApiParam(defaultValue = "false", value = "Show map or schema locations") @RequestParam(value = "schema", required = false) final Boolean schema,
-            @ApiParam(value = "Track work notification version", required = true) @PathVariable final long version,
+            @ApiParam(value = "Track work notification version integer or 'latest' for latest version", required = true) @PathVariable final String version,
+            @RequestHeader("Accept") final String accept,
             HttpServletResponse response) {
-        final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdAndVersion(id, version);
-        if (trackWorkNotification.isEmpty()) {
+
+        final Optional<TrackWorkNotification> twn = version.toLowerCase().equals("latest") ? trackWorkNotificationRepository.findByTwnIdLatest(id) : trackWorkNotificationRepository.findByTwnIdAndVersion(id, Long.parseLong(version));
+        if (twn.isEmpty()) {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
-            return emptyList();
         } else {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_AGE_DAY);
-            return Collections.singleton(RumaSerializationUtil.toTwnDto(trackWorkNotification.get(), schema != null ? schema : false));
+        }
+        if (accept.toLowerCase().equals(ContentType.GEOJSON)) {
+            response.setContentType(ContentType.GEOJSON);
+            List<Feature> features = twn.isEmpty() ? emptyList() : RumaSerializationUtil.toTwnFeatures(twn.get(), schema != null ? schema : false).collect(Collectors.toList());
+            return new FeatureCollection(features);
+        } else {
+            response.setContentType(ContentType.JSON);
+            return twn.isEmpty() ? Collections.emptyList() : Collections.singleton(RumaSerializationUtil.toTwnDto(twn.get(), schema != null ? schema : false));
         }
     }
 
