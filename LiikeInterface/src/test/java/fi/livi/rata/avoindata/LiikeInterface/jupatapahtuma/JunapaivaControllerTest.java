@@ -1,16 +1,20 @@
 package fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma;
 
-import fi.livi.rata.avoindata.LiikeInterface.MockMvcBaseTest;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.time.LocalDate;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import fi.livi.rata.avoindata.LiikeInterface.MockMvcBaseTest;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
 
+@Ignore
 public class JunapaivaControllerTest extends MockMvcBaseTest {
     private static final LocalDate TEST_DATE = LocalDate.of(2014, 10, 26);
 

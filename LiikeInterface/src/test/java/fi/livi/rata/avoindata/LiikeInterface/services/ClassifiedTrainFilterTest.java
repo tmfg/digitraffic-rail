@@ -1,24 +1,27 @@
 package fi.livi.rata.avoindata.LiikeInterface.services;
 
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.LiikeInterface.BaseTest;
-import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
-import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JunapaivaRepository;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.mockito.Mockito.when;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import fi.livi.rata.avoindata.LiikeInterface.BaseTest;
+import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
+import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JunapaivaRepository;
+
+@Ignore
 public class ClassifiedTrainFilterTest extends BaseTest {
     @Autowired
     private ClassifiedTrainFilter classifiedTrainFilter;

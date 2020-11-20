@@ -1,5 +1,17 @@
 package fi.livi.rata.avoindata.LiikeInterface.kulkutietoviesti;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.LiikeInterface.BaseTest;
@@ -7,17 +19,8 @@ import fi.livi.rata.avoindata.LiikeInterface.domain.JunapaivaPrimaryKey;
 import fi.livi.rata.avoindata.LiikeInterface.domain.entities.kulkutietoviesti.Kulkutietoviesti;
 import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.JunapaivaRepository;
 import fi.livi.rata.avoindata.LiikeInterface.kulkutietoviesti.repository.KulkutietoviestiRepository;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.time.LocalDate;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
-
+@Ignore
 public class KulkutietoviestiControllerTest extends BaseTest {
     @Autowired
     private KulkutietoviestiController kulkutietoviestiController;
