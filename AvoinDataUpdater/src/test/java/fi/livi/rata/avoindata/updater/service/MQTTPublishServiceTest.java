@@ -4,8 +4,11 @@ import java.time.LocalDate;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,10 @@ import fi.livi.rata.avoindata.updater.factory.CauseFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
 
 public class MQTTPublishServiceTest extends BaseTest {
+
+    @Value("${updater.mqtt.server-url}")
+    private String mqttServerUrl;
+
     @Autowired
     private MQTTPublishService mqttPublishService;
 
@@ -29,6 +36,11 @@ public class MQTTPublishServiceTest extends BaseTest {
 
     @Autowired
     private CauseFactory causeFactory;
+
+    @Before
+    public void before() {
+        Assume.assumeTrue(!mqttServerUrl.contains("not-a-real-url"));
+    }
 
     @Transactional
     @Test
