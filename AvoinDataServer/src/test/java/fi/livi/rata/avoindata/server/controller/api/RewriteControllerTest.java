@@ -7,9 +7,14 @@ import static org.mockito.Mockito.verify;
 import java.time.LocalDate;
 
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.transaction.annotation.Transactional;
 
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.factory.TrainCategoryFactory;
+import fi.livi.rata.avoindata.server.factory.TrainTypeFactory;
 
 public class RewriteControllerTest extends MockMvcBaseTest {
     @SpyBean
@@ -24,6 +29,12 @@ public class RewriteControllerTest extends MockMvcBaseTest {
     @SpyBean
     private ScheduleController scheduleController;
 
+    @Autowired
+    private TrainCategoryFactory trainCategoryFactory;
+
+    @Autowired
+    private TrainTypeFactory trainTypeFactory;
+
     @Test
     public void allTrainsTransformationShouldBeOkay() throws Exception {
         getJson("/all-trains?version=1");
@@ -34,7 +45,10 @@ public class RewriteControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    @Transactional
     public void liveTrainsTransformationShouldBeOkay() throws Exception {
+        TrainType trainType = trainTypeFactory.create(trainCategoryFactory.create(1L, "test category"));
+
         getJson("/live-trains/1?departure_date=2017-01-01&version=10");
         verify(trainController).getTrainByTrainNumberAndDepartureDate(eq(1L), eq(LocalDate.of(2017, 1, 1)), eq(false), eq(10L), any());
 
