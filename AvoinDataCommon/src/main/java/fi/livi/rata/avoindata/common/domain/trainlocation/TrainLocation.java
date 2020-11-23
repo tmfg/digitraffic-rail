@@ -1,11 +1,16 @@
 package fi.livi.rata.avoindata.common.domain.trainlocation;
 
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Transient;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.vividsolutions.jts.geom.Point;
 import io.swagger.annotations.ApiModelProperty;
-
-import javax.persistence.*;
 
 
 @Entity
@@ -23,9 +28,6 @@ public class TrainLocation {
     public Point location;
 
     public Integer speed;
-
-    @JsonIgnore
-    public TrainLocationConnectionQuality connectionQuality;
 
     @Transient
     @JsonIgnore
