@@ -71,7 +71,7 @@ public class JupaTapahtuma extends BaseEntity {
     @JsonUnwrapped
     public LiikennepaikanRaide liikennepaikanRaide;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = Aikataulutapahtuma.KEY_NAME, insertable = false, updatable = false)
     public Aikataulutapahtuma aikataulutapahtuma;
 
