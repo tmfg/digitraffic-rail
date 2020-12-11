@@ -23,6 +23,9 @@ public interface JunapaivaRepository extends CrudRepository<Junapaiva, Junapaiva
             "inner join fetch aikataulu.junatyyppi junatyyppi " +
             "inner join fetch junapaiva.jupaTapahtumas junaTapahtumas " +
             "inner join fetch junaTapahtumas.liikennepaikka liikennepaikka " +
+            "inner join fetch junaTapahtumas.aikataulutapahtuma aikataulutapahtuma " +
+            "inner join fetch aikataulutapahtuma.aikataulurivi aikataulurivi " +
+            "left join fetch aikataulurivi.raidemuutos raidemuutos " +
             "left join fetch junaTapahtumas.liikennepaikanRaide " +
             "left join fetch junaTapahtumas.syytietos syytietos " +
             "left join fetch syytietos.syyluokka syyluokka " +
