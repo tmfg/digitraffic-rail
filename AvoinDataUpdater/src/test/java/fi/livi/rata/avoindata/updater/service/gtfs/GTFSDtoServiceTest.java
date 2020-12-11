@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
@@ -84,11 +86,26 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/781.json")
     private Resource schedules_781;
 
+    @Value("classpath:gtfs/59.json")
+    private Resource schedules_59;
+
 
     @Before
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+    }
+
+    @Test
+    @Transactional
+    public void train59ShouldBeOkay() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 12, 11));
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
+
+        List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_2021-01-10_2021-01-10_replacement")).collect(Collectors.toList());
+        assertTrips(trips, 1);
     }
 
     @Test

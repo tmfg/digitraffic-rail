@@ -21,6 +21,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Range;
 import com.google.common.collect.Table;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
@@ -144,6 +145,8 @@ public class GTFSTripService {
             differentRouteCancellations = cancellationFlattener.flatten(differentRouteCancellations);
         }
 
+        handleConnectedPartialCancellations(partialCancellations);
+
         final Iterable<ScheduleCancellation> allCancellations = Iterables.concat(partialCancellations, differentRouteCancellations);
         Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = HashBasedTable.create();
         for (final ScheduleCancellation cancellation : allCancellations) {
@@ -151,7 +154,7 @@ public class GTFSTripService {
             if (existingCancellation == null) {
                 cancellations.put(cancellation.startDate, cancellation.endDate, cancellation);
             } else {
-                log.trace("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
+                log.info("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
                 if (existingCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE &&
                         cancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
                     existingCancellation.cancelledRows.addAll(cancellation.cancelledRows);
@@ -161,6 +164,28 @@ public class GTFSTripService {
             }
         }
         return cancellations;
+    }
+
+    private void handleConnectedPartialCancellations(Collection<ScheduleCancellation> partialCancellations) {
+        for (ScheduleCancellation left : partialCancellations) {
+            Range<LocalDate> leftRange = Range.closed(left.startDate, left.endDate);
+            for (ScheduleCancellation right : partialCancellations) {
+                if (left != right) {
+                    Range<LocalDate> rightRange = Range.closed(right.startDate, right.endDate);
+                    if (leftRange.isConnected(rightRange)) {
+                        Range<LocalDate> newRange = leftRange.span(rightRange);
+
+                        log.info("Collision between two partial cancellations {} and {}", left, right);
+
+                        left.startDate = newRange.lowerEndpoint();
+                        left.endDate = newRange.upperEndpoint();
+
+                        right.startDate = newRange.lowerEndpoint();
+                        right.endDate = newRange.upperEndpoint();
+                    }
+                }
+            }
+        }
     }
 
     private boolean isStoptimeCancelled(final StopTime stopTime, final Map<Long, ScheduleRowPart> cancelledRows) {
