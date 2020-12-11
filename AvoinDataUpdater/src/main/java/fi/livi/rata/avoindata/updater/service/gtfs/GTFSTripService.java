@@ -146,7 +146,10 @@ public class GTFSTripService {
         }
 
         handleConnectedPartialCancellations(partialCancellations);
+        return handleEqualDoubleCancellations(partialCancellations, differentRouteCancellations);
+    }
 
+    private Table<LocalDate, LocalDate, ScheduleCancellation> handleEqualDoubleCancellations(Collection<ScheduleCancellation> partialCancellations, Collection<ScheduleCancellation> differentRouteCancellations) {
         final Iterable<ScheduleCancellation> allCancellations = Iterables.concat(partialCancellations, differentRouteCancellations);
         Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = HashBasedTable.create();
         for (final ScheduleCancellation cancellation : allCancellations) {
@@ -154,7 +157,7 @@ public class GTFSTripService {
             if (existingCancellation == null) {
                 cancellations.put(cancellation.startDate, cancellation.endDate, cancellation);
             } else {
-                log.info("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
+                log.trace("Collision between two cancellations: {} and {}", existingCancellation, cancellation);
                 if (existingCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE &&
                         cancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
                     existingCancellation.cancelledRows.addAll(cancellation.cancelledRows);
@@ -172,10 +175,10 @@ public class GTFSTripService {
             for (ScheduleCancellation right : partialCancellations) {
                 if (left != right) {
                     Range<LocalDate> rightRange = Range.closed(right.startDate, right.endDate);
-                    if (leftRange.isConnected(rightRange)) {
+                    if (leftRange.isConnected(rightRange) && !leftRange.equals(rightRange)) {
                         Range<LocalDate> newRange = leftRange.span(rightRange);
 
-                        log.info("Collision between two partial cancellations {} and {}", left, right);
+                        log.info("Collision between two partial cancellations {}->{} and {}->{}", left.startDate, left.endDate, right.startDate, right.endDate);
 
                         left.startDate = newRange.lowerEndpoint();
                         left.endDate = newRange.upperEndpoint();
