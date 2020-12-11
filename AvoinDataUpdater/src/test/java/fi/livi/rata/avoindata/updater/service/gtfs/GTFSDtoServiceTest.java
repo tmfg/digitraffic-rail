@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
@@ -86,26 +84,11 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/781.json")
     private Resource schedules_781;
 
-    @Value("classpath:gtfs/59.json")
-    private Resource schedules_59;
-
 
     @Before
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
-    }
-
-    @Test
-    @Transactional
-    public void train59ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 12, 11));
-
-        final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
-
-        List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_2021-01-10_2021-01-10_replacement")).collect(Collectors.toList());
-        assertTrips(trips, 2);
     }
 
     @Test
@@ -157,9 +140,18 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        assertTripStops(tripsByServiceId, "66_2019-11-25_2019-12-14", "OL", "HKI");
-        assertTripStops(tripsByServiceId, "66_2019-12-01_2019-12-01_replacement_912544", "KAJ", "HKI");
-        assertTripStops(tripsByServiceId, "66_2019-12-02_2019-12-02_replacement_912562", "KUO", "HKI");
+        Trip normalTrip = tripsByServiceId.get("66_2019-11-25_2019-12-14");
+        Trip KAJTrip = tripsByServiceId.get("66_2019-12-01_2019-12-01_replacement");
+        Trip KUOTrip = tripsByServiceId.get("66_2019-12-02_2019-12-02_replacement");
+
+        Assert.assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
+        Assert.assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
+        Assert.assertEquals(KUOTrip.stopTimes.get(0).stopId, "KUO");
+
+        Assert.assertEquals(Iterables.getLast(normalTrip.stopTimes).stopId, "HKI");
+        Assert.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
+        Assert.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
+
     }
 
     @Test
@@ -175,7 +167,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), true, true, true, true, true, true, true);
 
-        assertTripStops(tripsByServiceId, "1_2017-09-02_2017-12-09", HELSINKI_UIC, JOENSUU_UIC);
+        assertTripStops(firstTrip, HELSINKI_UIC, JOENSUU_UIC);
 
         Map<String, Integer> stopTypes = new HashMap<>();
         stopTypes.put("HAA", 1);
@@ -317,7 +309,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 13))));        // ke
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 14))));        // to
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 15))));        // pe
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_654329", 9L, LocalDate.of(2018, 6, 16)), "HKI", "IMR");
+        Assert.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, LocalDate.of(2018, 6, 16))));     // la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 17))));        // su
 
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 18))));        // ma
@@ -325,7 +317,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 20))));        // ke
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 21))));        // to
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 22))));        // pe
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_654716", 9L, LocalDate.of(2018, 6, 23)), "HKI", "IMR");     // la
+        Assert.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, LocalDate.of(2018, 6, 23))));     // la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 24))));        // su
 
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 25))));        // ma
@@ -333,7 +325,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 27))));        // ke
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 28))));        // to
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 6, 29))));        // pe
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_654717", 9L, LocalDate.of(2018, 6, 30)), "HKI", "IMR");     // la
+        Assert.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, LocalDate.of(2018, 6, 30))));     // la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, LocalDate.of(2018, 7, 1))));         // su
     }
 
@@ -354,7 +346,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        assertTripStops(trips, String.format("%s_%s_%s_replacement_645242", 27L, LocalDate.of(2017, 10, 7), LocalDate.of(2017, 10, 7)), HELSINKI_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s_replacement", 27L, LocalDate.of(2017, 10, 7), LocalDate.of(2017, 10, 7))), HELSINKI_UIC,
                 TAMPERE_UIC);
     }
 
@@ -368,23 +360,23 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        assertTripStops(trips, String.format("%s_%s_%s", 20L, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9)), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9))), OULU_UIC,
                 HELSINKI_UIC);
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645072", 20L, LocalDate.of(2017, 9, 9)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 9, 9))), KOKKOLA_UIC,
                 HELSINKI_UIC);    // 9.9. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645084", 20L, LocalDate.of(2017, 9, 16)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 9, 16))), KOKKOLA_UIC,
                 HELSINKI_UIC);         // 16.9. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645085", 20L, LocalDate.of(2017, 9, 23)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 9, 23))), KOKKOLA_UIC,
                 HELSINKI_UIC);      // 23.9. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645086", 20L, LocalDate.of(2017, 9, 30)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 9, 30))), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 30.9. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645090", 20L, LocalDate.of(2017, 10, 7)), TAMPERE_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 10, 7))), TAMPERE_UIC,
                 HELSINKI_UIC);         // 7.10. la TPE-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645088", 20L, LocalDate.of(2017, 10, 14)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 10, 14))), KOKKOLA_UIC,
                 HELSINKI_UIC);      // 14.10. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_645089", 20L, LocalDate.of(2017, 10, 21)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 10, 21))), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 21.10. la KOK-HKI
-        assertTripStops(trips, String.format("%s_%2$s_%2$s_replacement_654177", 20L, LocalDate.of(2017, 10, 28)), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, LocalDate.of(2017, 10, 28))), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 28.10. la YVI-HKI
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 11, 4))));            // 4.11. la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 11, 11))));           // 11.11. la
@@ -393,9 +385,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 12, 2))));            // 2.12. la
         Assert.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, LocalDate.of(2017, 12, 9))));            // 9.12. la
 
-        assertTripStops(trips, String.format("%s_%s_%s", 20L, LocalDate.of(2017, 12, 11), LocalDate.of(2018, 6, 16)), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2017, 12, 11), LocalDate.of(2018, 6, 16))), OULU_UIC,
                 HELSINKI_UIC);
-        assertTripStops(trips, String.format("%s_%s_%s", 20L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 8)), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, LocalDate.of(2018, 6, 18), LocalDate.of(2018, 12, 8))), OULU_UIC,
                 HELSINKI_UIC);
     }
 
@@ -441,14 +433,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals(125 - 8, firstTrip.stopTimes.size());
     }
 
-    private void assertTripStops(ImmutableMap<String, Trip> trips, String tripId, String departureStopId, String arrivalStopId) {
-        Trip trip = trips.get(tripId);
-        if (trip == null) {
-            throw new IllegalArgumentException(String.format("Trip %s not found. Trips: %s", tripId, trips.keySet()));
-        } else {
-            Assert.assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
-            Assert.assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
-        }
+    private void assertTripStops(Trip trip, String departureStopId, String arrivalStopId) {
+        Assert.assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
+        Assert.assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
     }
 
     private void assertTrip(final Trip trip, final LocalDate startDate, final LocalDate endDate, final boolean monday,

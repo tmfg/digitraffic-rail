@@ -114,8 +114,8 @@ public class GTFSTripService {
                 trip.calendar.calendarDates.add(createCalendarDate(trip.serviceId, date, true));
             }
 
-            log.trace("Creating cancellation trip from {} {}", schedule.id, scheduleCancellation);
-            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, String.format("_replacement_%s", scheduleCancellation.id));
+            log.trace("Creating cancellation trip from {}", scheduleCancellation);
+            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement");
             partialCancellationTrip.calendar.calendarDates.clear();
 
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(
