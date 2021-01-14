@@ -28,8 +28,9 @@ public interface JunapaivaRepository extends CrudRepository<Junapaiva, Junapaiva
             "left join fetch aikataulurivi.raidemuutos raidemuutos " +
             "left join fetch junaTapahtumas.liikennepaikanRaide " +
             "left join fetch junaTapahtumas.syytietos syytietos " +
-            "left join fetch syytietos.syyluokka syyluokka " +
             "left join fetch syytietos.syykoodi syykoodi " +
+            "left join fetch syytietos.tarkentavaSyykoodi tarkentavaSyykoodi " +
+            "left join fetch syykoodi.syyluokka syyluokka " +
             "where junapaiva.id.lahtopvm = ?1 " +
             "and junatyyppi.avoinData = 1 " +
             "and liikennepaikka.lptypId IN (1,2,3)" +
@@ -83,8 +84,9 @@ public interface JunapaivaRepository extends CrudRepository<Junapaiva, Junapaiva
             "left join fetch aikataulurivi.raidemuutos raidemuutos " +
             "left join fetch junaTapahtumas.liikennepaikanRaide " +
             "left join fetch junaTapahtumas.syytietos syytietos " +
-            "left join fetch syytietos.syyluokka syyluokka " +
             "left join fetch syytietos.syykoodi syykoodi " +
+            "left join fetch syytietos.tarkentavaSyykoodi tarkentavaSyykoodi " +
+            "left join fetch syykoodi.syyluokka syyluokka " +
             "where junapaiva.id in ?1 " +
             "and junatyyppi.avoinData = 1 " +
             "and liikennepaikka.lptypId IN (1,2,3)" +

@@ -1,10 +1,19 @@
 package fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma;
 
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.AcceptanceDate;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.JupaTapahtuma;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Syytieto;
-import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.AcceptanceDateRepository;
+import static fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.JunapaivaController.TRAINS_TO_FETCH_PER_QUERY;
+
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +22,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.function.Function;
-
-import static fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.JunapaivaController.TRAINS_TO_FETCH_PER_QUERY;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.AcceptanceDate;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.JupaTapahtuma;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Syyluokka;
+import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Syytieto;
+import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.AcceptanceDateRepository;
 
 @Service
 public class JunapaivaPostProcessService {
@@ -69,8 +76,8 @@ public class JunapaivaPostProcessService {
                 List<Syytieto> syyTietosToBeDeleted = new ArrayList<>(0);
 
                 for (final Syytieto syytieto : jupaTapahtuma.syytietos) {
-                    if (syytieto.syyluokka != null && !acceptableSyyluokkas.contains(syytieto.syyluokka.tunnus)) {
-                        syytieto.syyluokka = null;
+                    Syyluokka syyluokka = syytieto.syykoodi.syyluokka;
+                    if (syyluokka != null && !acceptableSyyluokkas.contains(syyluokka.tunnus)) {
                         syytieto.syykoodi = null;
                         syytieto.tarkentavaSyykoodi = null;
                     } else if (syytieto.syykoodi != null && !acceptableSyykoodi.contains(syytieto.syykoodi.syykoodi)) {

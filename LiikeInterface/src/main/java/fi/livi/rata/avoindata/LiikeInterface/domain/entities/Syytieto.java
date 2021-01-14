@@ -1,6 +1,12 @@
 package fi.livi.rata.avoindata.LiikeInterface.domain.entities;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+import javax.persistence.Version;
 
 @Entity
 public class Syytieto {
@@ -16,15 +22,11 @@ public class Syytieto {
     public Long version;
 
     @ManyToOne
-    @JoinColumn(name = Syyluokka.KEY_NAME)
-    public Syyluokka syyluokka;
-
-    @ManyToOne
-    @JoinColumn(name = Syykoodi.KEY_NAME)
+    @JoinColumn(name = "syykoodi_oid", referencedColumnName = "oid")
     public Syykoodi syykoodi;
 
     @ManyToOne
-    @JoinColumn(name = TarkentavaSyykoodi.KEY_NAME)
+    @JoinColumn(name = "tarkentava_syykoodi_oid", referencedColumnName = "oid")
     public TarkentavaSyykoodi tarkentavaSyykoodi;
 
 
