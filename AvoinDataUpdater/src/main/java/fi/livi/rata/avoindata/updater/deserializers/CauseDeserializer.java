@@ -28,7 +28,7 @@ public class CauseDeserializer extends AEntityDeserializer<Cause> {
         Cause cause = new Cause();
 
         final JsonNode syykoodi = node.get("syykoodi");
-        final JsonNode syyluokka = syykoodi.get("syyluokka");
+        final JsonNode syyluokka = node.get("syyluokka");
         final JsonNode tarkentavaSyykoodi = node.get("tarkentavaSyykoodi");
 
         if (node == null || node.get("version") == null) {

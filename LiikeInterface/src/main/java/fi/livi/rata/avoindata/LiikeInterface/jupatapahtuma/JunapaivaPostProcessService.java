@@ -25,7 +25,6 @@ import org.springframework.util.MultiValueMap;
 import fi.livi.rata.avoindata.LiikeInterface.domain.entities.AcceptanceDate;
 import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Junapaiva;
 import fi.livi.rata.avoindata.LiikeInterface.domain.entities.JupaTapahtuma;
-import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Syyluokka;
 import fi.livi.rata.avoindata.LiikeInterface.domain.entities.Syytieto;
 import fi.livi.rata.avoindata.LiikeInterface.jupatapahtuma.repository.AcceptanceDateRepository;
 
@@ -76,8 +75,12 @@ public class JunapaivaPostProcessService {
                 List<Syytieto> syyTietosToBeDeleted = new ArrayList<>(0);
 
                 for (final Syytieto syytieto : jupaTapahtuma.syytietos) {
-                    Syyluokka syyluokka = syytieto.syykoodi.syyluokka;
-                    if (syyluokka != null && !acceptableSyyluokkas.contains(syyluokka.tunnus)) {
+                    if (syytieto.syykoodi.syyluokka != null) {
+                        syytieto.syyluokka = syytieto.syykoodi.syyluokka;
+                    }
+
+                    if (syytieto.syyluokka != null && !acceptableSyyluokkas.contains(syytieto.syyluokka.tunnus)) {
+                        syytieto.syyluokka = null;
                         syytieto.syykoodi = null;
                         syytieto.tarkentavaSyykoodi = null;
                     } else if (syytieto.syykoodi != null && !acceptableSyykoodi.contains(syytieto.syykoodi.syykoodi)) {
@@ -131,7 +134,7 @@ public class JunapaivaPostProcessService {
     }
 
     private Map<String, AcceptanceDate> getAcceptanceDates(List<String> junanumeros,
-            Function<List<String>, List<Object[]>> acceptanceDateSupplier) {
+                                                           Function<List<String>, List<Object[]>> acceptanceDateSupplier) {
         if (junanumeros.isEmpty()) {
             return new HashMap<>();
         }

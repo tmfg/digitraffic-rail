@@ -6,6 +6,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinColumns;
 import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
 import javax.persistence.Version;
 
 @Entity
@@ -29,6 +30,8 @@ public class Syytieto {
     @JoinColumn(name = "tarkentava_syykoodi_oid", referencedColumnName = "oid")
     public TarkentavaSyykoodi tarkentavaSyykoodi;
 
+    @Transient
+    public Syyluokka syyluokka;
 
     public Integer poistettu;
 
