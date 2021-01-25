@@ -33,10 +33,10 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);
 
     @Query("SELECT t FROM TrackWorkNotification t " +
-           "JOIN FETCH t.trackWorkParts twp " +
-           "JOIN FETCH twp.locations rl " +
-           "JOIN FETCH rl.identifierRanges ir " +
-           "JOIN FETCH ir.elementRanges " +
+           "LEFT JOIN FETCH t.trackWorkParts twp " +
+           "LEFT JOIN FETCH twp.locations rl " +
+           "LEFT JOIN FETCH rl.identifierRanges ir " +
+           "LEFT JOIN FETCH ir.elementRanges " +
            "WHERE t.state IN (:states) AND (t.id.id, t.id.version) IN " +
            "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
            "ORDER BY t.modified ASC, t.id.id ASC")
