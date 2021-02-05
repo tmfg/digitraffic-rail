@@ -1,20 +1,32 @@
 package fi.livi.rata.avoindata.updater.service.miku;
 
-import com.google.common.collect.*;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.*;
 
 @Service
 public class ForecastMergingService {
@@ -100,9 +112,17 @@ public class ForecastMergingService {
 
     private void createExternalForecast(Train train, long newMaxVersion, TimeTableRow timeTableRow, Forecast forecast) {
         if (forecast.forecastTime == null) {
-            log.info("Merged unknownDelay forecast {}", forecast);
-            timeTableRow.unknownDelay = true;
-            timeTableRow.liveEstimateTime = null;
+            int indexOfTimeTableRow = train.timeTableRows.indexOf(timeTableRow);
+            if (indexOfTimeTableRow >= 0) {
+                List<TimeTableRow> unknownDelayTimeTableRows = train.timeTableRows.subList(indexOfTimeTableRow, train.timeTableRows.size());
+                for (TimeTableRow unknownDelayTimeTableRow : unknownDelayTimeTableRows) {
+                    log.info("Merged unknownDelay forecast {}", forecast);
+                    unknownDelayTimeTableRow.unknownDelay = true;
+                    unknownDelayTimeTableRow.liveEstimateTime = null;
+                }
+            }
+
+
         } else {
             final Duration duration = Duration.between(timeTableRow.scheduledTime, forecast.forecastTime);
             timeTableRow.differenceInMinutes = duration.toMinutes();
