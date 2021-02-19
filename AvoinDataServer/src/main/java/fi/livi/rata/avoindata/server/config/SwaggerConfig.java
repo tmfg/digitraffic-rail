@@ -28,7 +28,7 @@ public class SwaggerConfig {
                 .description(
                         "Digitraffic is a service operated by the [Fintraffic](https://www.fintraffic.fi) offering real time traffic information. \n" +
                                 "Currently the service covers *road, marine and rail* traffic. More information can be found at the [Digitraffic website](https://www.digitraffic.fi/) \n\n\n" +
-                                "The service has a public Google-group [road.digitraffic.fi](https://groups.google.com/forum/#!forum/roaddigitrafficfi) for \n" +
+                                "The service has a public Google-group [rail.digitraffic.fi](https://groups.google.com/forum/#!forum/rata_digitraffic_fi) for \n" +
                                 "communication between developers, service administrators and Fintraffic. \n" +
                                 "The discussion in the forum is mostly in Finnish, but you're welcome to communicate in English too. \n\n\n" +
                                 "### General notes of the API\n\n" +
