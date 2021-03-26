@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
@@ -19,7 +18,6 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 
 @Repository
 @Transactional
-@XRayEnabled
 public interface TrainRepository extends CustomGeneralRepository<Train, TrainId> {
 
     String BASE_TRAIN_SELECT = "select distinct train from Train train " +

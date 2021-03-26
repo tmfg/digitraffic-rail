@@ -1,15 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.utils;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Entity;
-import com.amazonaws.xray.entities.Subsegment;
-import com.amazonaws.xray.spring.aop.XRayEnabled;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +10,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Entity;
+import com.amazonaws.xray.entities.Subsegment;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 @Service
 public class FindByIdService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
@@ -28,7 +28,6 @@ public class FindByIdService {
 
     public static final int ENTITY_FETCH_SIZE = 100;
 
-    @XRayEnabled
     public <ID_TYPE extends Serializable, ENTITY_TYPE> List<ENTITY_TYPE> findById(Function<List<ID_TYPE>, List<ENTITY_TYPE>> entityProvider, List<ID_TYPE> ids, Comparator<ENTITY_TYPE> order) {
         List<Future<List<ENTITY_TYPE>>> streamFutures = new ArrayList<>();
 

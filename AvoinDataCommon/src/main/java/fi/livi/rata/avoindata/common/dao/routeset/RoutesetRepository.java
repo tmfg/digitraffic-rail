@@ -1,18 +1,17 @@
 package fi.livi.rata.avoindata.common.dao.routeset;
 
-import com.amazonaws.xray.spring.aop.XRayEnabled;
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 
 @Repository
-@XRayEnabled
 public interface RoutesetRepository extends CustomGeneralRepository<Routeset, Long> {
     @Query("select coalesce(max(t.version),0) from Routeset t")
     long getMaxVersion();
