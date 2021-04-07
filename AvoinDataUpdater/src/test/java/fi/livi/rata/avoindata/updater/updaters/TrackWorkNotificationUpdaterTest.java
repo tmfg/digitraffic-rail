@@ -46,7 +46,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
     @Before
     public void setUp() {
-        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService, lastUpdateService,wgs84ConversionService, "http://fake-url");
+        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService, localTrackWorkNotificationService, lastUpdateService,wgs84ConversionService, "http://fake-url", "");
     }
 
     @After
@@ -174,5 +174,28 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         updater.update();
 
         assertEquals(2, repository.findAll().size());
+    }
+
+    @Test
+    @Transactional
+    public void ignore() {
+        TrackWorkNotification twn1 = factory.create(1).get(0);
+        TrackWorkNotification twn2 = factory.create(1).get(0);
+
+        // set ignore manually
+        updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService,
+                localTrackWorkNotificationService,
+                lastUpdateService,wgs84ConversionService,
+                "http://fake-url",
+                twn1.id.id + "," + twn2.id.id);
+
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(
+                new RemoteRumaNotificationStatus[]{
+                        new RemoteRumaNotificationStatus(twn1.id.id, twn1.id.version),
+                        new RemoteRumaNotificationStatus(twn2.id.id, twn2.id.version)});
+
+        updater.update();
+
+        assertEquals(0, repository.findAll().size());
     }
 }

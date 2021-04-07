@@ -29,18 +29,21 @@ public class TrackWorkNotificationUpdater {
     private final LastUpdateService lastUpdateService;
     private final Wgs84ConversionService wgs84ConversionService;
     private final String liikeInterfaceUrl;
+    private final Set<String> ignoredTwns;
 
     public TrackWorkNotificationUpdater(
             final RemoteTrackWorkNotificationService remoteTrackWorkNotificationService,
             final LocalTrackWorkNotificationService localTrackWorkNotificationService,
             final LastUpdateService lastUpdateService,
             final Wgs84ConversionService wgs84ConversionService,
-            final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
+            final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl,
+            final @Value("${updater.trackwork-notifications.ignored:}") String ignoredTwns) {
         this.remoteTrackWorkNotificationService = remoteTrackWorkNotificationService;
         this.localTrackWorkNotificationService = localTrackWorkNotificationService;
         this.lastUpdateService = lastUpdateService;
         this.wgs84ConversionService = wgs84ConversionService;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
+        this.ignoredTwns = Set.of(ignoredTwns.split(","));
     }
 
     @Scheduled(fixedDelay = 300000) // every 5 minutes
@@ -49,11 +52,17 @@ public class TrackWorkNotificationUpdater {
             return;
         }
 
-        RemoteRumaNotificationStatus[] statusesResp = remoteTrackWorkNotificationService.getStatuses();
+        RemoteRumaNotificationStatus[] statusesResp =
+                remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
             Map<String, Long> statuses = Arrays.stream(statusesResp)
+                    .filter(twn -> !ignoredTwns.contains(twn.id))
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
+            if (statuses.size() == 0) {
+                log.info("Received track work notifications but all were on ignore list");
+                return;
+            }
             log.info("Received {} track work notification statuses", statuses.size());
             List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
