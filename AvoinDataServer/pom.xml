@@ -203,15 +203,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>bintray-dicetechnology-dice-fairlink</id>
-            <name>bintray</name>
-            <url>https://dl.bintray.com/dicetechnology/dice-fairlink</url>
-        </repository>
-    </repositories>
 </project>
