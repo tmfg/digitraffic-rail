@@ -135,9 +135,9 @@
         </dependency>
 
         <dependency>
-            <groupId>technology.dice.open</groupId>
-            <artifactId>dice-fairlink</artifactId>
-            <version>1.2.1</version>
+            <groupId>software.aws.rds</groupId>
+            <artifactId>aws-mysql-jdbc</artifactId>
+            <version>0.1.0</version>
         </dependency>
 
         <dependency>
