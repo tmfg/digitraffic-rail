@@ -57,7 +57,7 @@ public class LastUpdateService {
         prefixToEnumMap.put("train-running-message-rules", LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES);
         prefixToEnumMap.put("tracksections", LastUpdatedType.TRACKSECTIONS);
         prefixToEnumMap.put("stations", LastUpdatedType.STATIONS);
-        prefixToEnumMap.put("category-codes", LastUpdatedType.CATEGORY_CODES);
+        prefixToEnumMap.put("/v1/reason-categories/latest/v1/reason-codes/latest", LastUpdatedType.CATEGORY_CODES);
     }
 
     public void update(String lastUpdatedType) {

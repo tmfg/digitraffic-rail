@@ -36,7 +36,7 @@ public abstract class AEntityUpdater<T> {
         new SimpleAsyncTaskExecutor().execute(this::wrapUpdate);
     }
 
-    protected T getForObjectWithRetry(final String targetUrl, final Class<T> responseType) {
+    protected <T> T getForObjectWithRetry(final String targetUrl, final Class<T> responseType) {
         return retryTemplate.execute(context -> {
             log.info("Requesting data from " + targetUrl);
             return restTemplate.getForObject(targetUrl, responseType);
@@ -56,6 +56,10 @@ public abstract class AEntityUpdater<T> {
 
         final String targetUrl = String.format("%s/%s", liikeInterfaceUrl, path);
         final T results = getForObjectWithRetry(targetUrl, responseType);
+        persist(path, updater, results);
+    }
+
+    protected final void persist(String path, Consumer<T> updater, T results) {
         updater.accept(results);
         log.info(String.format("Updated %s", path));
 
