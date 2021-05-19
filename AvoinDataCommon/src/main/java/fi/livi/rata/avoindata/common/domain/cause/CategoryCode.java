@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.common.domain.cause;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -23,7 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 public class CategoryCode extends ACauseCode {
     @Id
     @JsonView(CategoryCodeJsonView.All.class)
-    public Long id;
+    public String oid;
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
     @ApiModelProperty(value = "Official code",example = "E",required = true)
@@ -52,6 +53,6 @@ public class CategoryCode extends ACauseCode {
 
     @Override
     public String getIdString() {
-        return String.format("%s_%s",categoryCode,id);
+        return this.oid;
     }
 }

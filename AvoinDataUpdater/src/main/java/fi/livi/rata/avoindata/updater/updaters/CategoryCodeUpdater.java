@@ -58,26 +58,28 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     }
 
     private CategoryCode[] merge(JsonNode reasonCategoryResult, JsonNode reasonCodeResult) {
-        Map<Long, CategoryCode> categoryCodes = new HashMap<>();
+        Map<String, CategoryCode> categoryCodes = new HashMap<>();
 
         for (JsonNode childElement : reasonCategoryResult) {
             CategoryCode categoryCode = parseCategoryCode(childElement);
-            categoryCodes.put(categoryCode.id, categoryCode);
+            categoryCodes.put(categoryCode.oid, categoryCode);
         }
 
         for (JsonNode childElement : reasonCodeResult) {
             if (childElement.get("visibilityRestricted").asBoolean() == false) {
                 DetailedCategoryCode detailedCategoryCode = parseDetailedCategoryCode(childElement);
-                CategoryCode categoryCode = categoryCodes.get(oidToid(childElement.get("reasonCategoryOid").asText()));
+                CategoryCode categoryCode = categoryCodes.get(childElement.get("reasonCategoryOid").asText());
 
                 detailedCategoryCode.categoryCode = categoryCode;
                 categoryCode.detailedCategoryCodes.add(detailedCategoryCode);
 
                 for (JsonNode detailedReasonCodeElement : childElement.get("detailedReasonCodes")) {
-                    ThirdCategoryCode thirdCategoryCode = parseThirdCategoryCode(detailedReasonCodeElement);
+                    if (detailedReasonCodeElement.get("visibilityRestricted").asBoolean() == false) {
+                        ThirdCategoryCode thirdCategoryCode = parseThirdCategoryCode(detailedReasonCodeElement);
 
-                    thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;
-                    detailedCategoryCode.thirdCategoryCodes.add(thirdCategoryCode);
+                        thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;
+                        detailedCategoryCode.thirdCategoryCodes.add(thirdCategoryCode);
+                    }
                 }
             }
         }
@@ -91,13 +93,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         categoryCode.categoryName = categoryCodeElement.get("name").textValue();
         categoryCode.validFrom = LocalDate.parse(categoryCodeElement.get("validFromDate").textValue());
         categoryCode.validTo = categoryCodeElement.get("validUntilDate").isNull() ? null : LocalDate.parse(categoryCodeElement.get("validUntilDate").textValue());
-        categoryCode.id = oidToid(categoryCodeElement.get("oid").asText());
+        categoryCode.oid = categoryCodeElement.get("oid").asText();
         return categoryCode;
-    }
-
-    private Long oidToid(String oid) {
-        String[] oidSplit = oid.split("\\.");
-        return Long.parseLong(oidSplit[oidSplit.length - 3] + oidSplit[oidSplit.length - 2] + oidSplit[oidSplit.length - 1]);
     }
 
     private ThirdCategoryCode parseThirdCategoryCode(JsonNode thirdCategoryElement) {
@@ -106,7 +103,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         thirdCategoryCode.thirdCategoryName = thirdCategoryElement.get("name").textValue();
         thirdCategoryCode.validFrom = LocalDate.parse(thirdCategoryElement.get("validFromDate").textValue());
         thirdCategoryCode.validTo = thirdCategoryElement.get("validUntilDate").isNull() ? null : LocalDate.parse(thirdCategoryElement.get("validUntilDate").textValue());
-        thirdCategoryCode.id = oidToid(thirdCategoryElement.get("oid").asText());
+        thirdCategoryCode.oid = thirdCategoryElement.get("oid").asText();
         return thirdCategoryCode;
     }
 
@@ -116,7 +113,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         detailedCategoryCode.detailedCategoryName = detailedCategoryElement.get("name").textValue();
         detailedCategoryCode.validFrom = LocalDate.parse(detailedCategoryElement.get("validFromDate").textValue());
         detailedCategoryCode.validTo = detailedCategoryElement.get("validUntilDate").isNull() ? null : LocalDate.parse(detailedCategoryElement.get("validUntilDate").textValue());
-        detailedCategoryCode.id = oidToid(detailedCategoryElement.get("oid").asText());
+        detailedCategoryCode.oid = detailedCategoryElement.get("oid").asText();
         return detailedCategoryCode;
     }
 }

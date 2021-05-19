@@ -203,17 +203,17 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         thirdCategoryCode.thirdCategoryName = "3 koodin nimi";
         thirdCategoryCode.description = "3 koodin selitys";
         thirdCategoryCode.validFrom = LocalDate.of(2017, 1, 1);
-        thirdCategoryCode.id = 3L;
+        thirdCategoryCode.oid = "3";
         DetailedCategoryCode detailedCategoryCode = new DetailedCategoryCode();
         detailedCategoryCode.detailedCategoryCode = "2 koodi";
         detailedCategoryCode.detailedCategoryName = "2 koodin nimi";
         detailedCategoryCode.validFrom = LocalDate.of(2017, 1, 2);
-        detailedCategoryCode.id = 2L;
+        detailedCategoryCode.oid = "2";
         CategoryCode categoryCode = new CategoryCode();
         categoryCode.categoryCode = "1 koodi";
         categoryCode.categoryName = "1 koodin nimi";
         categoryCode.validFrom = LocalDate.of(2017, 1, 3);
-        categoryCode.id = 1L;
+        categoryCode.oid = "1";
 
         detailedCategoryCode.categoryCode = categoryCode;
         thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;
