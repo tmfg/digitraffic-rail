@@ -164,7 +164,7 @@ public class TrackWorkNotificationController extends ADataController {
         ZonedDateTime startTime = getStartTime(start);
         ZonedDateTime endTime = getEndTime(end);
 
-        Duration duration = Duration.between(start, endTime);
+        Duration duration = Duration.between(startTime, endTime);
         if (duration.isNegative()) {
             throw new IllegalArgumentException("Duration between start and end time is negative");
         }
