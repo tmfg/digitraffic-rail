@@ -168,7 +168,7 @@ public class TrackWorkNotificationController extends ADataController {
         if (duration.isNegative()) {
             throw new IllegalArgumentException("Duration between start and end time is negative");
         }
-        if (duration.toDays() > 7) {
+        if (duration.toDays() > 30) {
             throw new IllegalArgumentException("Duration between start and end time is more than 7 days");
         }
 
