@@ -2,8 +2,8 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.CACHE_AGE_DAY;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -161,9 +161,20 @@ public class TrackWorkNotificationController extends ADataController {
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
         Set<TrackWorkNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
+        ZonedDateTime startTime = getStartTime(start);
+        ZonedDateTime endTime = getEndTime(end);
+
+        Duration duration = Duration.between(endTime, start);
+        if (duration.isNegative()) {
+            throw new IllegalArgumentException("Duration between start and end time is negative");
+        }
+        if (duration.toDays() > 7) {
+            throw new IllegalArgumentException("Duration between start and end time is more than 7 days");
+        }
+
         return trackWorkNotificationRepository.findByState(states,
-                getStartTime(start),
-                getEndTime(end),
+                startTime,
+                endTime,
                 PageRequest.of(0, MAX_RESULTS));
     }
 
