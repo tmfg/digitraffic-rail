@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
@@ -28,41 +27,31 @@ public class GTFSRouteService {
             final Route route = new Route();
             final Schedule schedule = trip.source;
 
-            final StopTime firstStop = trip.stopTimes.get(0);
-            final StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
-
-            final String routeId = getRouteId(trip);
-            route.routeId = routeId;
             route.agencyId = schedule.operator.operatorUICCode;
-            route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
 
             if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
+                final StopTime firstStop = trip.stopTimes.get(0);
+                final StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
+
                 route.shortName = String.format("%s %s", schedule.trainType.name, schedule.trainNumber);
+                route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
+
+                Long magicNumber = Long.valueOf(String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trip.source.trainNumber,
+                        gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode).hashCode()) + Integer.MAX_VALUE;
+                route.routeId = magicNumber.toString();
             } else {
                 route.shortName = schedule.commuterLineId;
+                route.longName = schedule.commuterLineId;
+                route.routeId = schedule.commuterLineId;
             }
 
             route.type = gtfsTrainTypeService.getGtfsTrainType(schedule);
 
-            trip.routeId = routeId;
+            trip.routeId = route.routeId;
 
             routeMap.putIfAbsent(route.routeId, route);
         }
 
         return Lists.newArrayList(routeMap.values());
-    }
-
-    private String getRouteId(final Trip trip) {
-        final StopTime firstStop = trip.stopTimes.get(0);
-        final StopTime lastStop = Iterables.getLast(trip.stopTimes);
-        Long id;
-        if (!Strings.isNullOrEmpty(trip.source.commuterLineId)) {
-            id = Long.valueOf(String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trip.source.commuterLineId,
-                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode).hashCode()) + Integer.MAX_VALUE;
-        } else {
-            id = Long.valueOf(String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trip.source.trainNumber,
-                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode).hashCode()) + Integer.MAX_VALUE;
-        }
-        return id.toString();
     }
 }
