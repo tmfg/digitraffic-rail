@@ -1,8 +1,13 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.updater.BaseTest;
@@ -21,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +39,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
     private TrafficRestrictionNotificationUpdater updater;
 
-    private GeometryFactory geometryFactory = new GeometryFactory();
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Autowired
     private TrafficRestrictionNotificationRepository repository;
@@ -149,6 +156,31 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
         updater.update();
 
         assertEquals(2, repository.findAll().size());
+    }
+
+    @Test
+    @Transactional
+    public void onlyPointIsPersistedForVaihdeMapGeometry() {
+        TrafficRestrictionNotification trn = factory.create(1).get(0);
+        RumaLocation loc = factory.createRumaLocation();
+        IdentifierRange ir = factory.createIdentifierRange();
+        ir.locationMap = geometryFactory.createGeometryCollection(new Geometry[]{
+                geometryFactory.createLineString(new Coordinate[]{ TAMPERE_COORDINATE_TM35FIN, TAMPERE_COORDINATE_TM35FIN}),
+                geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN)
+        });
+        ir.elementId = "1.2.246.586.1.24.123"; // vaihde
+        trn.locations = Set.of(loc);
+        loc.identifierRanges = Set.of(ir);
+        ir.location = loc;
+        when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
+        when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
+
+        updater.update();
+
+        final TrafficRestrictionNotification savedTrn = repository.getOne(trn.id);
+        final RumaLocation savedLoc = savedTrn.locations.iterator().next();
+        final IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
+        assertEquals(Point.class, savedIr.locationMap.getClass());
     }
 
 }

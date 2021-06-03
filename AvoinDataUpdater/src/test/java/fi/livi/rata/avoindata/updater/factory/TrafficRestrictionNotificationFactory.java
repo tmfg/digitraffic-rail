@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.factory;
 
-import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
@@ -23,14 +22,12 @@ import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINA
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN_DEVIATED;
 
 @Component
-public class TrafficRestrictionNotificationFactory {
+public class TrafficRestrictionNotificationFactory extends RumaNotificationFactoryBase {
 
     private static final Random random = new Random(System.nanoTime());
 
     @Autowired
     private TrafficRestrictionNotificationRepository repository;
-
-    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Transactional
     public List<TrafficRestrictionNotification> createPersist(int versions) {

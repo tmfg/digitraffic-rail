@@ -1,5 +1,9 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
@@ -21,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +48,8 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     private LastUpdateService lastUpdateService;
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
+
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Before
     public void setUp() {
@@ -174,6 +181,34 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         updater.update();
 
         assertEquals(2, repository.findAll().size());
+    }
+
+    @Test
+    @Transactional
+    public void onlyPointIsPersistedForVaihdeMapGeometry() {
+        TrackWorkNotification twn = factory.create(1).get(0);
+        TrackWorkPart twp = factory.createTrackWorkPart();
+        RumaLocation loc = factory.createRumaLocation();
+        IdentifierRange ir = factory.createIdentifierRange();
+        ir.locationMap = geometryFactory.createGeometryCollection(new Geometry[]{
+            geometryFactory.createLineString(new Coordinate[]{ TAMPERE_COORDINATE_TM35FIN, TAMPERE_COORDINATE_TM35FIN}),
+            geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN)
+        });
+        ir.elementId = "1.2.246.586.1.24.123"; // vaihde
+        twn.trackWorkParts = Set.of(twp);
+        twp.locations = Set.of(loc);
+        twp.trackWorkNotification = twn;
+        loc.identifierRanges = Set.of(ir);
+        ir.location = loc;
+        when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.getVersion())});
+        when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twn));
+
+        updater.update();
+
+        TrackWorkNotification savedTwn = repository.getOne(twn.id);
+        RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
+        IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
+        assertEquals(Point.class, savedIr.locationMap.getClass());
     }
 
     @Test

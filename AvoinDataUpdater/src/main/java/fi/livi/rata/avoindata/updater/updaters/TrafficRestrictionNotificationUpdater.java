@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.vividsolutions.jts.geom.GeometryCollection;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
@@ -134,7 +135,11 @@ public class TrafficRestrictionNotificationUpdater {
                         }
 
                         for (IdentifierRange ir : rl.identifierRanges) {
-                            ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                            if (ir.elementId != null && RumaUpdaterUtil.elementIsVaihde(ir.elementId)) {
+                                ir.locationMap = wgs84ConversionService.liviToWgs84Jts(RumaUpdaterUtil.getPointFromGeometryCollection((GeometryCollection) ir.locationMap, trn.id.id));
+                            } else {
+                                ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                            }
                             ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
                         }
                     });

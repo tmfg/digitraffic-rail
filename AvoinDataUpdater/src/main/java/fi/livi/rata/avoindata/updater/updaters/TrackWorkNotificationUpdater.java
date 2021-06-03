@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import com.vividsolutions.jts.geom.GeometryCollection;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -97,7 +98,7 @@ public class TrackWorkNotificationUpdater {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }
-       long remoteVersion = statuses.get(localTrackWorkNotification.id);
+        long remoteVersion = statuses.get(localTrackWorkNotification.id);
         SortedSet<Long> versions = new TreeSet<>();
         if (remoteVersion > localTrackWorkNotification.maxVersion) {
             LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
@@ -149,7 +150,11 @@ public class TrackWorkNotificationUpdater {
                         }
                         for (IdentifierRange ir : rl.identifierRanges) {
                             try {
-                                ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                                if (ir.elementId != null && RumaUpdaterUtil.elementIsVaihde(ir.elementId)) {
+                                    ir.locationMap = wgs84ConversionService.liviToWgs84Jts(RumaUpdaterUtil.getPointFromGeometryCollection((GeometryCollection) ir.locationMap, twn.id.id));
+                                } else {
+                                    ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
+                                }
                                 ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
                             } catch (Exception e) {
                                 log.error("Error while converting coordinates for identifier range: " + ir.toString(), e);
