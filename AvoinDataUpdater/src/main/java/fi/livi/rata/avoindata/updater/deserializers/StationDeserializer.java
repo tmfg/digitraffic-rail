@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Map;
 
 import org.osgeo.proj4j.ProjCoordinate;
@@ -38,7 +40,7 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
                                final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
         // To break circular reference
         if (trakediaLiikennepaikkaMap == null) {
-            trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas();
+            trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas(LocalDate.now().atStartOfDay(ZoneId.of("UTC")));
         }
 
         Station station = new Station();

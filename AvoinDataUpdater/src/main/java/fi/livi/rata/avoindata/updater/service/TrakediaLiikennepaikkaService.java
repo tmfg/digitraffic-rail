@@ -1,8 +1,7 @@
 package fi.livi.rata.avoindata.updater.service;
 
 import java.net.URI;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class TrakediaLiikennepaikkaService {
     private String baseUrl;
 
     @Cacheable("trakediaLiikennepaikka")
-    public Map<String, Double[]> getTrakediaLiikennepaikkas() {
+    public Map<String, Double[]> getTrakediaLiikennepaikkas(ZonedDateTime utcDate) {
         Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
 
         if (Strings.isNullOrEmpty(baseUrl)) {
@@ -38,7 +37,7 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            String now = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             URI url = new URI(String.format(baseUrl, now, now));
 
             logger.info("Fetching Trakedia data from {}", url);
