@@ -47,7 +47,7 @@ public class LastUpdateController {
         HttpHeaders httpHeaders = this.restTemplate.headForHeaders(URI.create(url));
         ZonedDateTime lastModified = ZonedDateTime.ofInstant(Instant.ofEpochMilli(httpHeaders.getLastModified()), ZoneId.of("UTC"));
         Duration sinceUpdate = Duration.between(lastModified, ZonedDateTime.now());
-        IsUpToDateService.IsToUpToDateDto isToUpToDateDto = new IsUpToDateService.IsToUpToDateDto(ZonedDateTime.now(), limit, sinceUpdate);
+        IsUpToDateService.IsToUpToDateDto isToUpToDateDto = new IsUpToDateService.IsToUpToDateDto(lastModified, limit, sinceUpdate);
         return isToUpToDateDto;
     }
 }
