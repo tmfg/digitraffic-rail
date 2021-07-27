@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -44,10 +45,14 @@ public class LastUpdateController {
     }
 
     private IsUpToDateService.IsToUpToDateDto createIsUpToDateForUrl(String url, Duration limit) {
-        HttpHeaders httpHeaders = this.restTemplate.headForHeaders(URI.create(url));
-        ZonedDateTime lastModified = ZonedDateTime.ofInstant(Instant.ofEpochMilli(httpHeaders.getLastModified()), ZoneId.of("UTC"));
-        Duration sinceUpdate = Duration.between(lastModified, ZonedDateTime.now());
-        IsUpToDateService.IsToUpToDateDto isToUpToDateDto = new IsUpToDateService.IsToUpToDateDto(lastModified, limit, sinceUpdate);
-        return isToUpToDateDto;
+        try {
+            HttpHeaders httpHeaders = this.restTemplate.headForHeaders(URI.create(url));
+            ZonedDateTime lastModified = ZonedDateTime.ofInstant(Instant.ofEpochMilli(httpHeaders.getLastModified()), ZoneId.of("UTC"));
+            Duration sinceUpdate = Duration.between(lastModified, ZonedDateTime.now());
+            IsUpToDateService.IsToUpToDateDto isToUpToDateDto = new IsUpToDateService.IsToUpToDateDto(lastModified, limit, sinceUpdate);
+            return isToUpToDateDto;
+        } catch (HttpClientErrorException.NotFound exception) {
+            return new IsUpToDateService.IsToUpToDateDto(null, limit, Duration.ofDays(30));
+        }
     }
 }
