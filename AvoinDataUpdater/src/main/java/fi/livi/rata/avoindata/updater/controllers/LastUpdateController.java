@@ -51,6 +51,8 @@ public class LastUpdateController {
             Duration sinceUpdate = Duration.between(lastModified, ZonedDateTime.now());
             IsUpToDateService.IsToUpToDateDto isToUpToDateDto = new IsUpToDateService.IsToUpToDateDto(lastModified, limit, sinceUpdate);
             return isToUpToDateDto;
+        } catch (HttpClientErrorException.TooManyRequests exception) {
+            return new IsUpToDateService.IsToUpToDateDto(ZonedDateTime.now(), limit, Duration.ofDays(0));
         } catch (HttpClientErrorException.NotFound exception) {
             return new IsUpToDateService.IsToUpToDateDto(null, limit, Duration.ofDays(30));
         }
