@@ -185,8 +185,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     @Query("select distinct train.id,train.version from Train train where train.id.departureDate = ?1")
     List<Object[]> findByDepartureDateLite(LocalDate date);
 
-    @Query("select train.id from Train train where train.id.departureDate = ?1 and (?2 = true or " + IS_NOT_DELETED + ")")
-    List<TrainId> findTrainIdByDepartureDate(LocalDate date, Boolean include_deleted);
+    @Query("select train.id from Train train where train.id.departureDate = ?1")
+    List<TrainId> findTrainIdByDepartureDate(LocalDate date);
 
     @Query("select distinct train from Train train left join fetch train.timeTableRows timeTableRow where train.id.departureDate = ?1")
     List<Train> findByDepartureDateFull(LocalDate date);

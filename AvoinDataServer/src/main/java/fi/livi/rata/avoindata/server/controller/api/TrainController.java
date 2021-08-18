@@ -134,10 +134,10 @@ public class TrainController extends ADataController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {//
         CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
 
-        List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date, include_deleted);
+        List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date);
 
         if (!trainIds.isEmpty()) {
-            return findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+            return findByIdService.findById(s -> trainRepository.findTrains(s, include_deleted), trainIds, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
