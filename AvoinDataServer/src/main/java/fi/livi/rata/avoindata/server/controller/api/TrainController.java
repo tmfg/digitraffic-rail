@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -26,9 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.dao.train.TrainStreamRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -36,6 +35,7 @@ import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -51,7 +51,7 @@ public class TrainController extends ADataController {
     @Autowired
     private BatchExecutionService bes;
     @Autowired
-    private TrainStreamRepository trainStreamRepository;
+    private FindByIdService findByIdService;
 
     private Logger log = LoggerFactory.getLogger(TrainController.class);
 
@@ -130,11 +130,17 @@ public class TrainController extends ADataController {
     @ApiOperation(value = "Returns trains run on {departure_date}", response = Train.class, responseContainer = "List")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
-    public Stream<Train> getTrainsByDepartureDate(
+    public List<Train> getTrainsByDepartureDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {//
         CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
 
-        return trainStreamRepository.getTrainsByDepartureDate(departure_date, include_deleted);
+        List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date, include_deleted);
+
+        if (!trainIds.isEmpty()) {
+            return findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+        } else {
+            return Lists.newArrayList();
+        }
     }
 
     private List<Train> getTrainWithoutDepartureDate(long train_number, long version, Boolean include_deleted) {
