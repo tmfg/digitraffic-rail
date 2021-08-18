@@ -6,8 +6,8 @@ import java.time.LocalDate;
 
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -19,9 +19,10 @@ public class TrainControllerTest extends MockMvcBaseTest {
     private TrainFactory trainFactory;
     @Autowired
     private DateProvider dateProvider;
+    @Autowired
+    private TrainRepository trainRepository;
 
     @Test
-    @Transactional
     public void deletedShouldBeFilteredByDefault() throws Exception {
         LocalDate someDate = dateProvider.dateInHelsinki();
 
@@ -29,16 +30,18 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         Train deletedTrain = trainFactory.createBaseTrain(new TrainId(2L, someDate));
         deletedTrain.deleted = true;
+        trainRepository.save(deletedTrain);
 
         trainFactory.createBaseTrain(new TrainId(3L, someDate));
 
         getJson(String.format("/trains/%s/1", someDate)).andExpect(jsonPath("$.length()").value(1));
         getJson(String.format("/trains/%s/2", someDate)).andExpect(jsonPath("$.length()").value(0));
         getJson(String.format("/trains/%s", someDate)).andExpect(jsonPath("$.length()").value(2));
+
+        trainRepository.deleteAll();
     }
 
     @Test
-    @Transactional
     public void deletedParameterShouldBeHonored() throws Exception {
         LocalDate someDate = dateProvider.dateInHelsinki();
 
@@ -46,6 +49,7 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         Train deletedTrain = trainFactory.createBaseTrain(new TrainId(2L, someDate));
         deletedTrain.deleted = true;
+        trainRepository.save(deletedTrain);
 
         trainFactory.createBaseTrain(new TrainId(3L, someDate));
 
@@ -57,5 +61,7 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         getJson(String.format("/trains/%s?include_deleted=true", someDate)).andExpect(jsonPath("$.length()").value(3));
         getJson(String.format("/trains/%s?include_deleted=false", someDate)).andExpect(jsonPath("$.length()").value(2));
+
+        trainRepository.deleteAll();
     }
 }
