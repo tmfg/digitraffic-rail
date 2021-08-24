@@ -38,9 +38,10 @@ public class FindByIdService {
             Future<List<ENTITY_TYPE>> streamFuture = executor.submit(() -> {
                 AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
 
-                Subsegment subsegment = AWSXRay.beginSubsegment("## Execute findById");
+                Subsegment subsegment = AWSXRay.beginSubsegment(String.format("## Execute findById for %s items", subIds.size()));
                 List<ENTITY_TYPE> entities = entityProvider.apply(subIds);
-                AWSXRay.endSubsegment();
+                subsegment.end();
+
                 return entities;
             });
             streamFutures.add(streamFuture);
