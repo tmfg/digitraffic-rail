@@ -1,18 +1,19 @@
 package fi.livi.rata.avoindata.common.dao.trackwork;
 
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 
 @Repository
 public interface TrackWorkNotificationRepository extends CustomGeneralRepository<TrackWorkNotification, TrackWorkNotification.TrackWorkNotificationId> {
@@ -33,13 +34,13 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);
 
     @Query("SELECT t FROM TrackWorkNotification t " +
-           "LEFT JOIN FETCH t.trackWorkParts twp " +
-           "LEFT JOIN FETCH twp.locations rl " +
-           "LEFT JOIN FETCH rl.identifierRanges ir " +
-           "LEFT JOIN FETCH ir.elementRanges " +
-           "WHERE t.state IN (:states) AND (t.id.id, t.id.version) IN " +
-           "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
-           "ORDER BY t.modified ASC, t.id.id ASC")
+            "LEFT JOIN FETCH t.trackWorkParts twp " +
+            "LEFT JOIN FETCH twp.locations rl " +
+            "LEFT JOIN FETCH rl.identifierRanges ir " +
+            "LEFT JOIN FETCH ir.elementRanges " +
+            "WHERE t.state IN (:states) AND (t.modified BETWEEN :start and :end) AND (t.id.id, t.id.version) IN " +
+            "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
+            "ORDER BY t.modified ASC, t.id.id ASC")
     List<TrackWorkNotification> findByState(
             @Param("states") Set<TrackWorkNotificationState> states,
             @Param("start") ZonedDateTime start,
