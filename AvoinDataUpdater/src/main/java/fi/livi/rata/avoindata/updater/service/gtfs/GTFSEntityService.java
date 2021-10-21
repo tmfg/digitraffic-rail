@@ -40,6 +40,9 @@ public class GTFSEntityService {
     private GTFSRouteService gtfsRouteService;
 
     @Autowired
+    private GTFSShapeService gtfsShapeService;
+
+    @Autowired
     private DateProvider dp;
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
@@ -52,6 +55,7 @@ public class GTFSEntityService {
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
         gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
+        gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
 
         return gtfsDto;
     }

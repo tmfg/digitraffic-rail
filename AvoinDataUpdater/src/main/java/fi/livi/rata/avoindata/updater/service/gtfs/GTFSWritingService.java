@@ -90,8 +90,11 @@ public class GTFSWritingService {
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
                 route -> String.format("%s,%s,%s,%s,,%s", route.routeId, route.agencyId, route.shortName, route.longName, route.type)));
 
-        files.add(write(getPath("trips.txt"), gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name",
-                trip -> String.format("%s,%s,%s,%s,,%s", trip.routeId, trip.serviceId, trip.tripId, trip.headsign, trip.shortName)));
+        files.add(write(getPath("trips.txt"), gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name,shape_id",
+                trip -> String.format("%s,%s,%s,%s,,%s,%s", trip.routeId, trip.serviceId, trip.tripId, trip.headsign, trip.shortName, trip.shapeId)));
+
+        files.add(write(getPath("shapes.txt"), gtfsDto.shapes, "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence",
+                shape -> String.format("%s,%s,%s,%s", shape.shapeId, shape.latitude, shape.longitude, shape.sequence)));
 
         List<StopTime> stopTimes = new ArrayList<>();
         List<Calendar> calendars = new ArrayList<>();

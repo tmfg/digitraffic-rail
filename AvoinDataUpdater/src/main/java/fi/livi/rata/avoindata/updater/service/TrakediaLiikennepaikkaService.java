@@ -56,4 +56,31 @@ public class TrakediaLiikennepaikkaService {
 
         return liikennepaikkaMap;
     }
+
+    @Cacheable("trakediaLiikennepaikkaNodes")
+    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes(ZonedDateTime utcDate) {
+        Map<String, JsonNode> liikennepaikkaMap = new HashMap<>();
+
+        if (Strings.isNullOrEmpty(baseUrl)) {
+            return liikennepaikkaMap;
+        }
+
+        try {
+            String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            URI url = new URI(String.format(baseUrl, now, now));
+
+            logger.info("Fetching Trakedia data from {}", url);
+
+            JsonNode jsonNode = restTemplate.getForObject(url, JsonNode.class);
+
+            for (final JsonNode node : jsonNode) {
+                final JsonNode lyhenne = node.get(0).get("lyhenne");
+                liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
+            }
+        } catch (Exception e) {
+            logger.error("could not fetch Trakedia data", e);
+        }
+
+        return liikennepaikkaMap;
+    }
 }

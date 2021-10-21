@@ -1,6 +1,9 @@
 package fi.livi.rata.avoindata.updater.controllers;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +17,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.CompositionInitializerService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainInitializerService;
 
@@ -45,6 +51,12 @@ public class ManualUpdateController {
 
     @Autowired
     private GTFSService gtfsService;
+
+    @Autowired
+    private ScheduleProviderService scheduleProviderService;
+
+    @Autowired
+    private DateProvider dp;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -98,5 +110,19 @@ public class ManualUpdateController {
         logger.info("Starting manual gtfs");
         gtfsService.generateGTFS();
         return true;
+    }
+
+    @RequestMapping("/gtfs-dev")
+    @ResponseBody
+    public boolean generateDevGTFS() throws ExecutionException, InterruptedException, IOException {
+        logger.info("Starting manual gtfs");
+        final LocalDate start = dp.dateInHelsinki().minusDays(7);
+
+        gtfsService.createVRTreGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()));
+        return true;
+    }
+
+    private boolean isPassengerTrain(Schedule s) {
+        return s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true);
     }
 }
