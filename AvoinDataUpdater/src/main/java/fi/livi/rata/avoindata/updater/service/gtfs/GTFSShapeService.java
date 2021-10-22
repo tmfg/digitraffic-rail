@@ -75,14 +75,21 @@ public class GTFSShapeService {
             Stop startStop = stopMap.get(startStopTime.stopId);
             Stop endStop = stopMap.get(endStopTime.stopId);
 
-            JsonNode startTrakediaNode = trakediaNodes.get(startStop.stopId);
-            JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
+            try {
+                JsonNode startTrakediaNode = trakediaNodes.get(startStop.stopId);
+                JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
 
-            String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
-            String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
+                String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
+                String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
 
 //                log.info("Creating shape for {} -> {}", startStop.stopCode, endStop.stopCode);
-            tripPoints.addAll(this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste));
+                tripPoints.addAll(this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste));
+            } catch (Exception e) {
+                log.error("Creating route failed for {} -> {}", startStop.stopCode, endStop.stopCode, e);
+                ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
+                ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
+                tripPoints.addAll(List.of(new double[]{start.x, start.y}, new double[]{end.x, end.y}));
+            }
         }
 
         List<Coordinate> coordinates = tripPoints.stream().map(s -> new Coordinate(s[0], s[1])).collect(Collectors.toList());

@@ -45,46 +45,39 @@ public class TrakediaRouteService {
         ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
         String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
-        try {
-            String routeUrl = String.format("https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s", correctTunniste(startTunniste), correctTunniste(endTunniste), String.format("%s/%s", startOfDayIso8601, startOfDayIso8601));
+        String routeUrl = String.format("https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s", correctTunniste(startTunniste), correctTunniste(endTunniste), String.format("%s/%s", startOfDayIso8601, startOfDayIso8601));
 
-            log.info(routeUrl);
+        log.info(routeUrl);
 
-            JsonNode apiRoute = restTemplate.getForObject(routeUrl, JsonNode.class);
+        JsonNode apiRoute = restTemplate.getForObject(routeUrl, JsonNode.class);
 
-            List<Vertex> path = getShortestPath(apiRoute, startStop, endStop);
+        List<Vertex> path = getShortestPath(apiRoute, startStop, endStop);
 
-            List<double[]> output = new ArrayList<>();
-            for (int i = 0; i < path.size() - 1; i++) {
-                Vertex startVertex = path.get(i);
-                Vertex endVertex = path.get(i + 1);
+        List<double[]> output = new ArrayList<>();
+        for (int i = 0; i < path.size() - 1; i++) {
+            Vertex startVertex = path.get(i);
+            Vertex endVertex = path.get(i + 1);
 
-                for (JsonNode lineNode : apiRoute.get("geometria")) {
-                    int total = Iterators.size(lineNode.iterator());
-                    JsonNode startNode = lineNode.get(0);
-                    JsonNode endNode = lineNode.get(total - 1);
+            for (JsonNode lineNode : apiRoute.get("geometria")) {
+                int total = Iterators.size(lineNode.iterator());
+                JsonNode startNode = lineNode.get(0);
+                JsonNode endNode = lineNode.get(total - 1);
 
-                    if (getVertexName(startNode).equals(startVertex.getName()) && getVertexName(endNode).equals(endVertex.getName())) {
-                        for (JsonNode pointNode : lineNode) {
-                            output.add(new double[]{pointNode.get(0).asDouble(), pointNode.get(1).asDouble()});
-                        }
-                    } else if (getVertexName(endNode).equals(startVertex.getName()) && getVertexName(startNode).equals(endVertex.getName())) {
-                        List<double[]> temp = new ArrayList<>();
-                        for (JsonNode pointNode : lineNode) {
-                            temp.add(new double[]{pointNode.get(0).asDouble(), pointNode.get(1).asDouble()});
-                        }
-                        Collections.reverse(temp);
-                        output.addAll(temp);
+                if (getVertexName(startNode).equals(startVertex.getName()) && getVertexName(endNode).equals(endVertex.getName())) {
+                    for (JsonNode pointNode : lineNode) {
+                        output.add(new double[]{pointNode.get(0).asDouble(), pointNode.get(1).asDouble()});
                     }
+                } else if (getVertexName(endNode).equals(startVertex.getName()) && getVertexName(startNode).equals(endVertex.getName())) {
+                    List<double[]> temp = new ArrayList<>();
+                    for (JsonNode pointNode : lineNode) {
+                        temp.add(new double[]{pointNode.get(0).asDouble(), pointNode.get(1).asDouble()});
+                    }
+                    Collections.reverse(temp);
+                    output.addAll(temp);
                 }
             }
-            return output;
-        } catch (Exception e) {
-            log.error("Creating route failed for {} -> {}", correctTunniste(startTunniste), correctTunniste(endTunniste), e);
-            ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
-            ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
-            return List.of(new double[]{start.x, start.y}, new double[]{end.x, end.y});
         }
+        return output;
     }
 
     private String correctTunniste(String tunniste) {
