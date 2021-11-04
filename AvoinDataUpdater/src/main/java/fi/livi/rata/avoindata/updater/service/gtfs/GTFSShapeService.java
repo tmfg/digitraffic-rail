@@ -85,7 +85,7 @@ public class GTFSShapeService {
 //                log.info("Creating shape for {} -> {}", startStop.stopCode, endStop.stopCode);
                 tripPoints.addAll(this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste));
             } catch (Exception e) {
-                log.error("Creating route failed for {} -> {}", startStop.stopCode, endStop.stopCode, e);
+                log.warn("Creating route failed for {} -> {}", startStop.stopCode, endStop.stopCode, e);
                 ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
                 ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
                 tripPoints.addAll(List.of(new double[]{start.x, start.y}, new double[]{end.x, end.y}));

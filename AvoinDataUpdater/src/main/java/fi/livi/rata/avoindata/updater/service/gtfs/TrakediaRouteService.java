@@ -166,7 +166,7 @@ public class TrakediaRouteService {
 //
 //            path = dijkstraAlgorithm.getPath(minVertex);
 
-            log.error("Could not find Dijkstra path for {} -> {}", startStop.stopCode, endStop.stopCode);
+            log.warn("Could not find Dijkstra path for {} -> {}", startStop.stopCode, endStop.stopCode);
             return List.of(startVertex, endVertex);
         }
         return path;
