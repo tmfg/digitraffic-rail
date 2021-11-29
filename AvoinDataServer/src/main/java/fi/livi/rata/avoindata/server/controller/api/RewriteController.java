@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -72,8 +71,8 @@ public class RewriteController {
 
     @RequestMapping(path = HISTORY_PREFIX, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public Stream<Train> getTrains(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-                                   HttpServletResponse response) {
+    public List<Train> getTrains(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
+                                 HttpServletResponse response) {
         return trainController.getTrainsByDepartureDate(departure_date, false, response);
     }
 
@@ -118,8 +117,8 @@ public class RewriteController {
 
     @RequestMapping(path = SCHEDULES_PREFIX, method = RequestMethod.GET)
     @JsonView(TrainJsonView.LiveTrains.class)
-    public Stream<Train> getOldSchedules(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-                                         HttpServletResponse response) {
+    public List<Train> getOldSchedules(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
+                                       HttpServletResponse response) {
         return trainController.getTrainsByDepartureDate(departure_date, false, response);
     }
 

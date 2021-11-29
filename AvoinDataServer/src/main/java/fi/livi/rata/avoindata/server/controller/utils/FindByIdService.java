@@ -24,7 +24,7 @@ import com.google.common.collect.Sets;
 public class FindByIdService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private ExecutorService executor = Executors.newFixedThreadPool(20);
+    private ExecutorService executor = Executors.newFixedThreadPool(10);
 
     public static final int ENTITY_FETCH_SIZE = 100;
 
@@ -38,9 +38,10 @@ public class FindByIdService {
             Future<List<ENTITY_TYPE>> streamFuture = executor.submit(() -> {
                 AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
 
-                Subsegment subsegment = AWSXRay.beginSubsegment("## Execute findById");
+                Subsegment subsegment = AWSXRay.beginSubsegment(String.format("## Execute findById for %s items", subIds.size()));
                 List<ENTITY_TYPE> entities = entityProvider.apply(subIds);
-                AWSXRay.endSubsegment();
+                subsegment.end();
+
                 return entities;
             });
             streamFutures.add(streamFuture);
