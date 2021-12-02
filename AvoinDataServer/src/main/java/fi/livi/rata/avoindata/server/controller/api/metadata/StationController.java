@@ -28,7 +28,7 @@ public class StationController extends AMetadataController {
     @ApiOperation("Returns list of stations")
     @RequestMapping(value = "stations", method = RequestMethod.GET)
     public List<Station> getStations(HttpServletResponse response) {
-        final List<Station> list = stationRepository.findAll(new Sort(Sort.Direction.ASC, "name"));
+        final List<Station> list = stationRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
         setCache(response, list);
         return list;
     }

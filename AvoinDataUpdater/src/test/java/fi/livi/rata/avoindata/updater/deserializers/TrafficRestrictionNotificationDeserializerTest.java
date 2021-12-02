@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;

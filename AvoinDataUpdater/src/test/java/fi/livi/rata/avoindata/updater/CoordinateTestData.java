@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater;
 
-import com.vividsolutions.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Coordinate;
 
 public final class CoordinateTestData {
 

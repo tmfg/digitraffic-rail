@@ -7,9 +7,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 
+import org.locationtech.jts.geom.Point;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.vividsolutions.jts.geom.Point;
 import io.swagger.annotations.ApiModelProperty;
 
 

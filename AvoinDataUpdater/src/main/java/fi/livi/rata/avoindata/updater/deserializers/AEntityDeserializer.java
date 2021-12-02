@@ -4,7 +4,6 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.vividsolutions.jts.geom.Geometry;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -16,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
+
+import org.locationtech.jts.geom.Geometry;
 
 public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
 
