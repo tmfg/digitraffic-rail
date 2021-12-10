@@ -1,23 +1,14 @@
 package fi.livi.rata.avoindata.common.domain.trafficrestriction;
 
+import com.vividsolutions.jts.geom.Geometry;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.OneToMany;
-
-import org.locationtech.jts.geom.Geometry;
-
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 
 @Entity
 public class TrafficRestrictionNotification {

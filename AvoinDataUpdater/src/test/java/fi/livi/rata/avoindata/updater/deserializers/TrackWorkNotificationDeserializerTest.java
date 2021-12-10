@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import org.locationtech.jts.geom.Point;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import fi.livi.rata.avoindata.updater.BaseTest;

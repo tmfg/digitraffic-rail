@@ -76,7 +76,7 @@ public class RoutesetController extends ADataController {
             version = routesetRepository.getMaxVersion() - 1;
         }
 
-        final List<Long> ids = routesetRepository.findIdByVersionGreaterThan(version, PageRequest.of(0, 2500));
+        final List<Long> ids = routesetRepository.findIdByVersionGreaterThan(version, new PageRequest(0, 2500));
 
         cacheControl.setCacheParameter(response, ids, version);
         return findByIds(ids);

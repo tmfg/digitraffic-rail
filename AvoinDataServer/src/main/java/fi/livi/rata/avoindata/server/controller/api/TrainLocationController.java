@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import org.locationtech.jts.geom.Point;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;

@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.vividsolutions.jts.geom.Geometry;
 import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;

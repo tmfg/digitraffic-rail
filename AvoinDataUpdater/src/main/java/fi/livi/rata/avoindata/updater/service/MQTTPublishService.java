@@ -63,7 +63,7 @@ public class MQTTPublishService {
 
             return publishString(topic, entityAsString);
         } catch (Exception e) {
-            log.error("Error publishing %s to %s".format(topic, entity), e);
+            log.error("Error publishing {} to {}", topic, entity);
         }
         return null;
     }
@@ -93,7 +93,7 @@ public class MQTTPublishService {
 
             return future;
         } catch (Exception e) {
-            log.error("Error publishing to: " + topic, e);
+            log.error("Error publishing to {}", topic, e);
             return null;
         }
     }

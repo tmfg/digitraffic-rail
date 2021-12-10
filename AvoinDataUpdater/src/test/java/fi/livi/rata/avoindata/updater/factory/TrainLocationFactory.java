@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.updater.factory;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import org.osgeo.proj4j.ProjCoordinate;

@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import org.locationtech.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Geometry;
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryUtils;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;

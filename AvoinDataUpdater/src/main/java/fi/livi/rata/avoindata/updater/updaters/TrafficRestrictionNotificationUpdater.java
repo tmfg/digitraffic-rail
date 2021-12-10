@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import org.locationtech.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;

@@ -1,31 +1,18 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import com.vividsolutions.jts.geom.*;
+import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
+import org.osgeo.proj4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.annotation.PostConstruct;
-
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.Polygon;
-import org.osgeo.proj4j.CRSFactory;
-import org.osgeo.proj4j.CoordinateReferenceSystem;
-import org.osgeo.proj4j.CoordinateTransform;
-import org.osgeo.proj4j.CoordinateTransformFactory;
-import org.osgeo.proj4j.ProjCoordinate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 
 @Service
 public class Wgs84ConversionService {
@@ -55,7 +42,7 @@ public class Wgs84ConversionService {
         from.y = pKoordinaatti;
 
         transformer.transform(from, to);
-        to.setValue(round(to.x, NUMBER_OF_DECIMALS), round(to.y, NUMBER_OF_DECIMALS));
+        to.setValue(round(to.x,NUMBER_OF_DECIMALS),round(to.y, NUMBER_OF_DECIMALS));
         return to;
     }
 
@@ -105,8 +92,8 @@ public class Wgs84ConversionService {
 
     private Geometry transformJtsMultiLineString(MultiLineString tm35FinGeometry) {
         final List<LineString> lines = new ArrayList<>();
-        for (int i = 0; i != tm35FinGeometry.getNumGeometries(); ++i) {
-            lines.add((LineString) tm35FinGeometry.getGeometryN(i));
+        for(int i = 0; i != tm35FinGeometry.getNumGeometries(); ++i) {
+            lines.add((com.vividsolutions.jts.geom.LineString) tm35FinGeometry.getGeometryN(i));
         }
         return geometryFactory.createMultiLineString(lines.stream().map(this::transformJtsLineString).toArray(LineString[]::new));
     }

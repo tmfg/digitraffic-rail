@@ -1,11 +1,10 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
+import com.vividsolutions.jts.geom.Geometry;
 
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.locationtech.jts.geom.Geometry;
 
 @Entity
 public class RumaLocation {

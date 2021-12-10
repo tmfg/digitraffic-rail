@@ -14,9 +14,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>2.2.13.RELEASE</spring.boot.version>
-        <com.google.guava.version>31.0.1-jre</com.google.guava.version>
-        <mysql.connector.version>5.1.49</mysql.connector.version>
+        <spring.boot.version>2.1.12.RELEASE</spring.boot.version>
+        <com.google.guava.version>27.1-jre</com.google.guava.version>
+        <mysql.connector.version>5.1.47</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
     </properties>
 
@@ -41,7 +41,7 @@
     <repositories>
         <repository>
             <id>repo1.maven.org</id>
-            <url>https://repo1.maven.org/maven2</url>
+            <url>http://repo1.maven.org/maven2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -50,7 +50,7 @@
         <repository>
             <id>com.springsource.repository.bundles.release</id>
             <name>SpringSource Enterprise Bundle Repository - SpringSource Bundle Releases</name>
-            <url>https://repository.springsource.com/maven/bundles/release</url>
+            <url>http://repository.springsource.com/maven/bundles/release</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -58,7 +58,7 @@
 
         <repository>
             <id>download.java.net</id>
-            <url>https://download.java.net/maven/2</url>
+            <url>http://download.java.net/maven/2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -82,6 +82,7 @@
     </repositories>
 
     <modules>
+        <module>/LiikeInterface/</module>
         <module>/AvoinDataCommon/</module>
         <module>/AvoinDataServer/</module>
         <module>/AvoinDataUpdater/</module>

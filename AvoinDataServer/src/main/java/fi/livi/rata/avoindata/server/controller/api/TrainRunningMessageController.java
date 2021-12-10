@@ -116,7 +116,7 @@ public class TrainRunningMessageController extends ADataController {
         }
 
         List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSection(station, track_section,
-                PageRequest.of(0, limit));
+                new PageRequest(0, limit));
 
         cacheControl.setCacheParameter(response, trainRunningMessages, -1);
         return trainRunningMessages;
@@ -130,7 +130,7 @@ public class TrainRunningMessageController extends ADataController {
             version = trainRunningMessageRepository.getMaxVersion() - 1;
         }
 
-        final List<TrainRunningMessage> items = trainRunningMessageRepository.findByVersionGreaterThan(version, PageRequest.of(0, 2500));
+        final List<TrainRunningMessage> items = trainRunningMessageRepository.findByVersionGreaterThan(version, new PageRequest(0, 2500));
 
         cacheControl.setCacheParameter(response, items, version);
         return items;

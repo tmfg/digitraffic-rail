@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.factory;
 
-import org.locationtech.jts.geom.Point;
+import com.vividsolutions.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
