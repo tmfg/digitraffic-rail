@@ -38,6 +38,6 @@ public class PropertyLogger {
                 .sorted().collect(Collectors.toList());
 
         log.info("Properties: {}", Joiner.on(", ").join(propertyKeys.stream().map(s -> String.format("%s = %s", s, environment.getProperty(s))).collect(Collectors.toList())));
-        log.info("Test: It is now {}", ZonedDateTime.now());
+        log.info("It is now {}", ZonedDateTime.now());
     }
 }
