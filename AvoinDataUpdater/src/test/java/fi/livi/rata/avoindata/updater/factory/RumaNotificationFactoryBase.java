@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.updater.factory;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;

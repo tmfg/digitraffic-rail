@@ -41,7 +41,7 @@ public class CompositionController extends ADataController {
             version = compositionRepository.getMaxVersion() - 1;
         }
 
-        List<TrainId> trainIds = compositionRepository.findIdsByVersionGreaterThan(version, new PageRequest(0, 1000));
+        List<TrainId> trainIds = compositionRepository.findIdsByVersionGreaterThan(version, PageRequest.of(0, 1000));
         if (!trainIds.isEmpty()) {
 
             List<Composition> compositions = compositionRepository.findByIds(trainIds);

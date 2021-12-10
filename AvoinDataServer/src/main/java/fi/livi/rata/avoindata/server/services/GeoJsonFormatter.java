@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.server.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import org.springframework.beans.factory.annotation.Autowired;

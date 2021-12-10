@@ -1,13 +1,31 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.vividsolutions.jts.geom.*;
-import fi.livi.rata.avoindata.updater.BaseTest;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.NAANTALI_TM35FIN_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.NAANTALI_TM35FIN_Y;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.NAANTALI_WGS84_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.NAANTALI_WGS84_Y;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_TM35FIN_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_TM35FIN_Y;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_WGS84_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_WGS84_Y;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_TM35FIN_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_TM35FIN_Y;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_WGS84_X;
+import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_WGS84_Y;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 import org.osgeo.proj4j.ProjCoordinate;
 import org.springframework.beans.factory.annotation.Autowired;
-import static fi.livi.rata.avoindata.updater.CoordinateTestData.*;
 
-import static org.junit.Assert.assertEquals;
+import fi.livi.rata.avoindata.updater.BaseTest;
 
 public class Wgs84ConversionServiceTest extends BaseTest {
 

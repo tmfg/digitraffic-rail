@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.spatial.LineStringDto;
 import fi.livi.rata.avoindata.common.domain.spatial.PointDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;

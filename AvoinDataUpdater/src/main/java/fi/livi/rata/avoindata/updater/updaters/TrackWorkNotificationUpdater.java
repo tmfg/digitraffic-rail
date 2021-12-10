@@ -1,14 +1,18 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import com.vividsolutions.jts.geom.GeometryCollection;
-import fi.livi.rata.avoindata.common.domain.trackwork.*;
-import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
-import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
-import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
 import org.apache.commons.collections4.CollectionUtils;
+import org.locationtech.jts.geom.GeometryCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,9 +20,17 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
+import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
 
 @Service
 public class TrackWorkNotificationUpdater {
