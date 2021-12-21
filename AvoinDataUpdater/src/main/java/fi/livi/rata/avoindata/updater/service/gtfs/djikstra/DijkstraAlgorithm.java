@@ -106,6 +106,10 @@ public class DijkstraAlgorithm {
         }
     }
 
+    public List<Edge> getEdges() {
+        return this.edges;
+    }
+
     /*
      * This method returns the path from the source to the selected target and
      * NULL if no path exists
