@@ -29,11 +29,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Value("${updater.reason.api-key}")
     private String apiKey;
 
-    @Value("${updater.reason.reason-code-path}")
-    private String reasonCodePath;
-
-    @Value("${updater.reason.reason-category-path}")
-    private String reasonCategoryPath;
+    @Value("${updater.reason.syykoodisto-api-path}")
+    private String syykoodiApiPath;
 
     //Every midnight 1:11
     @Override
@@ -45,12 +42,11 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
 
         HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
 
-        String basePath = "https://laadunvarmistus.rata.liikenteenohjaus.fi/syykoodisto-api";
         String reasonCodePath = "/v1/reason-codes/latest";
         String reasonCategoryPath = "/v1/reason-categories/latest";
 
-        ResponseEntity<JsonNode> reasonCategoryEntity = this.restTemplate.exchange(basePath + reasonCategoryPath, HttpMethod.GET, entity, JsonNode.class);
-        ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.exchange(basePath + reasonCodePath, HttpMethod.GET, entity, JsonNode.class);
+        ResponseEntity<JsonNode> reasonCategoryEntity = this.restTemplate.exchange(syykoodiApiPath + reasonCategoryPath, HttpMethod.GET, entity, JsonNode.class);
+        ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.exchange(syykoodiApiPath + reasonCodePath, HttpMethod.GET, entity, JsonNode.class);
 
         CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity.getBody(), reasonCodeEntity.getBody());
 
