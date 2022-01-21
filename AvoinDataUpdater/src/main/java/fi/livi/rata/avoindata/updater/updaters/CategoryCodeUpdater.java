@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
@@ -36,6 +37,9 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
+        if (Strings.isNullOrEmpty(syykoodiApiPath)) {
+            return;
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("API-KEY", apiKey);
