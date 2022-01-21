@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -24,6 +26,8 @@ import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
 
 @Service
 public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     private CategoryCodeService categoryCodeService;
 
@@ -37,9 +41,14 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
+        log.info("Updating CategoryCodes");
+
         if (Strings.isNullOrEmpty(syykoodiApiPath)) {
             return;
         }
+
+        log.info("A");
+
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("API-KEY", apiKey);
