@@ -47,8 +47,6 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
             return;
         }
 
-        log.info("A");
-
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.set("API-KEY", apiKey);
@@ -62,6 +60,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.exchange(syykoodiApiPath + reasonCodePath, HttpMethod.GET, entity, JsonNode.class);
 
         CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity.getBody(), reasonCodeEntity.getBody());
+
+        log.info("Found {} categoryCodes", categoryCodes.length);
 
         this.persist(reasonCategoryPath + reasonCodePath, this.categoryCodeService::update, categoryCodes);
     }
