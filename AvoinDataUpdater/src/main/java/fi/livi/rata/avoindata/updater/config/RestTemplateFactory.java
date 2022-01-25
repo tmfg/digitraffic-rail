@@ -61,7 +61,7 @@ class RestTemplateFactory {
         SSLContext sslContext = null;
         if (!Strings.isNullOrEmpty(trustStore)) {
             log.info("Creating trustStore: {}", trustStore);
-            sslContext = SSLContextBuilder.create().loadTrustMaterial(new URL(trustStore), trustStorePassword.toCharArray()).build();
+            sslContext = SSLContextBuilder.create().loadTrustMaterial(new URL("file://" + trustStore), trustStorePassword.toCharArray()).build();
         }
 
         CloseableHttpClient result = HttpClientBuilder
