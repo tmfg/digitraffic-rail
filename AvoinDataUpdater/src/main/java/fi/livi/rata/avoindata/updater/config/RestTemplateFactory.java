@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.config;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.KeyManagementException;
@@ -60,9 +61,8 @@ class RestTemplateFactory {
     public CloseableHttpClient httpClient(RequestConfig requestConfig) throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         SSLContext sslContext = null;
         if (!Strings.isNullOrEmpty(trustStore)) {
-            String url = "file://" + trustStore;
-            log.info("Creating trustStore: {}", url);
-            sslContext = SSLContextBuilder.create().loadTrustMaterial(new URL(url), trustStorePassword.toCharArray()).build();
+            log.info("Creating trustStore: {}", trustStore);
+            sslContext = SSLContextBuilder.create().loadTrustMaterial(new File(trustStore), trustStorePassword.toCharArray()).build();
         }
 
         CloseableHttpClient result = HttpClientBuilder
