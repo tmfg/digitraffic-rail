@@ -38,12 +38,6 @@ class RestTemplateFactory {
     @Value("${updater.http.connectionTimoutMillis:30000}")
     private int CONNECTION_TIMEOUT;
 
-    @Value("${javax.net.ssl.trustStore:}")
-    private String trustStore;
-
-    @Value("${javax.net.ssl.trustStorePassword:}")
-    private String trustStorePassword;
-
     @Bean
     public RequestConfig requestConfig() {
         RequestConfig result = RequestConfig.custom()
