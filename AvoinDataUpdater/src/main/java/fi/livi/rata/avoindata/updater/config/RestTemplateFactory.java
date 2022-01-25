@@ -60,8 +60,9 @@ class RestTemplateFactory {
     public CloseableHttpClient httpClient(RequestConfig requestConfig) throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         SSLContext sslContext = null;
         if (!Strings.isNullOrEmpty(trustStore)) {
-            log.info("Creating trustStore: {}", trustStore);
-            sslContext = SSLContextBuilder.create().loadTrustMaterial(new URL("file://" + trustStore), trustStorePassword.toCharArray()).build();
+            String url = "file://" + trustStore;
+            log.info("Creating trustStore: {}", url);
+            sslContext = SSLContextBuilder.create().loadTrustMaterial(new URL(url), trustStorePassword.toCharArray()).build();
         }
 
         CloseableHttpClient result = HttpClientBuilder
