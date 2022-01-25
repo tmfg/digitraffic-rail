@@ -37,38 +37,11 @@ public class Cause {
     @JsonUnwrapped
     public CategoryCode categoryCode;
 
-//    @Transient
-//    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-//    public Long getCategoryCodeId() {
-//        if (categoryCode != null) {
-//            return categoryCode.id;
-//        }
-//        return null;
-//    }
-
     @ManyToOne
     @JsonUnwrapped
     public DetailedCategoryCode detailedCategoryCode;
 
-//    @Transient
-//    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-//    public Long getDetailedCategoryCodeId() {
-//        if (detailedCategoryCode != null) {
-//            return detailedCategoryCode.id;
-//        }
-//        return null;
-//    }
-
     @ManyToOne
     @JsonUnwrapped
     public ThirdCategoryCode thirdCategoryCode;
-
-//    @Transient
-//    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-//    public Long getThirdCategoryCodeId() {
-//        if (thirdCategoryCode != null) {
-//            return thirdCategoryCode.id;
-//        }
-//        return null;
-//    }
 }
