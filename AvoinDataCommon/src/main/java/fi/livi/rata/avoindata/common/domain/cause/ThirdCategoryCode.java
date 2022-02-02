@@ -62,6 +62,7 @@ public class ThirdCategoryCode extends ACauseCode {
     public DetailedCategoryCode detailedCategoryCode;
 
     @Transient
+    @JsonView(CategoryCodeJsonView.All.class)
     public Integer getId() throws GSSException {
         return causeOidToNumber(this.oid);
     }

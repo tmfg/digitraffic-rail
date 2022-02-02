@@ -57,6 +57,7 @@ public class CategoryCode extends ACauseCode {
     public Set<DetailedCategoryCode> detailedCategoryCodes = new HashSet<>();
 
     @Transient
+    @JsonView(CategoryCodeJsonView.All.class)
     public Integer getId() throws GSSException {
         return causeOidToNumber(this.oid);
     }
