@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.cause;
 
+import static fi.livi.rata.avoindata.common.domain.cause.Cause.causeOidToNumber;
+
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,10 +12,13 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Type;
+import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import io.swagger.annotations.ApiModel;
@@ -23,7 +28,7 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description="A code that is used to categorize reasons for a train not being on schedule")
 public class CategoryCode extends ACauseCode {
     @Id
-    @JsonView(CategoryCodeJsonView.All.class)
+    @JsonIgnore
     public String oid;
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
@@ -50,6 +55,11 @@ public class CategoryCode extends ACauseCode {
     @OrderBy
     @JsonIgnore
     public Set<DetailedCategoryCode> detailedCategoryCodes = new HashSet<>();
+
+    @Transient
+    public Integer getId() throws GSSException {
+        return causeOidToNumber(this.oid);
+    }
 
     @Override
     public String getIdString() {

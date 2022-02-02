@@ -1,5 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.cause;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,6 +12,9 @@ import javax.persistence.JoinColumns;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.Oid;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -17,10 +23,10 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import io.swagger.annotations.ApiModel;
 
 @Entity
-@ApiModel(description="Details why a train is not on schedule. Train-responses only have ids and codes populated.")
+@ApiModel(description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
 public class Cause {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
     public Long id;
 
@@ -47,20 +53,20 @@ public class Cause {
     @JsonUnwrapped
     public ThirdCategoryCode thirdCategoryCode;
 
-        @Transient
+    @Transient
     @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-    public String getCategoryCodeId() {
+    public Integer getCategoryCodeId() throws GSSException {
         if (categoryCode != null) {
-            return categoryCode.oid;
+            return causeOidToNumber(categoryCode.oid);
         }
         return null;
     }
 
-        @Transient
+    @Transient
     @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-    public String getDetailedCategoryCodeId() {
+    public Integer getDetailedCategoryCodeId() throws GSSException {
         if (detailedCategoryCode != null) {
-            return detailedCategoryCode.oid;
+            return causeOidToNumber(detailedCategoryCode.oid);
         }
         return null;
     }
@@ -68,10 +74,21 @@ public class Cause {
 
     @Transient
     @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
-    public String getThirdCategoryCodeId() {
+    public Integer getThirdCategoryCodeId() throws GSSException {
         if (thirdCategoryCode != null) {
-            return thirdCategoryCode.oid;
+            return  causeOidToNumber(thirdCategoryCode.oid);
         }
         return null;
+    }
+
+    public static int causeOidToNumber(String oid) throws GSSException {
+        Oid oidObject = new Oid(oid);
+        byte[] oidObjectDER = oidObject.getDER();
+        byte[] intBytes = new byte[4];
+        for (int i = 0; i < 4; i++) {
+             intBytes[i] = oidObjectDER[oidObjectDER.length-1-i];
+        }
+        ByteBuffer byteBuffer = ByteBuffer.wrap(intBytes);
+        return byteBuffer.getInt();
     }
 }
