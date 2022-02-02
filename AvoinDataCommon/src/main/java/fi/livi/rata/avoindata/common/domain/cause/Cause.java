@@ -11,6 +11,8 @@ import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonView;
+import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import io.swagger.annotations.ApiModel;
 
@@ -44,4 +46,32 @@ public class Cause {
     @ManyToOne
     @JsonUnwrapped
     public ThirdCategoryCode thirdCategoryCode;
+
+        @Transient
+    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
+    public String getCategoryCodeId() {
+        if (categoryCode != null) {
+            return categoryCode.oid;
+        }
+        return null;
+    }
+
+        @Transient
+    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
+    public String getDetailedCategoryCodeId() {
+        if (detailedCategoryCode != null) {
+            return detailedCategoryCode.oid;
+        }
+        return null;
+    }
+
+
+    @Transient
+    @JsonView(CategoryCodeJsonView.OnlyCauseCategoryCodes.class)
+    public String getThirdCategoryCodeId() {
+        if (thirdCategoryCode != null) {
+            return thirdCategoryCode.oid;
+        }
+        return null;
+    }
 }

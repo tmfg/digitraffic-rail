@@ -235,11 +235,11 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0]").exists());
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCode").value("1 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCodeId").value(1));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCodeId").value("1"));
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCode").value("2 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCodeId").value(2));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCodeId").value("2"));
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCode").value("3 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCodeId").value(3));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCodeId").value("3"));
 
         r1.andExpect(jsonPath("$[0].timeTableRows[1].causes[0]").doesNotExist());
     }
