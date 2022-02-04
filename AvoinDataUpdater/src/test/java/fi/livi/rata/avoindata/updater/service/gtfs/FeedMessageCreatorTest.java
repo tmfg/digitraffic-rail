@@ -15,12 +15,14 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+
 public class FeedMessageCreatorTest {
     private static final LocalDate DATE_1 = LocalDate.of(2022, 1, 1);
     private static final LocalDate DATE_2 = LocalDate.of(2022, 1, 10);
 
     private static final String TRIP_ID_1 = "trip_1";
-    private static final String TRIP_ID_2 = TRIP_ID_1 + "_replacement";
+    private static final String TRIP_ID_2 = TRIP_ID_1 + TRIP_REPLACEMENT;
 
     private static final String ROUTE_ID_1 = "route_1";
 

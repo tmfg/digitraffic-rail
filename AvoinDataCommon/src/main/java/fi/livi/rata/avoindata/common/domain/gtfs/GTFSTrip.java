@@ -14,12 +14,10 @@ public class GTFSTrip {
     @EmbeddedId
     public GTFSTripId id;
 
-    @Column
-    public LocalDate endDate;
-
     @NonNull
     public String tripId;
 
+    @NonNull
     public String routeId;
 
     public GTFSTrip() {
@@ -29,9 +27,8 @@ public class GTFSTrip {
                     final @NonNull LocalDate startDate,
                     final LocalDate endDate,
                     final @NonNull String tripId,
-                    final String routeId) {
-        this.id = new GTFSTripId(trainNumber, startDate);
-        this.endDate = endDate;
+                    final @NonNull String routeId) {
+        this.id = new GTFSTripId(trainNumber, startDate, endDate);
         this.tripId = tripId;
         this.routeId = routeId;
     }
@@ -41,7 +38,6 @@ public class GTFSTrip {
         return "GTFSTrip{" +
                 "trainNumber=" + id.trainNumber +
                 ", startDate= " + id.startDate +
-                ", endDate=" + endDate +
                 ", tripId='" + tripId + '\'' +
                 ", routeId='" + routeId + '\'' +
                 '}';

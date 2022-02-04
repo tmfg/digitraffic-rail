@@ -40,6 +40,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 public class GTFSTripService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
+    public static final String TRIP_REPLACEMENT = "_replacement";
+
     @Autowired
     private CancellationFlattener cancellationFlattener;
 
@@ -117,7 +119,7 @@ public class GTFSTripService {
             }
 
             log.trace("Creating cancellation trip from {}", scheduleCancellation);
-            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement");
+            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, TRIP_REPLACEMENT);
             partialCancellationTrip.calendar.calendarDates.clear();
 
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(

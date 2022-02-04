@@ -16,27 +16,30 @@ public class GTFSTripId implements Serializable {
     @Column
     public LocalDate startDate;
 
+    @NonNull
+    @Column
+    public LocalDate endDate;
+
     public GTFSTripId() {
         // DEFAULT
     }
 
-    public GTFSTripId(final @NonNull Long trainNumber, final @NonNull LocalDate startDate) {
+    public GTFSTripId(final @NonNull Long trainNumber, final @NonNull LocalDate startDate, final @NonNull LocalDate endDate) {
         this.trainNumber = trainNumber;
         this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        final GTFSTripId that = (GTFSTripId) o;
-
-        return trainNumber.equals(that.trainNumber) && startDate.equals(that.startDate);
+        GTFSTripId that = (GTFSTripId) o;
+        return trainNumber.equals(that.trainNumber) && startDate.equals(that.startDate) && endDate.equals(that.endDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(trainNumber, startDate);
+        return Objects.hash(trainNumber, startDate, endDate);
     }
 }

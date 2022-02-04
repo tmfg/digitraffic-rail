@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+
 public class FeedMessageCreator {
     private final TripFinder tripFinder;
 
@@ -41,31 +43,29 @@ public class FeedMessageCreator {
     }
 
     private List<GtfsRealtime.FeedEntity> createEntities(final List<TrainLocation> locations) {
-        return locations.stream().map(location -> {
-            final GTFSTrip trip = tripFinder.find(location);
-
-            if(trip == null) {
-                return null;
-            }
-
-            return GtfsRealtime.FeedEntity.newBuilder()
-                    .setId(createTripId(location))
-                    .setVehicle(GtfsRealtime.VehiclePosition.newBuilder()
-                            .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
-                                    .setRouteId(trip.routeId)
-                                    .setTripId(trip.tripId)
-                                    .setStartDate(location.trainLocationId.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
-                                    .build())
-                            .setPosition(GtfsRealtime.Position.newBuilder()
-                                    .setLatitude((float)location.location.getY())
-                                    .setLongitude((float)location.location.getX())
-                                    .setSpeed(location.speed)
-                                    .build())
-                            .build())
-                    .build();
-        })
+        return locations.stream().map(this::createFeedEntity)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+    }
+
+    private GtfsRealtime.FeedEntity createFeedEntity(final TrainLocation location) {
+        final GTFSTrip trip = tripFinder.find(location);
+
+        return trip == null ? null : GtfsRealtime.FeedEntity.newBuilder()
+                .setId(createTripId(location))
+                .setVehicle(GtfsRealtime.VehiclePosition.newBuilder()
+                        .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
+                                .setRouteId(trip.routeId)
+                                .setTripId(trip.tripId)
+                                .setStartDate(location.trainLocationId.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
+                                .build())
+                        .setPosition(GtfsRealtime.Position.newBuilder()
+                                .setLatitude((float)location.location.getY())
+                                .setLongitude((float)location.location.getX())
+                                .setSpeed(location.speed)
+                                .build())
+                        .build())
+                .build();
     }
 
     static class TripFinder {
@@ -79,11 +79,11 @@ public class FeedMessageCreator {
             final List<GTFSTrip> filtered = trips.stream()
                     .filter(t -> t.id.trainNumber.equals(location.trainLocationId.trainNumber))
                     .filter(t -> !t.id.startDate.isAfter(location.trainLocationId.departureDate))
-                    .filter(t -> t.endDate == null || !t.endDate.isBefore(location.trainLocationId.departureDate))
+                    .filter(t -> !t.id.endDate.isBefore(location.trainLocationId.departureDate))
                     .collect(Collectors.toList());
 
             if(filtered.isEmpty()) {
-                log.error("Could not find trip for trainnumber " + location.trainLocationId.trainNumber);
+                log.info("Could not find trip for trainnumber " + location.trainLocationId.trainNumber);
                 return null;
             }
 
@@ -91,8 +91,8 @@ public class FeedMessageCreator {
                 final Optional<GTFSTrip> replacement = findReplacement(filtered);
 
                 if(replacement.isEmpty()) {
-                    log.error("Multiple trips:" + filtered);
-                    log.error("Could not find replacement");
+                    log.info("Multiple trips:" + filtered);
+                    log.error("Could not find replacement from multiple " + location.trainLocationId.trainNumber);
                 }
 
                 return replacement.orElse(null);
@@ -103,7 +103,7 @@ public class FeedMessageCreator {
 
         Optional<GTFSTrip> findReplacement(final List<GTFSTrip> trips) {
             return trips.stream()
-                    .filter(trip -> trip.tripId.endsWith("_replacement"))
+                    .filter(trip -> trip.tripId.endsWith(TRIP_REPLACEMENT))
                     .findFirst();
         }
     }

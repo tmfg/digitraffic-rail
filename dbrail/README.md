@@ -3,5 +3,5 @@
 ## ;TL;TR
 
 ````bash
-docker-compose rm && docker-compose up
+docker compose rm && docker compose up
 ````
