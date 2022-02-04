@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -202,7 +203,7 @@ public class GTFSTripService {
     }
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix) {
-        final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate, endDate, scheduleSuffix);
+        final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate.format(DateTimeFormatter.BASIC_ISO_DATE), endDate.format(DateTimeFormatter.BASIC_ISO_DATE), scheduleSuffix);
         final String serviceId = tripId;
 
         Trip trip = new Trip(schedule);

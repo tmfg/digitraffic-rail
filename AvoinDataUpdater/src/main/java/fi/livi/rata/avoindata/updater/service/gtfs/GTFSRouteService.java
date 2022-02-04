@@ -55,14 +55,9 @@ public class GTFSRouteService {
     private String getRouteId(final Trip trip) {
         final StopTime firstStop = trip.stopTimes.get(0);
         final StopTime lastStop = Iterables.getLast(trip.stopTimes);
-        Long id;
-        if (!Strings.isNullOrEmpty(trip.source.commuterLineId)) {
-            id = Long.valueOf(String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trip.source.commuterLineId,
-                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode).hashCode()) + Integer.MAX_VALUE;
-        } else {
-            id = Long.valueOf(String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trip.source.trainNumber,
-                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode).hashCode()) + Integer.MAX_VALUE;
-        }
-        return id.toString();
+        final String trainNumberOrCommuterLineId = !Strings.isNullOrEmpty(trip.source.commuterLineId) ? trip.source.commuterLineId : trip.source.trainNumber.toString();
+
+        return String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trainNumberOrCommuterLineId,
+                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode);
     }
 }

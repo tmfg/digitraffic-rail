@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutorService;
 @ComponentScan(basePackages = {"fi.livi.rata.avoindata.updater", "fi.livi.rata.avoindata.common"})
 @EntityScan(basePackages = "fi.livi.rata.avoindata.common.domain")
 @EnableJpaRepositories(basePackages = "fi.livi.rata.avoindata.common.dao", repositoryBaseClass = CustomGeneralRepositoryImpl.class)
-@EnableScheduling
 public class DatabaseUpdaterApplication {
 
     private static Logger log = LoggerFactory.getLogger(DatabaseUpdaterApplication.class);
@@ -142,7 +141,7 @@ public class DatabaseUpdaterApplication {
 
         private void startInitPhaseIfNeeded() {
             try {
-                if (isInitiliazationNeeded()) {
+                if (isInitializationNeeded()) {
                     log.info("Database needs to be initiliazed!");
                     clearDatabase();
                     initializeInLockMode();
@@ -199,7 +198,7 @@ public class DatabaseUpdaterApplication {
             forecastInitializerService.clearEntities();
         }
 
-        private boolean isInitiliazationNeeded() {
+        private boolean isInitializationNeeded() {
             final long trainMaxVersion = trainPersistService.getMaxVersion();
             final long compositionMaxVersion = compositionService.getMaxVersion();
             final long trainRunningMessageMaxVersion = trainRunningMessageService.getMaxVersion();

@@ -1,0 +1,28 @@
+version: '2.0' # docker-compose version
+
+networks:
+  db_network:
+    external:
+      name: dnet1
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    networks:
+      - db_network
+    ports:
+      - "3306:3306"
+
+  db-init:
+    image: flyway/flyway:7.15-alpine
+    networks:
+      - db_network
+    volumes:
+      - "../AvoinDataUpdater/src/main/resources/db/migration/:/flyway/sql"
+      - "~/.m2:/root/.m2"
+    links:
+      - "db:db"
+    command: -url=jdbc:mysql://db -schemas=avoindata_test -user=root -connectRetries=60 migrate
