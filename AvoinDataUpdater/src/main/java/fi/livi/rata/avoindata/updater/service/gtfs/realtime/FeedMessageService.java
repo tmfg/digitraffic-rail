@@ -2,14 +2,14 @@ package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
 import com.google.transit.realtime.GtfsRealtime;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,13 +19,14 @@ import java.util.stream.Stream;
 
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
 
-public class FeedMessageCreator {
-    private final TripFinder tripFinder;
+@Service
+public class FeedMessageService {
+    private static final Logger log = LoggerFactory.getLogger(FeedMessageService.class);
 
-    private static final Logger log = LoggerFactory.getLogger(FeedMessageCreator.class);
+    private final GTFSTripRepository gtfsTripRepository;
 
-    public FeedMessageCreator(final List<GTFSTrip> trips) {
-        this.tripFinder = new TripFinder(trips);
+    public FeedMessageService(final GTFSTripRepository gtfsTripRepository) {
+        this.gtfsTripRepository = gtfsTripRepository;
     }
 
     private static GtfsRealtime.FeedMessage.Builder createBuilderWithHeader() {
@@ -37,8 +38,10 @@ public class FeedMessageCreator {
     }
 
     public GtfsRealtime.FeedMessage createVehicleLocationFeedMessage(final List<TrainLocation> locations) {
+        final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
+
         return createBuilderWithHeader()
-                .addAllEntity(createVLEntities(locations))
+                .addAllEntity(createVLEntities(tripFinder, locations))
                 .build();
     }
 
@@ -54,13 +57,13 @@ public class FeedMessageCreator {
         return String.format("%d_update_%d", train.id.trainNumber, train.version);
     }
 
-    private List<GtfsRealtime.FeedEntity> createVLEntities(final List<TrainLocation> locations) {
-        return locations.stream().map(this::createVLEntity)
+    private List<GtfsRealtime.FeedEntity> createVLEntities(final TripFinder tripFinder, final List<TrainLocation> locations) {
+        return locations.stream().map(location -> createVLEntity(tripFinder, location))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
-    private GtfsRealtime.FeedEntity createVLEntity(final TrainLocation location) {
+    private GtfsRealtime.FeedEntity createVLEntity(final TripFinder tripFinder, final TrainLocation location) {
         final GTFSTrip trip = tripFinder.find(location);
 
         return trip == null ? null : GtfsRealtime.FeedEntity.newBuilder()
@@ -80,10 +83,8 @@ public class FeedMessageCreator {
                 .build();
     }
 
-    private GtfsRealtime.FeedEntity createTUCancelledEntity(final GTFSTrain train) {
-        final GTFSTrip trip = tripFinder.find(train);
-
-        return trip == null ? null : GtfsRealtime.FeedEntity.newBuilder()
+    private GtfsRealtime.FeedEntity createTUCancelledEntity(final GTFSTrip trip, final GTFSTrain train) {
+        return GtfsRealtime.FeedEntity.newBuilder()
                 .setId(createCancellationId(train))
                 .setTripUpdate(GtfsRealtime.TripUpdate.newBuilder()
                         .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
@@ -124,7 +125,7 @@ public class FeedMessageCreator {
 
         // it's not late, don't report it!
         // must report first stop though
-        if(!updatesEmpty && arrivalDifference == 0 && (departureDifference == null || departureDifference == 0)) {
+        if(!updatesEmpty && arrivalDifference != null && arrivalDifference == 0 && (departureDifference == null || departureDifference == 0)) {
             return null;
         }
 
@@ -187,13 +188,7 @@ public class FeedMessageCreator {
         return updates;
     }
 
-    private GtfsRealtime.FeedEntity createTUUpdateEntity(final GTFSTrain train) {
-        final GTFSTrip trip = tripFinder.find(train);
-
-        if(trip == null) {
-            return null;
-        }
-
+    private GtfsRealtime.FeedEntity createTUUpdateEntity(final GTFSTrip trip, final GTFSTrain train) {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> stopTimeUpdates = createStopTimeUpdates(train);
 
         return stopTimeUpdates.isEmpty() ? null : GtfsRealtime.FeedEntity.newBuilder()
@@ -209,35 +204,35 @@ public class FeedMessageCreator {
                 .build();
     }
 
-    public GtfsRealtime.FeedEntity createTUEntity(final GTFSTrain train) {
-        if(train.cancelled) {
-            return createTUCancelledEntity(train);
-        }
-
+    public GtfsRealtime.FeedEntity createTUEntity(final TripFinder tripFinder, final GTFSTrain train) {
         final GTFSTrip trip = tripFinder.find(train);
 
-        if(trip == null) {
-            // new train!!
-            System.out.println("new train:" + train);
-        } else {
-            if(trip.version != train.version) {
-                return createTUUpdateEntity(train);
+        if(trip != null) {
+            if (train.cancelled) {
+                return createTUCancelledEntity(trip, train);
+            }
+
+            if (trip.version != train.version) {
+                return createTUUpdateEntity(trip, train);
             }
         }
 
+        // new train, we do nothing.  the realtime-spec does not support creation of new trips!
         return null;
     }
 
-    public List<GtfsRealtime.FeedEntity> createTUEntities(final List<GTFSTrain> trains) {
+    public List<GtfsRealtime.FeedEntity> createTUEntities(final TripFinder tripFinder, final List<GTFSTrain> trains) {
         return trains.stream()
-                .map(this::createTUEntity)
+                .map(train -> createTUEntity(tripFinder, train))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     public GtfsRealtime.FeedMessage createTripUpdateFeedMessage(final List<GTFSTrain> trains) {
+        final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
+
         return createBuilderWithHeader()
-                .addAllEntity(createTUEntities(trains))
+                .addAllEntity(createTUEntities(tripFinder, trains))
                 .build();
     }
 
@@ -253,18 +248,6 @@ public class FeedMessageCreator {
 
         Stream<GTFSTrip> safeStream(final List<GTFSTrip> trips) {
             return trips == null ? Stream.empty() : trips.stream();
-        }
-
-        GTFSTrip find(final Train train) {
-            final List<GTFSTrip> trips = tripMap.get(train.id.trainNumber);
-
-            final List<GTFSTrip> filtered = safeStream(trips)
-                    .filter(t -> t.id.trainNumber.equals(train.id.trainNumber))
-                    .filter(t -> !t.id.startDate.isAfter(train.id.departureDate))
-                    .filter(t -> !t.id.endDate.isBefore(train.id.departureDate))
-                    .collect(Collectors.toList());
-
-            return filtered.get(0);
         }
 
         GTFSTrip find(final GTFSTrain train) {
@@ -289,7 +272,7 @@ public class FeedMessageCreator {
                     .collect(Collectors.toList());
 
             if(filtered.isEmpty()) {
-                log.info("Could not find trip for trainnumber " + location.trainLocationId.trainNumber);
+                log.info("Could not find trip for train number " + location.trainLocationId.trainNumber);
                 return null;
             }
 
