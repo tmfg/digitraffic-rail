@@ -6,41 +6,31 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
-import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class GTFSRealtimeService {
-    private final TrainRepository trainRepository;
     private final TrainLocationRepository trainLocationRepository;
     private final GTFSTripRepository gtfsTripRepository;
-    private final GTFSWritingService gtfsWritingService;
     private final GTFSTrainRepository gtfsTrainRepository;
 
     private static Logger log = LoggerFactory.getLogger(GTFSRealtimeService.class);
 
-    public GTFSRealtimeService(final TrainRepository trainRepository,
-                               final TrainLocationRepository trainLocationRepository,
+    public GTFSRealtimeService(final TrainLocationRepository trainLocationRepository,
                                final GTFSTripRepository gtfsTripRepository,
-                               final GTFSWritingService gtfsWritingService,
                                final GTFSTrainRepository gtfsTrainRepository) {
-        this.trainRepository = trainRepository;
         this.trainLocationRepository = trainLocationRepository;
         this.gtfsTripRepository = gtfsTripRepository;
-        this.gtfsWritingService = gtfsWritingService;
         this.gtfsTrainRepository = gtfsTrainRepository;
     }
 
@@ -61,7 +51,7 @@ public class GTFSRealtimeService {
         final FeedMessageCreator creator = new FeedMessageCreator(gtfsTripRepository.findAll());
 
 //        log.info("train count " + trains.size());
-        
+
         return creator.createTripUpdateFeedMessage(trains);
     }
 
