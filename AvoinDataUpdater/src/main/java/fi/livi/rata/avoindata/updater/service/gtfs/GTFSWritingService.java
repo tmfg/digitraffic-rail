@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.google.transit.realtime.GtfsRealtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,26 +52,36 @@ public class GTFSWritingService {
     private DateProvider dateProvider;
 
     @Transactional
-    public List<File> writeGTFSFiles(GTFSDto gtfsDto) throws IOException {
+    public List<File> writeGTFSFiles(final GTFSDto gtfsDto) throws IOException {
         return writeGTFSFiles(gtfsDto, "gtfs.zip");
+    }
+
+    private void persist(final byte[] data, final String fileName) {
+        final GTFS gtfs = new GTFS();
+        gtfs.data = data;
+        gtfs.created = dateProvider.nowInHelsinki();
+        gtfs.fileName = fileName;
+
+        gtfsRepository.persist(Arrays.asList(gtfs));
     }
 
     @Transactional
     public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
         log.info("Generating {}", zipFileName);
 
-        List<File> files = writeGtfsFiles(gtfsDto);
-
+        final List<File> files = writeGtfsFiles(gtfsDto);
         writeGtfsZipFile(files, zipFileName);
 
-        GTFS gtfs = new GTFS();
-        gtfs.data = Files.readAllBytes(new File(zipFileName).toPath());
-        gtfs.created = dateProvider.nowInHelsinki();
-        gtfs.fileName = zipFileName;
-
-        gtfsRepository.persist(Arrays.asList(gtfs));
+        persist(Files.readAllBytes(new File(zipFileName).toPath()), zipFileName);
 
         return files;
+    }
+
+    @Transactional
+    public void writeRealtimeGTFS(final GtfsRealtime.FeedMessage message, final String fileName) {
+        log.info("Generating {} with {} entities", fileName, message.getEntityCount());
+
+        persist(message.toByteArray(), fileName);
     }
 
     private List<File> writeGtfsFiles(final GTFSDto gtfsDto) {

@@ -115,7 +115,6 @@ public class GTFSService {
 
         createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip");
         createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
-
         updateGtfsTrips(gtfs);
 
         log.info("Successfully wrote GTFS files");
@@ -123,7 +122,7 @@ public class GTFSService {
 
     private void updateGtfsTrips(final GTFSDto gtfs) {
         final List<GTFSTrip> gtfsTrips = gtfs.trips.stream()
-                .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId))
+                .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId, trip.source.version))
                 .collect(Collectors.toList());
 
         gtfsTripRepository.deleteAll();

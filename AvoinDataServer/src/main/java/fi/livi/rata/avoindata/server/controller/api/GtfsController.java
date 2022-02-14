@@ -37,6 +37,18 @@ public class GtfsController {
         return getData(response, "gtfs-passenger.zip");
     }
 
+    @ApiOperation("Returns GTFS Realtime locations")
+    @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-locations", produces = "application/protobuf")
+    public byte[] getGtfsRtLocations(HttpServletResponse response) {
+        return getData(response, "gtfs-rt-locations");
+    }
+
+    @ApiOperation("Returns GTFS Realtime updates")
+    @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-updates", produces = "application/protobuf")
+    public byte[] getGtfsRtUpdates(HttpServletResponse response) {
+        return getData(response, "gtfs-rt-updates");
+    }
+
     @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     public byte[] getGtfsForVRTRETrains(HttpServletResponse response) {
@@ -49,10 +61,12 @@ public class GtfsController {
         return getData(response, "gtfs-vr.zip");
     }
 
-    private byte[] getData(HttpServletResponse response, String zipFileName) {
-        GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(zipFileName);
+    private byte[] getData(final HttpServletResponse response, final String fileName) {
+        final GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
+
         response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
+
         return gtfs.data;
     }
 }

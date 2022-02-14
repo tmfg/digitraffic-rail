@@ -26,8 +26,8 @@ public class FeedMessageCreatorTest {
 
     private static final String ROUTE_ID_1 = "route_1";
 
-    private static final GTFSTrip TRIP_1 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_1, ROUTE_ID_1);
-    private static final GTFSTrip TRIP_2 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_2, ROUTE_ID_1);
+    private static final GTFSTrip TRIP_1 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_1, ROUTE_ID_1, 1);
+    private static final GTFSTrip TRIP_2 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_2, ROUTE_ID_1, 1);
 
     private static GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -45,7 +45,7 @@ public class FeedMessageCreatorTest {
     @Test
     public void empty() {
         final FeedMessageCreator creator = new FeedMessageCreator(Collections.emptyList());
-        final GtfsRealtime.FeedMessage message = creator.createFeedMessage(Collections.emptyList());
+        final GtfsRealtime.FeedMessage message = creator.createVehicleLocationFeedMessage(Collections.emptyList());
 
         Assert.assertNotNull(message.getHeader());
         Assert.assertNotNull(message.getEntityList());
@@ -57,7 +57,7 @@ public class FeedMessageCreatorTest {
         final TrainLocation location = createTrainLocation(1L, DATE_1);
 
         final FeedMessageCreator creator = new FeedMessageCreator(List.of(TRIP_1));
-        final GtfsRealtime.FeedMessage message = creator.createFeedMessage(List.of(location));
+        final GtfsRealtime.FeedMessage message = creator.createVehicleLocationFeedMessage(List.of(location));
 
         Assert.assertEquals(1, message.getEntityCount());
         Assert.assertEquals(TRIP_ID_1, message.getEntity(0).getVehicle().getTrip().getTripId());
@@ -69,7 +69,7 @@ public class FeedMessageCreatorTest {
         final TrainLocation location = createTrainLocation(1L, DATE_1.minusDays(100));
 
         final FeedMessageCreator creator = new FeedMessageCreator(List.of(TRIP_1));
-        final GtfsRealtime.FeedMessage message = creator.createFeedMessage(List.of(location));
+        final GtfsRealtime.FeedMessage message = creator.createVehicleLocationFeedMessage(List.of(location));
 
         Assert.assertEquals(0, message.getEntityCount());
     }
@@ -79,7 +79,7 @@ public class FeedMessageCreatorTest {
         final TrainLocation location = createTrainLocation(1L, DATE_1);
 
         final FeedMessageCreator creator = new FeedMessageCreator(List.of(TRIP_1, TRIP_2));
-        final GtfsRealtime.FeedMessage message = creator.createFeedMessage(List.of(location));
+        final GtfsRealtime.FeedMessage message = creator.createVehicleLocationFeedMessage(List.of(location));
 
         Assert.assertEquals(1, message.getEntityCount());
         Assert.assertEquals(TRIP_ID_2, message.getEntity(0).getVehicle().getTrip().getTripId());
