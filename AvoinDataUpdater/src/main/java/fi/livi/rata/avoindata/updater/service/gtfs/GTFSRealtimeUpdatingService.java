@@ -20,7 +20,7 @@ public class GTFSRealtimeUpdatingService {
         this.gtfsWritingService = gtfsWritingService;
     }
 
-    @Scheduled(fixedRate = 1000 * 60)
+    @Scheduled(fixedRate = 1000 * 10)
     public void updateVehicleLocations() {
         TimingUtil.log(log, "updateVehicleLocations", () -> {
             final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createVehiceLocationFeedMessage();
@@ -33,8 +33,6 @@ public class GTFSRealtimeUpdatingService {
     public void updateTripUpdates() {
         TimingUtil.log(log, "updateTripUpdates", () -> {
             final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createTripUpdateFeedMessage();
-
-//            System.out.println(message);
 
             gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-updates");
         });
