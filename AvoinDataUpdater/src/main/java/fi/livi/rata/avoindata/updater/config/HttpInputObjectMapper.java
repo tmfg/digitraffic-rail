@@ -10,10 +10,11 @@ import javax.annotation.PostConstruct;
 import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.updater.deserializers.*;
+
+import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.bedatadriven.jackson.datatype.jts.JtsModule;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,10 +23,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
-import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
-import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
-import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
@@ -41,12 +39,44 @@ import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriodChangeDate;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackRange;
 import fi.livi.rata.avoindata.common.domain.tracksection.TrackSection;
+import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
+import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.ElementRangeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.ForecastDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.IdentifierRangeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.LocalizationsDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.LocomotiveDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.OperatorDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.OperatorTrainNumberDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.RoutesectionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.RoutesetDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.RumaLocationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.StationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TimeTableRowDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackRangeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackSectionDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackWorkNotificationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrackWorkPartDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrafficRestrictionNotificationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainCategoryDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainLocationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageRuleDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.TrainTypeDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.WagonDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleCancellationDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.timetable.ScheduleExceptionDeserializer;
@@ -112,15 +142,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
     @Autowired
     private OperatorDeserializer operatorDeserializer;
-
-    @Autowired
-    private CategoryCodeDeserializer categoryCodeDeserializer;
-
-    @Autowired
-    private DetailedCategoryCodeDeserializer detailedCategoryCodeDeserializer;
-
-    @Autowired
-    private ThirdCategoryCodeDeserializer thirdCategoryCodeDeserializer;
 
     @Autowired
     private RoutesetDeserializer routesetDeserializer;
@@ -197,10 +218,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
         module.addDeserializer(Station.class, stationDeserializer);
         module.addDeserializer(Operator.class, operatorDeserializer);
         module.addDeserializer(OperatorTrainNumber.class, operatorTrainNumberDeserializer);
-
-        module.addDeserializer(CategoryCode.class, categoryCodeDeserializer);
-        module.addDeserializer(DetailedCategoryCode.class, detailedCategoryCodeDeserializer);
-        module.addDeserializer(ThirdCategoryCode.class, thirdCategoryCodeDeserializer);
 
         module.addDeserializer(Routeset.class, routesetDeserializer);
         module.addDeserializer(Routesection.class, routesectionDeserializer);

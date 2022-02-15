@@ -63,7 +63,7 @@ public class MQTTPublishService {
 
             return publishString(topic, entityAsString);
         } catch (Exception e) {
-            log.error("Error publishing {} to {}", topic, entity);
+            log.error("Error publishing %s to %s".format(topic, entity), e);
         }
         return null;
     }
@@ -78,7 +78,7 @@ public class MQTTPublishService {
                 try {
                     ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                   MQTTGateway.sendToMqtt(message);
+                    MQTTGateway.sendToMqtt(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
@@ -93,7 +93,7 @@ public class MQTTPublishService {
 
             return future;
         } catch (Exception e) {
-            log.error("Error publishing to {}", topic, e);
+            log.error("Error publishing to: " + topic, e);
             return null;
         }
     }

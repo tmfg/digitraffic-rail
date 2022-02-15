@@ -7,5 +7,6 @@ public class GTFSDto {
     public List<Agency> agencies = new ArrayList<>();
     public List<Route> routes = new ArrayList<>();
     public List<Trip> trips = new ArrayList<>();
-    public List<Stop> stops;
+    public List<Stop> stops = new ArrayList<>();
+    public List<Shape> shapes = new ArrayList<>();
 }

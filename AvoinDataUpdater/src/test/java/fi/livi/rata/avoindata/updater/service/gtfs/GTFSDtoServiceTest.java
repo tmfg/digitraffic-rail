@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import java.io.IOException;
@@ -51,6 +52,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     private GTFSWritingService gtfsWritingService;
 
     @MockBean
+    private GTFSShapeService gtfsShapeService;
+
+    @MockBean
     private DateProvider dp;
 
     @Value("classpath:gtfs/263.json")
@@ -94,6 +98,8 @@ public class GTFSDtoServiceTest extends BaseTest {
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+
+        given(gtfsShapeService.createShapesFromTrips(any(),any())).willReturn(new ArrayList<>());
     }
 
     @Test

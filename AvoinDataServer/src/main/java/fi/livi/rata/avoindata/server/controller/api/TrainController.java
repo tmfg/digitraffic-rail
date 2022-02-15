@@ -132,15 +132,20 @@ public class TrainController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public List<Train> getTrainsByDepartureDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {//
-        CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
+
 
         List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date);
 
+        List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
-            return findByIdService.findById(s -> trainRepository.findTrains(s, include_deleted), trainIds, Train::compareTo);
+            trainsResponse = findByIdService.findById(s -> trainRepository.findTrains(s, include_deleted), trainIds, Train::compareTo);
         } else {
-            return Lists.newArrayList();
+            trainsResponse = Lists.newArrayList();
         }
+
+        CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
+
+        return trainsResponse;
     }
 
     private List<Train> getTrainWithoutDepartureDate(long train_number, long version, Boolean include_deleted) {

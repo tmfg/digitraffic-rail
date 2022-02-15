@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -87,7 +88,8 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
 
         final JsonNode syytietos = node.get("syytietos");
         if (syytietos != null && !syytietos.isNull() && syytietos.size() > 0) {
-            final Set<Cause> causes = deserializeCauseRows(jsonParser, syytietos);
+            final Set<Cause> causes = deserializeCauseRows(jsonParser, syytietos).stream().filter(s -> s != null).collect(Collectors.toSet());
+
             causes.stream().forEach(x -> x.timeTableRow = timeTableRow);
             timeTableRow.causes = causes;
         }

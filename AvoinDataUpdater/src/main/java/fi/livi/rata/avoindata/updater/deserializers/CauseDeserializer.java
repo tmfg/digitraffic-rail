@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
@@ -27,9 +26,8 @@ public class CauseDeserializer extends AEntityDeserializer<Cause> {
 
         Cause cause = new Cause();
 
-        final JsonNode syykoodi = node.get("syykoodi");
-        final JsonNode syyluokka = node.get("syyluokka");
-        final JsonNode tarkentavaSyykoodi = node.get("tarkentavaSyykoodi");
+        final JsonNode syykoodi = node.get("syykoodiOid");
+        final JsonNode tarkentavaSyykoodi = node.get("tarkentavaSyykoodiOid");
 
         if (node == null || node.get("version") == null) {
             cause.version = -1;
@@ -37,22 +35,26 @@ public class CauseDeserializer extends AEntityDeserializer<Cause> {
             cause.version = node.get("version").asLong();
         }
 
-        if (!isNodeNull(syyluokka)) {
-            CategoryCode categoryCode = entityManager.find(CategoryCode.class, syyluokka.get("id").asLong());
-            cause.categoryCode = categoryCode;
 
-            if (!isNodeNull(syykoodi)) {
-                DetailedCategoryCode detailedCategoryCode = entityManager.find(DetailedCategoryCode.class, syykoodi.get("id").asLong());
+        if (!isNodeNull(syykoodi)) {
+            DetailedCategoryCode detailedCategoryCode = entityManager.find(DetailedCategoryCode.class, syykoodi.asText());
+            if (detailedCategoryCode != null) {
                 cause.detailedCategoryCode = detailedCategoryCode;
+                cause.categoryCode = detailedCategoryCode.categoryCode;
             }
+        }
 
-            if (!isNodeNull(tarkentavaSyykoodi)) {
-                ThirdCategoryCode thirdCategoryCode = entityManager.find(ThirdCategoryCode.class, tarkentavaSyykoodi.get("id").asLong());
+        if (!isNodeNull(tarkentavaSyykoodi)) {
+            ThirdCategoryCode thirdCategoryCode = entityManager.find(ThirdCategoryCode.class, tarkentavaSyykoodi.asText());
+            if (thirdCategoryCode != null) {
                 cause.thirdCategoryCode = thirdCategoryCode;
             }
         }
 
-        return cause;
+        if (cause.detailedCategoryCode != null) {
+            return cause;
+        } else {
+            return null;
+        }
     }
-
 }

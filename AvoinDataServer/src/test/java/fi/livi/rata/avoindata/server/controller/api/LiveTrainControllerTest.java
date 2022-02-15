@@ -203,17 +203,17 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         thirdCategoryCode.thirdCategoryName = "3 koodin nimi";
         thirdCategoryCode.description = "3 koodin selitys";
         thirdCategoryCode.validFrom = LocalDate.of(2017, 1, 1);
-        thirdCategoryCode.id = 3L;
+        thirdCategoryCode.oid = "1.2.246.586.8.1.21";
         DetailedCategoryCode detailedCategoryCode = new DetailedCategoryCode();
         detailedCategoryCode.detailedCategoryCode = "2 koodi";
         detailedCategoryCode.detailedCategoryName = "2 koodin nimi";
         detailedCategoryCode.validFrom = LocalDate.of(2017, 1, 2);
-        detailedCategoryCode.id = 2L;
+        detailedCategoryCode.oid = "1.2.246.586.8.1.21.2";
         CategoryCode categoryCode = new CategoryCode();
         categoryCode.categoryCode = "1 koodi";
         categoryCode.categoryName = "1 koodin nimi";
         categoryCode.validFrom = LocalDate.of(2017, 1, 3);
-        categoryCode.id = 1L;
+        categoryCode.oid = "1.2.246.586.8.1.21.2.4";
 
         detailedCategoryCode.categoryCode = categoryCode;
         thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;
@@ -235,11 +235,11 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0]").exists());
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCode").value("1 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCodeId").value(1));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].categoryCodeId").value(cause.getCategoryCodeId()));
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCode").value("2 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCodeId").value(2));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].detailedCategoryCodeId").value(cause.getDetailedCategoryCodeId()));
         r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCode").value("3 koodi"));
-        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCodeId").value(3));
+        r1.andExpect(jsonPath("$[0].timeTableRows[0].causes[0].thirdCategoryCodeId").value(cause.getThirdCategoryCodeId()));
 
         r1.andExpect(jsonPath("$[0].timeTableRows[1].causes[0]").doesNotExist());
     }
@@ -330,23 +330,23 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
             timeTableRow.scheduledTime = dp.nowInHelsinki();
         }
 
-        getJson("/live-trains/51").andExpect(jsonPath("$.length(").value(1));
-        getJson("/live-trains?station=PSL").andExpect(jsonPath("$.length(").value(1));
+        getJson("/live-trains/51").andExpect(jsonPath("$.length()").value(1));
+        getJson("/live-trains?station=PSL").andExpect(jsonPath("$.length()").value(1));
         getJson("/live-trains?station=PSL&minutes_before_departure=1500&minutes_after_departure=1500&minutes_before_arrival=1500" +
                 "&minutes_after_arrival=1500")
-                .andExpect(jsonPath("$.length(").value(1));
-        getJson("/live-trains?version=0").andExpect(jsonPath("$.length(").value(1));
-        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length(").value(1));
+                .andExpect(jsonPath("$.length()").value(1));
+        getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(1));
+        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(1));
 
         train.deleted = true;
 
-        getJson("/live-trains/51").andExpect(jsonPath("$.length(").value(0));
-        getJson("/live-trains?station=PSL").andExpect(jsonPath("$.length(").value(0));
+        getJson("/live-trains/51").andExpect(jsonPath("$.length()").value(0));
+        getJson("/live-trains?station=PSL").andExpect(jsonPath("$.length()").value(0));
         getJson("/live-trains?station=PSL&minutes_before_departure=1500&minutes_after_departure=1500&minutes_before_arrival=1500" +
                 "&minutes_after_arrival=1500")
-                .andExpect(jsonPath("$.length(").value(0));
-        getJson("/live-trains?version=0").andExpect(jsonPath("$.length(").value(0));
-        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length(").value(0));
+                .andExpect(jsonPath("$.length()").value(0));
+        getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(0));
+        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(0));
 
         FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
     }
