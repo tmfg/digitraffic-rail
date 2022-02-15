@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 @Service
 public class GTFSTripService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    public static final String TRIP_REPLACEMENT = "_replacement";
 
     @Autowired
     private CancellationFlattener cancellationFlattener;
@@ -116,7 +119,7 @@ public class GTFSTripService {
             }
 
             log.trace("Creating cancellation trip from {}", scheduleCancellation);
-            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, "_replacement");
+            final Trip partialCancellationTrip = createTrip(schedule, cancellationStartDate, cancellationEndDate, TRIP_REPLACEMENT);
             partialCancellationTrip.calendar.calendarDates.clear();
 
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(
@@ -202,7 +205,7 @@ public class GTFSTripService {
     }
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix) {
-        final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate, endDate, scheduleSuffix);
+        final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate.format(DateTimeFormatter.BASIC_ISO_DATE), endDate.format(DateTimeFormatter.BASIC_ISO_DATE), scheduleSuffix);
         final String serviceId = tripId;
 
         Trip trip = new Trip(schedule);

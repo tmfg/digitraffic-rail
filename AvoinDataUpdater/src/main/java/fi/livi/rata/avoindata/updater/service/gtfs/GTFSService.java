@@ -8,7 +8,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,9 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 @Service
 public class GTFSService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    private GTFSTripRepository gtfsTripRepository;
 
     @Autowired
     private GTFSEntityService gtfsEntityService;
@@ -73,17 +79,18 @@ public class GTFSService {
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
 
-    private void createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
-        GTFSDto vrGtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
-        for (Stop stop : vrGtfsDto.stops) {
+    private GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
+        GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+
+        for (Stop stop : gfsDto.stops) {
             stop.name = stop.name.replace(" asema", "");
         }
 
-        for (Trip trip : vrGtfsDto.trips) {
+        for (Trip trip : gfsDto.trips) {
             trip.headsign = trip.headsign.replace(" asema", "");
         }
 
-        for (Trip trip : vrGtfsDto.trips) {
+        for (Trip trip : gfsDto.trips) {
             if (trip.stopTimes != null) {
                 if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
                     trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
@@ -93,11 +100,13 @@ public class GTFSService {
             }
         }
 
-        gtfsWritingService.writeGTFSFiles(vrGtfsDto, zipFileName);
+        gtfsWritingService.writeGTFSFiles(gfsDto, zipFileName);
+
+        return gfsDto;
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip");
+        final GTFSDto gtfs = createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip");
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
                 Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
@@ -105,10 +114,19 @@ public class GTFSService {
                 Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
 
         createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip");
-
         createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
+        updateGtfsTrips(gtfs);
 
         log.info("Successfully wrote GTFS files");
+    }
+
+    private void updateGtfsTrips(final GTFSDto gtfs) {
+        final List<GTFSTrip> gtfsTrips = gtfs.trips.stream()
+                .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId, trip.source.version))
+                .collect(Collectors.toList());
+
+        gtfsTripRepository.deleteAll();
+        gtfsTripRepository.saveAll(gtfsTrips);
     }
 
     private void createVrGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {

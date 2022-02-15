@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.GTFSRealtimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,9 @@ public class ManualUpdateController {
 
     @Autowired
     private ScheduleProviderService scheduleProviderService;
+
+    @Autowired
+    private GTFSRealtimeService gtfsRealtimeService;
 
     @Autowired
     private DateProvider dp;
@@ -119,6 +123,26 @@ public class ManualUpdateController {
         final LocalDate start = dp.dateInHelsinki().minusDays(7);
 
         gtfsService.createVRTreGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()));
+        return true;
+    }
+
+    @RequestMapping("/gtfs-locations")
+    @ResponseBody
+    public boolean generateGTFSLocations() {
+        logger.info("Starting manual gtfs vehicle location feed");
+
+        logger.info(gtfsRealtimeService.createVehiceLocationFeedMessage().toString());
+
+        return true;
+    }
+
+    @RequestMapping("/gtfs-realtime")
+    @ResponseBody
+    public boolean generateGTFSRealtime() {
+        logger.info("Starting manual gtfs trip update feed");
+
+        logger.info(gtfsRealtimeService.createTripUpdateFeedMessage().toString());
+
         return true;
     }
 
