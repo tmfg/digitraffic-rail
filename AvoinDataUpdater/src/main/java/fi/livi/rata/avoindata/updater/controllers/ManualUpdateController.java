@@ -126,26 +126,6 @@ public class ManualUpdateController {
         return true;
     }
 
-    @RequestMapping("/gtfs-locations")
-    @ResponseBody
-    public boolean generateGTFSLocations() {
-        logger.info("Starting manual gtfs vehicle location feed");
-
-        logger.info(gtfsRealtimeService.createVehiceLocationFeedMessage().toString());
-
-        return true;
-    }
-
-    @RequestMapping("/gtfs-realtime")
-    @ResponseBody
-    public boolean generateGTFSRealtime() {
-        logger.info("Starting manual gtfs trip update feed");
-
-        logger.info(gtfsRealtimeService.createTripUpdateFeedMessage().toString());
-
-        return true;
-    }
-
     private boolean isPassengerTrain(Schedule s) {
         return s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true);
     }
