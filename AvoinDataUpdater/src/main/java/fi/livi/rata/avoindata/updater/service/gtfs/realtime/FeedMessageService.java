@@ -84,16 +84,18 @@ public class FeedMessageService {
     }
 
     private GtfsRealtime.FeedEntity createTUCancelledEntity(final GTFSTrip trip, final GTFSTrain train) {
+        final GtfsRealtime.TripUpdate tripUpdate = GtfsRealtime.TripUpdate.newBuilder()
+                .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
+                        .setRouteId(trip.routeId)
+                        .setTripId(trip.tripId)
+                        .setStartDate(train.id.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
+                        .setScheduleRelationship(GtfsRealtime.TripDescriptor.ScheduleRelationship.CANCELED)
+                        .build())
+                .build();
+
         return GtfsRealtime.FeedEntity.newBuilder()
                 .setId(createCancellationId(train))
-                .setTripUpdate(GtfsRealtime.TripUpdate.newBuilder()
-                        .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
-                                .setRouteId(trip.routeId)
-                                .setTripId(trip.tripId)
-                                .setStartDate(train.id.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
-                                .setScheduleRelationship(GtfsRealtime.TripDescriptor.ScheduleRelationship.CANCELED)
-                                .build())
-                        .build())
+                .setTripUpdate(tripUpdate)
                 .build();
     }
 
@@ -134,6 +136,7 @@ public class FeedMessageService {
                 .setStopId(stopId)
                 .setStopSequence(stopSequence);
 
+        // GTFS delay is seconds, our difference is minutes
         if(arrivalDifference != null) {
             builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
                     .setDelay((int)(arrivalDifference * 60))
@@ -191,16 +194,22 @@ public class FeedMessageService {
     private GtfsRealtime.FeedEntity createTUUpdateEntity(final GTFSTrip trip, final GTFSTrain train) {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> stopTimeUpdates = createStopTimeUpdates(train);
 
-        return stopTimeUpdates.isEmpty() ? null : GtfsRealtime.FeedEntity.newBuilder()
-                .setId(createTripUpdateId(train))
-                .setTripUpdate(GtfsRealtime.TripUpdate.newBuilder()
-                        .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
-                                .setRouteId(trip.routeId)
-                                .setTripId(trip.tripId)
-                                .setStartDate(train.id.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
-                                .build())
-                        .addAllStopTimeUpdate(stopTimeUpdates)
+        if(stopTimeUpdates.isEmpty()) {
+            return null;
+        }
+
+        final GtfsRealtime.TripUpdate tripUpdate = GtfsRealtime.TripUpdate.newBuilder()
+                .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
+                        .setRouteId(trip.routeId)
+                        .setTripId(trip.tripId)
+                        .setStartDate(train.id.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
                         .build())
+                .addAllStopTimeUpdate(stopTimeUpdates)
+                .build();
+
+        return GtfsRealtime.FeedEntity.newBuilder()
+                .setId(createTripUpdateId(train))
+                .setTripUpdate(tripUpdate)
                 .build();
     }
 
