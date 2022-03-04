@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,7 +139,8 @@ public class GTFSWritingService {
         files.add(write(getPath("feed_info.txt"), Lists.newArrayList(1),
                 "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
                         .format("%s,%s,%s,%s,%s,%s", "Traffic Management Finland", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
-                                format(maxEndDate), dateProvider.nowInHelsinki().toEpochSecond())));
+                                format(maxEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(
+                                        ZoneId.of("Z")).format(dateProvider.nowInHelsinki()))));
 
 
         return files;
