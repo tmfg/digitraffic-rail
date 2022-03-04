@@ -30,21 +30,21 @@ public class GtfsController {
     @ApiOperation("Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-all.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getGtfsForAllTrains(HttpServletResponse response) {
+    public byte[] getGtfsForAllTrains(final HttpServletResponse response) {
         return getData(response, "gtfs-all.zip");
     }
 
     @ApiOperation("Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getGtfsForPassengerTrains(HttpServletResponse response) {
+    public byte[] getGtfsForPassengerTrains(final HttpServletResponse response) {
         return getData(response, "gtfs-passenger.zip");
     }
 
     @ApiOperation("Returns GTFS Realtime locations")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-locations", produces = "application/protobuf")
     @Transactional(readOnly = true)
-    public byte[] getGtfsRtLocations(HttpServletResponse response) {
+    public byte[] getGtfsRtLocations(final HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, 10);
         return getData(response, "gtfs-rt-locations");
     }
@@ -52,7 +52,7 @@ public class GtfsController {
     @ApiOperation("Returns GTFS Realtime updates")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-updates", produces = "application/protobuf")
     @Transactional(readOnly = true)
-    public byte[] getGtfsRtUpdates(HttpServletResponse response) {
+    public byte[] getGtfsRtUpdates(final HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, 60);
         return getData(response, "gtfs-rt-updates");
     }
@@ -60,14 +60,14 @@ public class GtfsController {
     @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getGtfsForVRTRETrains(HttpServletResponse response) {
+    public byte[] getGtfsForVRTRETrains(final HttpServletResponse response) {
         return getData(response, "gtfs-vr-tre.zip");
     }
 
     @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getGtfsForVRTrains(HttpServletResponse response) {
+    public byte[] getGtfsForVRTrains(final HttpServletResponse response) {
         return getData(response, "gtfs-vr.zip");
     }
 
