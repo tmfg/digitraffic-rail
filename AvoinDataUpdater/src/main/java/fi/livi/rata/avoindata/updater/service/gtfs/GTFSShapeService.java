@@ -1,22 +1,16 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import static org.locationtech.jts.simplify.DouglasPeuckerSimplifier.simplify;
-
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.CoordinateSequence;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import org.osgeo.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +59,7 @@ public class GTFSShapeService {
     }
 
     private List<Shape> createShapes(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, Trip trip, String stops) {
-        List<StopTime> actualStops = getActualStops(trip);
+        List<StopTime> actualStops = this.getStopsThatMatter(trip);
 
         List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops);
 
@@ -86,17 +80,29 @@ public class GTFSShapeService {
         return tripsShapes;
     }
 
-    private List<StopTime> getActualStops(Trip trip) {
+    private List<StopTime> getStopsThatMatter(Trip trip) {
+        Set<String> alwaysPicked = Set.of("TPE", "OL", "SK", "KOK", "TL","HPK");
+
         List<StopTime> actualStops = new ArrayList<>();
-        actualStops.add(trip.stopTimes.get(0));
-        for (int i = 1; i < trip.stopTimes.size() - 1; i++) {
+        StopTime firstStop = trip.stopTimes.get(0);
+        StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
+
+        if (!alwaysPicked.contains(firstStop.stopId)) {
+            actualStops.add(firstStop);
+        }
+
+        for (int i = 0; i < trip.stopTimes.size(); i++) {
             StopTime current = trip.stopTimes.get(i);
 
-            if (!current.arrivalTime.equals(current.departureTime)) {
-                actualStops.add(current);
-            }
+           if (alwaysPicked.contains(current.stopId)) {
+               actualStops.add(current);
+           }
         }
-        actualStops.add(trip.stopTimes.get(trip.stopTimes.size() - 1));
+
+        if (!alwaysPicked.contains(lastStop.stopId)) {
+            actualStops.add(lastStop);
+        }
+
         return actualStops;
     }
 

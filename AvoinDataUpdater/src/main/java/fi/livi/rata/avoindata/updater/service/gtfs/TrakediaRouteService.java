@@ -66,7 +66,11 @@ public class TrakediaRouteService {
 
 
         List<List<Coordinate>> allLines = new ArrayList<>();
-        for (JsonNode lineNode : apiRoute.get("geometria")) {
+        JsonNode geometria = apiRoute.get("geometria");
+        if (geometria.size() == 0){
+            log.error("Trakedia returned 0 size geometry for {}->{} ({})",startStop.stopCode, endStop.stopCode, routeUrl);
+        }
+        for (JsonNode lineNode : geometria) {
             List<Coordinate> output = new ArrayList<>();
             for (JsonNode pointNode : lineNode) {
                 output.add(new Coordinate(pointNode.get(0).asDouble(), pointNode.get(1).asDouble()));
