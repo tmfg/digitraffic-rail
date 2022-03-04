@@ -81,7 +81,7 @@ public class GTFSShapeService {
     }
 
     private List<StopTime> getStopsThatMatter(Trip trip) {
-        Set<String> alwaysPicked = Set.of("TPE", "OL", "SK", "KOK", "TL","HPK");
+        Set<String> alwaysPicked = Set.of("TPE", "OL", "SK", "KOK", "TL","HPK", "SVI");
 
         List<StopTime> actualStops = new ArrayList<>();
         StopTime firstStop = trip.stopTimes.get(0);
