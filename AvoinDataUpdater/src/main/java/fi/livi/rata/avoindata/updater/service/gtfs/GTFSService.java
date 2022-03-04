@@ -171,6 +171,6 @@ public class GTFSService {
     }
 
     private boolean isPassengerTrain(Schedule s) {
-        return s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true);
+        return (s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true)) && Sets.newHashSet("V", "HV", "MV").contains(s.trainType.name) == false;
     }
 }
