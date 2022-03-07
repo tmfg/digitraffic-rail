@@ -29,6 +29,33 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 public class GTFSShapeService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
+    private Set<String> alwaysPicked = Set.of(
+            "JY", // 2 rails, east to north
+            "JNS", // 2 rails, north to west
+            "OHM",
+            "RSM",
+            "LNÄ",
+            "YLV",
+            "KML",
+            "PYE",
+            "RHA",
+            "TL",
+            "HPK",
+            "SVI",
+            "LMK",
+            "JRI",
+            "OLLI",
+            "KVLA",
+            "PMLA",
+            "KUV",
+            "LÄ",
+            "LH",
+            "LOL",
+            "KV",
+            "SAV",
+            "LPR"
+    );
+
     @Autowired
     private TrakediaRouteService trakediaRouteService;
 
@@ -81,8 +108,6 @@ public class GTFSShapeService {
     }
 
     private List<StopTime> getStopsThatMatter(Trip trip) {
-        Set<String> alwaysPicked = Set.of("SJ", "KML", "RHA", "KOK", "TL","HPK", "SVI", "LMK");
-
         List<StopTime> actualStops = new ArrayList<>();
         StopTime firstStop = trip.stopTimes.get(0);
         StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
@@ -94,9 +119,9 @@ public class GTFSShapeService {
         for (int i = 0; i < trip.stopTimes.size(); i++) {
             StopTime current = trip.stopTimes.get(i);
 
-           if (alwaysPicked.contains(current.stopId)) {
-               actualStops.add(current);
-           }
+            if (alwaysPicked.contains(current.stopId)) {
+                actualStops.add(current);
+            }
         }
 
         if (!alwaysPicked.contains(lastStop.stopId)) {

@@ -40,6 +40,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 
 @Service
 public class TrakediaRouteService {
+    private Set<String> ignoredStations = Set.of("PYE");
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -68,7 +69,10 @@ public class TrakediaRouteService {
         List<List<Coordinate>> allLines = new ArrayList<>();
         JsonNode geometria = apiRoute.get("geometria");
         if (geometria.size() == 0){
-            log.error("Trakedia returned 0 size geometry for {}->{} ({})",startStop.stopCode, endStop.stopCode, routeUrl);
+            if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
+                log.error("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
+            }
+            return new ArrayList<>();
         }
         for (JsonNode lineNode : geometria) {
             List<Coordinate> output = new ArrayList<>();
