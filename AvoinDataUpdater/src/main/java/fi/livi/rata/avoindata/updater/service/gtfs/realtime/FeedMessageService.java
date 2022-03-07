@@ -281,7 +281,7 @@ public class FeedMessageService {
                     .collect(Collectors.toList());
 
             if(filtered.isEmpty()) {
-                log.info("Could not find trip for train number " + location.trainLocationId.trainNumber);
+                log.trace("Could not find trip for train number " + location.trainLocationId.trainNumber);
                 return null;
             }
 
