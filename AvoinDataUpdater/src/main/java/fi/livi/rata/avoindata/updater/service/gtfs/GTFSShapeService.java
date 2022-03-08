@@ -29,33 +29,6 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 public class GTFSShapeService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private Set<String> alwaysPicked = Set.of(
-            "JY", // 2 rails, east to north
-            "JNS", // 2 rails, north to west
-            "OHM",
-            "RSM",
-            "LNÄ",
-            "YLV",
-            "KML",
-            "PYE",
-            "RHA",
-            "TL",
-            "HPK",
-            "SVI",
-            "LMK",
-            "JRI",
-            "OLLI",
-            "KVLA",
-            "PMLA",
-            "KUV",
-            "LÄ",
-            "LH",
-            "LOL",
-            "KV",
-            "SAV",
-            "LPR"
-    );
-
     @Autowired
     private TrakediaRouteService trakediaRouteService;
 
@@ -64,6 +37,9 @@ public class GTFSShapeService {
 
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
+
+    @Autowired
+    private StoptimesSplitterService stoptimesSplitterService;
 
     public List<Shape> createShapesFromTrips(List<Trip> trips, Map<String, Stop> stopMap) {
         ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
@@ -86,7 +62,7 @@ public class GTFSShapeService {
     }
 
     private List<Shape> createShapes(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, Trip trip, String stops) {
-        List<StopTime> actualStops = this.getStopsThatMatter(trip);
+        List<StopTime> actualStops = this.stoptimesSplitterService.splitStoptimes(trip);
 
         List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops);
 
@@ -107,29 +83,7 @@ public class GTFSShapeService {
         return tripsShapes;
     }
 
-    private List<StopTime> getStopsThatMatter(Trip trip) {
-        List<StopTime> actualStops = new ArrayList<>();
-        StopTime firstStop = trip.stopTimes.get(0);
-        StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
 
-        if (!alwaysPicked.contains(firstStop.stopId)) {
-            actualStops.add(firstStop);
-        }
-
-        for (int i = 0; i < trip.stopTimes.size(); i++) {
-            StopTime current = trip.stopTimes.get(i);
-
-            if (alwaysPicked.contains(current.stopId)) {
-                actualStops.add(current);
-            }
-        }
-
-        if (!alwaysPicked.contains(lastStop.stopId)) {
-            actualStops.add(lastStop);
-        }
-
-        return actualStops;
-    }
 
     private List<Coordinate> getCoordinates(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, List<StopTime> stopTimes) {
         List<Coordinate> tripPoints = new ArrayList<>();
