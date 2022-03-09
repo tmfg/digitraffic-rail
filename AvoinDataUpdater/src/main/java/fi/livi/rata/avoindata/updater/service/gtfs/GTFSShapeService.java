@@ -109,7 +109,7 @@ public class GTFSShapeService {
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 }
             } catch (Exception e) {
-                log.warn("Creating route failed for {} -> {}", startStop.stopCode, endStop.stopCode, e);
+                log.warn(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
             }
         }
