@@ -489,7 +489,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals(1, routes.size());
         final Route route = routes.iterator().next();
         Assert.assertEquals(10, route.agencyId);
-        Assert.assertEquals(2, route.type);
+        Assert.assertEquals(102, route.type);
         Assert.assertEquals(shortName, route.shortName);
     }
 
