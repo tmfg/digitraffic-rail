@@ -18,7 +18,6 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.osgeo.proj4j.CRSFactory;
 import org.osgeo.proj4j.CoordinateReferenceSystem;
-import org.osgeo.proj4j.CoordinateTransform;
 import org.osgeo.proj4j.CoordinateTransformFactory;
 import org.osgeo.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
@@ -30,21 +29,20 @@ import fi.livi.rata.avoindata.common.domain.spatial.SpatialConstants;
 @Service
 public class Wgs84ConversionService {
     public static final int NUMBER_OF_DECIMALS = 6;
-    private CoordinateTransform transformer;
-    private CoordinateTransform reverseTransformer;
     private GeometryFactory geometryFactory;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private CoordinateTransformFactory coordinateTransformFactory;
+    private CoordinateReferenceSystem coordinateTransformTo;
+    private CoordinateReferenceSystem coordinateTransformFrom;
 
     @PostConstruct
     private void setup() {
         CRSFactory crsFactory = new CRSFactory();
-        CoordinateReferenceSystem coordinateTransformFrom = crsFactory.createFromParameters("EPSG:3067",
+        coordinateTransformFrom = crsFactory.createFromParameters("EPSG:3067",
                 "+proj=utm +zone=35 ellps=GRS80 +units=m +no_defs");
-        CoordinateReferenceSystem coordinateTransformTo = crsFactory.createFromParameters("EPSG:4326",
+        coordinateTransformTo = crsFactory.createFromParameters("EPSG:4326",
                 "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
-        CoordinateTransformFactory coordinateTransformFactory = new CoordinateTransformFactory();
-        transformer = coordinateTransformFactory.createTransform(coordinateTransformFrom, coordinateTransformTo);
-        reverseTransformer = coordinateTransformFactory.createTransform(coordinateTransformTo, coordinateTransformFrom);
+        coordinateTransformFactory = new CoordinateTransformFactory();
         geometryFactory = new GeometryFactory();
     }
 
@@ -54,8 +52,9 @@ public class Wgs84ConversionService {
         from.x = iKoordinaatti;
         from.y = pKoordinaatti;
 
-        transformer.transform(from, to);
+        coordinateTransformFactory.createTransform(coordinateTransformFrom, coordinateTransformTo).transform(from, to);
         to.setValue(round(to.x, NUMBER_OF_DECIMALS), round(to.y, NUMBER_OF_DECIMALS));
+
         return to;
     }
 
@@ -130,7 +129,7 @@ public class Wgs84ConversionService {
         from.x = x;
         from.y = y;
 
-        reverseTransformer.transform(from, to);
+        coordinateTransformFactory.createTransform(coordinateTransformTo, coordinateTransformFrom).transform(from, to);
         return to;
     }
 

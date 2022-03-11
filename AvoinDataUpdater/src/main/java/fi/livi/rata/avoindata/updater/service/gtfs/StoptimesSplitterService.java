@@ -8,6 +8,8 @@ import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
@@ -17,6 +19,8 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 // Splits GTFS-trips into smaller sections so that geometries can be successfully fetched from infra-api. Infra-api does not like long distances or Y-shaped routes
 @Service
 public class StoptimesSplitterService {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     private static class SplittingLogic {
         public String stationToSplit;
         public List<String> stationsThatMustBePresent;
@@ -86,6 +90,8 @@ public class StoptimesSplitterService {
         if (!this.shouldSplit(trip, lastStop)) {
             actualStops.add(lastStop);
         }
+
+        log.info("Split {} to {}", trip.stopTimes, actualStops);
 
         return actualStops;
     }
