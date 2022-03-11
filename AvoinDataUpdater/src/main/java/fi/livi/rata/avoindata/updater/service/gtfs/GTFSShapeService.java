@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -16,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
@@ -84,7 +84,6 @@ public class GTFSShapeService {
     }
 
 
-
     private List<Coordinate> getCoordinates(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, List<StopTime> stopTimes) {
         List<Coordinate> tripPoints = new ArrayList<>();
         for (int i = 0; i < stopTimes.size() - 1; i++) {
@@ -108,8 +107,16 @@ public class GTFSShapeService {
                 } else {
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 }
+            } catch (HttpClientErrorException e) {
+                if (e.getRawStatusCode() == 400) {
+                    log.warn(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, stopTimes), e);
+                    tripPoints.addAll(createDummyRoute(startStop, endStop));
+                } else {
+                    log.error(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
+                    tripPoints.addAll(createDummyRoute(startStop, endStop));
+                }
             } catch (Exception e) {
-                log.warn(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
+                log.error(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
             }
         }
