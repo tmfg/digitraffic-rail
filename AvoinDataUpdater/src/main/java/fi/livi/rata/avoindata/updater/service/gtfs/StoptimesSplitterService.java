@@ -52,7 +52,7 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("KUK", "KVLA", "HJ"));    // Kuusankosi -> Harju                  Y-shaped Duplicate?
         this.createSplittingLogic(List.of("KUK", "KVLA", "KRA"));   // Kuusankosi -> Koria                  Y-shaped
         this.createSplittingLogic(List.of("HJ", "KV", "KUK"));      // Kuusankosi -> Harju                  Y-shaped Duplicate?
-        this.createSplittingLogic(List.of("KUK", "KV", "KRA"));      // Kuusankosi -> Koria                 Y-shaped Duplicate?
+        this.createSplittingLogic(List.of("KUK", "KV", "KRA"));     // Kuusankosi -> Koria                  Y-shaped Duplicate?
         this.createSplittingLogic(List.of("KRA", "KV", "HJ"));      // Koria -> Harju                       Y-shaped
         this.createSplittingLogic(List.of("RHL", "JY", "VRI"));     // Vaajakoski -> Vihtavuori             Y-shaped
         this.createSplittingLogic(List.of("RAS", "LÄ", "PL"));      // Rasinsuo -> Pulsa (VNA)              Y-shaped
