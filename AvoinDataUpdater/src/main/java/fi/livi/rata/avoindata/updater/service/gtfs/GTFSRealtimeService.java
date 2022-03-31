@@ -10,6 +10,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,14 +56,11 @@ public class GTFSRealtimeService {
         final Long maxVersion = gtfsTripRepository.getMaxVersion();
         final List<GTFSTrain> trains = new ArrayList<>();
 
-//        log.info("gtfs max version " + maxVersion);
-//        log.info("train max version " + trainRepository.getMaxVersion());
-
         if(maxVersion == null) {
             log.error("null version from gtfs-trips!");
         } else {
             TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
-                trains.addAll(gtfsTrainRepository.findByVersionGreaterThan(maxVersion));
+                trains.addAll(gtfsTrainRepository.findByVersionGreaterThan(maxVersion, PageRequest.of(0,2000)));
             });
         }
 
