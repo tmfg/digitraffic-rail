@@ -64,7 +64,7 @@ public class GTFSShapeService {
     private List<Shape> createShapes(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, Trip trip, String stops) {
         List<StopTime> actualStops = this.stoptimesSplitterService.splitStoptimes(trip);
 
-        List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops);
+        List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops, trip);
 
         List<Shape> tripsShapes = new ArrayList<>();
         for (int i1 = 0; i1 < coordinates.size(); i1++) {
@@ -84,7 +84,7 @@ public class GTFSShapeService {
     }
 
 
-    private List<Coordinate> getCoordinates(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, List<StopTime> stopTimes) {
+    private List<Coordinate> getCoordinates(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, List<StopTime> stopTimes, Trip trip) {
         List<Coordinate> tripPoints = new ArrayList<>();
         for (int i = 0; i < stopTimes.size() - 1; i++) {
             StopTime startStopTime = stopTimes.get(i);
@@ -112,11 +112,11 @@ public class GTFSShapeService {
                     log.warn(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, stopTimes), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 } else {
-                    log.error(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
+                    log.error(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, trip.tripId), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 }
             } catch (Exception e) {
-                log.error(String.format("Creating route failed for %s -> %s", startStop.stopCode, endStop.stopCode), e);
+                log.error(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, trip.tripId), e);
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
             }
         }
