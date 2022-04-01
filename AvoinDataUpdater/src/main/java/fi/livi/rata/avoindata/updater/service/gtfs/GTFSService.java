@@ -8,10 +8,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,14 +20,16 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 @Service
 public class GTFSService {
@@ -66,7 +65,7 @@ public class GTFSService {
         }
     }
 
-//For generating test json
+    //For generating test json
 //    @PostConstruct
 //    public void writeJson() throws ExecutionException, InterruptedException, IOException {
 //        List<Schedule> allSchedules = new ArrayList<>();
@@ -78,8 +77,11 @@ public class GTFSService {
 //
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
-
     public GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
+        return this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, zipFileName, false);
+    }
+
+    public GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName, boolean filterOutNonStops) throws IOException {
         GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
 
         for (Stop stop : gfsDto.stops) {
@@ -97,6 +99,12 @@ public class GTFSService {
                 }
             } else {
                 log.error("Encountered trip without stoptimes: {}", trip);
+            }
+        }
+
+        if (filterOutNonStops) {
+            for (Trip trip : gfsDto.trips) {
+                trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
             }
         }
 
@@ -120,6 +128,19 @@ public class GTFSService {
         log.info("Successfully wrote GTFS files");
     }
 
+    private List<StopTime> filterOutNonStops(List<StopTime> stopTimes) {
+        List<StopTime> filteredStopTimes = new ArrayList<>();
+
+        for (int i = 0; i < stopTimes.size(); i++) {
+            StopTime stopTime = stopTimes.get(i);
+            if (i == 0 || i == (stopTimes.size() - 1) || !stopTime.arrivalTime.equals(stopTime.departureTime)) {
+                filteredStopTimes.add(stopTime);
+            }
+        }
+
+        return filteredStopTimes;
+    }
+
     private void updateGtfsTrips(final GTFSDto gtfs) {
         final List<GTFSTrip> gtfsTrips = gtfs.trips.stream()
                 .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId, trip.source.version))
@@ -133,7 +154,7 @@ public class GTFSService {
         List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
         List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
 
-        createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip");
+        createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip", true);
         createVRTreGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
     }
 
@@ -141,23 +162,12 @@ public class GTFSService {
         Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z");
         List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
         for (Schedule schedule : passengerAdhocSchedules) {
-            filterOutNonStops(schedule);
             if (schedule.operator.operatorUICCode == 10 &&
                     (Strings.isNullOrEmpty(schedule.commuterLineId) || acceptedCommuterLineIds.contains(schedule.commuterLineId))) {
                 vrPassengerAdhocSchedules.add(schedule);
             }
         }
         return vrPassengerAdhocSchedules;
-    }
-
-    private void filterOutNonStops(Schedule schedule) {
-        List<ScheduleRow> filteredRows = new ArrayList<>();
-        for (ScheduleRow scheduleRow : schedule.scheduleRows) {
-            if (scheduleRow.arrival == null || scheduleRow.departure == null || (!scheduleRow.departure.timestamp.equals(scheduleRow.arrival.timestamp) && scheduleRow.departure.stopType != ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL)) {
-                filteredRows.add(scheduleRow);
-            }
-        }
-        schedule.scheduleRows = filteredRows;
     }
 
 
@@ -167,7 +177,7 @@ public class GTFSService {
         List<Schedule> vrTrePassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(treFilter).collect(Collectors.toList());
         List<Schedule> vrTreRegularSchedules = passengerRegularSchedules.stream().filter(treFilter).collect(Collectors.toList());
 
-        createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip");
+        createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip", true);
     }
 
     private boolean isPassengerTrain(Schedule s) {
