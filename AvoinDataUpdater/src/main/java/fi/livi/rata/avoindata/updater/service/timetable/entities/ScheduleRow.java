@@ -25,6 +25,7 @@ public class ScheduleRow {
     public String toString() {
         return "ScheduleRow{" +
                 "id=" + id +
+                ", station=" + station +
                 '}';
     }
 
