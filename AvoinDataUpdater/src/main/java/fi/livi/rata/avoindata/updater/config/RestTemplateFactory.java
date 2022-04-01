@@ -6,6 +6,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
@@ -72,6 +73,7 @@ class RestTemplateFactory {
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
         RestTemplate restTemplate = new RestTemplate(requestFactory);
+        restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor()));
         restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
         return restTemplate;
     }
