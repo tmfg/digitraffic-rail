@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.controllers;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 

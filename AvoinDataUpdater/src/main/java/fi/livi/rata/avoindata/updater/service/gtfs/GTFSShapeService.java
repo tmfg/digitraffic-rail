@@ -109,14 +109,14 @@ public class GTFSShapeService {
                 }
             } catch (HttpClientErrorException e) {
                 if (e.getRawStatusCode() == 400) {
-                    log.warn(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, stopTimes), e);
+                    log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 } else {
-                    log.error(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, trip.tripId), e);
+                    log.error(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId,startStop.stopCode, endStop.stopCode, trip.tripId), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 }
             } catch (Exception e) {
-                log.error(String.format("Creating route failed for %s -> %s: %s", startStop.stopCode, endStop.stopCode, trip.tripId), e);
+                log.error(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, trip.tripId), e);
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
             }
         }
