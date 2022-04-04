@@ -268,7 +268,7 @@ public class FeedMessageService {
                     .filter(t -> !t.id.endDate.isBefore(train.id.departureDate))
                     .collect(Collectors.toList());
 
-            return filtered.get(0);
+            return filtered.size() > 0 ? filtered.get(0) : null;
         }
 
         GTFSTrip find(final TrainLocation location) {
