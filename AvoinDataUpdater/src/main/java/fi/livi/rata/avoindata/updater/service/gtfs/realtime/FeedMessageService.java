@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -269,31 +270,24 @@ public class FeedMessageService {
         GTFSTrip find(final GTFSTrain train) {
             final List<GTFSTrip> trips = tripMap.get(train.id.trainNumber);
 
-            final List<GTFSTrip> filtered = safeStream(trips)
-                    .filter(t -> t.id.trainNumber.equals(train.id.trainNumber))
-                    .filter(t -> !t.id.startDate.isAfter(train.id.departureDate))
-                    .filter(t -> !t.id.endDate.isBefore(train.id.departureDate))
-                    .collect(Collectors.toList());
-
-            if (filtered.size() != 1) {
-                log.info("Found {} GTFSTrips for {}", filtered.size(), train.id);
-                return null;
-            } else {
-                return filtered.get(0);
-            }
+            return findTripFromList(trips, train.id.trainNumber, train.id.departureDate);
         }
 
         GTFSTrip find(final TrainLocation location) {
             final List<GTFSTrip> trips = tripMap.get(location.trainLocationId.trainNumber);
 
+            return findTripFromList(trips, location.trainLocationId.trainNumber, location.trainLocationId.departureDate);
+        }
+
+        GTFSTrip findTripFromList(final List<GTFSTrip> trips, final Long trainNumber, final LocalDate departureDate) {
             final List<GTFSTrip> filtered = safeStream(trips)
-                    .filter(t -> t.id.trainNumber.equals(location.trainLocationId.trainNumber))
-                    .filter(t -> !t.id.startDate.isAfter(location.trainLocationId.departureDate))
-                    .filter(t -> !t.id.endDate.isBefore(location.trainLocationId.departureDate))
+                    .filter(t -> t.id.trainNumber.equals(trainNumber))
+                    .filter(t -> !t.id.startDate.isAfter(departureDate))
+                    .filter(t -> !t.id.endDate.isBefore(departureDate))
                     .collect(Collectors.toList());
 
             if(filtered.isEmpty()) {
-                log.trace("Could not find trip for train number " + location.trainLocationId.trainNumber);
+                log.trace("Could not find trip for train number " + trainNumber);
                 return null;
             }
 
@@ -302,7 +296,7 @@ public class FeedMessageService {
 
                 if(replacement.isEmpty()) {
                     log.info("Multiple trips:" + filtered);
-                    log.error("Could not find replacement from multiple " + location.trainLocationId.trainNumber);
+                    log.error("Could not find replacement from multiple " + trainNumber);
                 }
 
                 return replacement.orElse(null);
