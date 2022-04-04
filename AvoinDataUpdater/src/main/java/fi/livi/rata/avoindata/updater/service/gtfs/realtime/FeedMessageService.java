@@ -1,5 +1,23 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import com.google.transit.realtime.GtfsRealtime;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
@@ -7,17 +25,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
 
 @Service
 public class FeedMessageService {
@@ -268,7 +275,12 @@ public class FeedMessageService {
                     .filter(t -> !t.id.endDate.isBefore(train.id.departureDate))
                     .collect(Collectors.toList());
 
-            return filtered.size() > 0 ? filtered.get(0) : null;
+            if (filtered.size() != 1) {
+                log.info("Found {} GTFSTrips for {}", filtered.size(), train.id);
+                return null;
+            } else {
+                return filtered.get(0);
+            }
         }
 
         GTFSTrip find(final TrainLocation location) {
