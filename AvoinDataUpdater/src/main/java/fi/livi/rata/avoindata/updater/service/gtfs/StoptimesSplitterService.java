@@ -127,7 +127,7 @@ public class StoptimesSplitterService {
         for (SplittingLogic logic : candidates) {
             indexes.clear();
             for (String stationThatMustBePresent : logic.stationsThatMustBePresent) {
-                Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent);
+                Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent, indexes);
                 if (indexOfStop.isPresent() && indexes.stream().filter(s -> s == indexOfStop.get()).findFirst().isEmpty()) {
                     indexes.add(indexOfStop.get());
                     matchingLogic = logic;
@@ -163,11 +163,13 @@ public class StoptimesSplitterService {
         return true;
     }
 
-    private Optional<Integer> getIndexOfStop(List<StopTime> stopTimes, String stopId) {
+    private Optional<Integer> getIndexOfStop(List<StopTime> stopTimes, String stopId, List<Integer> indexes) {
         for (int i = 0; i < stopTimes.size(); i++) {
-            StopTime stopTime = stopTimes.get(i);
-            if (stopTime.stopId.equals(stopId)) {
-                return Optional.of(i);
+            if (!indexes.contains(Integer.valueOf(i))) {
+                StopTime stopTime = stopTimes.get(i);
+                if (stopTime.stopId.equals(stopId)) {
+                    return Optional.of(i);
+                }
             }
         }
 
