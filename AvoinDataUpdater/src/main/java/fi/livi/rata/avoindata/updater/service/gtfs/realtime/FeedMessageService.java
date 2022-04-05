@@ -101,7 +101,7 @@ public class FeedMessageService {
     }
 
     private boolean isInThePast(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(2);
+        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(30);
 
         final boolean isArrivalInPast = arrival == null || isBefore(arrival, limit);
         final boolean isDepartureInPast = departure == null || isBefore(departure, limit);
