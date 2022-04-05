@@ -13,5 +13,5 @@ import java.util.List;
 @Repository
 public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, TrainId> {
     @Query("select train from GTFSTrain train where train.version > ?1 order by train.version desc")
-    List<GTFSTrain> findByVersionGreaterThan(final long version, Pageable pageable);
+    List<GTFSTrain> findByVersionGreaterThan(final long version);
 }
