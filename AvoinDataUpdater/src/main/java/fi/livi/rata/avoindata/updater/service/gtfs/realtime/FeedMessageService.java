@@ -1,24 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
-import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
-
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import com.google.transit.realtime.GtfsRealtime;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
@@ -26,6 +7,18 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
 
 @Service
 public class FeedMessageService {
@@ -108,30 +101,27 @@ public class FeedMessageService {
     }
 
     private boolean isInThePast(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        final ZonedDateTime limit = ZonedDateTime.now().plusMinutes(2);
+        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(2);
 
-        if(arrival != null && arrival.liveEstimateTime != null) {
-            if(arrival.liveEstimateTime.isAfter(limit) || arrival.scheduledTime.isAfter(limit)) {
-                return false;
-            }
-        }
+        final boolean isArrivalInPast = arrival == null || isBefore(arrival, limit);
+        final boolean isDepartureInPast = departure == null || isBefore(departure, limit);
 
-        if(departure != null && departure.liveEstimateTime != null) {
-            return !departure.liveEstimateTime.isAfter(limit) && !departure.scheduledTime.isAfter(limit);
-        }
+        return isArrivalInPast && isDepartureInPast;
+    }
 
-        return true;
+    private boolean isBefore(final GTFSTimeTableRow row, final ZonedDateTime limit) {
+        // both scheduled time and live-estimate must be in the past to be skipped
+        return row.liveEstimateTime != null && row.liveEstimateTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
     }
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure, final boolean updatesEmpty) {
-        final Long arrivalDifference = arrival == null ? null : arrival.differenceInMinutes;
-        final Long departureDifference = departure == null ? null : departure.differenceInMinutes;
-
         // it's in the past, don't report it!
         if(isInThePast(arrival, departure)) {
-//            System.out.println("row is in the past!");
             return null;
         }
+
+        final Long arrivalDifference = arrival == null ? null : arrival.differenceInMinutes;
+        final Long departureDifference = departure == null ? null : departure.differenceInMinutes;
 
         // it's not late, don't report it!
         // must report first stop though
