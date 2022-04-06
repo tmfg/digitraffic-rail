@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -100,30 +101,27 @@ public class FeedMessageService {
     }
 
     private boolean isInThePast(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        final ZonedDateTime limit = ZonedDateTime.now().plusMinutes(2);
+        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(30);
 
-        if(arrival != null && arrival.liveEstimateTime != null) {
-            if(arrival.liveEstimateTime.isAfter(limit) || arrival.scheduledTime.isAfter(limit)) {
-                return false;
-            }
-        }
+        final boolean isArrivalInPast = arrival == null || isBefore(arrival, limit);
+        final boolean isDepartureInPast = departure == null || isBefore(departure, limit);
 
-        if(departure != null && departure.liveEstimateTime != null) {
-            return !departure.liveEstimateTime.isAfter(limit) && !departure.scheduledTime.isAfter(limit);
-        }
+        return isArrivalInPast && isDepartureInPast;
+    }
 
-        return true;
+    private boolean isBefore(final GTFSTimeTableRow row, final ZonedDateTime limit) {
+        // both scheduled time and live-estimate must be in the past to be skipped
+        return row.liveEstimateTime != null && row.liveEstimateTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
     }
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure, final boolean updatesEmpty) {
-        final Long arrivalDifference = arrival == null ? null : arrival.differenceInMinutes;
-        final Long departureDifference = departure == null ? null : departure.differenceInMinutes;
-
         // it's in the past, don't report it!
         if(isInThePast(arrival, departure)) {
-//            System.out.println("row is in the past!");
             return null;
         }
+
+        final Long arrivalDifference = arrival == null ? null : arrival.differenceInMinutes;
+        final Long departureDifference = departure == null ? null : departure.differenceInMinutes;
 
         // it's not late, don't report it!
         // must report first stop though
@@ -262,26 +260,24 @@ public class FeedMessageService {
         GTFSTrip find(final GTFSTrain train) {
             final List<GTFSTrip> trips = tripMap.get(train.id.trainNumber);
 
-            final List<GTFSTrip> filtered = safeStream(trips)
-                    .filter(t -> t.id.trainNumber.equals(train.id.trainNumber))
-                    .filter(t -> !t.id.startDate.isAfter(train.id.departureDate))
-                    .filter(t -> !t.id.endDate.isBefore(train.id.departureDate))
-                    .collect(Collectors.toList());
-
-            return filtered.get(0);
+            return findTripFromList(trips, train.id.trainNumber, train.id.departureDate);
         }
 
         GTFSTrip find(final TrainLocation location) {
             final List<GTFSTrip> trips = tripMap.get(location.trainLocationId.trainNumber);
 
+            return findTripFromList(trips, location.trainLocationId.trainNumber, location.trainLocationId.departureDate);
+        }
+
+        GTFSTrip findTripFromList(final List<GTFSTrip> trips, final Long trainNumber, final LocalDate departureDate) {
             final List<GTFSTrip> filtered = safeStream(trips)
-                    .filter(t -> t.id.trainNumber.equals(location.trainLocationId.trainNumber))
-                    .filter(t -> !t.id.startDate.isAfter(location.trainLocationId.departureDate))
-                    .filter(t -> !t.id.endDate.isBefore(location.trainLocationId.departureDate))
+                    .filter(t -> t.id.trainNumber.equals(trainNumber))
+                    .filter(t -> !t.id.startDate.isAfter(departureDate))
+                    .filter(t -> !t.id.endDate.isBefore(departureDate))
                     .collect(Collectors.toList());
 
             if(filtered.isEmpty()) {
-                log.trace("Could not find trip for train number " + location.trainLocationId.trainNumber);
+                log.trace("Could not find trip for train number " + trainNumber);
                 return null;
             }
 
@@ -290,7 +286,7 @@ public class FeedMessageService {
 
                 if(replacement.isEmpty()) {
                     log.info("Multiple trips:" + filtered);
-                    log.error("Could not find replacement from multiple " + location.trainLocationId.trainNumber);
+                    log.error("Could not find replacement from multiple " + trainNumber);
                 }
 
                 return replacement.orElse(null);

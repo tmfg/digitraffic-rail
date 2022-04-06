@@ -58,12 +58,16 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("RAS", "LÄ", "PL"));      // Rasinsuo -> Pulsa (VNA)              Y-shaped
         this.createSplittingLogic(List.of("VLH", "LH", "OM"));      // Villilähde -> Orimattila             Y-shaped
         this.createSplittingLogic(List.of("VSA", "KE", "SAV"));     // Vuosaari -> Kerava                   Y-shaped
+        this.createSplittingLogic(List.of("NTH", "SUL", "HÄV"));    // Niittylähti -> Heinävaara            Y-shaped
+        this.createSplittingLogic(List.of("SMJ", "VNJ", "VIH"));    // Sysmäjärvi (Outokumpi) -> Vihtajärvi Y-shaped
         this.createSplittingLogic(List.of("KU", "TL", "UR"));       // Kuurila -> Urjala                    Y-shaped
         this.createSplittingLogic(List.of("HMA", "JRI", "TSL"));    // Hamina -> Kymi                       Y-shaped
         this.createSplittingLogic(List.of("APT", "LNA", "TE"));     // Iisalmi -> Siilinjärvi               Y-shaped
         this.createSplittingLogic(List.of("KRV", "PHÄ", "PYK"));    // Kiuruvesi -> Pyhäkumpu               Y-shaped
         this.createSplittingLogic(List.of("SKÄ", "PM", "TMU"));     // Siikamäki -> PM -> Temu              Y-shaped
+        this.createSplittingLogic(List.of("PM", "TMU", "PM"));      // PM -> TMU -> PM                      Y-shaped
         this.createSplittingLogic(List.of("RNN", "ILM", "SOA"));    // Runni -> Soininlahti (Iisalmi)       Y-shaped
+        this.createSplittingLogic(List.of("VIH", "HNV", "SYR"));    // POI -> PM                            Correct route
         this.createSplittingLogic(List.of("VKS", "VEH", "KTÖ"));    // Lentokenttärata                      Correct route
         this.createSplittingLogic(List.of("HVK", "ASO", "LNÄ"));    // Lentokenttärata                      Correct route
         this.createSplittingLogic(List.of("SJ", "TPE", "JVS"));     // Changes direction @ TPE              Correct route
@@ -123,7 +127,7 @@ public class StoptimesSplitterService {
         for (SplittingLogic logic : candidates) {
             indexes.clear();
             for (String stationThatMustBePresent : logic.stationsThatMustBePresent) {
-                Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent);
+                Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent, indexes);
                 if (indexOfStop.isPresent() && indexes.stream().filter(s -> s == indexOfStop.get()).findFirst().isEmpty()) {
                     indexes.add(indexOfStop.get());
                     matchingLogic = logic;
@@ -159,11 +163,13 @@ public class StoptimesSplitterService {
         return true;
     }
 
-    private Optional<Integer> getIndexOfStop(List<StopTime> stopTimes, String stopId) {
+    private Optional<Integer> getIndexOfStop(List<StopTime> stopTimes, String stopId, List<Integer> indexes) {
         for (int i = 0; i < stopTimes.size(); i++) {
-            StopTime stopTime = stopTimes.get(i);
-            if (stopTime.stopId.equals(stopId)) {
-                return Optional.of(i);
+            if (!indexes.contains(Integer.valueOf(i))) {
+                StopTime stopTime = stopTimes.get(i);
+                if (stopTime.stopId.equals(stopId)) {
+                    return Optional.of(i);
+                }
             }
         }
 

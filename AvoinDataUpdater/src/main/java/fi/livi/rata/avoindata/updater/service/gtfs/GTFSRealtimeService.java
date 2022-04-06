@@ -60,7 +60,9 @@ public class GTFSRealtimeService {
             log.error("null version from gtfs-trips!");
         } else {
             TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
-                trains.addAll(gtfsTrainRepository.findByVersionGreaterThan(maxVersion, PageRequest.of(0,2000)));
+                List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findByVersionGreaterThan(maxVersion);
+                log.debug("Found {} GtfsTrains", gtfsTrains.size());
+                trains.addAll(gtfsTrains);
             });
         }
 
