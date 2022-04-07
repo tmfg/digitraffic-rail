@@ -111,6 +111,9 @@ public class GTFSShapeService {
                 if (e.getRawStatusCode() == 400) {
                     log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
+                } else if (e.getRawStatusCode() == 503) {
+                    log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
+                    tripPoints.addAll(createDummyRoute(startStop, endStop));
                 } else {
                     log.error(String.format("Creating route failed for %s %s -> %s: %s %s ", trip.tripId,startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
