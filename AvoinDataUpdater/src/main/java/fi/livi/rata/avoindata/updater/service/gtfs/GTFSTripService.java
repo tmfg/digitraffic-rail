@@ -10,7 +10,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,16 +29,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Table;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+
+import javax.transaction.Transactional;
 
 @Service
 public class GTFSTripService {
@@ -44,6 +45,9 @@ public class GTFSTripService {
 
     @Autowired
     private CancellationFlattener cancellationFlattener;
+
+    @Autowired
+    private GTFSTripRepository gtfsTripRepository;
 
     private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
@@ -316,5 +320,15 @@ public class GTFSTripService {
         } else {
             return departureDate.getDayOfWeek().equals(dayOfWeek);
         }
+    }
+
+    @Transactional
+    public void updateGtfsTrips(final GTFSDto gtfs) {
+        final List<GTFSTrip> gtfsTrips = gtfs.trips.stream()
+                .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId, trip.source.version))
+                .collect(Collectors.toList());
+
+        gtfsTripRepository.deleteAll();
+        gtfsTripRepository.saveAll(gtfsTrips);
     }
 }
