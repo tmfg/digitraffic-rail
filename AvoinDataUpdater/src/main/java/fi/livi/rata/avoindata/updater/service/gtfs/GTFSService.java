@@ -1,5 +1,24 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,34 +28,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-
 @Service
 public class GTFSService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
-
-    @Autowired
-    private GTFSTripRepository gtfsTripRepository;
 
     @Autowired
     private GTFSEntityService gtfsEntityService;
@@ -52,6 +46,9 @@ public class GTFSService {
 
     @Autowired
     private LastUpdateService lastUpdateService;
+
+    @Autowired
+    private GTFSTripService gtfsTripService;
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
     public void generateGTFS() {
@@ -123,7 +120,8 @@ public class GTFSService {
 
         createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip");
         createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
-        updateGtfsTrips(gtfs);
+
+        gtfsTripService.updateGtfsTrips(gtfs);
 
         log.info("Successfully wrote GTFS files");
     }
@@ -139,15 +137,6 @@ public class GTFSService {
         }
 
         return filteredStopTimes;
-    }
-
-    private void updateGtfsTrips(final GTFSDto gtfs) {
-        final List<GTFSTrip> gtfsTrips = gtfs.trips.stream()
-                .map(trip -> new GTFSTrip(trip.source.trainNumber, trip.calendar.startDate, trip.calendar.endDate, trip.tripId, trip.routeId, trip.source.version))
-                .collect(Collectors.toList());
-
-        gtfsTripRepository.deleteAll();
-        gtfsTripRepository.saveAll(gtfsTrips);
     }
 
     private void createVrGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
