@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
@@ -107,17 +107,13 @@ public class GTFSShapeService {
                 } else {
                     tripPoints.addAll(createDummyRoute(startStop, endStop));
                 }
-            } catch (HttpClientErrorException e) {
-                if (e.getRawStatusCode() == 400) {
+            } catch (HttpStatusCodeException e) {
+                if (e.getRawStatusCode() == 400 || e.getRawStatusCode() == 503 || e.getRawStatusCode() == 504) {
                     log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
-                    tripPoints.addAll(createDummyRoute(startStop, endStop));
-                } else if (e.getRawStatusCode() == 503) {
-                    log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
-                    tripPoints.addAll(createDummyRoute(startStop, endStop));
                 } else {
-                    log.error(String.format("Creating route failed for %s %s -> %s: %s %s ", trip.tripId,startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
-                    tripPoints.addAll(createDummyRoute(startStop, endStop));
+                    log.error(String.format("Creating route failed for %s %s -> %s: %s %s ", trip.tripId, startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
                 }
+                tripPoints.addAll(createDummyRoute(startStop, endStop));
             } catch (Exception e) {
                 log.error(String.format("Creating route failed for %s %s -> %s: %s %s", trip.tripId, startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
