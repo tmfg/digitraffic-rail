@@ -68,6 +68,7 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("PM", "TMU", "PM"));      // PM -> TMU -> PM                      Y-shaped
         this.createSplittingLogic(List.of("LOL", "PM", "NRI"));     // LOL -> Jyväskylä                     Y-shaped
         this.createSplittingLogic(List.of("RNN", "ILM", "SOA"));    // Runni -> Soininlahti (Iisalmi)       Y-shaped
+        this.createSplittingLogic(List.of("MYN", "RAI", "NNL"));    // Mynämäki -> Naantali                 Y-shaped
         this.createSplittingLogic(List.of("VIH", "HNV", "SYR"));    // POI -> PM                            Correct route
         this.createSplittingLogic(List.of("VKS", "VEH", "KTÖ"));    // Lentokenttärata                      Correct route
         this.createSplittingLogic(List.of("HVK", "ASO", "LNÄ"));    // Lentokenttärata                      Correct route
