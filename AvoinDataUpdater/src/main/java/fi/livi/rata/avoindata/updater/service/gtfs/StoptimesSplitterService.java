@@ -47,28 +47,39 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("PTO", "MLL", "KVJ"));    // Kontiomäki -> Oulu                   Distance
         this.createSplittingLogic(List.of("TV", "LÄP", "LPR"));     // Tampere -> Jyväskylä                 Distance
         this.createSplittingLogic(List.of("PRL", "LTS", "ITA"));    // Hämeenlinna -> Tampere               Distance
-        this.createSplittingLogic(List.of("KLO", "HPK", "KEU"));    // Kolho -> Keuruu                      Y-shaped
         this.createSplittingLogic(List.of("AHO", "TJA", "RHE"));    // Aho -> Raahe (Rautaruukki)           Y-shaped
+        this.createSplittingLogic(List.of("AJO", "KEM", "SIM"));    // Ajos -> Simo (Kemi)                  Y-shaped
+        this.createSplittingLogic(List.of("APT", "LNA", "TE"));     // Iisalmi -> Siilinjärvi               Y-shaped
+        this.createSplittingLogic(List.of("HJ", "KV", "KUK"));      // Kuusankosi -> Harju                  Y-shaped Duplicate?
+        this.createSplittingLogic(List.of("HMA", "JRI", "TSL"));    // Hamina -> Kymi                       Y-shaped
+        this.createSplittingLogic(List.of("HVA", "KKI", "KN"));     // Harjavalta -> Kiukainen              Y-shaped
+        this.createSplittingLogic(List.of("KLO", "HPK", "KEU"));    // Kolho -> Keuruu                      Y-shaped
+        this.createSplittingLogic(List.of("KMM", "HKO", "JOR"));    // Kommila -> Rantasalmi                Y-shaped
+        this.createSplittingLogic(List.of("KPY", "KOK", "YKST"));   // Kokkola -> Ykspihlaja                Y-shaped
+        this.createSplittingLogic(List.of("KRA", "KV", "HJ"));      // Koria -> Harju                       Y-shaped
+        this.createSplittingLogic(List.of("KRV", "PHÄ", "PYK"));    // Kiuruvesi -> Pyhäkumpu               Y-shaped
+        this.createSplittingLogic(List.of("KU", "TL", "UR"));       // Kuurila -> Urjala                    Y-shaped
+        this.createSplittingLogic(List.of("KUK", "KV", "KRA"));     // Kuusankosi -> Koria                  Y-shaped Duplicate?
         this.createSplittingLogic(List.of("KUK", "KVLA", "HJ"));    // Kuusankosi -> Harju                  Y-shaped Duplicate?
         this.createSplittingLogic(List.of("KUK", "KVLA", "KRA"));   // Kuusankosi -> Koria                  Y-shaped
-        this.createSplittingLogic(List.of("HJ", "KV", "KUK"));      // Kuusankosi -> Harju                  Y-shaped Duplicate?
-        this.createSplittingLogic(List.of("KUK", "KV", "KRA"));     // Kuusankosi -> Koria                  Y-shaped Duplicate?
-        this.createSplittingLogic(List.of("KRA", "KV", "HJ"));      // Koria -> Harju                       Y-shaped
-        this.createSplittingLogic(List.of("RHL", "JY", "VRI"));     // Vaajakoski -> Vihtavuori             Y-shaped
+        this.createSplittingLogic(List.of("LOL", "PM", "NRI"));     // LOL -> Jyväskylä                     Y-shaped
+        this.createSplittingLogic(List.of("MUK", "LH", "VRM"));     // Mukkula -> Vierumäki                 Y-shaped
+        this.createSplittingLogic(List.of("MYN", "RAI", "NNL"));    // Mynämäki -> Naantali                 Y-shaped
+        this.createSplittingLogic(List.of("NTH", "SUL", "HÄV"));    // Niittylähti -> Heinävaara            Y-shaped
+        this.createSplittingLogic(List.of("OTM", "MUR", "TLV"));    // Otanmäki -> Talvivaara               Y-shaped
+        this.createSplittingLogic(List.of("PKK", "PKO", "NNS"));    // Poikkeus -> Niinisalo                Y-shaped
+        this.createSplittingLogic(List.of("PM", "TMU", "PM"));      // PM -> TMU -> PM                      Y-shaped
         this.createSplittingLogic(List.of("RAS", "LÄ", "PL"));      // Rasinsuo -> Pulsa (VNA)              Y-shaped
+        this.createSplittingLogic(List.of("RHL", "JY", "VRI"));     // Vaajakoski -> Vihtavuori             Y-shaped
+        this.createSplittingLogic(List.of("RNN", "ILM", "SOA"));    // Runni -> Soininlahti (Iisalmi)       Y-shaped
+        this.createSplittingLogic(List.of("RÖY", "TOR", "TRR"));    // Röyttä -> Tornio Raja                Y-shaped
+        this.createSplittingLogic(List.of("SKÄ", "PM", "TMU"));     // Siikamäki -> PM -> Temu              Y-shaped
+        this.createSplittingLogic(List.of("SMJ", "VNJ", "VIH"));    // Sysmäjärvi (Outokumpi) -> Vihtajärvi Y-shaped
+        this.createSplittingLogic(List.of("TAP", "LR", "MST"));     // Tapavainola -> Mustolan Satama       Y-shaped
+        this.createSplittingLogic(List.of("TSO", "LLH", "YLÖ"));    // Tesoma -> Lielahti                   Y-shaped
+        this.createSplittingLogic(List.of("TUS", "TKU", "TKUT"));   // Turku Satama -> Turku Tavara         Y-shaped
         this.createSplittingLogic(List.of("VLH", "LH", "OM"));      // Villilähde -> Orimattila             Y-shaped
         this.createSplittingLogic(List.of("VSA", "KE", "SAV"));     // Vuosaari -> Kerava                   Y-shaped
-        this.createSplittingLogic(List.of("NTH", "SUL", "HÄV"));    // Niittylähti -> Heinävaara            Y-shaped
-        this.createSplittingLogic(List.of("SMJ", "VNJ", "VIH"));    // Sysmäjärvi (Outokumpi) -> Vihtajärvi Y-shaped
-        this.createSplittingLogic(List.of("KU", "TL", "UR"));       // Kuurila -> Urjala                    Y-shaped
-        this.createSplittingLogic(List.of("HMA", "JRI", "TSL"));    // Hamina -> Kymi                       Y-shaped
-        this.createSplittingLogic(List.of("APT", "LNA", "TE"));     // Iisalmi -> Siilinjärvi               Y-shaped
-        this.createSplittingLogic(List.of("KRV", "PHÄ", "PYK"));    // Kiuruvesi -> Pyhäkumpu               Y-shaped
-        this.createSplittingLogic(List.of("SKÄ", "PM", "TMU"));     // Siikamäki -> PM -> Temu              Y-shaped
-        this.createSplittingLogic(List.of("PM", "TMU", "PM"));      // PM -> TMU -> PM                      Y-shaped
-        this.createSplittingLogic(List.of("LOL", "PM", "NRI"));     // LOL -> Jyväskylä                     Y-shaped
-        this.createSplittingLogic(List.of("RNN", "ILM", "SOA"));    // Runni -> Soininlahti (Iisalmi)       Y-shaped
-        this.createSplittingLogic(List.of("MYN", "RAI", "NNL"));    // Mynämäki -> Naantali                 Y-shaped
         this.createSplittingLogic(List.of("VIH", "HNV", "SYR"));    // POI -> PM                            Correct route
         this.createSplittingLogic(List.of("VKS", "VEH", "KTÖ"));    // Lentokenttärata                      Correct route
         this.createSplittingLogic(List.of("HVK", "ASO", "LNÄ"));    // Lentokenttärata                      Correct route
