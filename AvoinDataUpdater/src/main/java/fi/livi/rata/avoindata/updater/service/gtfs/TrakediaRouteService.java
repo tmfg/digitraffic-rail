@@ -70,7 +70,7 @@ public class TrakediaRouteService {
         JsonNode geometria = apiRoute.get("geometria");
         if (geometria.size() == 0){
             if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
-                log.error("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
+                log.warn("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
             }
             return new ArrayList<>();
         }
