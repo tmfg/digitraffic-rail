@@ -125,7 +125,12 @@ public class FeedMessageService {
 
         // it's not late, don't report it!
         // must report first stop though
-        if(!updatesEmpty && arrivalDifference != null && arrivalDifference == 0 && (departureDifference == null || departureDifference == 0)) {
+        if(!updatesEmpty && (arrivalDifference == null || arrivalDifference == 0) && (departureDifference == null || departureDifference == 0)) {
+            return null;
+        }
+
+        // if there's no estimates yet, do not report
+        if(arrivalDifference == null && departureDifference == null) {
             return null;
         }
 
