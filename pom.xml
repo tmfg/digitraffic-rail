@@ -15,7 +15,7 @@
         <java.version>11</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>2.2.13.RELEASE</spring.boot.version>
-        <com.google.guava.version>31.0.1-jre</com.google.guava.version>
+        <com.google.guava.version>31.1-jre</com.google.guava.version>
         <mysql.connector.version>5.1.49</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
     </properties>
@@ -138,6 +138,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <rulesUri>file:///${maven.multiModuleProjectDirectory}/versions-maven-plugin-rules.xml</rulesUri>
+                </configuration>
             </plugin>
         </plugins>
     </build>
