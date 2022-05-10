@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +19,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Component
 public class ScheduleProviderService {
+    @Qualifier("ripaRestTemplate")
     @Autowired
     private RestTemplate restTemplate;
 

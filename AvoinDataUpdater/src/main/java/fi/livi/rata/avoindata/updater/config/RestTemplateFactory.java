@@ -12,7 +12,10 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.TrustStrategy;
@@ -39,6 +42,9 @@ class RestTemplateFactory {
     @Value("${updater.http.connectionTimoutMillis:30000}")
     private int CONNECTION_TIMEOUT;
 
+    @Value("${updater.reason.api-key}")
+    private String apiKey;
+
     @Bean
     public RequestConfig requestConfig() {
         RequestConfig result = RequestConfig.custom()
@@ -58,7 +64,7 @@ class RestTemplateFactory {
                 .loadTrustMaterial(null, acceptingTrustStrategy)
                 .build();
 
-        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext);
+        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
         CloseableHttpClient result = HttpClientBuilder
                 .create()
@@ -68,7 +74,7 @@ class RestTemplateFactory {
         return result;
     }
 
-    @Bean
+    @Bean(name = "normalRestTemplate")
     public RestTemplate restTemplate(HttpClient httpClient) {
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
@@ -76,5 +82,12 @@ class RestTemplateFactory {
         restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor()));
         restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
         return restTemplate;
+    }
+
+    @Bean(name = "ripaRestTemplate")
+    public RestTemplate ripaRestTemplate(HttpClient httpClient) {
+        RestTemplate template = this.restTemplate(httpClient);
+        template.setInterceptors(List.of(new UserHeaderReqInterceptor(), new ApiKeyReqInterceptor(this.apiKey)));
+        return template;
     }
 }

@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,10 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,9 +26,6 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Autowired
     private CategoryCodeService categoryCodeService;
 
-    @Value("${updater.reason.api-key}")
-    private String apiKey;
-
     @Value("${updater.reason.syykoodisto-api-path}")
     private String syykoodiApiPath;
 
@@ -47,17 +39,12 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
             return;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        headers.set("API-KEY", apiKey);
-
-        HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
 
         String reasonCodePath = "/v1/reason-codes/latest";
         String reasonCategoryPath = "/v1/reason-categories/latest";
 
-        ResponseEntity<JsonNode> reasonCategoryEntity = this.restTemplate.exchange(syykoodiApiPath + reasonCategoryPath, HttpMethod.GET, entity, JsonNode.class);
-        ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.exchange(syykoodiApiPath + reasonCodePath, HttpMethod.GET, entity, JsonNode.class);
+        ResponseEntity<JsonNode> reasonCategoryEntity = this.restTemplate.getForEntity(syykoodiApiPath + reasonCategoryPath, JsonNode.class);
+        ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.getForEntity(syykoodiApiPath + reasonCodePath, JsonNode.class);
 
         CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity.getBody(), reasonCodeEntity.getBody());
 

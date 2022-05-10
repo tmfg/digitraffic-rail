@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.util.StringUtils;
@@ -24,6 +25,7 @@ public abstract class AEntityUpdater<T> {
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
 
+    @Qualifier("ripaRestTemplate")
     @Autowired
     protected RestTemplate restTemplate;
 

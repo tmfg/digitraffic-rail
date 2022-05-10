@@ -10,6 +10,7 @@ import org.osgeo.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.geo.Point;
@@ -37,6 +38,7 @@ public class TrackBoundingBoxesService {
     @Autowired
     private BoundingBoxService boundingBoxService;
 
+    @Qualifier("normalRestTemplate")
     @Autowired
     protected RestTemplate restTemplate;
 
