@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
+import javax.transaction.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +27,20 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Table;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-
-import javax.transaction.Transactional;
 
 @Service
 public class GTFSTripService {
@@ -265,8 +270,9 @@ public class GTFSTripService {
             stopTime.stopId = scheduleRow.station.stationShortCode;
             stopTime.stopSequence = i;
 
-            final boolean isLongStop = scheduleRow.departure == null || scheduleRow.arrival == null || !stopTime.departureTime.equals(
-                    stopTime.arrivalTime);
+            final boolean isLongStop =
+                    scheduleRow.departure == null || scheduleRow.arrival == null ||
+                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL && scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL);
             stopTime.pickupType = isLongStop ? 0 : 1;
             stopTime.dropoffType = isLongStop ? 0 : 1;
 
