@@ -272,7 +272,7 @@ public class GTFSTripService {
 
             final boolean isLongStop =
                     scheduleRow.departure == null || scheduleRow.arrival == null ||
-                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL && scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL);
+                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
             stopTime.pickupType = isLongStop ? 0 : 1;
             stopTime.dropoffType = isLongStop ? 0 : 1;
 
