@@ -21,7 +21,6 @@ import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.google.transit.realtime.GtfsRealtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
+import com.google.transit.realtime.GtfsRealtime;
+
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -119,7 +120,7 @@ public class GTFSWritingService {
 
         files.add(write(getPath("stop_times.txt"), stopTimes,
                 "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type", st -> String
-                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.stopId,
+                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.platform != null ? st.stopId + "_" + st.platform : st.stopId,
                                 st.stopSequence, st.pickupType, st.dropoffType)));
 
 

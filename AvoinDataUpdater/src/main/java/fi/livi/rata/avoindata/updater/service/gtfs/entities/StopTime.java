@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.entities;
 
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-
 import java.time.Duration;
+
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 public class StopTime extends GTFSEntity<ScheduleRow> {
     public String tripId;
@@ -12,6 +12,7 @@ public class StopTime extends GTFSEntity<ScheduleRow> {
     public int stopSequence;
     public int pickupType;
     public int dropoffType;
+    public String platform;
 
     public StopTime(final ScheduleRow source) {
         super(source);
