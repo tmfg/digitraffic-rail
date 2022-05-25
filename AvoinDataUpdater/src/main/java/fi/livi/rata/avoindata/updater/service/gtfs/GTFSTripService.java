@@ -1,17 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSWritingService.isValidTrack;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -32,7 +34,7 @@ import com.google.common.collect.Table;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
@@ -61,8 +63,12 @@ public class GTFSTripService {
     private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
     public List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
-                                  final Map<String, Stop> stopMap, Map<Long, List<TimeTableRow>> timeTableRowsByTrainNumber) {
+                                  final Map<String, Stop> stopMap, final List<SimpleTimeTableRow> timeTableRows) {
         List<Trip> trips = new ArrayList<>();
+
+        Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber = timeTableRows
+                .stream()
+                .collect(Collectors.groupingBy(SimpleTimeTableRow::getTrainNumber));
 
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
             final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
@@ -111,7 +117,7 @@ public class GTFSTripService {
     }
 
     private List<Trip> createPartialCancellationTrips(final List<LocalDate> localDates, final Schedule schedule, final Trip trip,
-                                                      Map<Long, List<TimeTableRow>> timeTableRowsByTrainNumber) {
+                                                      final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber) {
         List<Trip> partialCancellationTrips = new ArrayList<>();
 
         Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = getFilteredCancellations(schedule);
@@ -219,7 +225,7 @@ public class GTFSTripService {
     }
 
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix,
-                            Map<Long, List<TimeTableRow>> timeTableRowsByTrainNumber) {
+                            final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber) {
         final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate.format(DateTimeFormatter.BASIC_ISO_DATE), endDate.format(DateTimeFormatter.BASIC_ISO_DATE), scheduleSuffix);
         final String serviceId = tripId;
 
@@ -255,43 +261,25 @@ public class GTFSTripService {
         return calendar;
     }
 
-    private boolean isValidPlatform(String platform) {
-        if (platform == null) {
-            return false;
-        }
-        Pattern p = Pattern.compile("[0-9]+");
-        Matcher m = p.matcher(platform);
-        return m.matches();
-    }
+    private Optional<String> findTrack(final ScheduleRow scheduleRow, final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber) {
+        final Long trainNumber = scheduleRow.schedule.trainNumber;
 
-    private String findPlatform(ScheduleRow scheduleRow, Map<Long, List<TimeTableRow>> timeTableRowsByTrainNumber) {
-        Long trainNumber = scheduleRow.schedule.trainNumber;
-
-        if (timeTableRowsByTrainNumber.containsKey(trainNumber)) {
-            List<TimeTableRow> trainRows = timeTableRowsByTrainNumber.get(trainNumber);
-
-            TimeTableRow matchingRow = trainRows
-                    .stream()
-                    .filter(timeTableRow ->
-                    {
-                        if (scheduleRow.arrival != null) {
-                            return timeTableRow.id.attapId.equals(scheduleRow.arrival.id)
-                                    && scheduleRow.schedule.isRunOnDay(timeTableRow.scheduledTime.toLocalDate());
-                        }
-                        return false;
-                    })
-                    .findAny()
-                    .orElse(null);
-
-            if (matchingRow != null) {
-                return isValidPlatform(matchingRow.commercialTrack) ? matchingRow.commercialTrack : "";
-            }
-        }
-        return "";
+        return timeTableRowsByTrainNumber.getOrDefault(trainNumber, Collections.emptyList())
+                .stream()
+                .filter(simpleTimeTableRow ->
+                {
+                    if (scheduleRow.arrival != null) {
+                        return simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id)
+                                && scheduleRow.schedule.isRunOnDay(simpleTimeTableRow.scheduledTime.toLocalDate());
+                    }
+                    return false;
+                })
+                .map(matchingRow -> matchingRow.commercialTrack)
+                .findAny();
     }
 
     private List<StopTime> createStopTimes(final Schedule schedule, final String tripId,
-                                           final Map<Long, List<TimeTableRow>> timeTableRowsByTrainNumber) {
+                                           final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber) {
         List<StopTime> stopTimes = new ArrayList<>();
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {
             ScheduleRow scheduleRow = schedule.scheduleRows.get(i);
@@ -309,9 +297,9 @@ public class GTFSTripService {
                 stopTime.arrivalTime = scheduleRow.departure.timestamp;
             }
 
-            String platform = findPlatform(scheduleRow, timeTableRowsByTrainNumber);
-            if (platform != "") {
-                stopTime.platform = platform;
+            Optional<String> trackNumber = findTrack(scheduleRow, timeTableRowsByTrainNumber);
+            if (trackNumber.isPresent() && isValidTrack(trackNumber.get())) {
+                stopTime.track = trackNumber.get();
             }
 
             stopTime.stopId = scheduleRow.station.stationShortCode;

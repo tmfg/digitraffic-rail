@@ -12,7 +12,7 @@ public class StopTime extends GTFSEntity<ScheduleRow> {
     public int stopSequence;
     public int pickupType;
     public int dropoffType;
-    public String platform;
+    public String track;
 
     public StopTime(final ScheduleRow source) {
         super(source);
