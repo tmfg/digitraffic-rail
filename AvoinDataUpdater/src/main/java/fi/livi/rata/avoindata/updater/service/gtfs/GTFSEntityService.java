@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
-import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
@@ -47,7 +45,7 @@ public class GTFSEntityService {
     private GTFSShapeService gtfsShapeService;
 
     @Autowired
-    private TimeTableRowRepository timeTableRowRepository;
+    private TimeTableRowService timeTableRowService;
 
     @Autowired
     private DateProvider dp;
@@ -55,8 +53,7 @@ public class GTFSEntityService {
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
 
-        final ZonedDateTime currentDate = dp.nowInHelsinki();
-        final List<SimpleTimeTableRow> timeTableRows = timeTableRowRepository.findSimpleByScheduledTimeBetween(currentDate, currentDate.plusDays(10));
+        final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
 
         GTFSDto gtfsDto = new GTFSDto();
 

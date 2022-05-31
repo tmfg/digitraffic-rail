@@ -18,6 +18,8 @@ public class StopTime extends GTFSEntity<ScheduleRow> {
         super(source);
     }
 
+    public String getStopCodeWithPlatform() { return stopId + "_" + track; }
+
     @Override
     public String toString() {
         return "StopTime{stopId=" + stopId + ",arrivalTime=" + arrivalTime + ", departureTime=" + departureTime + '}';

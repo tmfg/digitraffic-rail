@@ -25,6 +25,8 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -55,6 +57,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     private GTFSShapeService gtfsShapeService;
 
     @MockBean
+    private TimeTableRowService timeTableRowService;
+
+    @MockBean
     private DateProvider dp;
 
     @Value("classpath:gtfs/263.json")
@@ -80,6 +85,9 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Value("classpath:gtfs/66.json")
     private Resource schedules_66;
+
+    @Value("classpath:gtfs/66_ttr.json")
+    private Resource timetablerows_66;
 
     @Value("classpath:gtfs/141_151.json")
     private Resource schedules_141_151;
@@ -175,6 +183,35 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
         Assert.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
 
+    }
+
+    @Test
+    @Transactional
+    public void train66StopTimesHaveCorrectPlatforms() throws IOException {
+        LocalDate startDate = LocalDate.of(2019, 1, 1);
+        given(dp.dateInHelsinki()).willReturn(startDate);
+
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        final Map<Long, List<StopTime>> stopTimesByAttapId = gtfsDto.trips.stream()
+                .map(trip -> trip.stopTimes)
+                .flatMap(stopTimes -> stopTimes.stream())
+                .filter(stopTime -> stopTime.source.arrival != null)
+                .collect(Collectors.groupingBy(stopTime -> stopTime.source.arrival.id));
+
+        timeTableRows.forEach(row -> {
+            List<StopTime> matchingStopTimes = stopTimesByAttapId.get(row.getAttapId());
+
+            Assert.assertNotNull(matchingStopTimes);
+            matchingStopTimes.forEach(stopTime ->
+                    Assert.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
+            );
+        });
     }
 
     @Test

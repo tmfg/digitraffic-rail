@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service;
+package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
@@ -21,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 
 @Component
@@ -63,20 +65,25 @@ public class InfraApiPlatformService {
     }
 
     private InfraApiPlatform deserializePlatform(JsonNode node) {
-        InfraApiPlatform platform = new InfraApiPlatform();
+
+        String liikennepaikkaId;
+        String name;
+        String description;
+        String commercialTrack;
+        Geometry geometry;
 
         final JsonNode rautatieliikennepaikka = node.get("rautatieliikennepaikka");
         if (!rautatieliikennepaikka.isNull()) {
-            platform.liikennepaikkaId = rautatieliikennepaikka.textValue();
+            liikennepaikkaId = rautatieliikennepaikka.asText();
         } else {
             final JsonNode liikennepaikanOsa = node.get("liikennepaikanOsa");
-            platform.liikennepaikkaId = liikennepaikanOsa.isNull() ?
-                                        "" : liikennepaikanOsa.textValue();
+            liikennepaikkaId = liikennepaikanOsa.isNull() ?
+                               "" : liikennepaikanOsa.asText();
         }
 
-        platform.name = node.get("tunnus").textValue();
-        platform.description = node.get("kuvaus").textValue();
-        platform.commercialTrack = node.get("kaupallinenNumero").textValue();
+        name = node.get("tunnus").asText();
+        description = node.get("kuvaus").asText();
+        commercialTrack = node.get("kaupallinenNumero").asText();
 
         GeometryFactory geometryFactory = new GeometryFactory();
         List<LineString> platformLineStrings = new ArrayList<>();
@@ -97,9 +104,9 @@ public class InfraApiPlatformService {
         });
 
         MultiLineString platformGeometry = geometryFactory.createMultiLineString(platformLineStrings.toArray(new LineString[platformLineStrings.size()]));
-        platform.geometry = wgs84ConversionService.liviToWgs84Jts(platformGeometry);
+        geometry = wgs84ConversionService.liviToWgs84Jts(platformGeometry);
 
-        return platform;
+        return new InfraApiPlatform(liikennepaikkaId, name, description, commercialTrack, geometry);
     }
 
 }

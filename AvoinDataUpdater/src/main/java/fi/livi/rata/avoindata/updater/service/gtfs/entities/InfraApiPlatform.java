@@ -4,13 +4,18 @@ import org.locationtech.jts.geom.Geometry;
 
 public class InfraApiPlatform {
 
-    public String liikennepaikkaId;
-    public String name;
-    public String description;
-    public String commercialTrack;
-    public Geometry geometry;
+    public final String liikennepaikkaId;
+    public final String name;
+    public final String description;
+    public final String commercialTrack;
+    public final Geometry geometry;
 
-    public InfraApiPlatform() {
+    public InfraApiPlatform(String liikennepaikkaId, String name, String description, String commercialTrack, Geometry geometry) {
+        this.liikennepaikkaId = liikennepaikkaId;
+        this.name = name;
+        this.description = description;
+        this.commercialTrack = commercialTrack;
+        this.geometry = geometry;
     }
 
     @Override
