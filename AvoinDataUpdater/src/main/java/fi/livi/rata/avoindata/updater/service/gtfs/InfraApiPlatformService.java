@@ -4,7 +4,11 @@ import java.net.URI;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -40,9 +44,11 @@ public class InfraApiPlatformService {
     @Value("${infra-api.laiturit.url}")
     private String baseUrl;
 
+    public static final Pattern lastTwoLiikennepaikkaIdPlaces = Pattern.compile("\\d+.\\d+$");
+
     @Cacheable("infraApiPlatformNodes")
-    public List<InfraApiPlatform> getInfraApiPlatformNodes(ZonedDateTime fromDate, ZonedDateTime toDate) {
-        List<InfraApiPlatform> infraApiPlatforms = new ArrayList<>();
+    public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart(final ZonedDateTime fromDate, final ZonedDateTime toDate) {
+        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = new HashMap<>();
 
         try {
             String from = fromDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
@@ -55,16 +61,20 @@ public class InfraApiPlatformService {
 
             for (final JsonNode node : jsonNode) {
                 InfraApiPlatform platform = deserializePlatform(node.get(0));
-                infraApiPlatforms.add(platform);
+                String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
+                if (!platformsByLiikennepaikkaIdPart.containsKey(liikennepaikkaIdPart)) {
+                    platformsByLiikennepaikkaIdPart.put(liikennepaikkaIdPart, new ArrayList<>());
+                }
+                platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
             }
         } catch (Exception e) {
             logger.error("could not fetch Infra-API platform data", e);
         }
 
-        return infraApiPlatforms;
+        return platformsByLiikennepaikkaIdPart;
     }
 
-    private InfraApiPlatform deserializePlatform(JsonNode node) {
+    private InfraApiPlatform deserializePlatform(final JsonNode node) {
 
         String liikennepaikkaId;
         String name;
@@ -85,12 +95,18 @@ public class InfraApiPlatformService {
         description = node.get("kuvaus").asText();
         commercialTrack = node.get("kaupallinenNumero").asText();
 
-        GeometryFactory geometryFactory = new GeometryFactory();
-        List<LineString> platformLineStrings = new ArrayList<>();
-
         final JsonNode geometria = node.get("geometria");
+        final MultiLineString platformGeometry = deserializePlatformGeometry(geometria);
+        geometry = wgs84ConversionService.liviToWgs84Jts(platformGeometry);
 
-        geometria.elements().forEachRemaining(lineStringElement -> {
+        return new InfraApiPlatform(liikennepaikkaId, name, description, commercialTrack, geometry);
+    }
+
+    private MultiLineString deserializePlatformGeometry(final JsonNode geometryNode) {
+        GeometryFactory geometryFactory = new GeometryFactory();
+        List<LineString> lineStrings = new ArrayList<>();
+
+        geometryNode.elements().forEachRemaining(lineStringElement -> {
             List<Coordinate> lineStringCoordinates = new ArrayList<>();
             if (lineStringElement.isArray()) {
                 lineStringElement.elements().forEachRemaining(coordinateElement -> {
@@ -100,13 +116,15 @@ public class InfraApiPlatformService {
                 });
             }
             LineString lineString = geometryFactory.createLineString(lineStringCoordinates.toArray(new Coordinate[lineStringCoordinates.size()]));
-            platformLineStrings.add(lineString);
+            lineStrings.add(lineString);
         });
 
-        MultiLineString platformGeometry = geometryFactory.createMultiLineString(platformLineStrings.toArray(new LineString[platformLineStrings.size()]));
-        geometry = wgs84ConversionService.liviToWgs84Jts(platformGeometry);
+        return geometryFactory.createMultiLineString(lineStrings.toArray(new LineString[lineStrings.size()]));
+    }
 
-        return new InfraApiPlatform(liikennepaikkaId, name, description, commercialTrack, geometry);
+    public static String extractLiikennepaikkaIdPart(String id) {
+        Matcher matcher = lastTwoLiikennepaikkaIdPlaces.matcher(id);
+        return matcher.find() ? matcher.group() : "";
     }
 
 }

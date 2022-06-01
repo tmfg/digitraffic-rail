@@ -1,23 +1,31 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -46,6 +54,12 @@ public class GTFSEntityService {
 
     @Autowired
     private TimeTableRowService timeTableRowService;
+
+    @Autowired
+    private InfraApiPlatformService infraApiPlatformService;
+
+    @Autowired
+    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     @Autowired
     private DateProvider dp;
@@ -95,7 +109,8 @@ public class GTFSEntityService {
         return scheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end, Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
+    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end,
+                                                                   Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
         Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
 
         Schedule previousSchedule = null;
@@ -148,4 +163,25 @@ public class GTFSEntityService {
         }
         return correctedTrainsScheduleIntervals;
     }
+
+    private Map<String, List<InfraApiPlatform>> getPlatformsByStation() {
+        ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
+
+        Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes(currentDate);
+
+        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
+
+        return liikennePaikkaNodes.keySet()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                stationShortCode -> stationShortCode,
+                                stationShortCode -> {
+                                    String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
+                                    String stationLiikennepaikkaIdPart = infraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
+                                    return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList());
+                                })
+                        );
+    }
+
+
 }

@@ -8,14 +8,14 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.data.annotation.Immutable;
 
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 @Entity
 @Table(name = "time_table_row")
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Immutable
 public class SimpleTimeTableRow {
 
     @EmbeddedId
