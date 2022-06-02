@@ -18,6 +18,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -95,9 +97,10 @@ public class GTFSWritingService {
 
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
-                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code", stop ->
-                        String.format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
-                                stop.longitude, stop.source != null ? stop.source.shortCode : stop.stopCode)
+                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
+                        String.format("%s,%s,,%s,%s,,%s,%s,%s,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
+                                stop.longitude, stop.track != null ? "0" : "1", stop.track != null ? stop.source.shortCode : "",
+                                stop.source != null ? stop.source.shortCode : stop.stopCode, stop.track != null ? stop.track : "")
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",

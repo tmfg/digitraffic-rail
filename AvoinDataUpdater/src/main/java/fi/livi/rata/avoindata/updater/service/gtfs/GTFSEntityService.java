@@ -68,13 +68,14 @@ public class GTFSEntityService {
         Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
 
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
+        final Map<String, Map<String, InfraApiPlatform>> platformsByStationAndTrack = getPlatformsByStationAndTrack();
 
         GTFSDto gtfsDto = new GTFSDto();
 
-        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain);
+        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformsByStationAndTrack);
         gtfsDto.stops = Lists.newArrayList(stopMap.values());
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
-        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows);
+        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformsByStationAndTrack);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
         gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
 
@@ -164,24 +165,26 @@ public class GTFSEntityService {
         return correctedTrainsScheduleIntervals;
     }
 
-    private Map<String, List<InfraApiPlatform>> getPlatformsByStation() {
+    private Map<String, Map<String, InfraApiPlatform>> getPlatformsByStationAndTrack() {
         ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
         Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes(currentDate);
 
-        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
+        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
+                infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
 
         return liikennePaikkaNodes.keySet()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                stationShortCode -> stationShortCode,
-                                stationShortCode -> {
-                                    String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
-                                    String stationLiikennepaikkaIdPart = infraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
-                                    return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList());
-                                })
-                        );
+                .stream()
+                .collect(Collectors.toMap(
+                        stationShortCode -> stationShortCode,
+                        stationShortCode -> {
+                            String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
+                            String stationLiikennepaikkaIdPart = infraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
+                            return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList())
+                                    .stream()
+                                    .collect(Collectors.toMap(platform -> platform.commercialTrack, platform -> platform));
+                        })
+                );
     }
-
 
 }

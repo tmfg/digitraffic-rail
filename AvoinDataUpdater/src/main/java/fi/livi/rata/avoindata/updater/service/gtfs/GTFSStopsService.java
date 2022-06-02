@@ -2,21 +2,28 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Maps;
+
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -44,9 +51,18 @@ public class GTFSStopsService {
     @Autowired
     private StationRepository stationRepository;
 
-    public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
+    public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
+                                         final List<SimpleTimeTableRow> timeTableRows,
+                                         final Map<String, Map<String, InfraApiPlatform>> platformsByStationAndTrack) {
         List<Stop> stops = new ArrayList<>();
 
+        Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
+        timeTableRows.forEach(ttr -> {
+            if (platformsByStationAndTrack.getOrDefault(ttr.stationShortCode, Collections.emptyMap()).containsKey(ttr.commercialTrack)) {
+                tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
+                tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
+            }
+        });
 
         Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
@@ -78,6 +94,36 @@ public class GTFSStopsService {
             setCustomLocations(stationShortCode, stop);
 
             stops.add(stop);
+
+            for (String track : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
+                Stop stopWithTrack = new Stop(station);
+                stopWithTrack.stopId = stationShortCode + "_" + track;
+                stopWithTrack.stopCode = stationShortCode;
+                stopWithTrack.track = track;
+
+                stopWithTrack.name = station.name.replace("_", " ") + " raide " + track;
+
+                if (platformsByStationAndTrack.get(stationShortCode).containsKey(track)) {
+                    InfraApiPlatform platform = platformsByStationAndTrack.get(stationShortCode).get(track);
+
+                    stopWithTrack.name = platform.description;
+
+                    Point centroid = platform.geometry.getCentroid();
+                    stopWithTrack.latitude = centroid.getY();
+                    stopWithTrack.longitude = centroid.getX();
+
+                } else {
+                    if (station != null) {
+                        stopWithTrack.latitude = station.latitude.doubleValue();
+                        stopWithTrack.longitude = station.longitude.doubleValue();
+                    } else {
+                        log.warn("Could not find Station for {}", stationShortCode);
+                    }
+                }
+
+                stops.add(stopWithTrack);
+            }
+
         }
 
         return Maps.uniqueIndex(stops, s -> s.stopId);

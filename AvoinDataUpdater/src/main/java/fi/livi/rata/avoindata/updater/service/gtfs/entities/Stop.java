@@ -6,6 +6,7 @@ public class Stop extends GTFSEntity<Station> {
     public String stopId;
     public String stopCode;
     public String name;
+    public String track;
     public double latitude;
     public double longitude;
 

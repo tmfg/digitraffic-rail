@@ -62,9 +62,7 @@ public class InfraApiPlatformService {
             for (final JsonNode node : jsonNode) {
                 InfraApiPlatform platform = deserializePlatform(node.get(0));
                 String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
-                if (!platformsByLiikennepaikkaIdPart.containsKey(liikennepaikkaIdPart)) {
-                    platformsByLiikennepaikkaIdPart.put(liikennepaikkaIdPart, new ArrayList<>());
-                }
+                platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
                 platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
             }
         } catch (Exception e) {
