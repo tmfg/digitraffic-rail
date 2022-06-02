@@ -16,7 +16,6 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
 
     @Query("SELECT sttr FROM SimpleTimeTableRow sttr " +
             "WHERE sttr.scheduledTime > ?1 AND sttr.scheduledTime < ?2  " +
-            "AND sttr.commercialTrack IS NOT NULL AND sttr.commercialTrack <> ''" +
-            "AND sttr.type = 0")
+            "AND sttr.commercialTrack IS NOT NULL AND sttr.commercialTrack <> ''")
     List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(ZonedDateTime start, ZonedDateTime end);
 }

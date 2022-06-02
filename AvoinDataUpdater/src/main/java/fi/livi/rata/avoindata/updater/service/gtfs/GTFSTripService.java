@@ -271,9 +271,16 @@ public class GTFSTripService {
                 .filter(simpleTimeTableRow ->
                 {
                     if (scheduleRow.arrival != null) {
-                        return simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id)
+                        return simpleTimeTableRow.type.equals(TimeTableRow.TimeTableRowType.ARRIVAL)
+                                && simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id)
+                                && scheduleRow.schedule.isRunOnDay(simpleTimeTableRow.scheduledTime.toLocalDate());
+
+                    } else if (scheduleRow.departure != null) {
+                        return simpleTimeTableRow.type.equals(TimeTableRow.TimeTableRowType.DEPARTURE)
+                                && simpleTimeTableRow.id.attapId.equals(scheduleRow.departure.id)
                                 && scheduleRow.schedule.isRunOnDay(simpleTimeTableRow.scheduledTime.toLocalDate());
                     }
+
                     return false;
                 })
                 .map(matchingRow -> matchingRow.commercialTrack)
