@@ -148,7 +148,7 @@ public class GTFSService {
     }
 
     private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
-        Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z");
+        Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z", "O");
         List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
         for (Schedule schedule : passengerAdhocSchedules) {
             if (schedule.operator.operatorUICCode == 10 &&
