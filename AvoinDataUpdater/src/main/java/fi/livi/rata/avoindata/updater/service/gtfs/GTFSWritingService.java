@@ -39,6 +39,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 
@@ -98,9 +99,9 @@ public class GTFSWritingService {
 
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
                 "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
-                        String.format("%s,%s,,%s,%s,,%s,%s,%s,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
-                                stop.longitude, stop.track != null ? "0" : "1", stop.track != null ? stop.source.shortCode : "",
-                                stop.source != null ? stop.source.shortCode : stop.stopCode, stop.track != null ? stop.track : "")
+                        String.format("%s,%s,,%s,%s,,%s,%s,%s,%s", stop.stopId, stop instanceof Platform ? stop.name : stop.stopCode, stop.latitude,
+                                stop.longitude, stop instanceof Platform ? "0" : "1", stop instanceof Platform ? stop.source.shortCode : "",
+                                stop.source != null ? stop.source.shortCode : stop.stopCode, stop instanceof Platform ? ((Platform) stop).track : "")
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -33,6 +34,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
@@ -212,6 +214,32 @@ public class GTFSDtoServiceTest extends BaseTest {
                     Assert.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
             );
         });
+    }
+
+    @Test
+    @Transactional
+    public void allStopTracksAreFoundInStopTimes() throws IOException {
+        LocalDate startDate = LocalDate.of(2019, 1, 1);
+        given(dp.dateInHelsinki()).willReturn(startDate);
+
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        final Set<String> tracksInStopTimes = gtfsDto.trips.stream()
+                .map(trip -> trip.stopTimes)
+                .flatMap(stopTimes -> stopTimes.stream())
+                .map(stopTime -> stopTime.track != null ? stopTime.getStopCodeWithPlatform() : null)
+                .collect(Collectors.toSet());
+
+        final Set <String> tracksInStops = gtfsDto.stops.stream()
+                .map(stop -> stop instanceof Platform ? stop.stopId : null)
+                .collect(Collectors.toSet());
+
+        Assert.assertTrue(tracksInStopTimes.containsAll(tracksInStops));
     }
 
     @Test

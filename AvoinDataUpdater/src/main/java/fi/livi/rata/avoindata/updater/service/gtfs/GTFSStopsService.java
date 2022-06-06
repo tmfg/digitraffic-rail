@@ -24,6 +24,7 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -95,33 +96,28 @@ public class GTFSStopsService {
 
             stops.add(stop);
 
-            for (String track : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
-                Stop stopWithTrack = new Stop(station);
-                stopWithTrack.stopId = stationShortCode + "_" + track;
-                stopWithTrack.stopCode = stationShortCode;
-                stopWithTrack.track = track;
+            for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
 
-                stopWithTrack.name = station.name.replace("_", " ") + " raide " + track;
+                if (platformsByStationAndTrack.get(stationShortCode).containsKey(scheduledTrack) && station != null) {
 
-                if (platformsByStationAndTrack.get(stationShortCode).containsKey(track)) {
-                    InfraApiPlatform platform = platformsByStationAndTrack.get(stationShortCode).get(track);
+                    InfraApiPlatform infraApiPlatform = platformsByStationAndTrack.get(stationShortCode).get(scheduledTrack);
 
-                    stopWithTrack.name = platform.description;
+                    String name = infraApiPlatform.description;
+                    String stopId = stationShortCode + "_" + scheduledTrack;
+                    String stopCode = stationShortCode;
+                    String track = scheduledTrack;
 
-                    Point centroid = platform.geometry.getCentroid();
-                    stopWithTrack.latitude = centroid.getY();
-                    stopWithTrack.longitude = centroid.getX();
+                    Point centroid = infraApiPlatform.geometry.getCentroid();
+                    double latitude = centroid.getY();
+                    double longitude = centroid.getX();
+
+                    Platform platform = new Platform(station, stopId, stopCode, name, latitude, longitude, track);
+
+                    stops.add(platform);
 
                 } else {
-                    if (station != null) {
-                        stopWithTrack.latitude = station.latitude.doubleValue();
-                        stopWithTrack.longitude = station.longitude.doubleValue();
-                    } else {
-                        log.warn("Could not find Station for {}", stationShortCode);
-                    }
+                    log.warn("Invalid track number {}", scheduledTrack);
                 }
-
-                stops.add(stopWithTrack);
             }
 
         }
