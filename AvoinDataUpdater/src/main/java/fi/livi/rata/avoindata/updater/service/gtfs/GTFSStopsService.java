@@ -118,7 +118,7 @@ public class GTFSStopsService {
                         latitude = centroid.getY();
                         longitude = centroid.getX();
                     } else {
-                        name = stopCode;
+                        name = station.name.replace("_", " ");
                         latitude = station.latitude.doubleValue();
                         longitude = station.longitude.doubleValue();
                     }
