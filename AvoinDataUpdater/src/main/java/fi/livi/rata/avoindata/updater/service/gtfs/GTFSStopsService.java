@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -25,6 +26,7 @@ import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -54,12 +56,12 @@ public class GTFSStopsService {
 
     public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                          final List<SimpleTimeTableRow> timeTableRows,
-                                         final Map<String, Map<String, InfraApiPlatform>> platformsByStationAndTrack) {
+                                         final PlatformData platformData) {
         List<Stop> stops = new ArrayList<>();
 
         Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
         timeTableRows.forEach(ttr -> {
-            if (platformsByStationAndTrack.getOrDefault(ttr.stationShortCode, Collections.emptyMap()).containsKey(ttr.commercialTrack)) {
+            if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
                 tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
                 tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
             }
@@ -97,26 +99,33 @@ public class GTFSStopsService {
             stops.add(stop);
 
             for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
-
-                if (platformsByStationAndTrack.get(stationShortCode).containsKey(scheduledTrack) && station != null) {
-
-                    InfraApiPlatform infraApiPlatform = platformsByStationAndTrack.get(stationShortCode).get(scheduledTrack);
-
-                    String name = infraApiPlatform.description;
+                if (station != null) {
                     String stopId = stationShortCode + "_" + scheduledTrack;
                     String stopCode = stationShortCode;
                     String track = scheduledTrack;
 
-                    Point centroid = infraApiPlatform.geometry.getCentroid();
-                    double latitude = centroid.getY();
-                    double longitude = centroid.getX();
+                    String name;
+                    double latitude;
+                    double longitude;
+
+                    Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
+                    if (infraApiPlatform.isPresent()) {
+                        InfraApiPlatform foundPlatform = infraApiPlatform.get();
+
+                        name = foundPlatform.description;
+
+                        Point centroid = foundPlatform.geometry.getCentroid();
+                        latitude = centroid.getY();
+                        longitude = centroid.getX();
+                    } else {
+                        name = stopCode;
+                        latitude = station.latitude.doubleValue();
+                        longitude = station.longitude.doubleValue();
+                    }
 
                     Platform platform = new Platform(station, stopId, stopCode, name, latitude, longitude, track);
 
                     stops.add(platform);
-
-                } else {
-                    log.warn("Invalid track number {}", scheduledTrack);
                 }
             }
 

@@ -66,7 +66,7 @@ public class InfraApiPlatformService {
                 platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
             }
         } catch (Exception e) {
-            logger.error("could not fetch Infra-API platform data", e);
+            logger.error("Could not fetch Infra-API platform data", e);
         }
 
         return platformsByLiikennepaikkaIdPart;
@@ -110,8 +110,12 @@ public class InfraApiPlatformService {
                 lineStringElement.elements().forEachRemaining(coordinateElement -> {
                     if (coordinateElement.isArray()) {
                         lineStringCoordinates.add(new Coordinate(coordinateElement.get(0).asDouble(), coordinateElement.get(1).asDouble()));
+                    } else {
+                        logger.warn("Could not parse platform geometry: expected array, got {}", coordinateElement.getNodeType());
                     }
                 });
+            } else {
+                logger.warn("Could not parse platform geometry: expected array, got {}", lineStringElement.getNodeType());
             }
             LineString lineString = geometryFactory.createLineString(lineStringCoordinates.toArray(new Coordinate[lineStringCoordinates.size()]));
             lineStrings.add(lineString);

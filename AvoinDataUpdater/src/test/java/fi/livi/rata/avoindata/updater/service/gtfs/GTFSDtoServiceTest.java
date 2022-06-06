@@ -201,8 +201,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         final Map<Long, List<StopTime>> stopTimesByAttapId = gtfsDto.trips.stream()
-                .map(trip -> trip.stopTimes)
-                .flatMap(stopTimes -> stopTimes.stream())
+                .flatMap(trip -> trip.stopTimes.stream())
                 .filter(stopTime -> stopTime.source.arrival != null)
                 .collect(Collectors.groupingBy(stopTime -> stopTime.source.arrival.id));
 

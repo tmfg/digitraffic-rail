@@ -1,31 +1,24 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -56,10 +49,7 @@ public class GTFSEntityService {
     private TimeTableRowService timeTableRowService;
 
     @Autowired
-    private InfraApiPlatformService infraApiPlatformService;
-
-    @Autowired
-    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
+    private PlatformDataService platformDataService;
 
     @Autowired
     private DateProvider dp;
@@ -68,14 +58,14 @@ public class GTFSEntityService {
         Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
 
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
-        final Map<String, Map<String, InfraApiPlatform>> platformsByStationAndTrack = getPlatformsByStationAndTrack();
+        final PlatformData platformData = platformDataService.getCurrentPlatformData();
 
         GTFSDto gtfsDto = new GTFSDto();
 
-        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformsByStationAndTrack);
+        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformData);
         gtfsDto.stops = Lists.newArrayList(stopMap.values());
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
-        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformsByStationAndTrack);
+        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
         gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
 
@@ -163,28 +153,6 @@ public class GTFSEntityService {
             }
         }
         return correctedTrainsScheduleIntervals;
-    }
-
-    private Map<String, Map<String, InfraApiPlatform>> getPlatformsByStationAndTrack() {
-        ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
-
-        Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes(currentDate);
-
-        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
-                infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
-
-        return liikennePaikkaNodes.keySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        stationShortCode -> stationShortCode,
-                        stationShortCode -> {
-                            String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
-                            String stationLiikennepaikkaIdPart = infraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
-                            return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList())
-                                    .stream()
-                                    .collect(Collectors.toMap(platform -> platform.commercialTrack, platform -> platform));
-                        })
-                );
     }
 
 }
