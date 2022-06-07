@@ -46,7 +46,7 @@ public class ScheduleService {
     private LastUpdateService lastUpdateService;
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
-    public void extractSchedules() {
+    public synchronized void extractSchedules() {
         try {
             final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);

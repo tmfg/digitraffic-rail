@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+        Temporary suppressions, check and update these periodically
+    -->
+
+    <!--
+        Permanent suppressions
+    -->
+
+
+
+</suppressions>
