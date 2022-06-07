@@ -100,7 +100,7 @@ public class InfraApiPlatformService {
         return new InfraApiPlatform(liikennepaikkaId, name, description, commercialTrack, geometry);
     }
 
-    private MultiLineString deserializePlatformGeometry(final JsonNode geometryNode) {
+    public MultiLineString deserializePlatformGeometry(final JsonNode geometryNode) {
         GeometryFactory geometryFactory = new GeometryFactory();
         List<LineString> lineStrings = new ArrayList<>();
 

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +17,15 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.locationtech.jts.geom.MultiLineString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -34,7 +38,9 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
@@ -55,11 +61,16 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Autowired
     private GTFSWritingService gtfsWritingService;
 
+    @Autowired
+    private InfraApiPlatformService infraApiPlatformService;
     @MockBean
     private GTFSShapeService gtfsShapeService;
 
     @MockBean
     private TimeTableRowService timeTableRowService;
+
+    @MockBean
+    private PlatformDataService platformDataService;
 
     @MockBean
     private DateProvider dp;
@@ -110,6 +121,8 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
         given(gtfsShapeService.createShapesFromTrips(any(),any())).willReturn(new ArrayList<>());
+
+        given(platformDataService.getCurrentPlatformData()).willReturn(getMockPlatformData());
     }
 
     @Test
@@ -202,13 +215,11 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final Map<Long, List<StopTime>> stopTimesByAttapId = gtfsDto.trips.stream()
                 .flatMap(trip -> trip.stopTimes.stream())
-                .filter(stopTime -> stopTime.source.arrival != null)
+                .filter(stopTime -> stopTime.source.arrival != null && stopTime.track != null)
                 .collect(Collectors.groupingBy(stopTime -> stopTime.source.arrival.id));
 
         timeTableRows.forEach(row -> {
-            List<StopTime> matchingStopTimes = stopTimesByAttapId.get(row.getAttapId());
-
-            Assert.assertNotNull(matchingStopTimes);
+            List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
             matchingStopTimes.forEach(stopTime ->
                     Assert.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
             );
@@ -229,12 +240,11 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         final Set<String> tracksInStopTimes = gtfsDto.trips.stream()
-                .map(trip -> trip.stopTimes)
-                .flatMap(stopTimes -> stopTimes.stream())
+                .flatMap(trip -> trip.stopTimes.stream())
                 .map(stopTime -> stopTime.track != null ? stopTime.getStopCodeWithPlatform() : null)
                 .collect(Collectors.toSet());
 
-        final Set <String> tracksInStops = gtfsDto.stops.stream()
+        final Set<String> tracksInStops = gtfsDto.stops.stream()
                 .map(stop -> stop instanceof Platform ? stop.stopId : null)
                 .collect(Collectors.toSet());
 
@@ -563,5 +573,31 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals("VR", agency.name);
         Assert.assertEquals(agencyId, agency.id);
         Assert.assertEquals("Europe/Helsinki", agency.timezone);
+    }
+
+    private PlatformData getMockPlatformData() throws IOException {
+        String geometryString = "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode geometryNode = mapper.readTree(geometryString);
+
+        MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);
+
+        InfraApiPlatform SNJ_1 = new InfraApiPlatform("", "Laituri SNJ L1", "Suonenjoki laituri: 1", "1", geometry);
+        InfraApiPlatform HKI_7 = new InfraApiPlatform("", "Laituri HKI L7", "Helsinki laituri: 7", "7", geometry);
+        InfraApiPlatform MI_1 = new InfraApiPlatform("", "Laituri MI L1", "Mikkeli laituri: 1", "1", geometry);
+        InfraApiPlatform KV_1 = new InfraApiPlatform("", "Laituri KV L1", "Kouvola laituri: 1", "1", geometry);
+        InfraApiPlatform MR_2 = new InfraApiPlatform("", "Laituri MR L2", "Martinlaakso laituri: 2", "2", geometry);
+        InfraApiPlatform SKV_1 = new InfraApiPlatform("", "Laituri SKV L1", "Sukeva laituri: 1", "1", geometry);
+        
+        Map<String, List<InfraApiPlatform>> platformsByStation = Map.of(
+                "SNJ", List.of(SNJ_1),
+                "HKI", List.of(HKI_7),
+                "MI", List.of(MI_1),
+                "KV", List.of(KV_1),
+                "MR", List.of(MR_2),
+                "SKV", List.of(SKV_1)
+                );
+
+        return new PlatformData(platformsByStation);
     }
 }
