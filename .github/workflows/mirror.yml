@@ -1,0 +1,14 @@
+name: 'Mirror repo to public'
+on:
+  push:
+    branches:
+      - master
+jobs:
+  Mirror-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror
+        uses: tmfg/digitraffic-actions@mirror/v1
+        with:
+          mirror-repo: git@github.com:tmfg/digitraffic-rail.git
+          ssh-private-key: ${{ secrets.SSH_MIRROR_KEY }}
