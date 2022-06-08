@@ -2,3 +2,5 @@
 /.idea
 *.iml
 **/main/resources/application.properties
+.DS_Store
+
