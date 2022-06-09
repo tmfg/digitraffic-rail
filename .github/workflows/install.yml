@@ -63,3 +63,4 @@ jobs:
             --build-arg LOGCONF_FILE=conf/${{ env.CONFIG_FILE_NAME }}-logback.xml \
             -t ${{ secrets.ECR_URL }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA} \
             --pull=true --file=Dockerfile-rail-${{ env.CONFIG_FILE_NAME }} .
+          docker push ${{ secrets.ECR_URL }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA}
