@@ -54,7 +54,7 @@ jobs:
       - name: Build ${{ github.event.inputs.app }}
         run: |
           mvn install -DskipTests=true -Ddependency-check.skip=true
-          cp ${{ github.event.inputs.app }}/target/${{ github.event.inputs.app }}-0.0.1-SNAPSHOT.jar ../config/aws/app.jar
+          cp ${{ github.event.inputs.app }}/target/${{ github.event.inputs.app }}-0.0.1-SNAPSHOT.jar config/aws/app.jar
           cd config/aws
           docker build --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
