@@ -55,7 +55,7 @@ jobs:
           docker build --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=train-history-backend.jar \
-            --build-arg PROPERTY_FILE=conf/${{ env.CONFIG_FILE_NAME-${{ github.event.inputs.env }}.properties}} \
+            --build-arg PROPERTY_FILE=conf/${{ env.CONFIG_FILE_NAME }}-${{ github.event.inputs.env }}.properties}} \
             --build-arg LOGCONF_FILE=conf/${{ env.CONFIG_FILE_NAME }}-logback.xml
             -t ${{ secrets.ECR_URL }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA} \
             --pull=true --file=Dockerfile-rail-${{ env.CONFIG_FILE_NAME }} .
