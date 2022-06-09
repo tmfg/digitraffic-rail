@@ -28,7 +28,7 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.4
         with:
-          ssh-private-key: ${{ secrets.CONFIG_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
       - name: Checkout config repo
         run: |
           git clone ${{ secrets.CONFIG_REPO_URL }} config
