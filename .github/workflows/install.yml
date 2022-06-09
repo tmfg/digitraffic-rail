@@ -12,8 +12,8 @@ on:
         required: true
         type: choice
         options:
-          - AvoinDataServer
-          - AvoinDataUpdater
+          - server
+          - updater
       config-branch:
         description: 'Config repo branch'
         default: master
@@ -45,12 +45,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
-      - name: Set app name env variables
-        run: |
-          CONFIG_FILE_NAME=$(echo ${{ github.event.inputs.app }} | awk '{print tolower($0)}')
-          echo "CONFIG_FILE_NAME=$CONFIG_FILE_NAME" >> $GITHUB_ENV
-          SERVICE_NAME=$(echo ${{ github.event.inputs.app }} | awk '{print tolower(substr($0, 0, 9)) "-" tolower(substr($0, 10))}')
-          echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
       - name: Build ${{ github.event.inputs.app }}
         run: |
           mvn install -DskipTests=true -Ddependency-check.skip=true
@@ -59,8 +53,17 @@ jobs:
           docker build --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=app.jar \
-            --build-arg PROPERTY_FILE=conf/${{ env.CONFIG_FILE_NAME }}-${{ github.event.inputs.env }}.properties \
-            --build-arg LOGCONF_FILE=conf/${{ env.CONFIG_FILE_NAME }}-logback.xml \
-            -t ${{ secrets.ECR_URL }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA} \
-            --pull=true --file=Dockerfile-rail-${{ env.CONFIG_FILE_NAME }} .
-          docker push ${{ secrets.ECR_URL }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA}
+            --build-arg PROPERTY_FILE=conf/avoindata${{ github.event.inputs.app }}-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/avoindata${{ github.event.inputs.app }}-logback.xml \
+            -t ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA} \
+            --pull=true --file=Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
+          docker push ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA}
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: FAILED Rail Install ${{ github.event.inputs.app }} to ${{ github.event.inputs.env }}
+          fields: repo, job, took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
