@@ -49,7 +49,7 @@ jobs:
         run: |
           CONFIG_FILE_NAME=$(echo ${{ github.event.inputs.app }} | awk '{print tolower($0)}')
           echo "CONFIG_FILE_NAME=$CONFIG_FILE_NAME" >> $GITHUB_ENV
-          SERVICE_NAME=$(echo ${{ github.event.inputs.app }} | awk '{print substr($0, 0, 9) "-" substr($0, 10)}' })
+          SERVICE_NAME=$(echo ${{ github.event.inputs.app }} | awk '{print substr($0, 0, 9) "-" substr($0, 10)}')
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
       - name: Build ${{ github.event.inputs.app }}
         run: |
