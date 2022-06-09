@@ -53,6 +53,7 @@ jobs:
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
       - name: Build ${{ github.event.inputs.app }}
         run: |
+          mvn install -f AvoinDataCommon/pom.xml -DskipTests=true -Ddependency-check.skip=true
           cd ${{ github.event.inputs.app }}
           mvn install -DskipTests=true -Ddependency-check.skip=true
           cp target/${{ github.event.inputs.app }}-0.0.1-SNAPSHOT.jar ../config/aws/app.jar
