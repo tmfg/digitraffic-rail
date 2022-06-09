@@ -13,7 +13,7 @@ jobs:
           distribution: temurin
           cache: maven
       - name: Compile
-        run: mvn -f project/pom.xml -T1.5C install -e -U -DskipTests=true -Ddependency-check.skip=true
+        run: mvn -f pom.xml -T1.5C install -e -U -DskipTests=true -Ddependency-check.skip=true
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
