@@ -24,7 +24,7 @@ on:
         required: true
         type: string
 jobs:
-  install:
+  deploy:
     environment: ${{ github.event.inputs.env }}
     runs-on: ubuntu-latest
     permissions:
@@ -46,7 +46,7 @@ jobs:
           image-arn: ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${{ github.event.inputs.commit-hash }}
           aws-role: ${{ secrets.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
-          ci-repo-url: ${{ env.CONFIG_REPO_NAME }}
+          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
           ci-repo-branch: ${{ github.event.inputs.config-branch }}
           ci-ssh-key: ${{ secrets.CONFIG_SSH_PRIVATE_KEY }}
       - name: Update ${{ github.event.inputs.app }} ECS service
