@@ -48,7 +48,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
           ci-repo-branch: ${{ github.event.inputs.config-branch }}
-          ci-ssh-key: ${{ secrets.CONFIG_SSH_PRIVATE_KEY }}
+          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
       - name: Update ${{ github.event.inputs.app }} ECS service
         uses: tmfg/digitraffic-actions@ecs-service-update/v1
         with:
