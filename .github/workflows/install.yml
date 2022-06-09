@@ -31,7 +31,7 @@ jobs:
           ssh-private-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
       - name: Checkout config repo
         run: |
-          git clone ${{ secrets.CONFIG_REPO_URL }} config
+          git clone ${{ secrets.CONFIG_REPO_NAME }} config
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
