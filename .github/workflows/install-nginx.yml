@@ -6,7 +6,7 @@ on:
         description: 'Environment'
         required: true
         type: environment
-        default: 'test'
+        default: 'beta'
       config-repo-branch:
         description: 'Branch or tag of CI-repo'
         required: true
@@ -40,10 +40,18 @@ jobs:
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           ref: ${{ inputs.config-repo-branch }}
           path: digitraffic-ci
+      - name: Set docker environment
+        run: |
+          if [ "${{ github.event.inputs }}" == "beta" ]
+          then
+            echo "ENVIRONMENT=test" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=${{ github.event.inputs }}" >> $GITHUB_ENV
+          fi
       - name: Check nginx configurations
         run: |
           cd digitraffic-ci/aws/nginx-rail
-          docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=${{ github.event.inputs.env }} .
+          docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=$ENVIRONMENT .
           docker run --rm -t nginx-rail-${{ github.event.inputs.env }} nginx -t
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -58,7 +66,7 @@ jobs:
           cd digitraffic-ci/aws/nginx-rail
 
           docker build --no-cache \
-              --build-arg ENVIRONMENT=${{ github.event.inputs.env }} \
+              --build-arg ENVIRONMENT=$ENVIRONMENT \
               --build-arg APPNAME=rail \
               -t ${{ secrets.ECR_URL }}/rata-nginx:latest \
               --pull=true --file=Dockerfile .
