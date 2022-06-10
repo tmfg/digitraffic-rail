@@ -23,10 +23,7 @@ jobs:
         if: ${{ success() || failure() }}
         with:
           name: dependency-check-report.html
-          path: |
-            AvoinDataCommon/target/dependency-check-report.html
-            AvoinDataServer/target/dependency-check-report.html
-            AvoinDataUpdater/target/dependency-check-report.html
+          path: target/dependency-check-report.html
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
