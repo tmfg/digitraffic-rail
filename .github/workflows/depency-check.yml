@@ -20,7 +20,7 @@ jobs:
         run: mvn dependency-check:aggregate
       - name: Upload report
         uses: actions/upload-artifact@v3
-        if: ${{ success() | failure() }}
+        if: ${{ success() || failure() }}
         with:
           name: dependency-check-report.html
           path: |
