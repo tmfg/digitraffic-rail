@@ -42,11 +42,11 @@ jobs:
           path: digitraffic-ci
       - name: Set docker environment
         run: |
-          if [ "${{ github.event.inputs }}" == "beta" ]
+          if [ "${{ github.event.inputs.env }}" == "beta" ]
           then
             echo "ENVIRONMENT=test" >> $GITHUB_ENV
           else
-            echo "ENVIRONMENT=${{ github.event.inputs }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=${{ github.event.inputs.env }}" >> $GITHUB_ENV
           fi
       - name: Check nginx configurations
         run: |
