@@ -54,6 +54,7 @@ jobs:
         with:
           aws-role: ${{ secrets.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
+          task-definition: avoindata-${{ github.event.inputs.app }}
           service-name: avoindata-${{ github.event.inputs.app }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
           desired-count: 1
