@@ -51,7 +51,7 @@ jobs:
       - name: Check nginx configurations
         run: |
           cd digitraffic-ci/aws/nginx-rail
-          docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=$ENVIRONMENT .
+          docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=${{ env.ENVIRONMENT }} .
           docker run --rm -t nginx-rail-${{ github.event.inputs.env }} nginx -t
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -66,7 +66,7 @@ jobs:
           cd digitraffic-ci/aws/nginx-rail
 
           docker build --no-cache \
-              --build-arg ENVIRONMENT=$ENVIRONMENT \
+              --build-arg ENVIRONMENT=${{ env.ENVIRONMENT}} \
               --build-arg APPNAME=rail \
               -t ${{ secrets.ECR_URL }}/rata-nginx:latest \
               --pull=true --file=Dockerfile .
