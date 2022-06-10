@@ -16,6 +16,13 @@ jobs:
           java-version: 11
           distribution: corretto
           cache: maven
+      - name: Cache dependency-check files
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository/org/owasp
+          key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-
       - name: Dependency check
         run: mvn dependency-check:aggregate
       - name: Upload report
