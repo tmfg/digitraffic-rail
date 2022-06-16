@@ -60,10 +60,14 @@ public class GTFSStopsService {
         List<Stop> stops = new ArrayList<>();
 
         Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
+        Set<String> scheduledTracklessStops = new HashSet<>();
+
         timeTableRows.forEach(ttr -> {
             if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
                 tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
                 tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
+            } else {
+                scheduledTracklessStops.add(ttr.stationShortCode);
             }
         });
 
@@ -82,19 +86,7 @@ public class GTFSStopsService {
             String stationShortCode = stationEmbeddable.stationShortCode;
             final Station station = stationRepository.findByShortCode(stationShortCode);
 
-            Stop stop = new Stop(station);
-            stop.stopId = stationShortCode;
-            stop.stopCode = stationShortCode;
-
-            if (station != null) {
-                stop.name = station.name.replace("_", " ");
-                stop.latitude = station.latitude.doubleValue();
-                stop.longitude = station.longitude.doubleValue();
-            } else {
-                log.warn("Could not find Station for {}", stationShortCode);
-            }
-
-            setCustomLocations(stationShortCode, stop);
+            Stop stop = createStationStop(station, stationShortCode, 1);
 
             stops.add(stop);
 
@@ -106,17 +98,47 @@ public class GTFSStopsService {
 
                     Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
 
-                    Platform gtfsPlatform = createGtfsPlatform(station, stopId, stopCode, track, infraApiPlatform);
+                    Platform gtfsPlatform = createPlatformStop(station, stopId, stopCode, track, infraApiPlatform);
 
                     stops.add(gtfsPlatform);
                 }
+            }
+
+            if (scheduledTracklessStops.contains(stationShortCode)) {
+                Stop tracklessStop = createStationStop(station, stationShortCode, 0);
+                stops.add(tracklessStop);
             }
         }
 
         return Maps.uniqueIndex(stops, s -> s.stopId);
     }
 
-    private Platform createGtfsPlatform(final Station station, final String stopId, final String stopCode, final String track, final Optional<InfraApiPlatform> infraApiPlatform) {
+    private Stop createStationStop(final Station station, final String stationShortCode, final int locationType) {
+        Stop stop = new Stop(station);
+        stop.stopId = locationType == 0 ?
+                      stationShortCode + "_0" :
+                      stationShortCode;
+        stop.stopCode = stationShortCode;
+        stop.locationType = locationType;
+
+        if (station != null) {
+            stop.name = station.name.replace("_", " ");
+            stop.latitude = station.latitude.doubleValue();
+            stop.longitude = station.longitude.doubleValue();
+        } else {
+            log.warn("Could not find Station for {}", stationShortCode);
+        }
+
+        if (locationType == 0) {
+            stop.description = "Platform information not yet available";
+        }
+
+        setCustomLocations(stationShortCode, stop);
+
+        return stop;
+    }
+
+    private Platform createPlatformStop(final Station station, final String stopId, final String stopCode, final String track, final Optional<InfraApiPlatform> infraApiPlatform) {
         if (infraApiPlatform.isPresent()) {
             final InfraApiPlatform foundPlatform = infraApiPlatform.get();
 

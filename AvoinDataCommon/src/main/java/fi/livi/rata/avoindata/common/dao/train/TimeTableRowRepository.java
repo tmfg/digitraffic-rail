@@ -16,7 +16,6 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTableRow, TimeTableRowId> {
 
     @Query("SELECT sttr FROM SimpleTimeTableRow sttr " +
-            "WHERE sttr.scheduledTime > :start AND sttr.scheduledTime < :end  " +
-            "AND sttr.commercialTrack IS NOT NULL AND sttr.commercialTrack <> ''")
+            "WHERE sttr.scheduledTime > :start AND sttr.scheduledTime < :end")
     List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end);
 }
