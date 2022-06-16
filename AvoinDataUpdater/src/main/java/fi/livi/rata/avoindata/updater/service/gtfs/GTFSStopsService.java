@@ -60,14 +60,11 @@ public class GTFSStopsService {
         List<Stop> stops = new ArrayList<>();
 
         Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
-        Set<String> scheduledTracklessStops = new HashSet<>();
 
         timeTableRows.forEach(ttr -> {
             if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
                 tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
                 tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
-            } else {
-                scheduledTracklessStops.add(ttr.stationShortCode);
             }
         });
 
@@ -87,8 +84,10 @@ public class GTFSStopsService {
             final Station station = stationRepository.findByShortCode(stationShortCode);
 
             Stop stop = createStationStop(station, stationShortCode, 1);
+            Stop tracklessStop = createStationStop(station, stationShortCode, 0);
 
             stops.add(stop);
+            stops.add(tracklessStop);
 
             for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
                 if (station != null) {
@@ -102,11 +101,6 @@ public class GTFSStopsService {
 
                     stops.add(gtfsPlatform);
                 }
-            }
-
-            if (scheduledTracklessStops.contains(stationShortCode)) {
-                Stop tracklessStop = createStationStop(station, stationShortCode, 0);
-                stops.add(tracklessStop);
             }
         }
 

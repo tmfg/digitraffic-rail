@@ -121,7 +121,7 @@ public class GTFSWritingService {
 
         files.add(write(getPath("stop_times.txt"), stopTimes,
                 "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type", st -> String
-                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.track != null ? st.stopId + "_" + st.track : st.stopId,
+                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.track != null ? st.stopId + "_" + st.track : st.stopId + "_0",
                                 st.stopSequence, st.pickupType, st.dropoffType)));
 
 
