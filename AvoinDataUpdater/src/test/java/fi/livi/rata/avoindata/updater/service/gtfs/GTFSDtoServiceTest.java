@@ -576,19 +576,20 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private PlatformData getMockPlatformData() throws IOException {
-        String geometryString = "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
+        final String geometryString = "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
+
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode geometryNode = mapper.readTree(geometryString);
+        final JsonNode geometryNode = mapper.readTree(geometryString);
 
-        MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);
+        final MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);
 
-        InfraApiPlatform SNJ_1 = new InfraApiPlatform("", "Laituri SNJ L1", "Suonenjoki laituri: 1", "1", geometry);
-        InfraApiPlatform HKI_7 = new InfraApiPlatform("", "Laituri HKI L7", "Helsinki laituri: 7", "7", geometry);
-        InfraApiPlatform MI_1 = new InfraApiPlatform("", "Laituri MI L1", "Mikkeli laituri: 1", "1", geometry);
-        InfraApiPlatform KV_1 = new InfraApiPlatform("", "Laituri KV L1", "Kouvola laituri: 1", "1", geometry);
-        InfraApiPlatform MR_2 = new InfraApiPlatform("", "Laituri MR L2", "Martinlaakso laituri: 2", "2", geometry);
-        InfraApiPlatform SKV_1 = new InfraApiPlatform("", "Laituri SKV L1", "Sukeva laituri: 1", "1", geometry);
-        
+        final InfraApiPlatform SNJ_1 = new InfraApiPlatform("", "Laituri SNJ L1", "Suonenjoki laituri: 1", "1", geometry);
+        final InfraApiPlatform HKI_7 = new InfraApiPlatform("", "Laituri HKI L7", "Helsinki laituri: 7", "7", geometry);
+        final InfraApiPlatform MI_1 = new InfraApiPlatform("", "Laituri MI L1", "Mikkeli laituri: 1", "1", geometry);
+        final InfraApiPlatform KV_1 = new InfraApiPlatform("", "Laituri KV L1", "Kouvola laituri: 1", "1", geometry);
+        final InfraApiPlatform MR_2 = new InfraApiPlatform("", "Laituri MR L2", "Martinlaakso laituri: 2", "2", geometry);
+        final InfraApiPlatform SKV_1 = new InfraApiPlatform("", "Laituri SKV L1", "Sukeva laituri: 1", "1", geometry);
+
         Map<String, List<InfraApiPlatform>> platformsByStation = Map.of(
                 "SNJ", List.of(SNJ_1),
                 "HKI", List.of(HKI_7),

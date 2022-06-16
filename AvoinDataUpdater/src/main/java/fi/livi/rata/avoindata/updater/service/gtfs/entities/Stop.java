@@ -13,7 +13,7 @@ public class Stop extends GTFSEntity<Station> {
         super(source);
     }
 
-    public Stop(Station source, final String stopId, final String stopCode, final String name, final double latitude, final double longitude) {
+    public Stop(final Station source, final String stopId, final String stopCode, final String name, final double latitude, final double longitude) {
         super(source);
         this.stopId = stopId;
         this.stopCode = stopCode;

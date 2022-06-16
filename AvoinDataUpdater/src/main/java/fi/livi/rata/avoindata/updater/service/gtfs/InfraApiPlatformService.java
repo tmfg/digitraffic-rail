@@ -124,7 +124,7 @@ public class InfraApiPlatformService {
         return geometryFactory.createMultiLineString(lineStrings.toArray(new LineString[lineStrings.size()]));
     }
 
-    public static String extractLiikennepaikkaIdPart(String id) {
+    public static String extractLiikennepaikkaIdPart(final String id) {
         Matcher matcher = lastTwoLiikennepaikkaIdPlaces.matcher(id);
         return matcher.find() ? matcher.group() : "";
     }

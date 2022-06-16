@@ -18,8 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -197,15 +195,6 @@ public class GTFSWritingService {
         }
 
         return object ? "1" : "0";
-    }
-
-    public static boolean isValidTrack(final String trackNumber) {
-        if (trackNumber == null) {
-            return false;
-        }
-        final Pattern validTrack = Pattern.compile("[0-9]+");
-        Matcher m = validTrack.matcher(trackNumber);
-        return m.matches();
     }
 
     private String nullableToString(Object o) {

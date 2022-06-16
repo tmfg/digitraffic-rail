@@ -104,34 +104,39 @@ public class GTFSStopsService {
                     String stopCode = stationShortCode;
                     String track = scheduledTrack;
 
-                    String name;
-                    double latitude;
-                    double longitude;
-
                     Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
-                    if (infraApiPlatform.isPresent()) {
-                        InfraApiPlatform foundPlatform = infraApiPlatform.get();
 
-                        name = foundPlatform.description;
+                    Platform gtfsPlatform = createGtfsPlatform(station, stopId, stopCode, track, infraApiPlatform);
 
-                        Point centroid = foundPlatform.geometry.getCentroid();
-                        latitude = centroid.getY();
-                        longitude = centroid.getX();
-                    } else {
-                        name = station.name.replace("_", " ");
-                        latitude = station.latitude.doubleValue();
-                        longitude = station.longitude.doubleValue();
-                    }
-
-                    Platform platform = new Platform(station, stopId, stopCode, name, latitude, longitude, track);
-
-                    stops.add(platform);
+                    stops.add(gtfsPlatform);
                 }
             }
-
         }
 
         return Maps.uniqueIndex(stops, s -> s.stopId);
+    }
+
+    private Platform createGtfsPlatform(final Station station, final String stopId, final String stopCode, final String track, final Optional<InfraApiPlatform> infraApiPlatform) {
+        if (infraApiPlatform.isPresent()) {
+            final InfraApiPlatform foundPlatform = infraApiPlatform.get();
+
+            final String name = station.name
+                    .replace("_", " ")
+                    .concat(" raide ")
+                    .concat(track);
+
+            final Point centroid = foundPlatform.geometry.getCentroid();
+            final double latitude = centroid.getY();
+            final double longitude = centroid.getX();
+
+            return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
+        } else {
+            final String name = station.name.replace("_", " ");
+            final double latitude = station.latitude.doubleValue();
+            final double longitude = station.longitude.doubleValue();
+
+            return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
+        }
     }
 
     private void setCustomLocations(String stationShortCode, Stop stop) {
