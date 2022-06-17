@@ -17,11 +17,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Describes a leg where train's composition is in effect")
+@Schema(description = "Describes a leg where train's composition is in effect")
 public class JourneySection {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     @JsonIgnore

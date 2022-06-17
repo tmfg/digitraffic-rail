@@ -32,15 +32,15 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(indexes = {
         @Index(name = "timetablerow_stationShortCode", columnList = "stationShortCode")
 })
-@ApiModel(description = "A part of train's schedule")
+@Schema(description = "A part of train's schedule")
 public class TimeTableRow {
     public enum TimeTableRowType {
         ARRIVAL,

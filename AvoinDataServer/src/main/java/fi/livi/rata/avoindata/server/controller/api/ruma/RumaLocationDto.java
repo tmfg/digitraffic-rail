@@ -2,10 +2,10 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(description = "Location of work, either an operating point or a section between operating points")
+@Schema(description = "Location of work, either an operating point or a section between operating points")
 public class RumaLocationDto {
 
     @ApiModelProperty(value = "Notification identifier", required = true)

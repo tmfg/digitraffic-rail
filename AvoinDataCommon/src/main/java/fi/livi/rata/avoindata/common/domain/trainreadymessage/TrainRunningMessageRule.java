@@ -5,12 +5,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table
-@ApiModel(description = "These rules define how TrainRunningMessages trigger actual times for TimeTableRows")
+@Schema(description = "These rules define how TrainRunningMessages trigger actual times for TimeTableRows")
 public class TrainRunningMessageRule {
     @Id
     public Long id;

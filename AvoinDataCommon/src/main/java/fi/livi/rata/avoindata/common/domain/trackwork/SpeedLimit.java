@@ -1,12 +1,12 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.persistence.*;
 
 @Embeddable
-@ApiModel(description = "Speed limit set for a part of a track")
+@Schema(description = "Speed limit set for a part of a track")
 public class SpeedLimit {
 
     @ApiModelProperty(value = "Speed limit value", required = true)

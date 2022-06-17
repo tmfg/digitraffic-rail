@@ -2,8 +2,8 @@ package fi.livi.rata.avoindata.common.domain.metadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Table
 @Entity
 @JsonPropertyOrder({"id", "bottomLimit", "topLimit", "trainCategory"})
-@ApiModel(description = "Operators own a range of train numbers")
+@Schema(description = "Operators own a range of train numbers")
 public class OperatorTrainNumber implements Serializable {
     @Id
     @Column

@@ -19,11 +19,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Most detailed category code for a Cause")
+@Schema(description = "Most detailed category code for a Cause")
 public class ThirdCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore

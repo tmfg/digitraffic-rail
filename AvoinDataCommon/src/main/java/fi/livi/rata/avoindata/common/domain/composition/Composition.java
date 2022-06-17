@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -14,7 +14,7 @@ import java.util.Set;
 
 @Entity
 @Table
-@ApiModel(description = "Describes train's locomotives and wagons")
+@Schema(description = "Describes train's locomotives and wagons")
 public class Composition  {
 
     @EmbeddedId

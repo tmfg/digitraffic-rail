@@ -2,12 +2,12 @@ package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Set;
 
-@ApiModel(description = "Place of work: between two track elements or a single track element")
+@Schema(description = "Place of work: between two track elements or a single track element")
 public class IdentifierRangeDto {
 
     @ApiModelProperty(value = "Notification identifier", required = true)

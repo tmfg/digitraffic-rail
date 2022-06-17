@@ -21,11 +21,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description="A code that is used to categorize reasons for a train not being on schedule")
+@Schema(description="A code that is used to categorize reasons for a train not being on schedule")
 public class CategoryCode extends ACauseCode {
     @Id
     @JsonIgnore

@@ -24,11 +24,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Category code that is one step more detailed from its parent CategoryCode")
+@Schema(description = "Category code that is one step more detailed from its parent CategoryCode")
 public class DetailedCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore

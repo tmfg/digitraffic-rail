@@ -6,10 +6,10 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(description = "A logical part of a track work")
+@Schema(description = "A logical part of a track work")
 public class TrackWorkPartDto {
 
     @ApiModelProperty(value = "Index number", required = true)

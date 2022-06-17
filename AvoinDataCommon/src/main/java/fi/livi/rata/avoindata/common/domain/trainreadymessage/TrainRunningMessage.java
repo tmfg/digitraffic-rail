@@ -15,12 +15,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(indexes = {@Index(name = "tr20_departureDate_trainNumber", columnList = "departureDate,trainNumber"), @Index(name = "tr20_version", columnList = "version")})
-@ApiModel(description = "TrainRunMessages are generated when a train either enters or exists a TrackSection")
+@Schema(description = "TrainRunMessages are generated when a train either enters or exists a TrackSection")
 public class TrainRunningMessage {
     @Id
     public Long id;

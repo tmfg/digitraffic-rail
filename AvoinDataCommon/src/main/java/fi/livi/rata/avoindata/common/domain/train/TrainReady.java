@@ -1,15 +1,16 @@
 package fi.livi.rata.avoindata.common.domain.train;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
-@ApiModel(description = "Operator has to ask permission (=TrainReady) to leave certain stations")
+@Schema(description = "Operator has to ask permission (=TrainReady) to leave certain stations")
 public class TrainReady {
     public enum TrainReadySource {
         PHONE,

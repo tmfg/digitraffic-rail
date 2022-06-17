@@ -20,10 +20,10 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
+@Schema(description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
 public class Cause {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
