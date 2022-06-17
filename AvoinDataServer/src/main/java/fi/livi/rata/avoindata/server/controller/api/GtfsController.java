@@ -14,8 +14,8 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import springfox.documentation.annotations.ApiIgnore;
 
 @Tag(name = "trains", description = "Returns trains as gtfs")
 @RestController
@@ -57,14 +57,14 @@ public class GtfsController {
         return getData(response, "gtfs-rt-updates");
     }
 
-    @ApiIgnore
+    @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTRETrains(final HttpServletResponse response) {
         return getData(response, "gtfs-vr-tre.zip");
     }
 
-    @ApiIgnore
+    @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTrains(final HttpServletResponse response) {

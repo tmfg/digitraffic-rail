@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Tag(name = "train-locations", description = "Train locations")
-@ApiIgnore
+@Hidden
 @RestController
 @RequestMapping("/api/v2/" + "train-locations")
 public class TrainLocationV2Controller extends ADataController {

@@ -34,7 +34,7 @@ import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
 @Entity
 @Table(indexes = {
@@ -195,7 +195,7 @@ public class TimeTableRow {
         return timeTableRow.id;
     }
 
-    @ApiIgnore
+    @Hidden
     public ZonedDateTime getCommercialTrackChanged() {
         return commercialTrackChanged;
     }
