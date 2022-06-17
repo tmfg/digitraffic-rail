@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.services.GeoJsonFormatter;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
+@Tag(name = "train-locations", description = "Train locations")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations.geojson")
 public class TrainLocationGeoJsonController extends ADataController {

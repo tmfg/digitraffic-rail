@@ -8,9 +8,10 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
+@Tag(name = "train-locations", description = "Train locations")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
 public class TrainLocationController extends ADataController {

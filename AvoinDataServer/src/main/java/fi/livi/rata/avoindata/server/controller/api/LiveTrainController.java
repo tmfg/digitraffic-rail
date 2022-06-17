@@ -35,10 +35,10 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainMaximumLimitE
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "live-trains", description = "Returns trains that have been recently active")
+@Tag(name = "live-trains", description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 public class LiveTrainController extends ADataController {

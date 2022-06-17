@@ -13,8 +13,9 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.EndDateBeforeStartDateException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TooLongPeriodRequestedException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainNotFoundException;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-@Api(tags = "live-trains", description = "Returns trains")
+@Tag(name = "live-trains", description = "Returns trains")
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)
 public class ScheduleController extends ADataController {

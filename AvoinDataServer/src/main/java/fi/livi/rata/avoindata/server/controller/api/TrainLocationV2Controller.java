@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.server.dto.TrainLocationV2;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
@@ -10,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
+@Tag(name = "train-locations", description = "Train locations")
 @ApiIgnore
 @RestController
 @RequestMapping("/api/v2/" + "train-locations")

@@ -8,9 +8,10 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.CompositionNotFoundException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,7 +26,7 @@ import java.util.List;
 
 import static fi.livi.rata.avoindata.server.controller.utils.CacheControl.addSchedulesCacheParametersForDailyResult;
 
-@Api(tags = "compositions", description = "Returns compositions of trains")
+@Tag(name = "compositions", description = "Returns compositions of trains")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "compositions")
 @Transactional(timeout = 30, readOnly = true)

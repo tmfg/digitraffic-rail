@@ -13,11 +13,11 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import springfox.documentation.annotations.ApiIgnore;
 
-@Api(tags = "trains", description = "Returns trains as gtfs", position = Integer.MIN_VALUE)
+@Tag(name = "trains", description = "Returns trains as gtfs")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {

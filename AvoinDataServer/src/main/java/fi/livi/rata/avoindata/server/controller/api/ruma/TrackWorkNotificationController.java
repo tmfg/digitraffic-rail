@@ -33,11 +33,11 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "track-work-notifications", description = "Returns track work notifications")
+@Tag(name = "track-work-notifications", description = "Returns track work notifications")
 @RestController
 @Transactional(timeout = 30, readOnly = true)
 public class TrackWorkNotificationController extends ADataController {

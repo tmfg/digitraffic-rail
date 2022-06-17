@@ -5,8 +5,9 @@ import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessag
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@Api(tags = "train-tracking", description = "Returns detailed information about train's location")
+@Tag(name = "train-tracking", description = "Returns detailed information about train's location")
 @RestController
 
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-tracking")

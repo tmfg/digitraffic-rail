@@ -24,10 +24,10 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "routesets", description = "Returns routesets")
+@Tag(name = "routesets", description = "Returns routesets")
 @RequestMapping(WebConfig.CONTEXT_PATH + "routesets")
 @Transactional(timeout = 30, readOnly = true)
 @RestController

@@ -36,10 +36,10 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "trains", description = "Returns trains", position = Integer.MIN_VALUE)
+@Tag(name = "trains", description = "Returns trains")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController extends ADataController {

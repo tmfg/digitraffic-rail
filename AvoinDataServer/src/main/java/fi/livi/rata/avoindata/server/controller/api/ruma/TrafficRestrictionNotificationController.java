@@ -32,11 +32,11 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "traffic-restriction-notifications", description = "Returns traffic restriction notifications")
+@Tag(name = "traffic-restriction-notifications", description = "Returns traffic restriction notifications")
 @RestController
 @Transactional(timeout = 30, readOnly = true)
 public class TrafficRestrictionNotificationController extends ADataController {
