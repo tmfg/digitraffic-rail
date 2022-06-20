@@ -66,7 +66,7 @@ public class TimeTableRow {
     @JsonView({LiveTrains.class, ScheduleTrains.class})
     public TimeTableRowType type ;
 
-    @ApiModelProperty("Does the train actual stop on the station")
+    @Schema(description = "Does the train actual stop on the station")
     public boolean trainStopping = true;
 
     @Column
@@ -74,52 +74,52 @@ public class TimeTableRow {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Nullable
     // Should be null when trainStopping == false
-    @ApiModelProperty("Is the stop 'commercial' ie. loading/unloading of passengers or cargo")
+    @Schema(description = "Is the stop 'commercial' ie. loading/unloading of passengers or cargo")
     public Boolean commercialStop;
 
     @Column
     @JsonView({LiveTrains.class, ScheduleTrains.class})
-    @ApiModelProperty(value = "Track where the train stops",example = "1")
+    @Schema(description = "Track where the train stops",example = "1")
     public String commercialTrack;
 
     @Column(nullable = false)
     @JsonView({LiveTrains.class, ScheduleTrains.class})
-    @ApiModelProperty("Is the schedule part cancelled")
+    @Schema(description = "Is the schedule part cancelled")
     public boolean cancelled;
 
     @Column
     @JsonView({LiveTrains.class, ScheduleTrains.class})
     @Type(type="org.hibernate.type.ZonedDateTimeType")
-    @ApiModelProperty("Scheduled time for departure/arrival of the train")
+    @Schema(description = "Scheduled time for departure/arrival of the train")
     public ZonedDateTime scheduledTime;
 
     @Column
     @JsonView(LiveTrains.class)
     @Type(type="org.hibernate.type.ZonedDateTimeType")
-    @ApiModelProperty("Estimated time for departure/arrival of the train")
+    @Schema(description = "Estimated time for departure/arrival of the train")
     public ZonedDateTime liveEstimateTime;
 
     @JsonView(LiveTrains.class)
-    @ApiModelProperty(value = "Source for the estimate",example = "LIIKE_USER")
+    @Schema(description = "Source for the estimate",example = "LIIKE_USER")
     public EstimateSourceEnum estimateSource;
 
     @JsonView({LiveTrains.class, ScheduleTrains.class})
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Nullable
     // Should be null when trainStopping == false
-    @ApiModelProperty("Set if the train is delayed, but it is impossible to estimate for how long")
+    @Schema(description = "Set if the train is delayed, but it is impossible to estimate for how long")
     public Boolean unknownDelay;
 
     @Nullable
     @Column
     @JsonView(LiveTrains.class)
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
-    @ApiModelProperty("Actual time when train departured or arrived on the station")
+    @Schema(description = "Actual time when train departured or arrived on the station")
     public ZonedDateTime actualTime;
 
     @Column
     @JsonView(LiveTrains.class)
-    @ApiModelProperty(value = "Difference between schedule and actual time in minutes", example = "5")
+    @Schema(description = "Difference between schedule and actual time in minutes", example = "5")
     public Long differenceInMinutes;
 
     @Column

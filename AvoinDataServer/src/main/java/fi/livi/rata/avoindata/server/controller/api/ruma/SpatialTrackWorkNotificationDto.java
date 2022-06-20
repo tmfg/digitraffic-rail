@@ -1,19 +1,19 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
-import io.swagger.annotations.ApiModelProperty;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
-    @ApiModelProperty(value = "Approximate location", required = true)
+    @Schema(description = "Approximate location", required = true)
     public final GeometryDto<?> location;
 
-    @ApiModelProperty(value = "Work parts", required = true)
+    @Schema(description = "Work parts", required = true)
     public final List<TrackWorkPartDto> workParts;
 
     public SpatialTrackWorkNotificationDto(

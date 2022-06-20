@@ -12,31 +12,31 @@ public class TrackWorkNotificationDto {
 
     public TrackWorkNotification.TrackWorkNotificationId id;
 
-    @ApiModelProperty(value = "State", required = true)
+    @Schema(description = "State", required = true)
     public final TrackWorkNotificationState state;
 
-    @ApiModelProperty(value = "Which organization created this notification", required = true)
+    @Schema(description = "Which organization created this notification", required = true)
     public final String organization;
 
-    @ApiModelProperty(value = "When this notification was created", required = true)
+    @Schema(description = "When this notification was created", required = true)
     public final ZonedDateTime created;
 
-    @ApiModelProperty(value = "When this notification last modified")
+    @Schema(description = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @ApiModelProperty(value = "Does the notification contain a traffic safety plan", required = true)
+    @Schema(description = "Does the notification contain a traffic safety plan", required = true)
     public final Boolean trafficSafetyPlan;
 
-    @ApiModelProperty(value = "Does the notification contain a speed limit removal plan", required = true)
+    @Schema(description = "Does the notification contain a speed limit removal plan", required = true)
     public final Boolean speedLimitRemovalPlan;
 
-    @ApiModelProperty(value = "Does the notification contain a electricity safety plan", required = true)
+    @Schema(description = "Does the notification contain a electricity safety plan", required = true)
     public final Boolean electricitySafetyPlan;
 
-    @ApiModelProperty(value = "Does the notification contain a speed limit plan", required = true)
+    @Schema(description = "Does the notification contain a speed limit plan", required = true)
     public final Boolean speedLimitPlan;
 
-    @ApiModelProperty(value = "Does the notification contain a plan for persons in charge", required = true)
+    @Schema(description = "Does the notification contain a plan for persons in charge", required = true)
     public final Boolean personInChargePlan;
 
     public TrackWorkNotificationDto(
@@ -63,12 +63,12 @@ public class TrackWorkNotificationDto {
         this.personInChargePlan = personInChargePlan;
     }
 
-    @ApiModelProperty(value = "Id", required = true)
+    @Schema(description = "Id", required = true)
     public String getId() {
         return id.id;
     }
 
-    @ApiModelProperty(value = "Version", required = true)
+    @Schema(description = "Version", required = true)
     public Long getVersion() {
         return id.version;
     }

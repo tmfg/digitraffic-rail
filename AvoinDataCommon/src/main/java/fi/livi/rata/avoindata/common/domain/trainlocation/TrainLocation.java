@@ -11,8 +11,8 @@ import org.locationtech.jts.geom.Point;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import io.swagger.annotations.ApiModelProperty;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 public class TrainLocation {
@@ -25,7 +25,7 @@ public class TrainLocation {
     @JsonUnwrapped
     public TrainLocationId trainLocationId;
 
-    @ApiModelProperty(dataType = "fi.livi.rata.avoindata.common.domain.trainlocation.SwaggerPoint")
+    @Schema(type = "fi.livi.rata.avoindata.common.domain.trainlocation.SwaggerPoint")
     public Point location;
 
     public Integer speed;

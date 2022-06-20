@@ -32,23 +32,23 @@ public class CategoryCode extends ACauseCode {
     public String oid;
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
-    @ApiModelProperty(value = "Official code",example = "E",required = true)
+    @Schema(description = "Official code",example = "E",required = true)
     public String categoryCode;
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "Official name",example = "Etuajassakulku",required = true)
+    @Schema(description = "Official name",example = "Etuajassakulku",required = true)
     public String categoryName;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "Start date when this code is used",required = true)
+    @Schema(description = "Start date when this code is used",required = true)
     public LocalDate validFrom;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "End date when this code is used. Empty means category is used until further notice")
+    @Schema(description = "End date when this code is used. Empty means category is used until further notice")
     public LocalDate validTo;
 
     @OneToMany(mappedBy = "categoryCode", fetch = FetchType.LAZY)

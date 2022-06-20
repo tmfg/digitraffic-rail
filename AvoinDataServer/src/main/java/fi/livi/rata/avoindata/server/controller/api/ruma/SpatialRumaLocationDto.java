@@ -1,17 +1,17 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import java.util.Set;
+
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Set;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class SpatialRumaLocationDto extends RumaLocationDto {
 
-    @ApiModelProperty("Location if no identifer ranges are present")
+    @Schema(description = "Location if no identifer ranges are present")
     public final GeometryDto<?> location;
 
-    @ApiModelProperty("Identifier ranges")
+    @Schema(description = "Identifier ranges")
     public final Set<IdentifierRangeDto> identifierRanges;
 
     public SpatialRumaLocationDto(

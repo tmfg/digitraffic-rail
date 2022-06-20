@@ -28,21 +28,21 @@ public class JourneySection {
     public Long id;
 
     @OneToOne(cascade = { CascadeType.REMOVE, CascadeType.PERSIST }, optional = false, orphanRemoval = true)
-    @ApiModelProperty("Point in schedule where composition starts")
+    @Schema(description = "Point in schedule where composition starts")
     public CompositionTimeTableRow beginTimeTableRow;
 
     @OneToOne(cascade = { CascadeType.REMOVE, CascadeType.PERSIST }, optional = false, orphanRemoval = true)
-    @ApiModelProperty("Point in schedule where composition ends")
+    @Schema(description = "Point in schedule where composition ends")
     public CompositionTimeTableRow endTimeTableRow;
 
     @OneToMany(mappedBy = "journeysection", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @OrderBy("location")
-    @ApiModelProperty("List of locomotives used on this leg")
+    @Schema(description = "List of locomotives used on this leg")
     public Set<Locomotive> locomotives = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "journeysection", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @OrderBy("location")
-    @ApiModelProperty("List of wagons used on this leg")
+    @Schema(description = "List of wagons used on this leg")
     public Set<Wagon> wagons = new LinkedHashSet<>();
 
     @ManyToOne(optional = false)

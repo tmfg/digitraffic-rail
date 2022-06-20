@@ -8,19 +8,19 @@ import java.util.List;
 @Schema(description = "Two consecutive elements in an identifier range")
 public class ElementRangeDto {
 
-    @ApiModelProperty(value = "Identifier of element 1", required = true)
+    @Schema(description = "Identifier of element 1", required = true)
     public final String elementId1;
 
-    @ApiModelProperty(value = "Identifier of element 2", required = true)
+    @Schema(description = "Identifier of element 2", required = true)
     public final String elementId2;
 
-    @ApiModelProperty(value = "Track kilometer range, required if notification type is traffic restriction, e.g. (006) 754+0273 > 764+0771")
+    @Schema(description = "Track kilometer range, required if notification type is traffic restriction, e.g. (006) 754+0273 > 764+0771")
     public final String trackKilometerRange;
 
-    @ApiModelProperty(value = "Track identifiers", required = true)
+    @Schema(description = "Track identifiers", required = true)
     public final List<String> trackIds;
 
-    @ApiModelProperty(value = "Specify a more detailed work area (track element)")
+    @Schema(description = "Specify a more detailed work area (track element)")
     public final List<String> specifiers;
 
     public ElementRangeDto(

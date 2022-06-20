@@ -29,15 +29,15 @@ public class TrainReady {
     @JsonIgnore
     public TimeTableRow timeTableRow;
 
-    @ApiModelProperty("How was the permission given")
+    @Schema(description = "How was the permission given")
     public TrainReadySource source;
 
     @Type(type = "org.hibernate.type.NumericBooleanType")
-    @ApiModelProperty("Was the permission given")
+    @Schema(description = "Was the permission given")
     public boolean accepted;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
-    @ApiModelProperty("When was the permission given")
+    @Schema(description = "When was the permission given")
     public ZonedDateTime timestamp;
 
 //    @OneToOne(mappedBy = "trainReady")

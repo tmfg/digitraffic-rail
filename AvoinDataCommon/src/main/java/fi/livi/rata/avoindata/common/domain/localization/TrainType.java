@@ -9,8 +9,9 @@ import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import fi.livi.rata.avoindata.common.domain.common.NamedEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -25,7 +26,7 @@ public class TrainType implements NamedEntity {
     public boolean commercial;
 
     @Column
-    @ApiModelProperty(example = "HL")
+    @Schema(example = "HL")
     public String name;
 
     @OneToOne(cascade = CascadeType.REMOVE, optional = false, orphanRemoval = false)

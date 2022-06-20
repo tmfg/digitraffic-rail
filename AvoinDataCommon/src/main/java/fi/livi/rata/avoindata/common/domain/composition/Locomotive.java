@@ -11,7 +11,8 @@ import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModelProperty;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,11 +23,11 @@ public class Locomotive {
     public Long id;
 
     @Column
-    @ApiModelProperty(value = "Location of the locomotive in the train. 1=start of the train", example = "1")
+    @Schema(description = "Location of the locomotive in the train. 1=start of the train", example = "1")
     public int location;
 
     @Column
-    @ApiModelProperty(example = "Sm3")
+    @Schema(example = "Sm3")
     public String locomotiveType;
 
     @Column
@@ -34,10 +35,10 @@ public class Locomotive {
     public String powerTypeAbbreviation;
 
     @Transient
-    @ApiModelProperty(example = "S")
+    @Schema(example = "S")
     public String powerType;
 
-    @ApiModelProperty(example = "94102081010-2")
+    @Schema(example = "94102081010-2")
     @Column
     public String vehicleNumber;
 

@@ -26,10 +26,10 @@ public class Composition  {
     public Operator operator;
 
     @Transient
-    @ApiModelProperty(example = "Long-distance",required = true)
+    @Schema(example = "Long-distance", required = true)
     public String trainCategory;
     @Transient
-    @ApiModelProperty(example = "IC",required = true)
+    @Schema(example = "IC", required = true)
     public String trainType;
     @Column
     @JsonIgnore
@@ -39,7 +39,7 @@ public class Composition  {
     public long trainTypeId;
 
     @Column
-    @ApiModelProperty(value = "When was this data last modified", example = "253328854733")
+    @Schema(description = "When was this data last modified", example = "253328854733")
     public Long version;
 
     @OneToMany(mappedBy = "composition", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)

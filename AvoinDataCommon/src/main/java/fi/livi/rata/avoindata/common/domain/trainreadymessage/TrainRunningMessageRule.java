@@ -15,9 +15,9 @@ public class TrainRunningMessageRule {
     @Id
     public Long id;
 
-    @ApiModelProperty("For which station is the actual time generated")
+    @Schema(description = "For which station is the actual time generated")
     public String timeTableRowStationShortCode;
-    @ApiModelProperty("For which TimeTableRow is the actual time generated")
+    @Schema(description = "For which TimeTableRow is the actual time generated")
     public TimeTableRow.TimeTableRowType timeTableRowType;
 
     public String trainRunningMessageStationShortCode;
@@ -25,7 +25,7 @@ public class TrainRunningMessageRule {
     public String trainRunningMessageTrackSection;
     public TrainRunningMessageTypeEnum trainRunningMessageType ;
 
-    @ApiModelProperty("TrainRunningMessages timestamp is adjusted for offset when generating actual time")
+    @Schema(description = "TrainRunningMessages timestamp is adjusted for offset when generating actual time")
     public Integer offset;
 
 

@@ -3,20 +3,20 @@ package fi.livi.rata.avoindata.common.domain.common;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable
 public class StationEmbeddable {
     @Column
-    @ApiModelProperty(example = "HKI")
+    @Schema(example = "HKI")
     public String stationShortCode;
 
     @Column(name = "station_uic_code")
-    @ApiModelProperty(example = "1")
+    @Schema(example = "1")
     public int stationUICCode;
 
     @Column
-    @ApiModelProperty(example = "FI")
+    @Schema(example = "FI")
     public String countryCode;
 
     public StationEmbeddable() {

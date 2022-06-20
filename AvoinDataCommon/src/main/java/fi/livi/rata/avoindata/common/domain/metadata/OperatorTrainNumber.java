@@ -16,11 +16,11 @@ public class OperatorTrainNumber implements Serializable {
     @Id
     @Column
     public Long id;
-    @ApiModelProperty(value = "Where operator's train numbers start", example = "76050")
+    @Schema(description = "Where operator's train numbers start", example = "76050")
     public int bottomLimit;
-    @ApiModelProperty(value = "Where operator's train numbers end", example = "76219")
+    @Schema(description = "Where operator's train numbers end", example = "76219")
     public int topLimit;
-    @ApiModelProperty(example = "On-track machines")
+    @Schema(example = "On-track machines")
     public String trainCategory;
 
     @ManyToOne

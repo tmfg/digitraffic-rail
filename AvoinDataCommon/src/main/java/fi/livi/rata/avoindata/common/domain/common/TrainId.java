@@ -1,23 +1,25 @@
 package fi.livi.rata.avoindata.common.domain.common;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
-import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.Type;
-
-import javax.persistence.Column;
 import java.io.Serializable;
 import java.time.LocalDate;
+
+import javax.persistence.Column;
+
+import org.hibernate.annotations.Type;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
+import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class TrainId implements Serializable {
     @NonNull
     @Column
-    @ApiModelProperty(value = "Identifies the train inside a single departure date", example = "1", required = true)
+    @Schema(description = "Identifies the train inside a single departure date", example = "1", required = true)
     public Long trainNumber;
     @NonNull
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
-    @ApiModelProperty(value = "Date of the train's first departure", required = true, example = "2017-12-01")
+    @Schema(description = "Date of the train's first departure", required = true, example = "2017-12-01")
     public LocalDate departureDate;
 
     protected TrainId() {

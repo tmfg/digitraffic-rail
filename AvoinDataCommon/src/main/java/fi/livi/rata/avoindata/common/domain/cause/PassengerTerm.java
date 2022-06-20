@@ -1,13 +1,13 @@
 package fi.livi.rata.avoindata.common.domain.cause;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class PassengerTerm {
-    @ApiModelProperty("Finnish passenger friendly term for the code")
+    @Schema(description = "Finnish passenger friendly term for the code")
     public String fi;
-    @ApiModelProperty("English passenger friendly term for the code")
+    @Schema(description = "English passenger friendly term for the code")
     public String en;
-    @ApiModelProperty("Swedish passenger friendly term for the code")
+    @Schema(description = "Swedish passenger friendly term for the code")
     public String sv;
 
     public PassengerTerm(final String fi, final String sv, final String en) {

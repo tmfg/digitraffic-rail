@@ -1,14 +1,14 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import java.util.Set;
+
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Set;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class SpatialIdentifierRangeDto extends IdentifierRangeDto {
 
-    @ApiModelProperty("Location")
+    @Schema(description = "Location")
     public final GeometryDto<?> location;
 
     public SpatialIdentifierRangeDto(

@@ -14,34 +14,34 @@ public class TrafficRestrictionNotificationDto {
 
     public final TrafficRestrictionNotification.TrafficRestrictionNotificationId id;
 
-    @ApiModelProperty(value = "State", required = true)
+    @Schema(description = "State", required = true)
     public final TrafficRestrictionNotificationState state;
 
-    @ApiModelProperty(value = "Which organization created this notification", required = true)
+    @Schema(description = "Which organization created this notification", required = true)
     public final String organization;
 
-    @ApiModelProperty(value = "When this notification was created", required = true)
+    @Schema(description = "When this notification was created", required = true)
     public final ZonedDateTime created;
 
-    @ApiModelProperty(value = "When this notification last modified")
+    @Schema(description = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @ApiModelProperty(value = "Limitation type", required = true)
+    @Schema(description = "Limitation type", required = true)
     public final TrafficRestrictionType limitation;
 
-    @ApiModelProperty(value = "Track work notification identifier")
+    @Schema(description = "Track work notification identifier")
     public final String trackWorkNotificationId;
 
-    @ApiModelProperty(value = "Max axle weight, required if limitation type is max axle weight")
+    @Schema(description = "Max axle weight, required if limitation type is max axle weight")
     public final Double axleWeightMax;
 
-    @ApiModelProperty(value = "Start datetime", required = true)
+    @Schema(description = "Start datetime", required = true)
     public final ZonedDateTime startDate;
 
-    @ApiModelProperty(value = "End datetime")
+    @Schema(description = "End datetime")
     public final ZonedDateTime endDate;
 
-    @ApiModelProperty(value = "Finished datetime, required if state is finished")
+    @Schema(description = "Finished datetime, required if state is finished")
     public final ZonedDateTime finished;
 
     public TrafficRestrictionNotificationDto(
@@ -70,12 +70,12 @@ public class TrafficRestrictionNotificationDto {
         this.finished = finished;
     }
 
-    @ApiModelProperty(value = "Id", required = true)
+    @Schema(description = "Id", required = true)
     public String getId() {
         return id.id;
     }
 
-    @ApiModelProperty(value = "Version", required = true)
+    @Schema(description = "Version", required = true)
     public Long getVersion() {
         return id.version;
     }
