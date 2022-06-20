@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -94,11 +96,10 @@ public class GTFSWritingService {
                 write(getPath("agency.txt"), gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
                         agency -> String.format("%s,%s,%s,%s,%s,fi", agency.id, agency.name, agency.url, agency.timezone, agency.phoneNumber)));
 
-
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
                 "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
                         String.format("%s,%s,%s,%s,%s,,%s,%s,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.description != null ? stop.description : "",
-                                stop.latitude, stop.longitude, stop.locationType, stop.locationType == 0 ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
+                                stop.latitude, stop.longitude, stop.locationType, stop.locationType == LOCATION_TYPE_STOP ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",

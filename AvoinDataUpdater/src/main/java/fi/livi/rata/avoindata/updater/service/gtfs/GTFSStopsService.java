@@ -1,5 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,23 +86,19 @@ public class GTFSStopsService {
             String stationShortCode = stationEmbeddable.stationShortCode;
             final Station station = stationRepository.findByShortCode(stationShortCode);
 
-            Stop stop = createStationStop(station, stationShortCode, 1);
-            Stop tracklessStop = createStationStop(station, stationShortCode, 0);
+            Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
+            Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
 
-            stops.add(stop);
+            stops.add(stationEntry);
             stops.add(tracklessStop);
 
             for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
                 if (station != null) {
-                    String stopId = stationShortCode + "_" + scheduledTrack;
-                    String stopCode = stationShortCode;
-                    String track = scheduledTrack;
-
                     Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
 
-                    Platform gtfsPlatform = createPlatformStop(station, stopId, stopCode, track, infraApiPlatform);
+                    Platform platformStop = createPlatformStop(station, infraApiPlatform, scheduledTrack);
 
-                    stops.add(gtfsPlatform);
+                    stops.add(platformStop);
                 }
             }
         }
@@ -109,7 +108,7 @@ public class GTFSStopsService {
 
     private Stop createStationStop(final Station station, final String stationShortCode, final int locationType) {
         Stop stop = new Stop(station);
-        stop.stopId = locationType == 0 ?
+        stop.stopId = locationType == LOCATION_TYPE_STOP ?
                       stationShortCode + "_0" :
                       stationShortCode;
         stop.stopCode = stationShortCode;
@@ -123,7 +122,7 @@ public class GTFSStopsService {
             log.warn("Could not find Station for {}", stationShortCode);
         }
 
-        if (locationType == 0) {
+        if (locationType == LOCATION_TYPE_STOP) {
             stop.description = "Platform information not yet available";
         }
 
@@ -132,27 +131,22 @@ public class GTFSStopsService {
         return stop;
     }
 
-    private Platform createPlatformStop(final Station station, final String stopId, final String stopCode, final String track, final Optional<InfraApiPlatform> infraApiPlatform) {
-        if (infraApiPlatform.isPresent()) {
-            final InfraApiPlatform foundPlatform = infraApiPlatform.get();
+    private Platform createPlatformStop(final Station station, final Optional<InfraApiPlatform> infraApiPlatform, final String scheduledTrack) {
+        final String stopId = station.shortCode + "_" + scheduledTrack;
+        final String stopCode = station.shortCode;
+        final String track = scheduledTrack;
 
-            final String name = station.name
-                    .replace("_", " ")
-                    .concat(" raide ")
-                    .concat(track);
+        final String name = station.name
+                .replace("_", " ")
+                .concat(" raide ")
+                .concat(track);
 
-            final Point centroid = foundPlatform.geometry.getCentroid();
-            final double latitude = centroid.getY();
-            final double longitude = centroid.getX();
+        final Optional<Point> centroid = infraApiPlatform.map(platform -> platform.geometry.getCentroid());
 
-            return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
-        } else {
-            final String name = station.name.replace("_", " ");
-            final double latitude = station.latitude.doubleValue();
-            final double longitude = station.longitude.doubleValue();
+        final double latitude = centroid.map(location -> location.getY()).orElseGet(() -> station.latitude.doubleValue());
+        final double longitude = centroid.map(location -> location.getX()).orElseGet(() -> station.longitude.doubleValue());
 
-            return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
-        }
+        return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
     }
 
     private void setCustomLocations(String stationShortCode, Stop stop) {
