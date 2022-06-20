@@ -36,7 +36,7 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "trains", description = "Returns trains")
@@ -58,7 +58,7 @@ public class TrainController extends ADataController {
     private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @ApiOperation("Returns trains that are newer than {version}")
+    @Operation(summary = "Returns trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional
@@ -95,7 +95,7 @@ public class TrainController extends ADataController {
         }).collect(Collectors.toList());
     }
 
-    @ApiOperation("Returns latest train")
+    @Operation(summary = "Returns latest train")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/latest/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumber(@PathVariable final long train_number,
@@ -103,7 +103,7 @@ public class TrainController extends ADataController {
         return this.getTrainByTrainNumberAndDepartureDate(train_number, null, false, version, response);
     }
 
-    @ApiOperation("Returns a specific train")
+    @Operation(summary = "Returns a specific train")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumberAndDepartureDate(@PathVariable final long train_number,

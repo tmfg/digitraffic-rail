@@ -33,8 +33,8 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "track-work-notifications", description = "Returns track work notifications")
@@ -55,18 +55,18 @@ public class TrackWorkNotificationController extends ADataController {
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;
 
-    @ApiOperation("Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns ids and latest versions of all trackwork notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
     public List<RumaNotificationIdAndVersion> getAllTrackWorkNotifications(
-            @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
+            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
+            @Parameter(description = "End time. If missing, current date is used", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trackWorkNotificationRepository.findByModifiedBetween(
                 getStartTime(start),
                 getEndTime(end),
                 PageRequest.of(0, MAX_RESULTS));
     }
 
-    @ApiOperation("Returns all versions of a trackwork notification or an empty list if the notification does not exist")
+    @Operation(summary = "Returns all versions of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrackWorkNotificationWithVersions getTrackWorkNotificationsById(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
@@ -78,7 +78,7 @@ public class TrackWorkNotificationController extends ADataController {
                 versions.stream().map(twn -> RumaSerializationUtil.toTwnDto(twn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
-    @ApiOperation("Returns the latest version of a trackwork notification in JSON format or an empty list if the notification does not exist")
+    @Operation(summary = "Returns the latest version of a trackwork notification in JSON format or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrackWorkNotificationDto> getLatestTrackWorkNotificationById(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
@@ -94,7 +94,7 @@ public class TrackWorkNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns the latest version of a trackwork notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
+    @Operation(summary = "Returns the latest version of a trackwork notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
     public FeatureCollection getLatestTrackWorkNotificationByIdGeoJson(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
@@ -111,7 +111,7 @@ public class TrackWorkNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
+    @Operation(summary = "Returns a specific version of a trackwork notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByIdAndVersion(
             @ApiParam(value = "Track work notification identifier", required = true) @PathVariable final String id,
@@ -128,7 +128,7 @@ public class TrackWorkNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns newest versions of trackwork notifications by state in JSON format, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns newest versions of trackwork notifications by state in JSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     @JsonView(RumaJsonViews.PlainJsonView.class)
     public List<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByStateJson(
@@ -145,7 +145,7 @@ public class TrackWorkNotificationController extends ADataController {
         return twns;
     }
 
-    @ApiOperation("Returns newest versions of trackwork notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns newest versions of trackwork notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public FeatureCollection getTrackWorkNotificationsByStateGeoJson(

@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
-
 import java.util.HashMap;
 import java.util.List;
 
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.ThirdCategoryCodeRepository;
@@ -27,7 +27,7 @@ import fi.livi.rata.avoindata.common.domain.cause.PassengerTerm;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 public class CauseController extends AMetadataController {
@@ -45,7 +45,7 @@ public class CauseController extends AMetadataController {
     private HashMap<String, PassengerTerm> translations;
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiOperation("Returns list of cause category codes")
+    @Operation(summary = "Returns list of cause category codes")
     @RequestMapping(value = "cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
     public List<CategoryCode> getCauseCodes(@RequestParam(defaultValue = "false", name = "show_inactive") final boolean showInactive,
@@ -65,7 +65,7 @@ public class CauseController extends AMetadataController {
     }
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiOperation("Returns list of detailed cause category codes")
+    @Operation(summary = "Returns list of detailed cause category codes")
     @RequestMapping(value = "detailed-cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
     public List<DetailedCategoryCode> getDetailedCauseResources(
@@ -84,7 +84,7 @@ public class CauseController extends AMetadataController {
         return output;
     }
 
-    @ApiOperation("Returns list of third cause category codes")
+    @Operation(summary = "Returns list of third cause category codes")
     @JsonView(CategoryCodeJsonView.All.class)
     @RequestMapping(value = "third-cause-category-codes", method = RequestMethod.GET)
     @ResponseBody

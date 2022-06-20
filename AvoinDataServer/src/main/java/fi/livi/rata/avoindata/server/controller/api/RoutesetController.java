@@ -24,7 +24,7 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "routesets", description = "Returns routesets")
@@ -44,7 +44,7 @@ public class RoutesetController extends ADataController {
 
     private static final Comparator<Routeset> COMPARATOR = Comparator.comparing(t -> t.messageTime);
 
-    @ApiOperation("Returns routesets for {train_number} and {departure_date}")
+    @Operation(summary = "Returns routesets for {train_number} and {departure_date}")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public List<Routeset> getRoutesetsByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
                                                     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
@@ -56,7 +56,7 @@ public class RoutesetController extends ADataController {
         return routesets;
     }
 
-    @ApiOperation("Returns routesets for {station} and {departure_date}")
+    @Operation(summary = "Returns routesets for {station} and {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}", method = RequestMethod.GET)
     public List<Routeset> getRoutesetsByStationAndDepartureDate(HttpServletResponse response,
                                                                 @PathVariable final String station,
@@ -68,7 +68,7 @@ public class RoutesetController extends ADataController {
         return findByIds(ids);
     }
 
-    @ApiOperation("Returns routesets that are newer than {version}")
+    @Operation(summary = "Returns routesets that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET)
     public List<Routeset> getRoutesetsByVersion(final HttpServletResponse response,
                                                 @RequestParam(required = false) Long version) {

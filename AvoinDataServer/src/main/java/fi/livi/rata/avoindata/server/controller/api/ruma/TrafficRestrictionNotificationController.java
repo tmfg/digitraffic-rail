@@ -32,8 +32,8 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.ADataController;
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "traffic-restriction-notifications", description = "Returns traffic restriction notifications")
@@ -53,18 +53,18 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @Autowired
     private TrafficRestrictionNotificationRepository trafficRestrictionNotificationRepository;
 
-    @ApiOperation("Returns ids and latest versions of all trafficrestriction notifications, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns ids and latest versions of all trafficrestriction notifications, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
     public List<RumaNotificationIdAndVersion> getAllTrafficRestrictionNotifications(
-            @ApiParam(value = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @ApiParam(value = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
+            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
+            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
         return trafficRestrictionNotificationRepository.findByModifiedBetween(
                 getStartTime(start),
                 getEndTime(end),
                 PageRequest.of(0, MAX_RESULTS));
     }
 
-    @ApiOperation("Returns all versions of a trafficrestriction notification or an empty list if the notification does not exist")
+    @Operation(summary = "Returns all versions of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrafficRestrictionNotificationWithVersions getTrafficRestrictionNotificationsById(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
@@ -76,7 +76,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
                 versions.stream().map(trn -> RumaSerializationUtil.toTrnDto(trn, schema != null ? schema : false)).collect(Collectors.toList()));
     }
 
-    @ApiOperation("Returns the latest version of a trafficrestriction notification in JSON format or an empty list if the notification does not exist")
+    @Operation(summary = "Returns the latest version of a trafficrestriction notification in JSON format or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrafficRestrictionNotificationDto> getLatestTrafficRestrictionNotificationById(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
@@ -92,7 +92,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns the latest version of a trafficrestriction notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
+    @Operation(summary = "Returns the latest version of a trafficrestriction notification in GeoJSON format or an empty FeatureCollection if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
     public FeatureCollection getLatestTrafficRestrictionNotificationByIdGeoJson(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
@@ -108,7 +108,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns a specific version of a trafficrestriction notification or an empty list if the notification does not exist")
+    @Operation(summary = "Returns a specific version of a trafficrestriction notification or an empty list if the notification does not exist")
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<SpatialTrafficRestrictionNotificationDto> getTrafficRestrictionNotificationsByVersion(
             @ApiParam(value = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
@@ -125,7 +125,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
         }
     }
 
-    @ApiOperation("Returns newest versions of trafficrestriction notifications by state in JSON format, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns newest versions of trafficrestriction notifications by state in JSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     @JsonView(RumaJsonViews.PlainJsonView.class)
     public List<SpatialTrafficRestrictionNotificationDto> getTrafficRestrictionNotificationsByStateJson(
@@ -142,7 +142,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
         return twns;
     }
 
-    @ApiOperation("Returns newest versions of trafficrestriction notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
+    @Operation(summary = "Returns newest versions of trafficrestriction notifications by state in GeoJSON format, limited to " + MAX_RESULTS + " results")
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public FeatureCollection getTrafficRestrictionNotificationsByStateGeoJson(

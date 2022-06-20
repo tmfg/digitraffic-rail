@@ -8,8 +8,8 @@ import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.CompositionNotFoundException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class CompositionController extends ADataController {
     private CompositionRepository compositionRepository;
 
 
-    @ApiOperation("Returns all compositions that are newer than {version}")
+    @Operation(summary = "Returns all compositions that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET, path = "")
     public List<Composition> getCompositionsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
@@ -56,10 +56,10 @@ public class CompositionController extends ADataController {
     }
 
 
-    @ApiOperation("Returns all compositions for trains run on {departure_date}")
+    @Operation(summary = "Returns all compositions for trains run on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public Collection<Composition> getCompositionsByDepartureDate(
-            @ApiParam(defaultValue = "2017-08-01") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate
+            @Parameter @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate
                     departure_date,
             HttpServletResponse response) {
 
@@ -77,12 +77,11 @@ public class CompositionController extends ADataController {
     }
 
 
-    @ApiOperation("Returns composition for a specific train")
+    @Operation(summary = "Returns composition for a specific train")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public Composition getCompositionByTrainNumberAndDepartureDate(
-            @ApiParam(defaultValue = "2017-08-01") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                    LocalDate departure_date,
-            @ApiParam(defaultValue = "1") @PathVariable("train_number") Long train_number, HttpServletResponse response) {
+            @Parameter @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+            @Parameter @PathVariable("train_number") Long train_number, HttpServletResponse response) {
         List<Composition> compositions = compositionRepository.findByIds(Lists.newArrayList(new TrainId(train_number, departure_date)));
 
         if (compositions == null || compositions.isEmpty()) {

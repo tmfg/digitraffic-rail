@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
@@ -35,7 +36,7 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainMaximumLimitE
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "live-trains", description = "Returns trains that have been recently active")
@@ -60,7 +61,7 @@ public class LiveTrainController extends ADataController {
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @ApiOperation(value = "Returns active trains that are newer than {version}")
+    @Operation(summary = "Returns active trains that are newer than {version}")
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
     public List<Train> getLiveTrainsByVersion(@RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {

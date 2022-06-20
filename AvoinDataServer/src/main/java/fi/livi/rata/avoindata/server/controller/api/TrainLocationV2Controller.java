@@ -2,8 +2,6 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.server.dto.TrainLocationV2;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +9,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletResponse;
@@ -36,19 +36,26 @@ public class TrainLocationV2Controller extends ADataController {
         return convertGeoJsonToSimpleJson(originalResponse);
     }
 
-    @ApiOperation("Returns latest wsg84 coordinates for a train")
+    @Operation(summary = "Returns latest wsg84 coordinates for a train")
     @RequestMapping(method = RequestMethod.GET, path = "latest/{train_number}")
-    public List<TrainLocationV2> getTrainLocationByTrainNumberV2(@PathVariable @ApiParam(example = "1") Long train_number, @RequestParam(required = false) @ApiParam(example =
-            "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public List<TrainLocationV2> getTrainLocationByTrainNumberV2(
+            @PathVariable @Parameter(example = "1") Long train_number,
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70") List<Double> bbox,
+            HttpServletResponse response) {
+
         Iterable<TrainLocation> originalResponse = trainLocationController.getTrainLocationByTrainNumber(train_number, bbox, response);
 
         return convertGeoJsonToSimpleJson(originalResponse);
     }
 
-    @ApiOperation("Returns wsg84 coordinates for a train run on departure date")
+    @Operation(summary = "Returns wsg84 coordinates for a train run on departure date")
     @RequestMapping(method = RequestMethod.GET, path = "{departure_date}/{train_number}")
-    public List<TrainLocationV2> getTrainLocationByTrainNumberAndDepartureDateV2(@PathVariable @ApiParam(example = "1") Long train_number, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date, @RequestParam(required = false) @ApiParam(example =
-            "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public List<TrainLocationV2> getTrainLocationByTrainNumberAndDepartureDateV2(
+            @PathVariable @Parameter(example = "1") Long train_number,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70") List<Double> bbox,
+            HttpServletResponse response) {
+
         Iterable<TrainLocation> originalResponse = trainLocationController.getTrainLocationByTrainNumberAndDepartureDate(train_number, departure_date, bbox, response);
 
         return convertGeoJsonToSimpleJson(originalResponse);

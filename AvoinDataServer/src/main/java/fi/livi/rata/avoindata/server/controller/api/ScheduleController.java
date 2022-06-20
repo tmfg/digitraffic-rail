@@ -13,7 +13,7 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.EndDateBeforeStartDateException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TooLongPeriodRequestedException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainNotFoundException;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,7 @@ public class ScheduleController extends ADataController {
     @Autowired
     private TrainRepository trainRepository;
 
-    @ApiOperation("Return trains that run from {arrival_station} to {departure_station}")
+    @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}")
     @JsonView(ScheduleTrains.class)
     @RequestMapping(path = "station/{departure_station}/{arrival_station}", method = RequestMethod.GET)
     public List<Train> getTrainsFromDepartureToArrivalStation(@PathVariable  String departure_station,
