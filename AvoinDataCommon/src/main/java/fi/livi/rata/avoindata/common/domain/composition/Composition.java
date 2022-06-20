@@ -1,16 +1,26 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table

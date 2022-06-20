@@ -1,9 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
+import javax.persistence.Embeddable;
 
-import javax.persistence.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable
 @Schema(description = "Speed limit set for a part of a track")

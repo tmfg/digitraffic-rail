@@ -1,9 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.List;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Two consecutive elements in an identifier range")
 public class ElementRangeDto {

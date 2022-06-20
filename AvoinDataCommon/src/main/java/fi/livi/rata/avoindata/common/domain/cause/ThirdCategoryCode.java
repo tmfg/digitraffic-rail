@@ -16,10 +16,9 @@ import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity

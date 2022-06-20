@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.common.domain.trainreadymessage;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -13,9 +14,9 @@ import org.hibernate.annotations.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity

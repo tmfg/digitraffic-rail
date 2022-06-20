@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.common.domain.tracksection;
 
 import javax.persistence.Embeddable;
 
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable

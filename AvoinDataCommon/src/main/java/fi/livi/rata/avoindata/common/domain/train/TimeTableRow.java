@@ -26,13 +26,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
+
 import edu.umd.cs.findbugs.annotations.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 

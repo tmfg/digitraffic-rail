@@ -1,11 +1,10 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import java.time.ZonedDateTime;
+
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.time.ZonedDateTime;
 
 @Schema(description = "Describes planned, in-progress or finished track work")
 public class TrackWorkNotificationDto {

@@ -17,7 +17,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModelProperty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity

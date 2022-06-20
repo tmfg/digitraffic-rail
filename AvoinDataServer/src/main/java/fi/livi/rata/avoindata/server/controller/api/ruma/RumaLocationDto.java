@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Location of work, either an operating point or a section between operating points")

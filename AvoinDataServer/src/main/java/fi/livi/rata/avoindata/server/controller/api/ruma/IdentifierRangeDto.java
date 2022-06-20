@@ -1,11 +1,11 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonView;
+
+import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Place of work: between two track elements or a single track element")
 public class IdentifierRangeDto {

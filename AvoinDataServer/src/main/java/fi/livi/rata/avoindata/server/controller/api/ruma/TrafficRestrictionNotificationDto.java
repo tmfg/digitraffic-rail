@@ -1,13 +1,11 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import java.time.ZonedDateTime;
+
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.time.ZonedDateTime;
-import java.util.List;
 
 @Schema(description = "Describes a restriction affecting the use of a railway infrastructure part")
 public class TrafficRestrictionNotificationDto {
