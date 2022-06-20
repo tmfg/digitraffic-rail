@@ -54,9 +54,9 @@ public class GTFSEntityService {
     @Autowired
     private DateProvider dp;
 
-    public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
-        Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
 
+    public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
+        final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
         final PlatformData platformData = platformDataService.getCurrentPlatformData();
 

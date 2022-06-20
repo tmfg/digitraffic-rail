@@ -31,14 +31,14 @@ public class PlatformDataService {
     private DateProvider dp;
 
     public PlatformData getCurrentPlatformData() {
-        ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
+        final ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
-        Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes(currentDate);
+        final Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes(currentDate);
 
-        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
+        final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
                 infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
 
-        Map<String, List<InfraApiPlatform>> platformsByStation = liikennePaikkaNodes.keySet()
+        final Map<String, List<InfraApiPlatform>> platformsByStation = liikennePaikkaNodes.keySet()
                 .stream()
                 .collect(Collectors.toMap(
                         stationShortCode -> stationShortCode,

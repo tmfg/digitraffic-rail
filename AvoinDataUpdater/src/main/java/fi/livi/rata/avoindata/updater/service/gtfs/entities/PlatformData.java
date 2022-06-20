@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 
 public class PlatformData {
 
-    public Map<String, List<InfraApiPlatform>> platformsByStation;
-    public Map<String, Set<String>> validTracksByStation;
+    public final Map<String, List<InfraApiPlatform>> platformsByStation;
+    public final Map<String, Set<String>> validTracksByStation;
 
     public PlatformData(final Map<String, List<InfraApiPlatform>> platformsByStation) {
         this.platformsByStation = platformsByStation;
@@ -25,13 +25,13 @@ public class PlatformData {
                 );
     }
 
-    public Optional<InfraApiPlatform> getStationPlatform(String stationShortCode, String track) {
+    public Optional<InfraApiPlatform> getStationPlatform(final String stationShortCode, final String track) {
         return platformsByStation.getOrDefault(stationShortCode, Collections.emptyList()).stream()
                 .filter(platform -> platform.commercialTrack.equals(track))
                 .findAny();
     }
 
-    public boolean isValidTrack(String stationShortCode, String track) {
+    public boolean isValidTrack(final String stationShortCode, final String track) {
         return validTracksByStation.getOrDefault(stationShortCode, Collections.emptySet()).contains(track);
     }
 }

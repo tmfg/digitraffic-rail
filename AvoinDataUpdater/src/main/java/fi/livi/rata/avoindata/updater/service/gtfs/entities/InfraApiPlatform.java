@@ -10,7 +10,7 @@ public class InfraApiPlatform {
     public final String commercialTrack;
     public final Geometry geometry;
 
-    public InfraApiPlatform(String liikennepaikkaId, String name, String description, String commercialTrack, Geometry geometry) {
+    public InfraApiPlatform(final String liikennepaikkaId, final String name, final String description, final String commercialTrack, final Geometry geometry) {
         this.liikennepaikkaId = liikennepaikkaId;
         this.name = name;
         this.description = description;
@@ -18,15 +18,4 @@ public class InfraApiPlatform {
         this.geometry = geometry;
     }
 
-    @Override
-    public String toString() {
-        return "InfraApiPlatform{" +
-                "liikennepaikkaId='" + liikennepaikkaId + '\'' +
-                ", platformName='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", commercialTrack='" + commercialTrack + '\'' +
-                ", geometry=" + geometry +
-                ", centroid=" + geometry.getCentroid() +
-                '}';
-    }
 }
