@@ -1,0 +1,103 @@
+name: Install nginx
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment'
+        required: true
+        type: environment
+        default: 'beta'
+      config-repo-branch:
+        description: 'Branch or tag of CI-repo'
+        required: true
+        default: 'master'
+jobs:
+  log-parameters:
+    runs-on: ubuntu-20.04
+    steps:
+      -   name: Create parameters.txt
+          run: |
+            echo "User ${{ github.actor }} started install on $(date)" > parameters.txt
+            echo "Environment ${{ github.event.inputs.env }}" >> parameters.txt
+            echo "config-repo-branch ${{ github.event.inputs.config-repo-branch }}" >> parameters.txt
+      -   name: Upload parameters.txt
+          uses: actions/upload-artifact@v3
+          with:
+            name: parameters.txt
+            path: parameters.txt
+  image:
+    runs-on: ubuntu-20.04
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    environment: ${{ github.event.inputs.env }}
+    steps:
+      - name: Checkout CI-repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
+      - name: Set docker environment
+        run: |
+          if [ "${{ github.event.inputs.env }}" == "beta" ]
+          then
+            echo "ENVIRONMENT=test" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=${{ github.event.inputs.env }}" >> $GITHUB_ENV
+          fi
+      - name: Check nginx configurations
+        run: |
+          cd digitraffic-ci/aws/nginx-rail
+          docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=${{ env.ENVIRONMENT }} .
+          docker run --rm -t nginx-rail-${{ github.event.inputs.env }} nginx -t
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-install-image-rail-nginx-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build image
+        run: |
+          cd digitraffic-ci/aws/nginx-rail
+
+          docker build --no-cache \
+              --build-arg ENVIRONMENT=${{ env.ENVIRONMENT}} \
+              --build-arg APPNAME=rail \
+              -t ${{ secrets.ECR_URL }}/rata-nginx:latest \
+              --pull=true --file=Dockerfile .
+          docker push ${{ secrets.ECR_URL }}/rata-nginx:latest
+      - name: Update nginx task-def
+        id: update
+        uses: tmfg/digitraffic-actions@update-task-def/v1
+        with:
+          task-def-file-name: rail-${{ github.event.inputs.env }}-nginx
+          family-name: rail-${{ github.event.inputs.env }}-nginx
+          image-arn: ${{ secrets.ECR_URL }}/rata-nginx:latest
+          aws-role: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
+          ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
+          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+      - name: Update nginx service
+        uses: tmfg/digitraffic-actions@ecs-service-update/v1
+        with:
+          aws-role: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          service-name: rata-nginx
+          cluster-name: ${{ secrets.CLUSTER_NAME }}
+          task-definition: rail-${{ github.event.inputs.env }}-nginx
+          desired-count: 1
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: FAILED Nginx rail-${{ github.event.inputs.env }} config on install
+          fields: job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

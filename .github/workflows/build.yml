@@ -1,0 +1,44 @@
+name: Build
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java
+        uses: actions/setup-java@v2.5.0
+        with:
+          java-version: 11
+          distribution: temurin
+          cache: maven
+      - name: Compile
+        run: mvn -f pom.xml -T1.5C install -e -U -DskipTests=true -Ddependency-check.skip=true
+      - name: Setup database
+        run: |
+          docker run --rm -p 3306:3306 --name dt-rail-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_PASSWORD= -d mysql:5.7.29
+          while ! docker exec -i dt-rail-mysql mysql -uroot -e "SELECT 1"; do sleep 1; echo 'Waiting for database to start'; done
+          docker exec -i dt-rail-mysql mysql -uroot -e "CREATE DATABASE avoindata_test;"
+      # Creates database, has to be run before AvoinDataServer tests
+      - name: Run AvoinDataUpdater tests
+        run: |
+          mvn org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report -pl AvoinDataUpdater test
+      - name: Run AvoinDataServer tests
+        run: |
+          mvn org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report -pl AvoinDataServer test
+      - name: Publish test results
+        uses: dorny/test-reporter@0d00bb14cb0cc2c9b8985df6e81dd333188224e1
+        if: success() || failure()
+        with:
+          name: jUnit tests
+          path: AvoinDataUpdater/target/surefire-reports/*.xml,AvoinDataServer/target/surefire-reports/*.xml
+          reporter: java-junit
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: FAILED Rail build
+          fields: repo, job, took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

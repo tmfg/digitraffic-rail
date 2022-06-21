@@ -1,0 +1,73 @@
+name: Install
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment'
+        required: true
+        type: environment
+        default: 'beta'
+      app:
+        description: Application
+        required: true
+        type: choice
+        options:
+          - server
+          - updater
+      config-branch:
+        description: 'Config repo branch'
+        default: master
+        required: true
+        type: string
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    environment: ${{ github.event.inputs.env }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Checkout CI-repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: config
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Set capitalized app variable
+        run: |
+          APP_CAPITALIZED=$(echo ${{ github.event.inputs.app }} | awk '{print toupper(substr($0, 0, 1)) substr($0, 2)}')
+          echo "APP_CAPITALIZED=$APP_CAPITALIZED" >> $GITHUB_ENV
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build ${{ github.event.inputs.app }}
+        run: |
+          mvn install -DskipTests=true -Ddependency-check.skip=true
+          cp AvoinData${{ env.APP_CAPITALIZED }}/target/AvoinData${{ env.APP_CAPITALIZED }}-0.0.1-SNAPSHOT.jar config/aws/app.jar
+          cd config/aws
+          docker build --no-cache \
+            --build-arg ENV=${{ github.event.inputs.env }} \
+            --build-arg JAR_FILE=app.jar \
+            --build-arg PROPERTY_FILE=conf/avoindata${{ github.event.inputs.app }}-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/avoindata${{ github.event.inputs.app }}-logback.xml \
+            -t ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA} \
+            --pull=true --file=Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
+          docker push ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA}
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: FAILED Rail Install ${{ github.event.inputs.app }} to ${{ github.event.inputs.env }}
+          fields: repo, job, took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
