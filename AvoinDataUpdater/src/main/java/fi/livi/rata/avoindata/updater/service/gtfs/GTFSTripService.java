@@ -284,7 +284,7 @@ public class GTFSTripService {
 
         return timeTableRowsByTrainNumber.getOrDefault(trainNumber, Collections.emptyList())
                 .stream()
-                .filter(simpleTimeTableRow -> timeTableRowMatchesScheduleRow(simpleTimeTableRow, scheduleRow))
+                .filter(simpleTimeTableRow -> timeTableRowMatchesScheduleRow(simpleTimeTableRow, scheduleRow) && simpleTimeTableRow.commercialTrack != null)
                 .map(matchingRow -> matchingRow.commercialTrack)
                 .findAny();
     }
