@@ -99,7 +99,7 @@ public class GTFSWritingService {
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
                 "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
                         String.format("%s,%s,%s,%s,%s,,%s,%s,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.description != null ? stop.description : "",
-                                stop.latitude, stop.longitude, stop.locationType, stop.locationType == LOCATION_TYPE_STOP ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
+                                stop.latitude, stop.longitude, stop.locationType, stop.locationType == LOCATION_TYPE_STOP && stop.source != null ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
