@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -538,6 +539,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Test
     @Transactional
+    @Sql({ "/gtfs/import_test_stations.sql" })
     public void stopFileOutputIsCorrect() throws IOException {
         final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
         given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
@@ -564,6 +566,8 @@ public class GTFSDtoServiceTest extends BaseTest {
                 String stopId = row[gtfsFieldIndices.get("stop_id")];
                 String platformCode = row[gtfsFieldIndices.get("platform_code")];
                 String stopCode = row[gtfsFieldIndices.get("stop_code")];
+
+                Assert.assertNotNull(locationType);
 
                 if (locationType.equals(String.valueOf(LOCATION_TYPE_STATION))) {
                     // stations (location_type=1) should not have a parent station
