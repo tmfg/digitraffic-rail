@@ -25,7 +25,7 @@ public class TrainLocation {
     @JsonUnwrapped
     public TrainLocationId trainLocationId;
 
-    @Schema(type = "fi.livi.rata.avoindata.common.domain.trainlocation.SwaggerPoint")
+    @Schema(type = "fi.livi.rata.avoindata.common.domain.trainlocation.SwaggerPoint", implementation = SwaggerPoint.class)
     public Point location;
 
     public Integer speed;
