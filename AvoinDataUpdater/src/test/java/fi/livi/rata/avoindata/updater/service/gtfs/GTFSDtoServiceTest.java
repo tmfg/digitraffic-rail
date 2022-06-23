@@ -55,6 +55,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
+@Sql({ "/gtfs/import_test_stations.sql" })
 public class GTFSDtoServiceTest extends BaseTest {
     public static final String KOKKOLA_UIC = "KOK";
     public static final String HELSINKI_UIC = "HKI";
@@ -539,7 +540,6 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Test
     @Transactional
-    @Sql({ "/gtfs/import_test_stations.sql" })
     public void stopFileOutputIsCorrect() throws IOException {
         final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
         given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
