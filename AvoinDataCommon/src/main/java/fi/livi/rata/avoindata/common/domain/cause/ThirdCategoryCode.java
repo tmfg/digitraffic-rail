@@ -22,7 +22,7 @@ import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(description = "Most detailed category code for a Cause")
+@Schema(name = "ThirdCategoryCode", title = "ThirdCategoryCode", description = "Most detailed category code for a Cause")
 public class ThirdCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore
@@ -46,7 +46,7 @@ public class ThirdCategoryCode extends ACauseCode {
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @Schema(description = "Start date when this category code is used",required = true)
+    @Schema(description = "Start date when this category code is used", required = true)
     public LocalDate validFrom;
 
     @Column

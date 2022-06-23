@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.cause;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import javax.persistence.Entity;
@@ -18,12 +17,13 @@ import org.ietf.jgss.Oid;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
+@Schema(name = "Cause", title = "Cause", description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
 public class Cause {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

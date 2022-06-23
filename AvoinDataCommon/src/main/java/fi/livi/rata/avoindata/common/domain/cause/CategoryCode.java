@@ -24,7 +24,7 @@ import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(description="A code that is used to categorize reasons for a train not being on schedule")
+@Schema(name = "CategoryCode", title = "CategoryCode", description="A code that is used to categorize reasons for a train not being on schedule")
 public class CategoryCode extends ACauseCode {
     @Id
     @JsonIgnore

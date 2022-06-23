@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.common.domain.cause;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "PassengerTerm", title = "PassengerTerm")
 public class PassengerTerm {
     @Schema(description = "Finnish passenger friendly term for the code")
     public String fi;

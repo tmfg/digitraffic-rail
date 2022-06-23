@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "Point", title = "Point")
 public final class PointDto implements GeometryDto<List<Double>> {
 
     @JsonIgnore

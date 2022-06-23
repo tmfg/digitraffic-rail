@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Location of work, either an operating point or a section between operating points")
+@Schema(name ="RumaLocation", description = "Location of work, either an operating point or a section between operating points")
 public class RumaLocationDto {
 
     @Schema(description = "Notification identifier", required = true)

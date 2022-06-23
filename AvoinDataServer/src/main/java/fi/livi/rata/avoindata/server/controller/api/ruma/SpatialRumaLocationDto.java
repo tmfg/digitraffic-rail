@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "SpatialRumaLocation", title = "SpatialRumaLocation")
 public class SpatialRumaLocationDto extends RumaLocationDto {
 
     @Schema(description = "Location if no identifer ranges are present")

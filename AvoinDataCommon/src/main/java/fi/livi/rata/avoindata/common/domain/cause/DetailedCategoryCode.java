@@ -27,7 +27,7 @@ import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(description = "Category code that is one step more detailed from its parent CategoryCode")
+@Schema(name ="DetailedCategoryCode", title = "DetailedCategoryCode", description = "Category code that is one step more detailed from its parent CategoryCode")
 public class DetailedCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore

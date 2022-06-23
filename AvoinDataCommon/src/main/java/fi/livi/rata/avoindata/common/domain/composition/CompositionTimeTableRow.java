@@ -12,7 +12,7 @@ import javax.persistence.*;
 import java.time.*;
 
 @Entity
-@Schema(description = "Describes a point in a trains schedule where its composition changes")
+@Schema(name = "CompositionTimeTableRow", description = "Describes a point in a trains schedule where its composition changes")
 public class CompositionTimeTableRow {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

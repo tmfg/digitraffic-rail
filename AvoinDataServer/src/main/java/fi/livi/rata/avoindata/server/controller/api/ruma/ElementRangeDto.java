@@ -4,7 +4,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Two consecutive elements in an identifier range")
+@Schema(name ="ElementRange", description = "Two consecutive elements in an identifier range")
 public class ElementRangeDto {
 
     @Schema(description = "Identifier of element 1", required = true)

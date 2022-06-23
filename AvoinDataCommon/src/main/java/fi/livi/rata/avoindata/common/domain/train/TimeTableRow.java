@@ -40,7 +40,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Table(indexes = {
         @Index(name = "timetablerow_stationShortCode", columnList = "stationShortCode")
 })
-@Schema(description = "A part of train's schedule")
+@Schema(name = "TimeTableRow", description = "A part of train's schedule")
 public class TimeTableRow {
     public enum TimeTableRowType {
         ARRIVAL,

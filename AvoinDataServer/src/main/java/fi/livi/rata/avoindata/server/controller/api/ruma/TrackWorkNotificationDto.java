@@ -6,7 +6,7 @@ import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Describes planned, in-progress or finished track work")
+@Schema(name = "TrackWorkNotification", title = "TrackWorkNotification", description = "Describes planned, in-progress or finished track work")
 public class TrackWorkNotificationDto {
 
     public TrackWorkNotification.TrackWorkNotificationId id;

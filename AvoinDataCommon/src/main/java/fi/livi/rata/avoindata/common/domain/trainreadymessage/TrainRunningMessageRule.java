@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table
-@Schema(description = "These rules define how TrainRunningMessages trigger actual times for TimeTableRows")
+@Schema(name = "TrainRunningMessageRule", description = "These rules define how TrainRunningMessages trigger actual times for TimeTableRows")
 public class TrainRunningMessageRule {
     @Id
     public Long id;
