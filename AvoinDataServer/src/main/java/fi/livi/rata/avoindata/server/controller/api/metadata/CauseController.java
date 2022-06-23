@@ -45,7 +45,7 @@ public class CauseController extends AMetadataController {
     private HashMap<String, PassengerTerm> translations;
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @Operation(summary = "Returns list of cause category codes")
+    @Operation(summary = "Returns list of cause category codes", ignoreJsonView = true)
     @RequestMapping(value = "cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
     public List<CategoryCode> getCauseCodes(@RequestParam(defaultValue = "false", name = "show_inactive") final boolean showInactive,
@@ -65,7 +65,7 @@ public class CauseController extends AMetadataController {
     }
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @Operation(summary = "Returns list of detailed cause category codes")
+    @Operation(summary = "Returns list of detailed cause category codes", ignoreJsonView = true)
     @RequestMapping(value = "detailed-cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
     public List<DetailedCategoryCode> getDetailedCauseResources(
@@ -84,7 +84,7 @@ public class CauseController extends AMetadataController {
         return output;
     }
 
-    @Operation(summary = "Returns list of third cause category codes")
+    @Operation(summary = "Returns list of third cause category codes", ignoreJsonView = true)
     @JsonView(CategoryCodeJsonView.All.class)
     @RequestMapping(value = "third-cause-category-codes", method = RequestMethod.GET)
     @ResponseBody

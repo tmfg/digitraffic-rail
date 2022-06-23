@@ -40,7 +40,7 @@ public class ScheduleController extends ADataController {
     @Autowired
     private TrainRepository trainRepository;
 
-    @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}")
+    @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}", ignoreJsonView = true)
     @JsonView(ScheduleTrains.class)
     @RequestMapping(path = "station/{departure_station}/{arrival_station}", method = RequestMethod.GET)
     public List<Train> getTrainsFromDepartureToArrivalStation(@PathVariable  String departure_station,

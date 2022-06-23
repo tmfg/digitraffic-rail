@@ -37,6 +37,10 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitE
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "live-trains", description = "Returns trains that have been recently active")
@@ -61,7 +65,7 @@ public class LiveTrainController extends ADataController {
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @Operation(summary = "Returns active trains that are newer than {version}")
+    @Operation(summary = "Returns active trains that are newer than {version}", ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
     public List<Train> getLiveTrainsByVersion(@RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {
@@ -79,7 +83,11 @@ public class LiveTrainController extends ADataController {
     }
 
     @JsonView(TrainJsonView.LiveTrains.class)
-    @ApiOperation(value = "Returns trains that travel trough {station}", response = Train.class, responseContainer = "List")
+    @Operation(summary = "Returns trains that travel trough {station}",
+               ignoreJsonView = true,
+               responses = { @ApiResponse(content = @Content(
+                       mediaType = "application/json",
+                       array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
     public List<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
                                          @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,

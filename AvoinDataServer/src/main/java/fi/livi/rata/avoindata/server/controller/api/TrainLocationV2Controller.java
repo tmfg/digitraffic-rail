@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletResponse;
@@ -28,7 +31,10 @@ public class TrainLocationV2Controller extends ADataController {
     @Autowired
     private TrainLocationController trainLocationController;
 
-    @ApiOperation(value = "Returns latest wsg84 coordinates for trains", response = Object.class)
+    @Operation(summary = "Returns latest wsg84 coordinates for trains",
+               responses = { @ApiResponse(content = @Content(
+                       mediaType = "application/json",
+                       schema = @Schema(implementation = TrainLocationV2.class))) })
     @RequestMapping(method = RequestMethod.GET, path = "latest")
     public List<TrainLocationV2> getTrainLocationsV2(@RequestParam(required = false) List<Double> bbox, HttpServletResponse response) {
         List<TrainLocation> originalResponse = trainLocationController.getTrainLocations(bbox, response);
