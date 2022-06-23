@@ -55,6 +55,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
+@Transactional
 @Sql({ "/gtfs/import_test_stations.sql" })
 public class GTFSDtoServiceTest extends BaseTest {
     public static final String KOKKOLA_UIC = "KOK";
