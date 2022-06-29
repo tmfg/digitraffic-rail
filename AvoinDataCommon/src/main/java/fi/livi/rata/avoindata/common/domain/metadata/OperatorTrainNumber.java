@@ -16,7 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Table
 @Entity
 @JsonPropertyOrder({"id", "bottomLimit", "topLimit", "trainCategory"})
-@Schema(description = "Operators own a range of train numbers")
+@Schema(name = "OperatorTrainNumber", title = "OperatorTrainNumber",
+        description = "Operators own a range of train numbers")
 public class OperatorTrainNumber implements Serializable {
     @Id
     @Column

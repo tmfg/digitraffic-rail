@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "FeatureCollection", title = "FeatureCollection")
 public final class FeatureCollection implements GeoJsonObject {
 
-    @Schema(type = "fi.livi.rata.avoindata.server.dto.SwaggerObject")
+    @Schema(type = "fi.livi.rata.avoindata.server.dto.SwaggerObject", implementation = fi.livi.rata.avoindata.server.dto.SwaggerObject.class)
     public final List<Feature> features;
 
     public FeatureCollection(final List<Feature> features) {

@@ -50,7 +50,7 @@ public class TrainRunningMessage {
     public String nextStation;
     public String previousStation;
 
-    @Schema(description = "OCCUPY = train entered TrackSection, RELEASE=train exited TrackSection")
+    @Schema(description = "OCCUPY = train entered TrackSection, RELEASE = train exited TrackSection")
     public TrainRunningMessageTypeEnum type;
 
     @Override

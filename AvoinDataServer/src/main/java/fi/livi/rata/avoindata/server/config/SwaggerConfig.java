@@ -1,9 +1,13 @@
 package fi.livi.rata.avoindata.server.config;
 
+import java.util.TreeMap;
+
 import org.springdoc.core.SwaggerUiConfigProperties;
+import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -19,7 +23,17 @@ public class SwaggerConfig {
         config.setDefaultModelRendering("model");
         config.setDefaultModelExpandDepth(6);
         config.setTagsSorter("alpha");
+        config.setOperationsSorter("alpha");
         return config;
+    }
+
+    @Bean
+    public OpenApiCustomiser openApiCustomiser() {
+        return openApi -> {
+            // Sorts schemas alphabetically
+            Components components = openApi.getComponents();
+            components.setSchemas(new TreeMap<>(components.getSchemas()));
+        };
     }
 
     @Bean
