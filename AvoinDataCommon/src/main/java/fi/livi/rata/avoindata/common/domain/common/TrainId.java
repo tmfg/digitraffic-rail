@@ -11,6 +11,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(required = true)
 public class TrainId implements Serializable {
     @NonNull
     @Column

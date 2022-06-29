@@ -10,6 +10,7 @@ import org.hibernate.annotations.Type;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(required = true)
 public class StringTrainId implements Serializable {
     @NonNull
     @Column

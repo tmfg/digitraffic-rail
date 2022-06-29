@@ -5,6 +5,7 @@ import javax.persistence.Embeddable;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(required = true)
 @Embeddable
 public class StationEmbeddable {
     @Column
