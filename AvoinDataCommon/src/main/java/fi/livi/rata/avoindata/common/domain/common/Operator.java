@@ -6,7 +6,9 @@ import javax.persistence.Embeddable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable
-@Schema(required = true)
+// Class has same name as fi.livi.rata.avoindata.common.domain.metadata.Operator.
+// Name needs to be set for schema, or this is shown in OpenAPI schemas instead (even when this is hidden)
+@Schema(hidden = true, name = "EmbeddedOperator")
 public class Operator {
     @Column(name = "operator_uic_code")
     @Schema(description = "Official UIC code of the operator", example = "10")

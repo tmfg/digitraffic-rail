@@ -42,6 +42,7 @@ public class Train implements Comparable<Train> {
 
     @Embedded
     @JsonUnwrapped
+    @JsonInclude(Include.NON_NULL) // Springdoc won't include embedded to OpenAPI schemas without JsonInclude
     public Operator operator;
 
     @Column

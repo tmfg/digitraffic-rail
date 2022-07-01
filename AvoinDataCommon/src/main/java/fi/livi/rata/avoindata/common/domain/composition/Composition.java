@@ -16,6 +16,8 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import fi.livi.rata.avoindata.common.domain.common.Operator;
@@ -33,6 +35,7 @@ public class Composition  {
 
     @Embedded
     @JsonUnwrapped
+    @JsonInclude(Include.NON_NULL) // Springdoc won't include embedded to OpenAPI schemas without JsonInclude
     public Operator operator;
 
     @Transient
