@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
@@ -34,6 +35,8 @@ import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "traffic-restriction-notifications", description = "Returns traffic restriction notifications")
@@ -68,7 +71,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrafficRestrictionNotificationWithVersions getTrafficRestrictionNotificationsById(
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final List<TrafficRestrictionNotification> versions = trafficRestrictionNotificationRepository.findByTrnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -80,7 +84,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrafficRestrictionNotificationDto> getLatestTrafficRestrictionNotificationById(
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
         if (trafficRestrictionNotification.isEmpty()) {
@@ -96,7 +101,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
     public FeatureCollection getLatestTrafficRestrictionNotificationByIdGeoJson(
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
         if (trafficRestrictionNotification.isEmpty()) {
@@ -113,7 +119,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     public Collection<SpatialTrafficRestrictionNotificationDto> getTrafficRestrictionNotificationsByVersion(
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @Parameter(description = "Traffic restriction notification version", required = true) @PathVariable final long version,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdAndVersion(id, version);
         if (trafficRestrictionNotification.isEmpty()) {
@@ -129,8 +136,15 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     @JsonView(RumaJsonViews.PlainJsonView.class)
     public List<SpatialTrafficRestrictionNotificationDto> getTrafficRestrictionNotificationsByStateJson(
-            @Parameter(description = "State of traffic restriction notification") @RequestParam(value = "state", required = false, defaultValue = "SENT, FINISHED") final Set<TrafficRestrictionNotificationState> state,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "State of traffic restriction notification",
+                       array = @ArraySchema(
+                               schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
+                                                enumAsRef = true,
+                                                type = "string"),
+                               arraySchema = @Schema(defaultValue = "SENT,FINISHED")))
+            @RequestParam(value = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             @Parameter(description = "Start time. If missing, current date - 7 days.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
             final HttpServletResponse response) {
@@ -146,8 +160,15 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public FeatureCollection getTrafficRestrictionNotificationsByStateGeoJson(
-            @Parameter(description = "State of traffic restriction notification") @RequestParam(value = "state", required = false, defaultValue = "SENT, FINISHED") final Set<TrafficRestrictionNotificationState> state,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "State of traffic restriction notification",
+                       array = @ArraySchema(
+                               schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
+                                                enumAsRef = true,
+                                                type = "string"),
+                               arraySchema = @Schema(defaultValue = "SENT,FINISHED")))
+            @RequestParam(name = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
+            @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
+            @RequestParam(name = "schema", required = false, defaultValue = "false") final Boolean schema,
             @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
             final HttpServletResponse response) {

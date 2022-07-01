@@ -28,6 +28,7 @@ import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
 public class CauseController extends AMetadataController {
@@ -48,7 +49,8 @@ public class CauseController extends AMetadataController {
     @Operation(summary = "Returns list of cause category codes", ignoreJsonView = true)
     @RequestMapping(value = "cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
-    public List<CategoryCode> getCauseCodes(@RequestParam(defaultValue = "false", name = "show_inactive") final boolean showInactive,
+    public List<CategoryCode> getCauseCodes(@Parameter(description = "show_inactive")
+                                            @RequestParam(defaultValue = "false", name = "show_inactive") final boolean showInactive,
                                             HttpServletResponse response) {
         final List<CategoryCode> output;
         if (showInactive) {
@@ -69,6 +71,7 @@ public class CauseController extends AMetadataController {
     @RequestMapping(value = "detailed-cause-category-codes", method = RequestMethod.GET)
     @ResponseBody
     public List<DetailedCategoryCode> getDetailedCauseResources(
+            @Parameter(description = "show_inactive")
             @RequestParam(defaultValue = "false", name = "show_inactive") final boolean showInactive, HttpServletResponse response) {
         final List<DetailedCategoryCode> output;
         if (showInactive) {

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
@@ -72,7 +73,7 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}")
     public TrackWorkNotificationWithVersions getTrackWorkNotificationsById(
             @Parameter(description = "Track work notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", example = "false") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final List<TrackWorkNotification> versions = trackWorkNotificationRepository.findByTwnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -84,7 +85,7 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.json")
     public Collection<SpatialTrackWorkNotificationDto> getLatestTrackWorkNotificationById(
             @Parameter(description = "Track work notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", example = "false") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
         if (trackWorkNotification.isEmpty()) {
@@ -100,7 +101,7 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/latest.geojson")
     public FeatureCollection getLatestTrackWorkNotificationByIdGeoJson(
             @Parameter(description = "Track work notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", example = "false") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             HttpServletResponse response) {
 
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdLatest(id);
@@ -117,7 +118,7 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/{id}/{version}")
     public Collection<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByIdAndVersion(
             @Parameter(description = "Track work notification identifier", required = true) @PathVariable final String id,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "Show map or schema locations", example = "false") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             @Parameter(description = "Track work notification version", required = true) @PathVariable final long version,
             HttpServletResponse response) {
         final Optional<TrackWorkNotification> trackWorkNotification = trackWorkNotificationRepository.findByTwnIdAndVersion(id, version);
@@ -135,10 +136,11 @@ public class TrackWorkNotificationController extends ADataController {
     @JsonView(RumaJsonViews.PlainJsonView.class)
     public List<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByStateJson(
             @Parameter(description = "State of track work notification",
-                       array = @ArraySchema(schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class)))
+                       array = @ArraySchema(schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class, defaultValue = "SENT,ACTIVE,PASSIVE")),
+                       example = "SENT,ACTIVE,PASSIVE")
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
-            @Parameter(description = "Show map or schema locations",
-                       schema = @Schema(enumAsRef = true, implementation = Boolean.class))
+            @Parameter(description = "Show map or schema locations", example = "false",
+                       schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
@@ -155,8 +157,13 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public FeatureCollection getTrackWorkNotificationsByStateGeoJson(
-            @Parameter(description = "State of track work notification") @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
-            @Parameter(description = "Show map or schema locations") @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
+            @Parameter(description = "State of track work notification",
+                       array = @ArraySchema(schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class, defaultValue = "SENT,ACTIVE,PASSIVE")),
+                       example = "SENT,ACTIVE,PASSIVE")
+            @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
+            @Parameter(description = "Show map or schema locations", example = "false",
+                       schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
+            @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
             @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
             @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
             final HttpServletResponse response) {

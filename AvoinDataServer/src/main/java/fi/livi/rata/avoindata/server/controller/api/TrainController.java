@@ -140,8 +140,8 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public List<Train> getTrainsByDepartureDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date, @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {//
-
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
+            @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {
 
         List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date);
 
