@@ -141,6 +141,10 @@ public class SingleDayScheduleExtractService {
             return false;
         }
 
+        if (left.timetableType != right.timetableType) {
+            return false;
+        }
+
         if (left.timeTableRows.size() != right.timeTableRows.size()) {
             return false;
         }
