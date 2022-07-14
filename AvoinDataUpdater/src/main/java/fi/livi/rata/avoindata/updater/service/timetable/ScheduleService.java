@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.timetable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +52,13 @@ public class ScheduleService {
             final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);
 
-            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
-            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
+            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start).stream().filter(s -> s.trainNumber == 9672L).collect(Collectors.toList());
+            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start).stream().filter(s -> s.trainNumber == 9672L).collect(Collectors.toList());
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                extractForDate(adhocSchedules, regularSchedules, date);
+                if (date.isEqual(LocalDate.of(2022,7,27))) {
+                    extractForDate(adhocSchedules, regularSchedules, date);
+                }
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.FUTURE_TRAINS);

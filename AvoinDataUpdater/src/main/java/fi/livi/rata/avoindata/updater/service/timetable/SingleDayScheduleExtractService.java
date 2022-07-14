@@ -141,7 +141,8 @@ public class SingleDayScheduleExtractService {
             return false;
         }
 
-        if (left.timetableType != right.timetableType) {
+        log.info("Train: %s / %s, TimeTableType: %s / %s", left.id.trainNumber, left.id.departureDate, left.timetableType, right.timetableType);
+        if (!left.timetableType.equals(right.timetableType) ){
             return false;
         }
 
