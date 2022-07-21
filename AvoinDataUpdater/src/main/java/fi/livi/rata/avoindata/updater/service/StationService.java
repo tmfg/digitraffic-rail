@@ -27,6 +27,9 @@ public class StationService {
             } else if (station.shortCode.equals("MVA")) {
                 station.latitude = BigDecimal.valueOf(55.777111);
                 station.longitude = BigDecimal.valueOf(37.655278);
+            } else if (station.shortCode.equals("TVER")) {
+                station.latitude = BigDecimal.valueOf(56.835200);
+                station.longitude = BigDecimal.valueOf(35.892800);
             }
         }
 
