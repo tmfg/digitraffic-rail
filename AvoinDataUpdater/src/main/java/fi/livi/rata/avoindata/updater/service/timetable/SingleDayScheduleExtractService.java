@@ -141,10 +141,6 @@ public class SingleDayScheduleExtractService {
             return false;
         }
 
-        if (!left.timetableAcceptanceDate.equals(right.timetableAcceptanceDate)) {
-            return false;
-        }
-
         if (!left.timetableType.equals(right.timetableType) ){
             return false;
         }
