@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(description = "Operator has to ask permission (=TrainReady) to leave certain stations")
+@Schema(name = "TrainReady", title = "TrainReady", description = "Operator has to ask permission (=TrainReady) to leave certain stations")
 public class TrainReady {
     public enum TrainReadySource {
         PHONE,

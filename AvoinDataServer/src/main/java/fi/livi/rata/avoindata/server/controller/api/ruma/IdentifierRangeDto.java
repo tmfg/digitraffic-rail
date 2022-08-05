@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "IdentifierRange", description = "Place of work: between two track elements or a single track element")
+@Schema(name = "IdentifierRange", title = "IdentifierRange", description = "Place of work: between two track elements or a single track element")
 public class IdentifierRangeDto {
 
     @Schema(description = "Notification identifier", required = true)

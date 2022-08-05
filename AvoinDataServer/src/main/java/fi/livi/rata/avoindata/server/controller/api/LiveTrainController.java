@@ -86,7 +86,7 @@ public class LiveTrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @Operation(summary = "Returns trains that travel trough {station}",
                ignoreJsonView = true,
-               responses = { @ApiResponse(content = @Content(
+               responses = { @ApiResponse(responseCode = "200", content = @Content(
                        mediaType = "application/json",
                        array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)

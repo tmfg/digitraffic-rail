@@ -5,7 +5,7 @@ import javax.persistence.Embeddable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable
-@Schema(name = "TrackLocation", description = "A location on the track. Kilometres and meters are distance from the start of the track")
+@Schema(name = "TrackLocation", title = "TrackLocation", description = "A location on the track. Kilometres and meters are distance from the start of the track")
 public class TrackLocation {
     @Schema(example = "003")
     public String track;

@@ -23,7 +23,7 @@ public class OperatorController extends AMetadataController {
     private OperatorRepository operatorRepository;
 
     @Operation(summary = "Returns list of operators",
-               responses = { @ApiResponse(content = @Content(
+               responses = { @ApiResponse(responseCode = "200", content = @Content(
                        mediaType = "application/json",
                        array = @ArraySchema(schema = @Schema(implementation = Operator.class)))) })
     @RequestMapping(value = "operators", method = RequestMethod.GET)

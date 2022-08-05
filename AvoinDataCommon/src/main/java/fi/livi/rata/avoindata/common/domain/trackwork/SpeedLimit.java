@@ -5,7 +5,7 @@ import javax.persistence.Embeddable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Embeddable
-@Schema(name = "SpeedLimit", description = "Speed limit set for a part of a track")
+@Schema(name = "SpeedLimit", title = "SpeedLimit", description = "Speed limit set for a part of a track")
 public class SpeedLimit {
 
     @Schema(description = "Speed limit value", required = true)

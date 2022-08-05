@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "TrainType", title = "TrainType")
 public class TrainType implements NamedEntity {
 
     @Id

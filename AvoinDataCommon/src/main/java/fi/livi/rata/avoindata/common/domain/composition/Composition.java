@@ -26,7 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table
-@Schema(name = "Composition", description = "Describes train's locomotives and wagons")
+@Schema(name = "Composition", title = "Composition", description = "Describes train's locomotives and wagons")
 public class Composition  {
 
     @EmbeddedId

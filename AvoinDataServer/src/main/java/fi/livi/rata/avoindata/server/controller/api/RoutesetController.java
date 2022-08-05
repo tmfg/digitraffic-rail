@@ -25,6 +25,7 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "routesets", description = "Returns routesets")
@@ -46,8 +47,10 @@ public class RoutesetController extends ADataController {
 
     @Operation(summary = "Returns routesets for {train_number} and {departure_date}")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
-    public List<Routeset> getRoutesetsByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
-                                                    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+    public List<Routeset> getRoutesetsByTrainNumber(
+            HttpServletResponse response,
+            @Parameter(description = "train_number") @PathVariable final String train_number,
+            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         final List<Routeset> routesets = routesetRepository.findByTrainNumberAndDepartureDate(train_number, departure_date);
 
@@ -58,9 +61,10 @@ public class RoutesetController extends ADataController {
 
     @Operation(summary = "Returns routesets for {station} and {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}", method = RequestMethod.GET)
-    public List<Routeset> getRoutesetsByStationAndDepartureDate(HttpServletResponse response,
-                                                                @PathVariable final String station,
-                                                                @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+    public List<Routeset> getRoutesetsByStationAndDepartureDate(
+            HttpServletResponse response,
+            @Parameter(description = "station") @PathVariable final String station,
+            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
 
         List<Long> ids = routesetRepository.findIdByStationAndDepartureDate(departure_date, station);
 

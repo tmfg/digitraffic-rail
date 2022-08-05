@@ -39,7 +39,9 @@ public class TrainLocationGeoJsonController extends ADataController {
 
     @Operation(summary = "Returns latest wsg84 coordinates for trains in geojson format")
     @RequestMapping(method = RequestMethod.GET, path = "latest", produces = "application/vnd.geo+json")
-    public FeatureCollection getTrainLocationsAsGeoJson(@RequestParam(required = false) @Parameter(example = "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public FeatureCollection getTrainLocationsAsGeoJson(
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
+            HttpServletResponse response) {
         validateBBox(bbox);
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocations(bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
@@ -47,8 +49,10 @@ public class TrainLocationGeoJsonController extends ADataController {
 
     @Operation(summary = "Returns latest wsg84 coordinates for a train in geojson format")
     @RequestMapping(method = RequestMethod.GET, path = "latest/{train_number}", produces = "application/vnd.geo+json")
-    public FeatureCollection getTrainLocationByTrainNumberAsGeoJson(@PathVariable @Parameter(example = "1") Long train_number, @RequestParam(required = false) @Parameter(example =
-            "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public FeatureCollection getTrainLocationByTrainNumberAsGeoJson(
+            @PathVariable @Parameter(example = "1", description = "train_number") Long train_number,
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
+            HttpServletResponse response) {
         validateBBox(bbox);
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocationByTrainNumber(train_number, bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
@@ -56,8 +60,11 @@ public class TrainLocationGeoJsonController extends ADataController {
 
     @Operation(summary = "Returns wsg84 coordinates for a train run on departure date in geojson format")
     @RequestMapping(method = RequestMethod.GET, path = "{departure_date}/{train_number}", produces = "application/vnd.geo+json")
-    public FeatureCollection getTrainLocationByTrainNumberAndDepartureDateAsGeoJson(@PathVariable @Parameter(example = "1") Long train_number, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date, @RequestParam(required = false) @Parameter(example =
-            "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public FeatureCollection getTrainLocationByTrainNumberAndDepartureDateAsGeoJson(
+            @PathVariable @Parameter(example = "1") Long train_number,
+            @PathVariable @Parameter(description = "departure_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
+            HttpServletResponse response) {
         validateBBox(bbox);
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocationByTrainNumberAndDepartureDate(train_number, departure_date, bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);

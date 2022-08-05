@@ -12,6 +12,7 @@ import javax.persistence.OneToMany;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
+@Schema(name = "TrackSection", title = "TrackSection")
 public class TrackSection {
     @Id
     public Long id;

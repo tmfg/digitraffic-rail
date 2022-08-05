@@ -132,11 +132,10 @@ public class TrainController extends ADataController {
         return trains;
     }
 
-    @Operation(summary = "Returns trains run on {departure_date}",
-               ignoreJsonView = true,
-               responses = { @ApiResponse(content = @Content(
-                       mediaType = "application/json",
-                       array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
+    @Operation(summary = "Returns trains run on {departure_date}", ignoreJsonView = true, responses = {
+            @ApiResponse(responseCode = "200", content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public List<Train> getTrainsByDepartureDate(

@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "TrackWorkNotificationWithVersions", title = "TrackWorkNotificationWithVersions")
 public class TrackWorkNotificationWithVersions {
 
     @Schema(description = "Track work notification id")

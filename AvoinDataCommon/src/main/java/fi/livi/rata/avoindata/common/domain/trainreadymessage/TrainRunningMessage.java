@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(indexes = {@Index(name = "tr20_departureDate_trainNumber", columnList = "departureDate,trainNumber"), @Index(name = "tr20_version", columnList = "version")})
-@Schema(name = "TrainRunningMessage", description = "TrainRunMessages are generated when a train either enters or exists a TrackSection")
+@Schema(name = "TrainRunningMessage", title = "TrainRunningMessage", description = "TrainRunMessages are generated when a train either enters or exists a TrackSection")
 public class TrainRunningMessage {
     @Id
     public Long id;

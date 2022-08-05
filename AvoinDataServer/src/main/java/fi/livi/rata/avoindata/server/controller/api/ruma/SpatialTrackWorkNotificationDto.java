@@ -8,7 +8,7 @@ import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "SpatialTrackWorkNotification", title = "SpatialTrackWorkNotification")
+@Schema(name = "SpatialTrackWorkNotification", title = "SpatialTrackWorkNotification", description = "Describes planned, in-progress or finished track work")
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
     @Schema(description = "Approximate location", required = true)

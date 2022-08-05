@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
+@Schema(name = "Station", title = "Station")
 public class Station {
     @JsonProperty("stationName")
     @Schema(example = "Helsinki asema")

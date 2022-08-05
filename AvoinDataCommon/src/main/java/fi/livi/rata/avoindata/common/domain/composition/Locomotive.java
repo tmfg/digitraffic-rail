@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "Locomotive", title = "Locomotive", description = "")
 public class Locomotive {
 
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Schema(name = "JourneySection", description = "Describes a leg where train's composition is in effect")
+@Schema(name = "JourneySection", title = "JourneySection", description = "Describes a leg where train's composition is in effect")
 public class JourneySection {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     @JsonIgnore

@@ -66,9 +66,8 @@ public class CompositionController extends ADataController {
     @Operation(summary = "Returns all compositions for trains run on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public Collection<Composition> getCompositionsByDepartureDate(
-            @Parameter(schema = @Schema(defaultValue = "2017-08-01"), description = "departure_date")
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate
-                    departure_date,
+            @Parameter(schema = @Schema(defaultValue = "2017-08-01", required = true, type = "string($date)"), description = "departure_date")
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
             HttpServletResponse response) {
 
 
@@ -88,7 +87,7 @@ public class CompositionController extends ADataController {
     @Operation(summary = "Returns composition for a specific train")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public Composition getCompositionByTrainNumberAndDepartureDate(
-            @Parameter(description = "departure_date", schema = @Schema(defaultValue = "2017-08-01"))
+            @Parameter(description = "departure_date", schema = @Schema(defaultValue = "2017-08-01", required = true, type = "string($date)"))
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
             @Parameter(description = "train_number", schema = @Schema(defaultValue = "1", type = "integer", format = "int64"))
             @PathVariable("train_number") Long train_number, HttpServletResponse response) {

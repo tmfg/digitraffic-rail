@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Entity
 @Table(indexes = {@Index(name = "train_trainNumber_departureDate", columnList = "trainNumber,departureDate", unique = true), @Index(name
         = "train_departureDate", columnList = "departureDate"), @Index(name = "train_version", columnList = "version")})
+@Schema(name = "Train", title = "Train")
 public class Train implements Comparable<Train> {
     public enum TimetableType {
         REGULAR,

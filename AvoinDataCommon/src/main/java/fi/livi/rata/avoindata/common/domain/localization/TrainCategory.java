@@ -10,6 +10,7 @@ import fi.livi.rata.avoindata.common.domain.common.NamedEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
+@Schema(name = "TrainCategory", title = "TrainCategory")
 public class TrainCategory implements NamedEntity {
 
     @Id

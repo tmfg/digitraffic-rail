@@ -9,7 +9,7 @@ import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictio
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "SpatialTrafficRestrictionNotification")
+@Schema(name = "SpatialTrafficRestrictionNotification", title = "SpatialTrafficRestrictionNotification", description = "Describes a restriction affecting the use of a railway infrastructure part")
 public class SpatialTrafficRestrictionNotificationDto extends TrafficRestrictionNotificationDto {
 
     @Schema(description = "Approximate location", required = true)

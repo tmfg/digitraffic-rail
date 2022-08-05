@@ -135,9 +135,10 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".json", produces = "application/json")
     @JsonView(RumaJsonViews.PlainJsonView.class)
     public List<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByStateJson(
-            @Parameter(description = "State of track work notification",
-                       array = @ArraySchema(schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class, defaultValue = "SENT,ACTIVE,PASSIVE")),
-                       example = "SENT,ACTIVE,PASSIVE")
+            @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
+                       array = @ArraySchema(
+                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
+                               arraySchema = @Schema(defaultValue = "SENT,ACTIVE,PASSIVE")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
@@ -157,9 +158,10 @@ public class TrackWorkNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + ".geojson", produces = "application/vnd.geo+json")
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public FeatureCollection getTrackWorkNotificationsByStateGeoJson(
-            @Parameter(description = "State of track work notification",
-                       array = @ArraySchema(schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class, defaultValue = "SENT,ACTIVE,PASSIVE")),
-                       example = "SENT,ACTIVE,PASSIVE")
+            @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
+                       array = @ArraySchema(
+                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
+                               arraySchema = @Schema(defaultValue = "SENT,ACTIVE,PASSIVE")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))

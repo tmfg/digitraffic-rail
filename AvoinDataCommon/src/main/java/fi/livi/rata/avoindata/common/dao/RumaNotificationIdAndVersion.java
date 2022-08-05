@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "RumaNotificationIdAndVersion", title = "RumaNotificationIdAndVersion")
 public interface RumaNotificationIdAndVersion {
 
     @Schema(description = "Id")
