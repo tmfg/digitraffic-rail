@@ -44,7 +44,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Tag(name = "trains", description = "Returns trains")
+// Tag has same name with a tag in GtfsController.
+// Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
+@Tag(name = "trains")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController extends ADataController {

@@ -36,8 +36,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Tag has same name with a tag in LiveTrainController.
+// Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
+@Tag(name = "live-trains")
 @RestController
-@Tag(name = "live-trains", description = "Returns trains")
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)
 public class ScheduleController extends ADataController {
