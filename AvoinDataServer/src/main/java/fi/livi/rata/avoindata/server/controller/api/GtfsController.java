@@ -65,6 +65,13 @@ public class GtfsController {
     }
 
     @ApiIgnore
+    @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger-stops.zip", produces = "application/zip")
+    @Transactional(readOnly = true)
+    public byte[] getGtfsForPassengerNoNonstops(final HttpServletResponse response) {
+        return getData(response, "gtfs-passenger-stops.zip");
+    }
+
+    @ApiIgnore
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTrains(final HttpServletResponse response) {

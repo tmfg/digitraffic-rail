@@ -52,13 +52,11 @@ public class ScheduleService {
             final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);
 
-            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start).stream().filter(s -> s.trainNumber == 9672L).collect(Collectors.toList());
-            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start).stream().filter(s -> s.trainNumber == 9672L).collect(Collectors.toList());
+            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
+            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                if (date.isEqual(LocalDate.of(2022,7,27))) {
-                    extractForDate(adhocSchedules, regularSchedules, date);
-                }
+                extractForDate(adhocSchedules, regularSchedules, date);
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.FUTURE_TRAINS);
