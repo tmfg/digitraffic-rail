@@ -1,9 +1,13 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -13,15 +17,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
 import org.locationtech.jts.geom.MultiLineString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,6 +55,8 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
+@Transactional
+@Sql({ "/gtfs/import_test_stations.sql" })
 public class GTFSDtoServiceTest extends BaseTest {
     public static final String KOKKOLA_UIC = "KOK";
     public static final String HELSINKI_UIC = "HKI";
@@ -527,6 +537,69 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assert.assertEquals(0, thirdTrip.calendar.calendarDates.size());
 
         Assert.assertEquals(125 - 8, firstTrip.stopTimes.size());
+    }
+
+    @Test
+    @Transactional
+    public void stopFileOutputIsCorrect() throws IOException {
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        gtfsWritingService.writeGTFSFiles(gtfsDto);
+
+        try (InputStream stopsFile = new FileInputStream("stops.txt"))
+        {
+            CsvParser csvParser = new CsvParser(new CsvParserSettings());
+
+            List<String[]> parsedRows = csvParser.parseAll(stopsFile);
+
+            String[] headers = parsedRows.get(0);
+            Map<String, Integer> gtfsFieldIndices = IntStream
+                    .range(0, headers.length)
+                    .boxed()
+                    .collect(Collectors.toMap(i -> headers[i], i -> i));
+
+            parsedRows.subList(1, parsedRows.size()).forEach(row -> {
+                String locationType = row[gtfsFieldIndices.get("location_type")];
+                String parentStation = row[gtfsFieldIndices.get("parent_station")];
+                String stopId = row[gtfsFieldIndices.get("stop_id")];
+                String platformCode = row[gtfsFieldIndices.get("platform_code")];
+                String stopCode = row[gtfsFieldIndices.get("stop_code")];
+
+                Assert.assertNotNull(locationType);
+
+                if (locationType.equals(String.valueOf(LOCATION_TYPE_STATION))) {
+                    // stations (location_type=1) should not have a parent station
+                    Assert.assertNull(parentStation);
+
+                    Assert.assertNull(platformCode);
+                    Assert.assertEquals(false, stopId.contains("_"));
+                }
+
+                if (locationType.equals(String.valueOf(LOCATION_TYPE_STOP))) {
+                    // actual stops (location_type=0) should have a parent station
+                    Assert.assertNotNull(parentStation);
+
+                    // stop_id should be of form <parent_station>_<platform_code>
+                    // if platform_code is null, stop_id should be <parent_station>_0
+                    if (platformCode != null) {
+                        Assert.assertEquals(parentStation + "_" + platformCode, stopId);
+                    } else {
+                        Assert.assertEquals(parentStation + "_0", stopId);
+                    }
+                }
+
+                Assert.assertNull(stopCode);
+
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void assertTripStops(Trip trip, String departureStopId, String arrivalStopId) {
