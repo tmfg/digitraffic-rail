@@ -13,6 +13,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +131,14 @@ public class GTFSService {
 
         for (int i = 0; i < stopTimes.size(); i++) {
             StopTime stopTime = stopTimes.get(i);
-            if (i == 0 || i == (stopTimes.size() - 1) || !stopTime.arrivalTime.equals(stopTime.departureTime)) {
+
+            ScheduleRow scheduleRow = stopTime.source;
+
+            final boolean isLongStop =
+                    scheduleRow.departure == null || scheduleRow.arrival == null ||
+                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
+
+            if (isLongStop) {
                 filteredStopTimes.add(stopTime);
             }
         }
