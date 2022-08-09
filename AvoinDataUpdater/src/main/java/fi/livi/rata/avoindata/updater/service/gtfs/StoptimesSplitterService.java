@@ -80,6 +80,7 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("TUS", "TKU", "TKUT"));   // Turku Satama -> Turku Tavara         Y-shaped
         this.createSplittingLogic(List.of("VLH", "LH", "OM"));      // Villilähde -> Orimattila             Y-shaped
         this.createSplittingLogic(List.of("VSA", "KE", "SAV"));     // Vuosaari -> Kerava                   Y-shaped
+        this.createSplittingLogic(List.of("MRI", "TKU", "KUT"));    // Maaria -> Kupittaa                   Y-shaped
         this.createSplittingLogic(List.of("VIH", "HNV", "SYR"));    // POI -> PM                            Correct route
         this.createSplittingLogic(List.of("VKS", "VEH", "KTÖ"));    // Lentokenttärata                      Correct route
         this.createSplittingLogic(List.of("HVK", "ASO", "LNÄ"));    // Lentokenttärata                      Correct route

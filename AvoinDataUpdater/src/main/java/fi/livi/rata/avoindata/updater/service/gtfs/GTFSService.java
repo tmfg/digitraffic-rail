@@ -13,6 +13,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,9 +75,6 @@ public class GTFSService {
 //
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
-    public GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName) throws IOException {
-        return this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, zipFileName, false);
-    }
 
     public GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName, boolean filterOutNonStops) throws IOException {
         GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
@@ -111,14 +109,15 @@ public class GTFSService {
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        final GTFSDto gtfs = createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip");
+        final GTFSDto gtfs = this.createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip", false);
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
                 Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
         final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
                 Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
 
-        createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip");
+        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip", false);
+        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger-stops.zip", true);
         createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
 
         gtfsTripService.updateGtfsTrips(gtfs);
