@@ -46,7 +46,12 @@
           plugins: [
             SwaggerUIBundle.plugins.DownloadUrl
           ],
-          layout: "StandaloneLayout"
+          layout: "StandaloneLayout",
+          operationsSorter: 'alpha',
+          tagsSorter: 'alpha',
+          defaultModelRendering: 'model',
+          defaultModelExpandDepth: 6,
+          docExpansion: 'none'
         })
 
         window.ui = ui
