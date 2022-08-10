@@ -5,10 +5,12 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import fi.livi.rata.avoindata.common.domain.common.NamedEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
+@Schema(name = "TrainCategory", title = "TrainCategory")
 public class TrainCategory implements NamedEntity {
 
     @Id
@@ -16,7 +18,7 @@ public class TrainCategory implements NamedEntity {
     public Long id;
 
     @Column
-    @ApiModelProperty(example = "Commuter")
+    @Schema(example = "Commuter")
     public String name;
 
     public TrainCategory() {

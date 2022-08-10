@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Schema(name = "Routeset", title = "Routeset")
 public class Routeset {
     @Id
     @JsonIgnore

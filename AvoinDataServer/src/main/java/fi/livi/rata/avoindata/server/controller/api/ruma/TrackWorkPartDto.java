@@ -6,36 +6,34 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@ApiModel(description = "A logical part of a track work")
+@Schema(name = "TrackWorkPart", title = "TrackWorkPart", description = "A logical part of a track work")
 public class TrackWorkPartDto {
 
-    @ApiModelProperty(value = "Index number", required = true)
+    @Schema(description = "Index number", required = true)
     public final Long partIndex;
 
-    @ApiModelProperty(value = "Planned (not necessarily actual) start day", required = true)
+    @Schema(description = "Planned (not necessarily actual) start day", required = true)
     public final LocalDate startDay;
 
-    @ApiModelProperty(
-            value = "Requested minimum duration for work permission in ISO 8601 format, e.g. PT30M",
-            dataType = "java.lang.String",
+    @Schema(description = "Requested minimum duration for work permission in ISO 8601 format, e.g. PT30M",
+            type = "java.lang.String",
+            implementation = java.lang.String.class,
             required = true)
     public final Duration permissionMinimumDuration;
 
-    @ApiModelProperty(value = "Contains fire work", required = true)
+    @Schema(description = "Contains fire work", required = true)
     public final Boolean containsFireWork;
 
-    @ApiModelProperty(
-            value = "Planned working gap in local time with no time zone, e.g. 11:43:00",
-            dataType = "java.lang.String")
+    @Schema(description = "Planned working gap in local time with no time zone, e.g. 11:43:00",
+            type = "java.lang.String", implementation = java.lang.String.class)
     public final LocalTime plannedWorkingGap;
 
-    @ApiModelProperty(value = "Related advance notifications")
+    @Schema(description = "Related advance notifications")
     public final List<String> advanceNotifications;
 
-    @ApiModelProperty(value = "Locations", required = true)
+    @Schema(description = "Locations", required = true)
     public final Set<RumaLocationDto> locations;
 
     public TrackWorkPartDto(

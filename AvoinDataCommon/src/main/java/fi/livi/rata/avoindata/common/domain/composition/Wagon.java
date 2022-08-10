@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,10 +10,12 @@ import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModelProperty;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "Wagon", title = "Wagon", description = "")
 public class Wagon {
 
     @Id
@@ -22,17 +23,17 @@ public class Wagon {
     @JsonIgnore
     public Long id;
 
-    @ApiModelProperty(example = "Ed")
+    @Schema(example = "Ed")
     public String wagonType;
 
     @Column
-    @ApiModelProperty(example = "1")
+    @Schema(example = "1")
     public int location;
     @Column
-    @ApiModelProperty(value = "wagon number in customer's ticket", example = "1")
+    @Schema(description = "wagon number in customer's ticket", example = "1")
     public int salesNumber;
     @Column
-    @ApiModelProperty(value = "Wagon length in decimeters", example = "2640")
+    @Schema(description = "Wagon length in decimeters", example = "2640")
     public int length;
     @Column
     public Boolean playground;
@@ -48,7 +49,7 @@ public class Wagon {
     public Boolean smoking;
     @Column
     public Boolean disabled;
-    @ApiModelProperty(example = "94102081010-2")
+    @Schema(example = "94102081010-2")
     @Column
     public String vehicleNumber;
     @ManyToOne

@@ -1,9 +1,28 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
@@ -13,23 +32,14 @@ import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.EndDateBeforeStartDateException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TooLongPeriodRequestedException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainNotFoundException;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-import javax.servlet.http.HttpServletResponse;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-
+// Tag has same name with a tag in LiveTrainController.
+// Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
+@Tag(name = "live-trains")
 @RestController
-@Api(tags = "live-trains", description = "Returns trains")
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 @Transactional(timeout = 30, readOnly = true)
 public class ScheduleController extends ADataController {
@@ -39,16 +49,17 @@ public class ScheduleController extends ADataController {
     @Autowired
     private TrainRepository trainRepository;
 
-    @ApiOperation("Return trains that run from {arrival_station} to {departure_station}")
+    @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}", ignoreJsonView = true)
     @JsonView(ScheduleTrains.class)
     @RequestMapping(path = "station/{departure_station}/{arrival_station}", method = RequestMethod.GET)
-    public List<Train> getTrainsFromDepartureToArrivalStation(@PathVariable  String departure_station,
-            @PathVariable  String arrival_station,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate,
-            @RequestParam(required = false) Integer limit, HttpServletResponse response) {
+    public List<Train> getTrainsFromDepartureToArrivalStation(
+            @Parameter(description = "departure_station") @PathVariable String departure_station,
+            @Parameter(description = "arrival_station") @PathVariable String arrival_station,
+            @Parameter(description = "departure_date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+            @Parameter(description = "include_nonstopping") @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
+            @Parameter(description = "startDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
+            @Parameter(description = "endDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate,
+            @Parameter(description = "limit") @RequestParam(required = false) Integer limit, HttpServletResponse response) {
         if (limit == null) {
             limit = MAX_ROUTE_SEARCH_RESULT_SIZE;
         }

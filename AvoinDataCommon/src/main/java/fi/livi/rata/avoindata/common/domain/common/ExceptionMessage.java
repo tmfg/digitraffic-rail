@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 
+import io.swagger.v3.oas.annotations.Hidden;
+
+@Hidden
 public class ExceptionMessage implements Serializable {
 
     @JsonIgnore

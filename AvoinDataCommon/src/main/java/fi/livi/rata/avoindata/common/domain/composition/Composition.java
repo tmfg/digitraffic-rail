@@ -1,20 +1,32 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Table
-@ApiModel(description = "Describes train's locomotives and wagons")
+@Schema(name = "Composition", title = "Composition", description = "Describes train's locomotives and wagons")
 public class Composition  {
 
     @EmbeddedId
@@ -23,13 +35,14 @@ public class Composition  {
 
     @Embedded
     @JsonUnwrapped
+    @JsonInclude(Include.NON_NULL) // Springdoc won't include embedded to OpenAPI schemas without JsonInclude
     public Operator operator;
 
     @Transient
-    @ApiModelProperty(example = "Long-distance",required = true)
+    @Schema(example = "Long-distance", required = true)
     public String trainCategory;
     @Transient
-    @ApiModelProperty(example = "IC",required = true)
+    @Schema(example = "IC", required = true)
     public String trainType;
     @Column
     @JsonIgnore
@@ -39,7 +52,7 @@ public class Composition  {
     public long trainTypeId;
 
     @Column
-    @ApiModelProperty(value = "When was this data last modified", example = "253328854733")
+    @Schema(description = "When was this data last modified", example = "253328854733")
     public Long version;
 
     @OneToMany(mappedBy = "composition", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)

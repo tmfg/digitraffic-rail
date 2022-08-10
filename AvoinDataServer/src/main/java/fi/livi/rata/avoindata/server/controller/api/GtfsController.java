@@ -13,11 +13,11 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "trains", description = "Returns trains as gtfs", position = Integer.MIN_VALUE)
+@Tag(name = "trains", description = "Returns trains as gtfs")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
@@ -27,21 +27,21 @@ public class GtfsController {
     @Autowired
     private GTFSRepository gtfsRepository;
 
-    @ApiOperation("Returns GTFS zip file")
+    @Operation(summary = "Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-all.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForAllTrains(final HttpServletResponse response) {
         return getData(response, "gtfs-all.zip");
     }
 
-    @ApiOperation("Returns GTFS zip file")
+    @Operation(summary = "Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerTrains(final HttpServletResponse response) {
         return getData(response, "gtfs-passenger.zip");
     }
 
-    @ApiOperation("Returns GTFS Realtime locations")
+    @Operation(summary = "Returns GTFS Realtime locations")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-locations", produces = "application/protobuf")
     @Transactional(readOnly = true)
     public byte[] getGtfsRtLocations(final HttpServletResponse response) {
@@ -49,7 +49,7 @@ public class GtfsController {
         return getData(response, "gtfs-rt-locations");
     }
 
-    @ApiOperation("Returns GTFS Realtime updates")
+    @Operation(summary = "Returns GTFS Realtime updates")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-updates", produces = "application/protobuf")
     @Transactional(readOnly = true)
     public byte[] getGtfsRtUpdates(final HttpServletResponse response) {
@@ -57,21 +57,21 @@ public class GtfsController {
         return getData(response, "gtfs-rt-updates");
     }
 
-    @ApiIgnore
+    @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTRETrains(final HttpServletResponse response) {
         return getData(response, "gtfs-vr-tre.zip");
     }
 
-    @ApiIgnore
+    @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger-stops.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerNoNonstops(final HttpServletResponse response) {
         return getData(response, "gtfs-passenger-stops.zip");
     }
 
-    @ApiIgnore
+    @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTrains(final HttpServletResponse response) {

@@ -8,7 +8,10 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import java.time.LocalDate;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
+@Schema(name = "TimeTablePeriodChangeDate", title = "TimeTablePeriodChangeDate")
 public class TimeTablePeriodChangeDate {
     @Id
     public Long id;

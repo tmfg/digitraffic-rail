@@ -1,15 +1,23 @@
 package fi.livi.rata.avoindata.common.domain.train;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.Type;
-
-import javax.persistence.*;
 import java.time.ZonedDateTime;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.ManyToOne;
+
+import org.hibernate.annotations.Type;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
-@ApiModel(description = "Operator has to ask permission (=TrainReady) to leave certain stations")
+@Schema(name = "TrainReady", title = "TrainReady", description = "Operator has to ask permission (=TrainReady) to leave certain stations")
 public class TrainReady {
     public enum TrainReadySource {
         PHONE,
@@ -28,15 +36,15 @@ public class TrainReady {
     @JsonIgnore
     public TimeTableRow timeTableRow;
 
-    @ApiModelProperty("How was the permission given")
+    @Schema(description = "How was the permission given")
     public TrainReadySource source;
 
     @Type(type = "org.hibernate.type.NumericBooleanType")
-    @ApiModelProperty("Was the permission given")
+    @Schema(description = "Was the permission given")
     public boolean accepted;
 
     @Type(type = "org.hibernate.type.ZonedDateTimeType")
-    @ApiModelProperty("When was the permission given")
+    @Schema(description = "When was the permission given")
     public ZonedDateTime timestamp;
 
 //    @OneToOne(mappedBy = "trainReady")

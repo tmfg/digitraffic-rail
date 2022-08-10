@@ -21,38 +21,37 @@ import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Category code that is one step more detailed from its parent CategoryCode")
+@Schema(name ="DetailedCategoryCode", title = "DetailedCategoryCode", description = "Category code that is one step more detailed from its parent CategoryCode")
 public class DetailedCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore
     public String oid;
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
-    @ApiModelProperty(example = "E2")
+    @Schema(example = "E2")
     public String detailedCategoryCode;
 
     @ColumnDefault("")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(example="Ajo- tai pysähdysajan alitus")
+    @Schema(example="Ajo- tai pysähdysajan alitus")
     public String detailedCategoryName;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "Start date when this category code is used",required = true)
+    @Schema(description = "Start date when this category code is used", required = true)
     public LocalDate validFrom;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "End date when this code is used. Empty means category is used until further notice")
+    @Schema(description = "End date when this code is used. Empty means category is used until further notice")
     public LocalDate validTo;
 
     @ManyToOne

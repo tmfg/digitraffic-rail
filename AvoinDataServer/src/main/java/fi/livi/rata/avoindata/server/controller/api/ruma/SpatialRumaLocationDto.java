@@ -1,17 +1,18 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
-import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
-import io.swagger.annotations.ApiModelProperty;
-
 import java.util.Set;
 
+import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
+import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "SpatialRumaLocation", title = "SpatialRumaLocation", description = "Location of work, either an operating point or a section between operating points")
 public class SpatialRumaLocationDto extends RumaLocationDto {
 
-    @ApiModelProperty("Location if no identifer ranges are present")
+    @Schema(description = "Location if no identifer ranges are present")
     public final GeometryDto<?> location;
 
-    @ApiModelProperty("Identifier ranges")
+    @Schema(description = "Identifier ranges")
     public final Set<IdentifierRangeDto> identifierRanges;
 
     public SpatialRumaLocationDto(

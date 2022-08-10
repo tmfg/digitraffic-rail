@@ -17,32 +17,32 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Describes a leg where train's composition is in effect")
+@Schema(name = "JourneySection", title = "JourneySection", description = "Describes a leg where train's composition is in effect")
 public class JourneySection {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     @JsonIgnore
     public Long id;
 
     @OneToOne(cascade = { CascadeType.REMOVE, CascadeType.PERSIST }, optional = false, orphanRemoval = true)
-    @ApiModelProperty("Point in schedule where composition starts")
+    @Schema(description = "Point in schedule where composition starts")
     public CompositionTimeTableRow beginTimeTableRow;
 
     @OneToOne(cascade = { CascadeType.REMOVE, CascadeType.PERSIST }, optional = false, orphanRemoval = true)
-    @ApiModelProperty("Point in schedule where composition ends")
+    @Schema(description = "Point in schedule where composition ends")
     public CompositionTimeTableRow endTimeTableRow;
 
     @OneToMany(mappedBy = "journeysection", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @OrderBy("location")
-    @ApiModelProperty("List of locomotives used on this leg")
+    @Schema(description = "List of locomotives used on this leg")
     public Set<Locomotive> locomotives = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "journeysection", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @OrderBy("location")
-    @ApiModelProperty("List of wagons used on this leg")
+    @Schema(description = "List of wagons used on this leg")
     public Set<Wagon> wagons = new LinkedHashSet<>();
 
     @ManyToOne(optional = false)

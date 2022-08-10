@@ -16,14 +16,13 @@ import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@ApiModel(description = "Most detailed category code for a Cause")
+@Schema(name = "ThirdCategoryCode", title = "ThirdCategoryCode", description = "Most detailed category code for a Cause")
 public class ThirdCategoryCode extends ACauseCode {
     @Id
     @JsonIgnore
@@ -31,29 +30,29 @@ public class ThirdCategoryCode extends ACauseCode {
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
     @Column(name = "code")
-    @ApiModelProperty(example = "E103")
+    @Schema(example = "E103")
     public String thirdCategoryCode;
 
     @ColumnDefault("")
     @Column(name = "name")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(example = "Valmistuminen etuajassa")
+    @Schema(example = "Valmistuminen etuajassa")
     public String thirdCategoryName;
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "Detailed description", example = "Jos kyseessä ei ole kääntyvä juna ja se on valmis lähtemään etuajassa. Esim. vaihtotöitä on selkeästi suunniteltua vähemmän.")
+    @Schema(description = "Detailed description", example = "Jos kyseessä ei ole kääntyvä juna ja se on valmis lähtemään etuajassa. Esim. vaihtotöitä on selkeästi suunniteltua vähemmän.")
     public String description;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "Start date when this category code is used",required = true)
+    @Schema(description = "Start date when this category code is used", required = true)
     public LocalDate validFrom;
 
     @Column
     @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
-    @ApiModelProperty(value = "End date when this code is used. Empty means category is used until further notice")
+    @Schema(description = "End date when this code is used. Empty means category is used until further notice")
     public LocalDate validTo;
 
     @ManyToOne
