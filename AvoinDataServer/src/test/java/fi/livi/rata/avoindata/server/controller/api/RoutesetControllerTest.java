@@ -9,8 +9,8 @@ import fi.livi.rata.avoindata.server.factory.RoutesetFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,12 +28,12 @@ public class RoutesetControllerTest extends MockMvcBaseTest {
 
     @Before
     public void setup() throws NoSuchFieldException {
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
     }
 
     @After
     public void teardown() throws NoSuchFieldException {
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test

@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>2.2.13.RELEASE</spring.boot.version>
+        <spring.boot.version>2.7.2</spring.boot.version>
         <com.google.guava.version>31.1-jre</com.google.guava.version>
         <mysql.connector.version>5.1.49</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
@@ -118,6 +118,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -125,7 +126,9 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>process-resources</phase>
