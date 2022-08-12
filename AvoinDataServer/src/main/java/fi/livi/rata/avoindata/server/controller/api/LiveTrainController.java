@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
@@ -35,10 +36,15 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainMaximumLimitE
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api(tags = "live-trains", description = "Returns trains that have been recently active")
+@Tag(name = "live-trains", description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 public class LiveTrainController extends ADataController {
@@ -60,10 +66,10 @@ public class LiveTrainController extends ADataController {
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @ApiOperation(value = "Returns active trains that are newer than {version}")
+    @Operation(summary = "Returns active trains that are newer than {version}", ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
-    public List<Train> getLiveTrainsByVersion(@RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {
+    public List<Train> getLiveTrainsByVersion(@Parameter(description = "version") @RequestParam(defaultValue = "0", name = "version") Long version, HttpServletResponse response) {
         List<Object[]> liveTrains = trainRepository.findLiveTrains(version, 60 * 4);
         List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
@@ -78,19 +84,24 @@ public class LiveTrainController extends ADataController {
     }
 
     @JsonView(TrainJsonView.LiveTrains.class)
-    @ApiOperation(value = "Returns trains that travel trough {station}", response = Train.class, responseContainer = "List")
+    @Operation(summary = "Returns trains that travel trough {station}",
+               ignoreJsonView = true,
+               responses = { @ApiResponse(responseCode = "200", content = @Content(
+                       mediaType = "application/json",
+                       array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
-    public List<Train> getStationsTrains(@PathVariable String station, @RequestParam(required = false, defaultValue = "0") long version,
-                                         @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,
-                                         @RequestParam(required = false, defaultValue = "5") Integer arriving_trains,
-                                         @RequestParam(required = false, defaultValue = "5") Integer departed_trains,
-                                         @RequestParam(required = false, defaultValue = "5") Integer departing_trains,
-                                         @RequestParam(required = false) Integer minutes_before_departure,
-                                         @RequestParam(required = false) Integer minutes_after_departure,
-                                         @RequestParam(required = false) Integer minutes_before_arrival,
-                                         @RequestParam(required = false) Integer minutes_after_arrival,
-                                         @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
-                                         @RequestParam(required = false) List<String> train_categories,
+    public List<Train> getStationsTrains(@Parameter(description = "station") @PathVariable String station,
+                                         @Parameter(description = "version") @RequestParam(required = false, defaultValue = "0") long version,
+                                         @Parameter(description = "arrived_trains") @RequestParam(required = false, defaultValue = "5") Integer arrived_trains,
+                                         @Parameter(description = "arriving_trains") @RequestParam(required = false, defaultValue = "5") Integer arriving_trains,
+                                         @Parameter(description = "departed_trains") @RequestParam(required = false, defaultValue = "5") Integer departed_trains,
+                                         @Parameter(description = "departing_trains") @RequestParam(required = false, defaultValue = "5") Integer departing_trains,
+                                         @Parameter(description = "minutes_before_departure") @RequestParam(required = false) Integer minutes_before_departure,
+                                         @Parameter(description = "minutes_after_departure") @RequestParam(required = false) Integer minutes_after_departure,
+                                         @Parameter(description = "minutes_before_arrival") @RequestParam(required = false) Integer minutes_before_arrival,
+                                         @Parameter(description = "minutes_after_arrival") @RequestParam(required = false) Integer minutes_after_arrival,
+                                         @Parameter(description = "include_nonstopping") @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
+                                         @Parameter(description = "train_categories") @RequestParam(required = false) List<String> train_categories,
                                          HttpServletResponse response) {
 
         List<Long> trainCategoryIds = getTrainCategories(train_categories);

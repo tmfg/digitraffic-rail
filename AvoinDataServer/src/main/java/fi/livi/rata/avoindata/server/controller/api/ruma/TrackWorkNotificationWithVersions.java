@@ -1,15 +1,16 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import io.swagger.annotations.ApiModelProperty;
-
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "TrackWorkNotificationWithVersions", title = "TrackWorkNotificationWithVersions")
 public class TrackWorkNotificationWithVersions {
 
-    @ApiModelProperty("Track work notification id")
+    @Schema(description = "Track work notification id")
     public final String id;
 
-    @ApiModelProperty("Track work notification versions")
+    @Schema(description = "Track work notification versions")
     public final List<SpatialTrackWorkNotificationDto> versions;
 
     public TrackWorkNotificationWithVersions(String id, final List<SpatialTrackWorkNotificationDto> versions) {

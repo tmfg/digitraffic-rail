@@ -5,8 +5,9 @@ import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessag
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@Api(tags = "train-tracking", description = "Returns detailed information about train's location")
+@Tag(name = "train-tracking", description = "Returns detailed information about train's location")
 @RestController
 
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-tracking")
@@ -42,7 +43,7 @@ public class TrainRunningMessageController extends ADataController {
         return new ZonedDateTime[]{start, end};
     }
 
-    @ApiOperation("Returns train running messages for single train")
+    @Operation(summary = "Returns train running messages for single train")
     @RequestMapping(path = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByTrainNumberAndDepartureDate(HttpServletResponse response, @PathVariable final String train_number,
                                                                                    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
@@ -65,7 +66,7 @@ public class TrainRunningMessageController extends ADataController {
         return trainRunningMessages;
     }
 
-    @ApiOperation("Returns latest train running messages for single train")
+    @Operation(summary = "Returns latest train running messages for single train")
     @RequestMapping(path = "/latest/{train_number}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByTrainNumber(HttpServletResponse response, @PathVariable final String train_number,
                                                                    @RequestParam(required = false, defaultValue = "0") final Long version) {
@@ -78,7 +79,7 @@ public class TrainRunningMessageController extends ADataController {
         return this.getTrainTrackingByTrainNumberAndDepartureDate(response, train_number, departure_date, version);
     }
 
-    @ApiOperation("Returns train running messages for trains that have passed {station} on {departure_date}")
+    @Operation(summary = "Returns train running messages for trains that have passed {station} on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "station/{station}/{departure_date}")
     public List<TrainRunningMessage> getTrainTrackingByStationAndDepartureDate(HttpServletResponse response,
                                                                                @PathVariable final String station, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
@@ -91,7 +92,7 @@ public class TrainRunningMessageController extends ADataController {
         return trainRunningMessages;
     }
 
-    @ApiOperation("Returns train running messages for trains that have passed {station}, {track_section} on {departure_date}")
+    @Operation(summary = "Returns train running messages for trains that have passed {station}, {track_section} on {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}/{track_section}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndDate(HttpServletResponse response,
                                                                                      @PathVariable final String station, @PathVariable final String track_section,
@@ -106,7 +107,7 @@ public class TrainRunningMessageController extends ADataController {
         return trainRunningMessages;
     }
 
-    @ApiOperation("Returns train running messages for trains that have passed {station}, {track_section}")
+    @Operation(summary = "Returns train running messages for trains that have passed {station}, {track_section}")
     @RequestMapping(path = "/station/{station}/latest/{track_section}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndLimit(HttpServletResponse response,
                                                                                       @PathVariable final String station, @PathVariable final String track_section,
@@ -122,7 +123,7 @@ public class TrainRunningMessageController extends ADataController {
         return trainRunningMessages;
     }
 
-    @ApiOperation("Returns train running messages newer than {version}")
+    @Operation(summary = "Returns train running messages newer than {version}")
     @RequestMapping(path = "/", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByVersion(final HttpServletResponse response,
                                                                @RequestParam(required = false) Long version) {

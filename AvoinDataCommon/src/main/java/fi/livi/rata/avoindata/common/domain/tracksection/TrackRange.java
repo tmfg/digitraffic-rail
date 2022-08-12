@@ -10,7 +10,10 @@ import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
+@Schema(name = "TrackRange", title = "TrackRange")
 public class TrackRange {
     @Id
     public Long id;

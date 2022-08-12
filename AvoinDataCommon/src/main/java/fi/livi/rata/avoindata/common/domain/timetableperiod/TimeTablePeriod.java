@@ -6,7 +6,10 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
+@Schema(name = "TimeTablePeriod", title = "TimeTablePeriod")
 public class TimeTablePeriod {
     @Id
     public Long id;

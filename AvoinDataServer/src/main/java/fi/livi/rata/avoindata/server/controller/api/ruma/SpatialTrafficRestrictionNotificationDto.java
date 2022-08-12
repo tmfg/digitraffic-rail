@@ -1,20 +1,21 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import java.time.ZonedDateTime;
+import java.util.Set;
+
 import fi.livi.rata.avoindata.common.domain.spatial.GeometryDto;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.time.ZonedDateTime;
-import java.util.Set;
-
+@Schema(name = "SpatialTrafficRestrictionNotification", title = "SpatialTrafficRestrictionNotification", description = "Describes a restriction affecting the use of a railway infrastructure part")
 public class SpatialTrafficRestrictionNotificationDto extends TrafficRestrictionNotificationDto {
 
-    @ApiModelProperty(value = "Approximate location", required = true)
+    @Schema(description = "Approximate location", required = true)
     public final GeometryDto<?> location;
 
-    @ApiModelProperty(value = "Locations", required = true)
+    @Schema(description = "Locations", required = true)
     public final Set<SpatialRumaLocationDto> locations;
 
     public SpatialTrafficRestrictionNotificationDto(

@@ -6,7 +6,10 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
+@Schema(name = "Routesection", title = "Routesection")
 public class Routesection {
     @Id
     @JsonIgnore

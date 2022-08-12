@@ -1,18 +1,19 @@
 package fi.livi.rata.avoindata.common.dao;
 
-import io.swagger.annotations.ApiModelProperty;
-
 import java.time.ZonedDateTime;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "RumaNotificationIdAndVersion", title = "RumaNotificationIdAndVersion")
 public interface RumaNotificationIdAndVersion {
 
-    @ApiModelProperty("Id")
+    @Schema(description = "Id")
     String getId();
 
-    @ApiModelProperty("Version")
+    @Schema(description = "Version")
     Long getVersion();
 
-    @ApiModelProperty("Last modified")
+    @Schema(description = "Last modified")
     ZonedDateTime getModified();
 }
 

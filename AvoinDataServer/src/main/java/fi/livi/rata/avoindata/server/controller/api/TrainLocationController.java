@@ -8,9 +8,10 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Api(tags = "train-locations", description = "Train locations", position = Integer.MIN_VALUE)
+@Tag(name = "train-locations", description = "Train locations")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
 public class TrainLocationController extends ADataController {
@@ -36,18 +37,18 @@ public class TrainLocationController extends ADataController {
     @Autowired
     private DateProvider dateProvider;
 
-    @ApiOperation("Returns latest wsg84 coordinates for trains")
+    @Operation(summary = "Returns latest wsg84 coordinates for trains")
     @RequestMapping(method = RequestMethod.GET, path = "latest")
-    public List<TrainLocation> getTrainLocations(@RequestParam(required = false) @ApiParam(example = "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public List<TrainLocation> getTrainLocations(@RequestParam(required = false) @Parameter(example = "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
 
         final List<Long> ids = trainLocationRepository.findLatest(dateProvider.nowInHelsinki().minusMinutes(15));
         return getAndFilterTrainLocations(bbox, response, ids);
     }
 
-    @ApiOperation("Returns latest wsg84 coordinates for a train")
+    @Operation(summary = "Returns latest wsg84 coordinates for a train")
     @RequestMapping(method = RequestMethod.GET, path = "latest/{train_number}")
-    public List<TrainLocation> getTrainLocationByTrainNumber(@PathVariable @ApiParam(example = "1") Long train_number, @RequestParam(required = false) @ApiParam(example =
+    public List<TrainLocation> getTrainLocationByTrainNumber(@PathVariable @Parameter(example = "1") Long train_number, @RequestParam(required = false) @Parameter(example =
             "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
 
@@ -55,10 +56,14 @@ public class TrainLocationController extends ADataController {
         return getAndFilterTrainLocations(bbox, response, ids);
     }
 
-    @ApiOperation("Returns wsg84 coordinates for a train run on departure date")
+    @Operation(summary = "Returns wsg84 coordinates for a train run on departure date")
     @RequestMapping(method = RequestMethod.GET, path = "{departure_date}/{train_number}")
-    public List<TrainLocation> getTrainLocationByTrainNumberAndDepartureDate(@PathVariable @ApiParam(example = "1") Long train_number, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date, @RequestParam(required = false) @ApiParam(example =
-            "1,1,70,70") List<Double> bbox, HttpServletResponse response) {
+    public List<TrainLocation> getTrainLocationByTrainNumberAndDepartureDate(
+            @PathVariable @Parameter(example = "1") Long train_number,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
+            @RequestParam(required = false) @Parameter(example = "1,1,70,70") List<Double> bbox,
+            HttpServletResponse response) {
+
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_HISTORY);
 
         final List<TrainLocation> trainLocations = trainLocationRepository.findTrain(train_number, departure_date);

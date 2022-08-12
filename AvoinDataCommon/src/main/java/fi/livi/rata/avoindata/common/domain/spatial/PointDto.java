@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.spatial;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public final class PointDto implements GeometryDto<List<Double>> {
 

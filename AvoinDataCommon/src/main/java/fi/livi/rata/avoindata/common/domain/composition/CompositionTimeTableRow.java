@@ -4,14 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.*;
 
 @Entity
-@ApiModel(description = "Describes a point in a trains schedule where its composition changes")
+@Schema(name = "CompositionTimeTableRow", title = "CompositionTimeTableRow", description = "Describes a point in a trains schedule where its composition changes")
 public class CompositionTimeTableRow {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
