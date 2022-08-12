@@ -47,12 +47,16 @@ jobs:
         run: |
           APP_CAPITALIZED=$(echo ${{ github.event.inputs.app }} | awk '{print toupper(substr($0, 0, 1)) substr($0, 2)}')
           echo "APP_CAPITALIZED=$APP_CAPITALIZED" >> $GITHUB_ENV
+      - name: Set JAR_PATH variable
+        run: |
+          JAR_PATH=$(find . -name "AvoinData${{ env.APP_CAPITALIZED }}/target/AvoinData${{ env.APP_CAPITALIZED }}-*.*.*.jar" | grep -v tests)
+          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_ENV
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
       - name: Build ${{ github.event.inputs.app }}
         run: |
           mvn install -DskipTests=true -Ddependency-check.skip=true
-          cp AvoinData${{ env.APP_CAPITALIZED }}/target/AvoinData${{ env.APP_CAPITALIZED }}-0.0.1-SNAPSHOT.jar config/aws/app.jar
+          cp $JAR_PATH config/aws/app.jar
           cd config/aws
           docker build --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
