@@ -8,8 +8,8 @@ import java.util.concurrent.Executors;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -249,7 +249,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void stationSearchShouldWork() throws Exception {
         trainCategoryFactory.create(1L, "test category");
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
 
         trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
@@ -279,7 +279,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 "/live-trains/station/PSL");
         r6.andExpect(jsonPath("$.length()").value(2));
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
@@ -290,7 +290,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         TrainCategory trainCategory2 = trainCategoryFactory.create(2L, "test cat");
         TrainType trainType = trainTypeFactory.create(trainCategory1);
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
 
         Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
@@ -317,13 +317,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         final ResultActions r6 = getJson("/live-trains/station/PSL?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=2&include_nonstopping=false&train_categories=test category");
         r6.andExpect(jsonPath("$.length()").value(1));
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain() throws Exception {
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
 
         final Train train = trainFactory.createBaseTrain();
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
@@ -348,13 +348,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(0));
         getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(0));
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
 
         LocalDate dateNow = LocalDate.now();
         final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, dateNow));
@@ -381,6 +381,6 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         r1.andExpect(jsonPath("$[1].trainNumber").value(4));
         r1.andExpect(jsonPath("$[2].trainNumber").value(5));
 
-        FieldSetter.setField(findByIdService, FindByIdService.class.getDeclaredField("executor"), Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }
 }

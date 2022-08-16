@@ -20,7 +20,7 @@ public abstract class MockMvcBaseTest extends BaseTest {
     protected ResultActions getJson(URI url) throws Exception {
         final ResultActions resultActions = this.mockMvc.perform(
                 get(url).accept(MediaType.parseMediaType("application/json;charset=UTF-8"))).andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
 
         return resultActions;
     }
@@ -32,7 +32,7 @@ public abstract class MockMvcBaseTest extends BaseTest {
     protected ResultActions getJson(String url, String apiVersion) throws Exception {
         final ResultActions resultActions = this.mockMvc.perform(
                 get("/api/" + apiVersion + "/" + url).accept(MediaType.parseMediaType("application/json;charset=UTF-8"))).andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
         return resultActions;
     }
