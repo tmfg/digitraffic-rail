@@ -6,7 +6,7 @@ on:
     - cron: '0 8 * * *' # UTC
 jobs:
   dependency-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,7 +24,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependency-check-
       - name: Dependency check
-        run: mvn dependency-check:aggregate
+        run: mvn -Pdepcheck
       - name: Upload report
         uses: actions/upload-artifact@v3
         if: ${{ success() || failure() }}

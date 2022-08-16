@@ -36,6 +36,27 @@
                 <build.profile.id>appserver</build.profile.id>
             </properties>
         </profile>
+        <profile>
+            <id>depcheck</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <defaultGoal>dependency-check:aggregate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>7.1.0</version>
+                        <configuration>
+                            <failBuildOnCVSS>5</failBuildOnCVSS>
+                            <suppressionFile>owasp-suppressions.xml</suppressionFile>
+                            <formats>html,xml</formats>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <repositories>
@@ -159,16 +180,6 @@
                 <version>2.8.1</version>
                 <configuration>
                     <rulesUri>file:///${maven.multiModuleProjectDirectory}/versions-maven-plugin-rules.xml</rulesUri>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>7.0.4</version>
-                <configuration>
-                    <failBuildOnCVSS>0</failBuildOnCVSS>
-                    <suppressionFile>owasp-suppressions.xml</suppressionFile>
                 </configuration>
             </plugin>
 
