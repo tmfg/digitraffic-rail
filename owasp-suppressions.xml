@@ -5,6 +5,36 @@
         Temporary suppressions, check and update these periodically
     -->
 
+    <suppress until="2022-09-15Z">
+        <!-- Only problem with spring versions <=5.3.16. -->
+        <notes><![CDATA[file name: spring-*-5.3.22.jar]]></notes>
+        <!--(spring\-tx|spring\-aop|spring\-jcl|spring\-orm|spring\-web|spring\-jdbc|spring\-core|spring\-beans|spring\-webmvc) -->
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-.*@.*$</packageUrl>
+        <cve>CVE-2016-1000027</cve>
+    </suppress>
+
+    <suppress until="2022-09-15Z">
+        <!-- we don't use com.amazonaws.services.s3.transfer.TransferManager::downloadDirectory
+        This is found multiple times, but the reasoning is the same for all of them-->
+        <notes><![CDATA[file name: aws-java-sdk-*.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.amazonaws/aws\-java\-sdk\-(core|rds|xray)@.*$</packageUrl>
+        <cve>CVE-2022-31159</cve>
+    </suppress>
+
+    <suppress until="2022-09-15Z">
+        <!-- same as above -->
+        <notes><![CDATA[file name: jmespath-java-*.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.amazonaws/jmespath\-java@.*$</packageUrl>
+        <cve>CVE-2022-31159</cve>
+    </suppress>
+
+    <suppress until="2022-09-15Z">
+        <!-- No new version of proj4 available. Ticket: DPO-1904 -->
+        <notes><![CDATA[file name: proj4j-*.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.osgeo/proj4j@.*$</packageUrl>
+        <cpe>cpe:/a:trac:trac</cpe>
+    </suppress>
+
     <!--
         Permanent suppressions
     -->

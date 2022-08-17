@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller;
 
-import com.mysql.jdbc.exceptions.MySQLTimeoutException;
 import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
@@ -25,6 +24,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import com.mysql.cj.jdbc.exceptions.MySQLTimeoutException;
 
 @ControllerAdvice
 @ResponseBody
