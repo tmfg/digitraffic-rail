@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 
 import org.locationtech.jts.geom.Point;
+import org.osgeo.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -42,6 +44,7 @@ public class GTFSStopsService {
 
     @PostConstruct
     private void setup() {
+        // RU
         customCoordinates.put("NRL", new double[]{62.174676, 30.603983});
         customCoordinates.put("BSL", new double[]{60.818538, 28.411931});
         customCoordinates.put("VYB", new double[]{60.715331, 28.751582});
@@ -52,10 +55,20 @@ public class GTFSStopsService {
         customCoordinates.put("BOLO", new double[]{57.877987, 34.106246});
         customCoordinates.put("MVA", new double[]{55.776115, 37.655077});
         customCoordinates.put("PRK", new double[]{61.783872, 34.344124});
+
+        // Infra 2013
+        customCoordinates.put("KSN", this.liviToWsgArray(7140104, 546725));
+        customCoordinates.put("ILH", this.liviToWsgArray(6974203, 534546));
+        customCoordinates.put("MKN", this.liviToWsgArray(7287986, 400875));
+        customCoordinates.put("LHS", this.liviToWsgArray(7254117, 424951));
+        customCoordinates.put("SHS", this.liviToWsgArray(7294961, 386825));
     }
 
     @Autowired
     private StationRepository stationRepository;
+
+    @Autowired
+    private Wgs84ConversionService wgs84ConversionService;
 
     public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                          final List<SimpleTimeTableRow> timeTableRows,
@@ -119,6 +132,7 @@ public class GTFSStopsService {
             stop.latitude = station.latitude.doubleValue();
             stop.longitude = station.longitude.doubleValue();
         } else {
+            stop.name = "-";
             log.warn("Could not find Station for {}", stationShortCode);
         }
 
@@ -147,6 +161,11 @@ public class GTFSStopsService {
         final double longitude = centroid.map(location -> location.getX()).orElseGet(() -> station.longitude.doubleValue());
 
         return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
+    }
+
+    private double[] liviToWsgArray(double p, double i) {
+        ProjCoordinate wsg84 = this.wgs84ConversionService.liviToWgs84(i, p);
+        return new double[] { wsg84.y, wsg84.x };
     }
 
     private void setCustomLocations(String stationShortCode, Stop stop) {
