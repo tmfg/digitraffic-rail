@@ -71,7 +71,7 @@ public class GTFSWritingService {
     }
 
     @Transactional
-    public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
+    public List<File> writeGTFSFiles(final GTFSDto gtfsDto, final String zipFileName) throws IOException {
         log.info("Generating {}", zipFileName);
 
         final List<File> files = writeGtfsFiles(gtfsDto);
