@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
 import com.google.transit.realtime.GtfsRealtime;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
@@ -11,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -154,7 +154,7 @@ public class FeedMessageService {
         return builder.build();
     }
 
-    private boolean delaysDiffer(final GtfsRealtime.TripUpdate.StopTimeUpdate previous, @NonNull final GtfsRealtime.TripUpdate.StopTimeUpdate current) {
+    private boolean delaysDiffer(final GtfsRealtime.TripUpdate.StopTimeUpdate previous, @Nonnull final GtfsRealtime.TripUpdate.StopTimeUpdate current) {
         if (previous == null) {
             return true;
         }
@@ -178,20 +178,29 @@ public class FeedMessageService {
             updates.add(previous);
         }
 
-        for(int i = 1; i < train.timeTableRows.size();stopSequence++) {
+        for(int i = 1; i < train.timeTableRows.size();) {
             final GTFSTimeTableRow arrival = train.timeTableRows.get(i++);
             final GTFSTimeTableRow departure = train.timeTableRows.size() == i ? null : train.timeTableRows.get(i++);
 
-            final GtfsRealtime.TripUpdate.StopTimeUpdate current = createStopTimeUpdate(stopSequence, arrival, departure, updates.isEmpty());
+            // skip stations where train does not stop
+            if(includeStop(arrival, departure)) {
+                final GtfsRealtime.TripUpdate.StopTimeUpdate current = createStopTimeUpdate(stopSequence++, arrival, departure, updates.isEmpty());
 
-            if(current != null && delaysDiffer(previous, current)) {
-                updates.add(current);
+                if (current != null && delaysDiffer(previous, current)) {
+                    updates.add(current);
+                }
+
+                previous = current;
             }
-
-            previous = current;
         }
 
         return updates;
+    }
+
+    private boolean includeStop(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+        // include only stops where scheduled times are different and stop is commercial
+        return departure == null || (!arrival.scheduledTime.equals(departure.scheduledTime) &&
+                (arrival.commercialStop || departure.commercialStop));
     }
 
     private GtfsRealtime.FeedEntity createTUUpdateEntity(final GTFSTrip trip, final GTFSTrain train) {

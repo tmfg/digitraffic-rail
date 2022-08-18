@@ -47,6 +47,9 @@ public class GTFSTimeTableRow {
     @Column
     public Long differenceInMinutes;
 
+    @Column
+    public Boolean commercialStop;
+
     @ManyToOne
     @JoinColumns({
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false, insertable = false, updatable = false),
