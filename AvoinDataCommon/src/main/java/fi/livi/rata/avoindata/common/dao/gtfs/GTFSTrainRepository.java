@@ -12,6 +12,8 @@ import java.util.List;
 
 @Repository
 public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, TrainId> {
-    @Query("select train from GTFSTrain train where train.version > ?1 and id.departureDate >= (current_date - 1) and id.departureDate < (current_date + 1)")
+    @Query("select train from GTFSTrain train where train.version > ?1" +
+            " and id.departureDate between (current_date - 1) and current_date " +
+            " and timeTableRows.id.departureDate between (current_date - 1) and current_date")
     List<GTFSTrain> findByVersionGreaterThan(final long version);
 }
