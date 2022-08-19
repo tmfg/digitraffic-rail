@@ -58,13 +58,13 @@ public class GTFSRealtimeService {
         if(maxVersion == null) {
             log.error("null version from gtfs-trips!");
         } else {
-//            TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
+            TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
                 log.info("Getting trains since version {}", maxVersion);
                 final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findByVersionGreaterThan(maxVersion);
                 log.info("Found {} GtfsTrains", gtfsTrains.size());
 
                 trains.addAll(gtfsTrains);
-  //          });
+            });
         }
 
         return trains;
