@@ -2,11 +2,11 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ElementRangeDeserializerTest extends BaseTest {
 

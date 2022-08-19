@@ -1,19 +1,21 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 
+import java.util.HashSet;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.HashSet;
 
 
 public class TrainPersistServiceTest extends BaseTest {
@@ -28,8 +30,8 @@ public class TrainPersistServiceTest extends BaseTest {
     @Autowired
     private TimeTableRowRepository timeTableRowRepository;
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void cleanDatabase() {
         trainRepository.deleteAllInBatch();
         timeTableRowRepository.deleteAllInBatch();
@@ -49,7 +51,7 @@ public class TrainPersistServiceTest extends BaseTest {
 
         trainPersistService.addEntities(Lists.newArrayList(train1));
 
-        Assert.assertNotNull(trainRepository.findById(train1.id).orElse(null));
+        Assertions.assertNotNull(trainRepository.findById(train1.id).orElse(null));
     }
 
     @Test
@@ -67,16 +69,16 @@ public class TrainPersistServiceTest extends BaseTest {
         trainPersistService.addEntities(Lists.newArrayList(train1));
 
         final Train addedTrain = trainRepository.findById(train1.id).orElse(null);
-        Assert.assertNotNull(addedTrain);
-        Assert.assertEquals(false, addedTrain.cancelled);
+        Assertions.assertNotNull(addedTrain);
+        Assertions.assertEquals(false, addedTrain.cancelled);
 
         train1.cancelled = true;
 
         trainPersistService.updateEntities(Lists.newArrayList(train1));
 
         final Train updatedTrain = trainRepository.findById(train1.id).orElse(null);
-        Assert.assertNotNull(updatedTrain);
-        Assert.assertEquals(true, updatedTrain.cancelled);
+        Assertions.assertNotNull(updatedTrain);
+        Assertions.assertEquals(true, updatedTrain.cancelled);
 
 
     }

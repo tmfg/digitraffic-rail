@@ -3,10 +3,10 @@ package fi.livi.rata.avoindata.updater.service;
 import java.time.LocalDate;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.mqtt.support.MqttHeaders;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -37,9 +38,9 @@ public class MQTTPublishServiceTest extends BaseTest {
     @Autowired
     private CauseFactory causeFactory;
 
-    @Before
+    @BeforeEach
     public void before() {
-        Assume.assumeTrue(!mqttServerUrl.contains("not-a-real-url"));
+        Assumptions.assumeTrue(!mqttServerUrl.contains("not-a-real-url"));
     }
 
     @Transactional
@@ -53,11 +54,11 @@ public class MQTTPublishServiceTest extends BaseTest {
 
         DocumentContext json = JsonPath.parse(message.getPayload());
 
-        Assert.assertEquals("testing/testtopic", message.getHeaders().get(MqttHeaders.TOPIC));
-        Assert.assertEquals("2000-01-01", json.read("$['departureDate']"));
-        Assert.assertEquals(24, json.<String>read("$['timetableAcceptanceDate']").length());
-        Assert.assertEquals("1 koodi", json.read("$['timeTableRows'][0]['causes'][0]['categoryCode']"));
-        Assert.assertEquals("3", json.read("$['timeTableRows'][0]['causes'][0]['thirdCategoryCodeId']").toString());
+        Assertions.assertEquals("testing/testtopic", message.getHeaders().get(MqttHeaders.TOPIC));
+        Assertions.assertEquals("2000-01-01", json.read("$['departureDate']"));
+        Assertions.assertEquals(24, json.<String>read("$['timetableAcceptanceDate']").length());
+        Assertions.assertEquals("1 koodi", json.read("$['timeTableRows'][0]['causes'][0]['categoryCode']"));
+        Assertions.assertEquals("3", json.read("$['timeTableRows'][0]['causes'][0]['thirdCategoryCodeId']").toString());
 
         assertPathNotPresent(json, "$['timeTableRows'][0]['causes'][0]['detailedCategoryName']");
     }
@@ -81,7 +82,7 @@ public class MQTTPublishServiceTest extends BaseTest {
     private void assertTopic(String inputTopic, String publishedTopic) throws ExecutionException, InterruptedException {
         Message<String> message = mqttPublishService.publishString(inputTopic, "content").get();
 
-        Assert.assertEquals(publishedTopic, message.getHeaders().get(MqttHeaders.TOPIC));
+        Assertions.assertEquals(publishedTopic, message.getHeaders().get(MqttHeaders.TOPIC));
     }
 
     @Transactional
@@ -93,7 +94,7 @@ public class MQTTPublishServiceTest extends BaseTest {
     private void assertPathNotPresent(DocumentContext json, String path) {
         try {
             json.read(path);
-            Assert.fail();
+            Assertions.fail();
         } catch (PathNotFoundException e) {
 
         }

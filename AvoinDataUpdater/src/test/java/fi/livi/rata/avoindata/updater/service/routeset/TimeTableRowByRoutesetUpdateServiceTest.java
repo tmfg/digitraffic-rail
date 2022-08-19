@@ -8,15 +8,16 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
@@ -45,7 +46,7 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
     @MockBean
     private TrainLockExecutor trainLockExecutor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         //Direct execution because of test transactions
         when(trainLockExecutor.executeInTransactionLock(any())).then(invocationOnMock -> {
@@ -64,9 +65,9 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("ABC123", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("ABC123", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
     @Test
@@ -80,14 +81,14 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
 
-        Assert.assertEquals("HKI", returnedTrain.timeTableRows.get(0).station.stationShortCode);
-        Assert.assertEquals("HKI", Iterables.getLast(returnedTrain.timeTableRows).station.stationShortCode);
+        Assertions.assertEquals("HKI", returnedTrain.timeTableRows.get(0).station.stationShortCode);
+        Assertions.assertEquals("HKI", Iterables.getLast(returnedTrain.timeTableRows).station.stationShortCode);
 
-        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
-        Assert.assertEquals("LAST", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
+        Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("LAST", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     @Test
@@ -101,10 +102,10 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
-        Assert.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
+        Assertions.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     @Test
@@ -116,10 +117,10 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(3).commercialTrack);
-        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(4).commercialTrack);
+        Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(3).commercialTrack);
+        Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(4).commercialTrack);
     }
 
     @Test
@@ -138,10 +139,10 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
-        Assert.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
+        Assertions.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     @Test
@@ -156,9 +157,9 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("1", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("1", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
     @Test
@@ -173,9 +174,9 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
         List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         Train returnedTrain = trains.get(0);
-        Assert.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
+        Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
 

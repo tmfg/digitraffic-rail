@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.server.controller.api.metadata;
 
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;

@@ -1,17 +1,8 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
-import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
-import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.factory.TrafficRestrictionNotificationFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,9 +11,19 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.annotation.Transactional;
+
+import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
+import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.factory.TrafficRestrictionNotificationFactory;
 
 public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
@@ -34,12 +35,12 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     private static final Random random = new Random(System.nanoTime());
 
-    @Before
+    @BeforeEach
     public void setUp() {
         clearTrns();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         clearTrns();
     }

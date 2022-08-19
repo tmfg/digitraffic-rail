@@ -1,23 +1,25 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
-import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import fi.livi.rata.avoindata.updater.BaseTest;
 
 public class RumaUpdaterUtilTest extends BaseTest {
 
     private static final GeometryFactory gf = new GeometryFactory();
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getPointFromGeometryCollectionThrowsIfMissingPoint() {
         final GeometryCollection coll = gf.createGeometryCollection(new Geometry[]{});
 
-        RumaUpdaterUtil.getPointFromGeometryCollection(coll, "test");
+        assertThrows(IllegalArgumentException.class, () -> RumaUpdaterUtil.getPointFromGeometryCollection(coll, "test"));
     }
 
     @Test

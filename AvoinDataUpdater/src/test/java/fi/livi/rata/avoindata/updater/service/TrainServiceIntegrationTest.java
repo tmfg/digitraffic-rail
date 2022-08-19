@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,18 +42,18 @@ public class TrainServiceIntegrationTest extends BaseTest {
     public void testAddTrains() throws Exception {
         testDataService.createTrainsFromResource("trainsSingle.json");
         final List<Train> trains = trainRepository.findAll();
-        Assert.assertEquals(1, trains.size());
+        Assertions.assertEquals(1, trains.size());
         final Train train = trains.get(0);
-        Assert.assertEquals(new Long(10600L), train.id.trainNumber);
-        Assert.assertEquals(LocalDate.of(2014, 12, 10), train.id.departureDate);
-        Assert.assertEquals(10, train.operator.operatorUICCode);
-        Assert.assertEquals("vr", train.operator.operatorShortCode);
-        Assert.assertEquals(52L, train.trainTypeId);
-        Assert.assertEquals("V", train.commuterLineID);
-        Assert.assertFalse(train.runningCurrently);
-        Assert.assertFalse(train.cancelled);
-        Assert.assertEquals(46, train.timeTableRows.size());
-        Assert.assertEquals(0, train.timeTableRows.stream().mapToLong(x -> x.causes.size()).sum());
+        Assertions.assertEquals(new Long(10600L), train.id.trainNumber);
+        Assertions.assertEquals(LocalDate.of(2014, 12, 10), train.id.departureDate);
+        Assertions.assertEquals(10, train.operator.operatorUICCode);
+        Assertions.assertEquals("vr", train.operator.operatorShortCode);
+        Assertions.assertEquals(52L, train.trainTypeId);
+        Assertions.assertEquals("V", train.commuterLineID);
+        Assertions.assertFalse(train.runningCurrently);
+        Assertions.assertFalse(train.cancelled);
+        Assertions.assertEquals(46, train.timeTableRows.size());
+        Assertions.assertEquals(0, train.timeTableRows.stream().mapToLong(x -> x.causes.size()).sum());
     }
 
     @Test
@@ -65,18 +65,18 @@ public class TrainServiceIntegrationTest extends BaseTest {
 
         testDataService.createTrainsFromResource("trainsSingle.json");
 
-        Assert.assertEquals(String.format("Should contain %d individual trains", AMOUNT_OF_TRAINS), AMOUNT_OF_TRAINS,
-                trainRepository.count());
-        Assert.assertEquals(String.format("Should contain %d individual timeTableRows", AMOUNT_OF_TIMETABLEROWS), AMOUNT_OF_TIMETABLEROWS,
-                timeTableRowRepository.count());
-        Assert.assertEquals(String.format("Should contain %d individual causes", AMOUNT_OF_CAUSES), AMOUNT_OF_CAUSES,
-                causeRepository.count());
+        Assertions.assertEquals(AMOUNT_OF_TRAINS, trainRepository.count(),
+                String.format("Should contain %d individual trains", AMOUNT_OF_TRAINS));
+        Assertions.assertEquals(AMOUNT_OF_TIMETABLEROWS, timeTableRowRepository.count(),
+                String.format("Should contain %d individual timeTableRows", AMOUNT_OF_TIMETABLEROWS));
+        Assertions.assertEquals(AMOUNT_OF_CAUSES, causeRepository.count(),
+                String.format("Should contain %d individual causes", AMOUNT_OF_CAUSES));
 
         trainService.clearEntities();
 
-        Assert.assertEquals("Databse should contain no trains", 0, trainRepository.count());
-        Assert.assertEquals("Database should contain no timeTableRows", 0, timeTableRowRepository.count());
-        Assert.assertEquals("Database should contain no causes", 0, causeRepository.count());
+        Assertions.assertEquals(0, trainRepository.count(), "Databse should contain no trains");
+        Assertions.assertEquals(0, timeTableRowRepository.count(), "Database should contain no timeTableRows");
+        Assertions.assertEquals(0, causeRepository.count(), "Database should contain no causes");
     }
 
     @Test
@@ -87,20 +87,20 @@ public class TrainServiceIntegrationTest extends BaseTest {
         trainService.updateEntities(trains);
         final Train trainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
                 originalTrain.id.trainNumber, false);
-        Assert.assertEquals(1, trainRepository.count());
+        Assertions.assertEquals(1, trainRepository.count());
         List<TimeTableRow> timeTableRowsWithActualTime = trainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null)
                 .collect(Collectors.toList());
-        Assert.assertTrue(timeTableRowsWithActualTime.isEmpty());
+        Assertions.assertTrue(timeTableRowsWithActualTime.isEmpty());
 
         final List<Train> trainsUpdated = testDataService.parseTrains("trainsSingle.json");
         trainService.updateEntities(trainsUpdated);
-        Assert.assertEquals(1, trainRepository.count());
+        Assertions.assertEquals(1, trainRepository.count());
         final Train updatedTrainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
                 originalTrain.id.trainNumber, false);
         timeTableRowsWithActualTime = updatedTrainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null).collect(
                 Collectors.toList());
-        Assert.assertFalse(timeTableRowsWithActualTime.isEmpty());
-        Assert.assertEquals(46, timeTableRowRepository.count());
+        Assertions.assertFalse(timeTableRowsWithActualTime.isEmpty());
+        Assertions.assertEquals(46, timeTableRowRepository.count());
 
         trainRepository.deleteAllInBatch();
     }

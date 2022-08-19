@@ -15,9 +15,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ import com.google.common.collect.Sets;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 
-@Ignore
+@Disabled
 public class StatusCodeTest {
     private Logger logger = LoggerFactory.getLogger(StatusCodeTest.class);
     private AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
@@ -42,7 +42,7 @@ public class StatusCodeTest {
     private static String CURRENT_DATE = LocalDate.now().toString();
 
     @Test
-    @Ignore
+    @Disabled
     public void schedulesShouldBeLimited() throws IOException, ExecutionException, InterruptedException {
         Set<String> urls = new HashSet<>();
 
@@ -63,8 +63,7 @@ public class StatusCodeTest {
             statusCodes.add(statusCode);
             logger.info("{} returned status code {}", url, statusCode);
         }
-
-        Assert.assertTrue("429 should be present", statusCodes.contains(429));
+        Assertions.assertTrue(statusCodes.contains(429), "429 should be present");
     }
 
     @Test
@@ -80,12 +79,12 @@ public class StatusCodeTest {
         final Future<Response> prd1Future = responseFutures.get(prd1Url);
         final Future<Response> prd2Future = responseFutures.get(prd2Url);
 
-        Assert.assertTrue(prd1Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
-        Assert.assertTrue(prd2Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
+        Assertions.assertTrue(prd1Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
+        Assertions.assertTrue(prd2Future.get().getResponseBody().contains("2017-05-19T04:23:00.000Z"));
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void cacheHeadersAreEqual() throws IOException, ExecutionException, InterruptedException {
         Set<String> ignoredUrls = Sets.newHashSet("http://uptime.statuscake.com/?TestID=KIvdE8ZaAe", "https://rata.digitraffic.fi/");
 
@@ -252,7 +251,7 @@ public class StatusCodeTest {
             final Response response = responses.get(url);
             final int statusCode = response.getStatusCode();
             logger.info("Url: {}, StatusCode: {}", url, statusCode);
-            Assert.assertTrue(ALLOWED_CODES.contains(statusCode));
+            Assertions.assertTrue(ALLOWED_CODES.contains(statusCode));
         }
     }
 }

@@ -5,11 +5,11 @@ import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictio
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZonedDateTime;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TrafficRestrictionNotificationDeserializerTest extends BaseTest {
 

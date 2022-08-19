@@ -12,9 +12,9 @@ import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_TM35FIN
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_TM35FIN_Y;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_WGS84_X;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.VUOSAARI_WGS84_Y;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;

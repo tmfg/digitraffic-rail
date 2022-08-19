@@ -6,14 +6,15 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.concurrent.Executors;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
+
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;
@@ -284,7 +285,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
     @Test
     @Transactional
-    @Ignore
+    @Disabled
     public void trainCategoryFilteringShouldWork() throws Exception {
         TrainCategory trainCategory1 = trainCategoryFactory.create(1L, "test category");
         TrainCategory trainCategory2 = trainCategoryFactory.create(2L, "test cat");
