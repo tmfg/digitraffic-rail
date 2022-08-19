@@ -31,11 +31,15 @@ public class GTFSRealtimeUpdatingService {
 
     @Scheduled(fixedRate = 1000 * 60)
     public void updateTripUpdates() {
-        TimingUtil.log(log, "updateTripUpdates", () -> {
-            final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createTripUpdateFeedMessage();
+        try {
+            TimingUtil.log(log, "updateTripUpdates", () -> {
+                final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createTripUpdateFeedMessage();
 
-            gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-updates");
-        });
+                gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-updates");
+            });
+        } catch(final Exception e) {
+            log.error("got exception", e);
+        }
     }
 
 }

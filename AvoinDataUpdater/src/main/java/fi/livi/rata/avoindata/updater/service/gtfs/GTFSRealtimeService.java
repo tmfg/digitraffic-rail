@@ -62,7 +62,7 @@ public class GTFSRealtimeService {
 
             TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
                 final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findByVersionGreaterThan(maxVersion);
-                log.debug("Found {} GtfsTrains", gtfsTrains.size());
+                log.info("Found {} GtfsTrains", gtfsTrains.size());
                 trains.addAll(gtfsTrains);
             });
         }
