@@ -250,7 +250,11 @@ public class FeedMessageService {
     }
 
     public GtfsRealtime.FeedMessage createTripUpdateFeedMessage(final List<GTFSTrain> trains) {
+        log.info("creating TripUpdateFeedMessages for {} trains", trains.size());
+
         final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
+
+        log.info("creating TripUpdateFeedMessages for {} train numbers", tripFinder.tripMap.entrySet().size());
 
         return createBuilderWithHeader()
                 .addAllEntity(createTUEntities(tripFinder, trains))

@@ -6,11 +6,10 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
+import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
