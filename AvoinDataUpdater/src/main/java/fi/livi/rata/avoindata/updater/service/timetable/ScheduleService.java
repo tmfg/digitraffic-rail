@@ -57,8 +57,12 @@ public class ScheduleService {
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                if (startDate.isAfter(dp.nowInHelsinki().minusHours(3))) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
+                ZonedDateTime nowInHelsinki = dp.nowInHelsinki();
+                if (startDate.isAfter(nowInHelsinki.minusHours(3))) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
                     extractForDate(adhocSchedules, regularSchedules, date);
+                } else {
+                    log.error("Stopping schedule extraction due to taking too long. Start: {}, Now: {}", startDate, nowInHelsinki);
+                    return;
                 }
             }
 
