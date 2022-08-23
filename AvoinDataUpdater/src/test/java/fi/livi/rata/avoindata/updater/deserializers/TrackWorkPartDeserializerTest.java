@@ -3,14 +3,14 @@ package fi.livi.rata.avoindata.updater.deserializers;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TrackWorkPartDeserializerTest extends BaseTest {
 

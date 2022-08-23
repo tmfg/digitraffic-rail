@@ -1,21 +1,22 @@
 package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 public class ScheduleDeserializerTest extends BaseTest {
     @Autowired
@@ -45,27 +46,27 @@ public class ScheduleDeserializerTest extends BaseTest {
                 Schedule.class);
 
 
-        Assert.assertEquals("KLI", schedule.scheduleRows.get(0).station.stationShortCode);
-        Assert.assertEquals("HKI", schedule.scheduleRows.get(116).station.stationShortCode);
+        Assertions.assertEquals("KLI", schedule.scheduleRows.get(0).station.stationShortCode);
+        Assertions.assertEquals("HKI", schedule.scheduleRows.get(116).station.stationShortCode);
 
-        Assert.assertEquals(Duration.parse("PT18H20M"), schedule.scheduleRows.get(0).departure.timestamp);
-        Assert.assertEquals(Duration.parse("PT33H38M"), schedule.scheduleRows.get(116).arrival.timestamp);
+        Assertions.assertEquals(Duration.parse("PT18H20M"), schedule.scheduleRows.get(0).departure.timestamp);
+        Assertions.assertEquals(Duration.parse("PT33H38M"), schedule.scheduleRows.get(116).arrival.timestamp);
 
     }
 
     private void assertSchedule(final Schedule schedule) {
-        Assert.assertEquals(4749, schedule.trainNumber.longValue());
-        Assert.assertEquals(LocalDate.of(2016, 12, 12), schedule.startDate);
-        Assert.assertEquals(LocalDate.of(2017, 6, 16), schedule.endDate);
+        Assertions.assertEquals(4749, schedule.trainNumber.longValue());
+        Assertions.assertEquals(LocalDate.of(2016, 12, 12), schedule.startDate);
+        Assertions.assertEquals(LocalDate.of(2017, 6, 16), schedule.endDate);
 
-        Assert.assertEquals(10, schedule.operator.operatorUICCode);
-        Assert.assertEquals("vr", schedule.operator.operatorShortCode);
+        Assertions.assertEquals(10, schedule.operator.operatorUICCode);
+        Assertions.assertEquals("vr", schedule.operator.operatorShortCode);
 
-        Assert.assertEquals(46, schedule.trainType.id.intValue());
-        Assert.assertEquals("T", schedule.trainType.name);
+        Assertions.assertEquals(46, schedule.trainType.id.intValue());
+        Assertions.assertEquals("T", schedule.trainType.name);
 
-        Assert.assertEquals(3, schedule.trainCategory.id.intValue());
-        Assert.assertEquals("Cargo", schedule.trainCategory.name);
+        Assertions.assertEquals(3, schedule.trainCategory.id.intValue());
+        Assertions.assertEquals("Cargo", schedule.trainCategory.name);
     }
 
     private void assertScheduleRows(final ArrayList<ScheduleRow> scheduleRows) {
@@ -88,36 +89,36 @@ public class ScheduleDeserializerTest extends BaseTest {
     private void assertScheduleRow(final ScheduleRow scheduleRow, final Duration arrivalTime, final Duration departureTime,
             final String stationShortCode) {
         if (departureTime != null) {
-            Assert.assertEquals(departureTime, scheduleRow.departure.timestamp);
+            Assertions.assertEquals(departureTime, scheduleRow.departure.timestamp);
         }
         if (arrivalTime != null) {
-            Assert.assertEquals(arrivalTime, scheduleRow.arrival.timestamp);
+            Assertions.assertEquals(arrivalTime, scheduleRow.arrival.timestamp);
         }
-        Assert.assertEquals(scheduleRow.station.stationShortCode, stationShortCode);
+        Assertions.assertEquals(scheduleRow.station.stationShortCode, stationShortCode);
     }
 
     private void assertWholeDayCancellation(final ScheduleCancellation wholedayCancellation) {
-        Assert.assertEquals(LocalDate.of(2016, 12, 26), wholedayCancellation.startDate);
-        Assert.assertEquals(LocalDate.of(2016, 12, 26), wholedayCancellation.endDate);
-        Assert.assertEquals(ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY, wholedayCancellation.scheduleCancellationType);
+        Assertions.assertEquals(LocalDate.of(2016, 12, 26), wholedayCancellation.startDate);
+        Assertions.assertEquals(LocalDate.of(2016, 12, 26), wholedayCancellation.endDate);
+        Assertions.assertEquals(ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY, wholedayCancellation.scheduleCancellationType);
     }
 
     private void assertPartialCancellation(final ScheduleCancellation partialDayCancellation) {
         final ArrayList<ScheduleRowPart> scheduleRowParts = new ArrayList<>(partialDayCancellation.cancelledRows);
         Collections.sort(scheduleRowParts, Comparator.comparingLong(o -> o.id));
 
-        Assert.assertEquals("SUL", scheduleRowParts.get(0).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("PLT", scheduleRowParts.get(1).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("PLT", scheduleRowParts.get(2).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("JNS", scheduleRowParts.get(3).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("JNS", scheduleRowParts.get(4).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("JNS_V101", scheduleRowParts.get(5).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("JNS_V101", scheduleRowParts.get(6).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("KHI", scheduleRowParts.get(7).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("KHI", scheduleRowParts.get(8).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("ENO", scheduleRowParts.get(9).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("ENO", scheduleRowParts.get(10).scheduleRow.station.stationShortCode);
-        Assert.assertEquals("UIM", scheduleRowParts.get(11).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("SUL", scheduleRowParts.get(0).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("PLT", scheduleRowParts.get(1).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("PLT", scheduleRowParts.get(2).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("JNS", scheduleRowParts.get(3).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("JNS", scheduleRowParts.get(4).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("JNS_V101", scheduleRowParts.get(5).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("JNS_V101", scheduleRowParts.get(6).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("KHI", scheduleRowParts.get(7).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("KHI", scheduleRowParts.get(8).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("ENO", scheduleRowParts.get(9).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("ENO", scheduleRowParts.get(10).scheduleRow.station.stationShortCode);
+        Assertions.assertEquals("UIM", scheduleRowParts.get(11).scheduleRow.station.stationShortCode);
     }
 
 

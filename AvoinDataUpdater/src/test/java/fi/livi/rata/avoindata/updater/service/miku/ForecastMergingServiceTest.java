@@ -3,12 +3,13 @@ package fi.livi.rata.avoindata.updater.service.miku;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Iterables;
+
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.train.Forecast;
@@ -125,7 +126,7 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         final TimeTableRow last = Iterables.getLast(updatedTrain.timeTableRows);
-        Assert.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC, last.estimateSource);
+        Assertions.assertEquals(TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC, last.estimateSource);
         assertTimeTableRow(last, null, 5);
     }
 
@@ -238,14 +239,14 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         final List<TimeTableRow> updatedRows = updatedTrain.timeTableRows;
-        Assert.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
-        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
-        Assert.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
+        Assertions.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
+        Assertions.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
     }
 
     @Test
@@ -275,14 +276,14 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         final List<TimeTableRow> updatedRows = updatedTrain.timeTableRows;
-        Assert.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
-        Assert.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
-        Assert.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
-        Assert.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(0).estimateSource, TimeTableRow.EstimateSourceEnum.MIKU_USER);
+        Assertions.assertEquals(updatedRows.get(1).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(2).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(3).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(4).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(5).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_USER);
+        Assertions.assertEquals(updatedRows.get(6).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
+        Assertions.assertEquals(updatedRows.get(7).estimateSource, TimeTableRow.EstimateSourceEnum.LIIKE_AUTOMATIC);
     }
 
     @Test
@@ -332,14 +333,14 @@ public class ForecastMergingServiceTest extends BaseTest {
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
         assertTimeTableRow(updatedTrain.timeTableRows.get(0), null, null);
-        Assert.assertTrue(updatedTrain.timeTableRows.get(0).unknownDelay);
+        Assertions.assertTrue(updatedTrain.timeTableRows.get(0).unknownDelay);
 
         Forecast forecastLater = forecastFactory.create(updatedTrain.timeTableRows.get(0), 1);
 
         Train updatedTrainLater = forecastMergingService.mergeEstimates(updatedTrain, Arrays.asList(forecastLater));
 
         assertTimeTableRow(updatedTrainLater.timeTableRows.get(0), null, 1);
-        Assert.assertNull(updatedTrainLater.timeTableRows.get(0).unknownDelay);
+        Assertions.assertNull(updatedTrainLater.timeTableRows.get(0).unknownDelay);
 
     }
 
@@ -365,14 +366,14 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(0).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(1).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(2).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(3).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(4).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(5).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(6).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(0).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(1).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(2).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(3).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(4).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(5).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(6).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
     }
 
     @Test
@@ -397,14 +398,14 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(0).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(1).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(2).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(3).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(4).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(5).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(6).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(0).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(1).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(2).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(3).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(4).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(5).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(6).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
     }
 
     @Test
@@ -429,14 +430,14 @@ public class ForecastMergingServiceTest extends BaseTest {
 
         Train updatedTrain = forecastMergingService.mergeEstimates(train, Arrays.asList(forecast));
 
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(0).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(1).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(2).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(3).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(4).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(5).unknownDelay);
-        Assert.assertEquals(null, updatedTrain.timeTableRows.get(6).unknownDelay);
-        Assert.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(0).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(1).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(2).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(3).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(4).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(5).unknownDelay);
+        Assertions.assertEquals(null, updatedTrain.timeTableRows.get(6).unknownDelay);
+        Assertions.assertEquals(true, updatedTrain.timeTableRows.get(7).unknownDelay);
     }
 
     private void clearActualTimesAndEstimates(final Train train) {
@@ -448,15 +449,15 @@ public class ForecastMergingServiceTest extends BaseTest {
 
     private void assertTimeTableRow(TimeTableRow timeTableRow, Integer actualTime, Integer liveEstimateTime) {
         if (actualTime == null) {
-            Assert.assertEquals(null, timeTableRow.actualTime);
+            Assertions.assertEquals(null, timeTableRow.actualTime);
         } else {
-            Assert.assertEquals(timeTableRow.scheduledTime.plusMinutes(actualTime), timeTableRow.actualTime);
+            Assertions.assertEquals(timeTableRow.scheduledTime.plusMinutes(actualTime), timeTableRow.actualTime);
         }
 
         if (liveEstimateTime == null) {
-            Assert.assertEquals(null, timeTableRow.liveEstimateTime);
+            Assertions.assertEquals(null, timeTableRow.liveEstimateTime);
         } else {
-            Assert.assertEquals(timeTableRow.scheduledTime.plusMinutes(liveEstimateTime), timeTableRow.liveEstimateTime);
+            Assertions.assertEquals(timeTableRow.scheduledTime.plusMinutes(liveEstimateTime), timeTableRow.liveEstimateTime);
         }
     }
 }

@@ -1,22 +1,24 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
-import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
-import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
-import fi.livi.rata.avoindata.server.factory.RoutesetFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import java.util.concurrent.Executors;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.concurrent.Executors;
+import com.google.common.util.concurrent.MoreExecutors;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
+import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
+import fi.livi.rata.avoindata.server.factory.RoutesetFactory;
 
 @Transactional
 public class RoutesetControllerTest extends MockMvcBaseTest {
@@ -26,12 +28,12 @@ public class RoutesetControllerTest extends MockMvcBaseTest {
     @Autowired
     private FindByIdService findByIdService;
 
-    @Before
+    @BeforeEach
     public void setup() throws NoSuchFieldException {
         ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
     }
 
-    @After
+    @AfterEach
     public void teardown() throws NoSuchFieldException {
         ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
     }

@@ -1,12 +1,14 @@
 package fi.livi.rata.avoindata.updater.service.ruma;
 
-import org.junit.Test;
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeJetiOid;
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTrakediaInfraOid;
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Random;
 
-import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.junit.jupiter.api.Test;
 
 public class RumaUtilsTest {
 

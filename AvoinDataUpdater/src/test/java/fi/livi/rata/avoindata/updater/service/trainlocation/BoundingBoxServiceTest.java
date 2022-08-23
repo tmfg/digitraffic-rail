@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.trainlocation;
 
 import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
@@ -43,11 +43,11 @@ public class BoundingBoxServiceTest extends BaseTest {
 
     private void assertBoundingBox(final List<Point> boundingBox, final Point point1, final Point point2, final Point point3,
             final Point point4) {
-        Assert.assertEquals(4, boundingBox.size());
+        Assertions.assertEquals(4, boundingBox.size());
 
-        Assert.assertEquals(boundingBox.get(0), point1);
-        Assert.assertEquals(boundingBox.get(1), point2);
-        Assert.assertEquals(boundingBox.get(2), point3);
-        Assert.assertEquals(boundingBox.get(3), point4);
+        Assertions.assertEquals(boundingBox.get(0), point1);
+        Assertions.assertEquals(boundingBox.get(1), point2);
+        Assertions.assertEquals(boundingBox.get(2), point3);
+        Assertions.assertEquals(boundingBox.get(3), point4);
     }
 }

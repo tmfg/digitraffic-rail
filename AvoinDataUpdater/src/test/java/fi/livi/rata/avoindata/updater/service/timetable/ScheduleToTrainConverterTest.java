@@ -1,6 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.BaseTest;
@@ -8,14 +22,6 @@ import fi.livi.rata.avoindata.updater.factory.ScheduleFactory;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
 
 
 public class ScheduleToTrainConverterTest extends BaseTest {
@@ -35,7 +41,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         assertTrain(train);
 
-        Assert.assertEquals(8, train.timeTableRows.size());
+        Assertions.assertEquals(8, train.timeTableRows.size());
 
         assertTimeTableRow(train.timeTableRows.get(0), "HKI", 1, TimeTableRow.TimeTableRowType.DEPARTURE);
         assertTimeTableRow(train.timeTableRows.get(1), "TPE", 2, TimeTableRow.TimeTableRowType.ARRIVAL);
@@ -59,7 +65,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         Collections.sort(orderedTrains, (o1, o2) -> o1.id.trainNumber.compareTo(o2.id.trainNumber));
 
 
-        Assert.assertEquals(2, orderedTrains.size());
+        Assertions.assertEquals(2, orderedTrains.size());
 
         orderedTrains.get(0).id.trainNumber = 1L;
         orderedTrains.get(1).id.trainNumber = 2L;
@@ -72,7 +78,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         schedule.startDate = extractionDate;
         schedule.endDate = null;
 
-        Assert.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
     }
 
     @Test
@@ -82,7 +88,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         schedule.endDate = null;
         schedule.typeCode = "Y";
 
-        Assert.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
     }
 
     @Test
@@ -94,7 +100,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.endDate = extractionDate;
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
     }
 
     @Test
@@ -106,7 +112,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancelledSchedule.scheduleExceptions.add(scheduleException);
 
         final Set<Train> trains = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet();
-        Assert.assertEquals(0, trains.size());
+        Assertions.assertEquals(0, trains.size());
     }
 
     @Test
@@ -118,7 +124,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.endDate = extractionDate.plusDays(2);
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        Assert.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
     }
 
     @Test
@@ -139,14 +145,14 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         assertTrain(train);
 
-        Assert.assertEquals(true, train.timeTableRows.get(0).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(1).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(2).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(3).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(4).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(5).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(6).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(7).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(0).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(1).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(2).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(3).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(4).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(5).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(6).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(7).cancelled);
 
         assertTimeTableRow(train.timeTableRows.get(2), "TPE", 3, TimeTableRow.TimeTableRowType.DEPARTURE);
         assertTimeTableRow(train.timeTableRows.get(3), "JK", 4, TimeTableRow.TimeTableRowType.ARRIVAL);
@@ -174,14 +180,14 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         assertTrain(train);
 
-        Assert.assertEquals(false, train.timeTableRows.get(0).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(1).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(2).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(3).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(4).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(5).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(6).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(7).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(0).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(1).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(2).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(3).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(4).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(5).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(6).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(7).cancelled);
 
         assertTimeTableRow(train.timeTableRows.get(0), "HKI", 1, TimeTableRow.TimeTableRowType.DEPARTURE);
         assertTimeTableRow(train.timeTableRows.get(1), "TPE", 2, TimeTableRow.TimeTableRowType.ARRIVAL);
@@ -212,14 +218,14 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         assertTrain(train);
 
-        Assert.assertEquals(false, train.timeTableRows.get(0).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(1).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(2).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(3).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(4).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(5).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(6).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(7).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(0).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(1).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(2).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(3).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(4).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(5).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(6).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(7).cancelled);
 
         assertTimeTableRow(train.timeTableRows.get(0), "HKI", 1, TimeTableRow.TimeTableRowType.DEPARTURE);
         assertTimeTableRow(train.timeTableRows.get(1), "TPE", 2, TimeTableRow.TimeTableRowType.ARRIVAL);
@@ -249,14 +255,14 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         assertTrain(train);
 
-        Assert.assertEquals(false, train.timeTableRows.get(0).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(1).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(2).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(3).cancelled);
-        Assert.assertEquals(true, train.timeTableRows.get(4).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(5).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(6).cancelled);
-        Assert.assertEquals(false, train.timeTableRows.get(7).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(0).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(1).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(2).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(3).cancelled);
+        Assertions.assertEquals(true, train.timeTableRows.get(4).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(5).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(6).cancelled);
+        Assertions.assertEquals(false, train.timeTableRows.get(7).cancelled);
 
         assertTimeTableRow(train.timeTableRows.get(0), "HKI", 1, TimeTableRow.TimeTableRowType.DEPARTURE);
         assertTimeTableRow(train.timeTableRows.get(5), "OL", 6, TimeTableRow.TimeTableRowType.ARRIVAL);
@@ -269,21 +275,21 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         Schedule okayschedule = scheduleFactory.create();
         okayschedule.startDate = extractionDate;
 
-        Assert.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayschedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayschedule), extractionDate).size());
 
         Schedule futureSchedule = scheduleFactory.create();
         futureSchedule.startDate = extractionDate.plusDays(1);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(futureSchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(futureSchedule), extractionDate).size());
 
         Schedule historySchedule = scheduleFactory.create();
         historySchedule.startDate = extractionDate.minusDays(8);
         historySchedule.endDate = extractionDate.minusDays(1);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(historySchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(historySchedule), extractionDate).size());
 
         Schedule okayHistorySchedule = scheduleFactory.create();
         okayHistorySchedule.startDate = extractionDate.minusDays(8);
         okayHistorySchedule.endDate = extractionDate;
-        Assert.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayHistorySchedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayHistorySchedule), extractionDate).size());
     }
 
     @Test
@@ -291,67 +297,67 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         Schedule mondaySchedule = scheduleFactory.create();
         mondaySchedule.runOnMonday = false;
         final LocalDate monday = extractionDate.minusDays(6);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(mondaySchedule), monday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(mondaySchedule), monday).size());
 
         Schedule tuesdaySchedule = scheduleFactory.create();
         tuesdaySchedule.runOnTuesday = false;
         final LocalDate tuesday = extractionDate.minusDays(5);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(tuesdaySchedule), tuesday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(tuesdaySchedule), tuesday).size());
 
         Schedule wednesdaySchedule = scheduleFactory.create();
         wednesdaySchedule.runOnWednesday = false;
         final LocalDate wednesday = extractionDate.minusDays(4);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(wednesdaySchedule), wednesday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(wednesdaySchedule), wednesday).size());
 
         Schedule thursdaySchedule = scheduleFactory.create();
         thursdaySchedule.runOnThursday = false;
         final LocalDate thursday = extractionDate.minusDays(3);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(thursdaySchedule), thursday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(thursdaySchedule), thursday).size());
 
         Schedule fridaySchedule = scheduleFactory.create();
         fridaySchedule.runOnFriday = false;
         final LocalDate friday = extractionDate.minusDays(2);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(fridaySchedule), friday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(fridaySchedule), friday).size());
 
         Schedule saturdaySchedule = scheduleFactory.create();
         saturdaySchedule.runOnSaturday = false;
         final LocalDate saturday = extractionDate.minusDays(1);
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(saturdaySchedule), saturday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(saturdaySchedule), saturday).size());
 
         Schedule sundaySchedule = scheduleFactory.create();
         sundaySchedule.runOnSunday = false;
         final LocalDate sunday = ScheduleToTrainConverterTest.extractionDate;
-        Assert.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(sundaySchedule), sunday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(sundaySchedule), sunday).size());
     }
 
     private void assertTimeTableRow(final TimeTableRow timeTableRow, final String stationShortCode, final int minutes,
             final TimeTableRow.TimeTableRowType rowType) {
-        Assert.assertEquals(null, timeTableRow.actualTime);
-        Assert.assertEquals(rowType, timeTableRow.type);
-        Assert.assertEquals(extractionDate, timeTableRow.id.departureDate);
-        Assert.assertEquals(1L, timeTableRow.id.trainNumber.longValue());
-        Assert.assertEquals(stationShortCode, timeTableRow.station.stationShortCode);
-        Assert.assertEquals(true, timeTableRow.trainStopping);
-        Assert.assertEquals(true, timeTableRow.commercialStop);
-        //        Assert.assertEquals("001", timeTableRow.commercialTrack);
-        Assert.assertEquals(extractionDate.atStartOfDay(ZoneId.of("Europe/Helsinki")).plusMinutes(minutes), timeTableRow.scheduledTime);
-        Assert.assertEquals(null, timeTableRow.liveEstimateTime);
-        Assert.assertEquals(null, timeTableRow.estimateSource);
-        Assert.assertEquals(null, timeTableRow.actualTime);
-        Assert.assertEquals(null, timeTableRow.differenceInMinutes);
+        Assertions.assertEquals(null, timeTableRow.actualTime);
+        Assertions.assertEquals(rowType, timeTableRow.type);
+        Assertions.assertEquals(extractionDate, timeTableRow.id.departureDate);
+        Assertions.assertEquals(1L, timeTableRow.id.trainNumber.longValue());
+        Assertions.assertEquals(stationShortCode, timeTableRow.station.stationShortCode);
+        Assertions.assertEquals(true, timeTableRow.trainStopping);
+        Assertions.assertEquals(true, timeTableRow.commercialStop);
+        //        Assertions.assertEquals("001", timeTableRow.commercialTrack);
+        Assertions.assertEquals(extractionDate.atStartOfDay(ZoneId.of("Europe/Helsinki")).plusMinutes(minutes), timeTableRow.scheduledTime);
+        Assertions.assertEquals(null, timeTableRow.liveEstimateTime);
+        Assertions.assertEquals(null, timeTableRow.estimateSource);
+        Assertions.assertEquals(null, timeTableRow.actualTime);
+        Assertions.assertEquals(null, timeTableRow.differenceInMinutes);
     }
 
     private void assertTrain(final Train train) {
-        Assert.assertEquals(train.id.departureDate, extractionDate);
-        Assert.assertEquals(new Long(1L), train.id.trainNumber);
+        Assertions.assertEquals(train.id.departureDate, extractionDate);
+        Assertions.assertEquals(new Long(1L), train.id.trainNumber);
 
-        Assert.assertEquals(false, train.cancelled);
-        Assert.assertEquals("Z", train.commuterLineID);
-        Assert.assertEquals(1L, train.trainCategoryId);
-        Assert.assertEquals(1L, train.trainTypeId);
-        Assert.assertEquals("TEST", train.operator.operatorShortCode);
-        Assert.assertEquals(false, train.runningCurrently);
-        Assert.assertEquals(ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")), train.timetableAcceptanceDate);
+        Assertions.assertEquals(false, train.cancelled);
+        Assertions.assertEquals("Z", train.commuterLineID);
+        Assertions.assertEquals(1L, train.trainCategoryId);
+        Assertions.assertEquals(1L, train.trainTypeId);
+        Assertions.assertEquals("TEST", train.operator.operatorShortCode);
+        Assertions.assertEquals(false, train.runningCurrently);
+        Assertions.assertEquals(ZonedDateTime.of(2017, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")), train.timetableAcceptanceDate);
     }
 
 

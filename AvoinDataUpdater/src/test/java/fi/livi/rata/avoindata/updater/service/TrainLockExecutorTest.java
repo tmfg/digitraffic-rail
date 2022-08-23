@@ -1,17 +1,18 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import fi.livi.rata.avoindata.updater.BaseTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import fi.livi.rata.avoindata.updater.BaseTest;
 
 
 public class TrainLockExecutorTest extends BaseTest {
@@ -52,10 +53,10 @@ public class TrainLockExecutorTest extends BaseTest {
             return new Object();
         });
 
-        Assert.assertEquals("1", order.get(0), new Integer(10));
-        Assert.assertEquals("2", order.get(1), new Integer(9));
-        Assert.assertEquals("3", order.get(2), new Integer(8));
-        Assert.assertEquals("4", order.get(3), new Integer(7));
+        Assertions.assertEquals(order.get(0), Integer.valueOf(10), "1");
+        Assertions.assertEquals(order.get(1), Integer.valueOf(9), "2");
+        Assertions.assertEquals(order.get(2), Integer.valueOf(8), "3");
+        Assertions.assertEquals(order.get(3), Integer.valueOf(7), "4");
     }
 
     @Test
@@ -128,9 +129,9 @@ public class TrainLockExecutorTest extends BaseTest {
         executorService.shutdown();
         executorService.awaitTermination(5, TimeUnit.SECONDS);
 
-        Assert.assertEquals("1", order.get(0), new Integer(10));
-        Assert.assertEquals("2", order.get(1), new Integer(9));
-        Assert.assertEquals("3", order.get(2), new Integer(8));
-        Assert.assertEquals("4", order.get(3), new Integer(7));
+        Assertions.assertEquals(order.get(0), Integer.valueOf(10), "1");
+        Assertions.assertEquals(order.get(1), Integer.valueOf(9), "2");
+        Assertions.assertEquals(order.get(2), Integer.valueOf(8), "3");
+        Assertions.assertEquals(order.get(3), Integer.valueOf(7), "4");
     }
 }

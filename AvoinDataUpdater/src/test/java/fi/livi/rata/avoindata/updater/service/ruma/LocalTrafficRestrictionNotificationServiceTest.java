@@ -1,18 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.ruma;
 
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
-import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.factory.TrafficRestrictionNotificationFactory;
-import org.junit.After;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
+import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.factory.TrafficRestrictionNotificationFactory;
 
 public class LocalTrafficRestrictionNotificationServiceTest extends BaseTest {
 
@@ -24,7 +25,7 @@ public class LocalTrafficRestrictionNotificationServiceTest extends BaseTest {
 
     private static final Random random = new Random(System.nanoTime());
 
-    @After
+    @AfterEach
     public void tearDown() {
         testDataService.clearTrafficRestrictionNotifications();
     }

@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api.ruma;
 
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Point;
 import fi.livi.rata.avoindata.common.domain.spatial.LineStringDto;
 import fi.livi.rata.avoindata.common.domain.spatial.PointDto;
@@ -7,7 +8,6 @@ import fi.livi.rata.avoindata.common.domain.trackwork.*;
 import fi.livi.rata.avoindata.server.BaseTest;
 import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;
 import fi.livi.rata.avoindata.server.factory.TrackWorkNotificationFactory;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Random;
@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static fi.livi.rata.avoindata.server.controller.api.ruma.RumaSerializationUtil.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RumaSerializationUtilTest extends BaseTest {
 

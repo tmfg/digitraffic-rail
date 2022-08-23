@@ -7,8 +7,8 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocationId;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,9 +59,9 @@ public class FeedMessageServiceTest extends BaseTest {
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(Collections.emptyList());
 
-        Assert.assertNotNull(message.getHeader());
-        Assert.assertNotNull(message.getEntityList());
-        Assert.assertEquals(0, message.getEntityCount());
+        Assertions.assertNotNull(message.getHeader());
+        Assertions.assertNotNull(message.getEntityList());
+        Assertions.assertEquals(0, message.getEntityCount());
     }
 
     @Test
@@ -71,9 +71,9 @@ public class FeedMessageServiceTest extends BaseTest {
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
 
-        Assert.assertEquals(1, message.getEntityCount());
-        Assert.assertEquals(TRIP_ID_1, message.getEntity(0).getVehicle().getTrip().getTripId());
-        Assert.assertEquals(ROUTE_ID_1, message.getEntity(0).getVehicle().getTrip().getRouteId());
+        Assertions.assertEquals(1, message.getEntityCount());
+        Assertions.assertEquals(TRIP_ID_1, message.getEntity(0).getVehicle().getTrip().getTripId());
+        Assertions.assertEquals(ROUTE_ID_1, message.getEntity(0).getVehicle().getTrip().getRouteId());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class FeedMessageServiceTest extends BaseTest {
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
 
-        Assert.assertEquals(0, message.getEntityCount());
+        Assertions.assertEquals(0, message.getEntityCount());
     }
 
     @Test
@@ -93,9 +93,9 @@ public class FeedMessageServiceTest extends BaseTest {
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
 
-        Assert.assertEquals(1, message.getEntityCount());
-        Assert.assertEquals(TRIP_ID_2, message.getEntity(0).getVehicle().getTrip().getTripId());
-        Assert.assertEquals(ROUTE_ID_1, message.getEntity(0).getVehicle().getTrip().getRouteId());
+        Assertions.assertEquals(1, message.getEntityCount());
+        Assertions.assertEquals(TRIP_ID_2, message.getEntity(0).getVehicle().getTrip().getTripId());
+        Assertions.assertEquals(ROUTE_ID_1, message.getEntity(0).getVehicle().getTrip().getRouteId());
     }
 }
 
