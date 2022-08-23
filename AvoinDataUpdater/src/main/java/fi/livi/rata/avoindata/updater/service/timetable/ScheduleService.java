@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +48,7 @@ public class ScheduleService {
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public synchronized void extractSchedules() {
+        ZonedDateTime startDate = dp.nowInHelsinki();
         try {
             final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);
@@ -56,7 +57,9 @@ public class ScheduleService {
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                extractForDate(adhocSchedules, regularSchedules, date);
+                if (startDate.isAfter(dp.nowInHelsinki().minusHours(3))) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
+                    extractForDate(adhocSchedules, regularSchedules, date);
+                }
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.FUTURE_TRAINS);
