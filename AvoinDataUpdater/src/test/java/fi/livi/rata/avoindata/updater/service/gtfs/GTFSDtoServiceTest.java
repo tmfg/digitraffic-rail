@@ -232,7 +232,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         timeTableRows.forEach(row -> {
             List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
             matchingStopTimes.forEach(stopTime ->
-                    Assert.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
+                    Assertions.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
             );
         });
     }
@@ -259,7 +259,7 @@ public class GTFSDtoServiceTest extends BaseTest {
                 .map(stop -> stop instanceof Platform ? stop.stopId : null)
                 .collect(Collectors.toSet());
 
-        Assert.assertTrue(tracksInStopTimes.containsAll(tracksInStops));
+        Assertions.assertTrue(tracksInStopTimes.containsAll(tracksInStops));
     }
 
     @Test
@@ -569,30 +569,30 @@ public class GTFSDtoServiceTest extends BaseTest {
                 String platformCode = row[gtfsFieldIndices.get("platform_code")];
                 String stopCode = row[gtfsFieldIndices.get("stop_code")];
 
-                Assert.assertNotNull(locationType);
+                Assertions.assertNotNull(locationType);
 
                 if (locationType.equals(String.valueOf(LOCATION_TYPE_STATION))) {
                     // stations (location_type=1) should not have a parent station
-                    Assert.assertNull(parentStation);
+                    Assertions.assertNull(parentStation);
 
-                    Assert.assertNull(platformCode);
-                    Assert.assertEquals(false, stopId.contains("_"));
+                    Assertions.assertNull(platformCode);
+                    Assertions.assertEquals(false, stopId.contains("_"));
                 }
 
                 if (locationType.equals(String.valueOf(LOCATION_TYPE_STOP))) {
                     // actual stops (location_type=0) should have a parent station
-                    Assert.assertNotNull(parentStation);
+                    Assertions.assertNotNull(parentStation);
 
                     // stop_id should be of form <parent_station>_<platform_code>
                     // if platform_code is null, stop_id should be <parent_station>_0
                     if (platformCode != null) {
-                        Assert.assertEquals(parentStation + "_" + platformCode, stopId);
+                        Assertions.assertEquals(parentStation + "_" + platformCode, stopId);
                     } else {
-                        Assert.assertEquals(parentStation + "_0", stopId);
+                        Assertions.assertEquals(parentStation + "_0", stopId);
                     }
                 }
 
-                Assert.assertNull(stopCode);
+                Assertions.assertNull(stopCode);
 
             });
 
