@@ -1,30 +1,48 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
+import org.locationtech.jts.geom.MultiLineString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.Resource;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -32,12 +50,17 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
+@Transactional
+@Sql({ "/gtfs/import_test_stations.sql" })
 public class GTFSDtoServiceTest extends BaseTest {
     public static final String KOKKOLA_UIC = "KOK";
     public static final String HELSINKI_UIC = "HKI";
@@ -52,8 +75,16 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Autowired
     private GTFSWritingService gtfsWritingService;
 
+    @Autowired
+    private InfraApiPlatformService infraApiPlatformService;
     @MockBean
     private GTFSShapeService gtfsShapeService;
+
+    @MockBean
+    private TimeTableRowService timeTableRowService;
+
+    @MockBean
+    private PlatformDataService platformDataService;
 
     @MockBean
     private DateProvider dp;
@@ -82,6 +113,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/66.json")
     private Resource schedules_66;
 
+    @Value("classpath:gtfs/66_ttr.json")
+    private Resource timetablerows_66;
+
     @Value("classpath:gtfs/141_151.json")
     private Resource schedules_141_151;
 
@@ -101,6 +135,8 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
         given(gtfsShapeService.createShapesFromTrips(any(),any())).willReturn(new ArrayList<>());
+
+        given(platformDataService.getCurrentPlatformData()).willReturn(getMockPlatformData());
     }
 
     @Test
@@ -176,6 +212,57 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
         Assertions.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
 
+    }
+
+    @Test
+    @Transactional
+    public void train66StopTimesHaveCorrectPlatforms() throws IOException {
+        LocalDate startDate = LocalDate.of(2019, 1, 1);
+        given(dp.dateInHelsinki()).willReturn(startDate);
+
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        final Map<Long, List<StopTime>> stopTimesByAttapId = gtfsDto.trips.stream()
+                .flatMap(trip -> trip.stopTimes.stream())
+                .filter(stopTime -> stopTime.source.arrival != null && stopTime.track != null)
+                .collect(Collectors.groupingBy(stopTime -> stopTime.source.arrival.id));
+
+        timeTableRows.forEach(row -> {
+            List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
+            matchingStopTimes.forEach(stopTime ->
+                    Assert.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
+            );
+        });
+    }
+
+    @Test
+    @Transactional
+    public void allStopTracksAreFoundInStopTimes() throws IOException {
+        LocalDate startDate = LocalDate.of(2019, 1, 1);
+        given(dp.dateInHelsinki()).willReturn(startDate);
+
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        final Set<String> tracksInStopTimes = gtfsDto.trips.stream()
+                .flatMap(trip -> trip.stopTimes.stream())
+                .map(stopTime -> stopTime.track != null ? stopTime.getStopCodeWithPlatform() : null)
+                .collect(Collectors.toSet());
+
+        final Set<String> tracksInStops = gtfsDto.stops.stream()
+                .map(stop -> stop instanceof Platform ? stop.stopId : null)
+                .collect(Collectors.toSet());
+
+        Assert.assertTrue(tracksInStopTimes.containsAll(tracksInStops));
     }
 
     @Test
@@ -456,6 +543,69 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(125 - 8, firstTrip.stopTimes.size());
     }
 
+    @Test
+    @Transactional
+    public void stopFileOutputIsCorrect() throws IOException {
+        final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
+        given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        gtfsWritingService.writeGTFSFiles(gtfsDto);
+
+        try (InputStream stopsFile = new FileInputStream("stops.txt"))
+        {
+            CsvParser csvParser = new CsvParser(new CsvParserSettings());
+
+            List<String[]> parsedRows = csvParser.parseAll(stopsFile);
+
+            String[] headers = parsedRows.get(0);
+            Map<String, Integer> gtfsFieldIndices = IntStream
+                    .range(0, headers.length)
+                    .boxed()
+                    .collect(Collectors.toMap(i -> headers[i], i -> i));
+
+            parsedRows.subList(1, parsedRows.size()).forEach(row -> {
+                String locationType = row[gtfsFieldIndices.get("location_type")];
+                String parentStation = row[gtfsFieldIndices.get("parent_station")];
+                String stopId = row[gtfsFieldIndices.get("stop_id")];
+                String platformCode = row[gtfsFieldIndices.get("platform_code")];
+                String stopCode = row[gtfsFieldIndices.get("stop_code")];
+
+                Assert.assertNotNull(locationType);
+
+                if (locationType.equals(String.valueOf(LOCATION_TYPE_STATION))) {
+                    // stations (location_type=1) should not have a parent station
+                    Assert.assertNull(parentStation);
+
+                    Assert.assertNull(platformCode);
+                    Assert.assertEquals(false, stopId.contains("_"));
+                }
+
+                if (locationType.equals(String.valueOf(LOCATION_TYPE_STOP))) {
+                    // actual stops (location_type=0) should have a parent station
+                    Assert.assertNotNull(parentStation);
+
+                    // stop_id should be of form <parent_station>_<platform_code>
+                    // if platform_code is null, stop_id should be <parent_station>_0
+                    if (platformCode != null) {
+                        Assert.assertEquals(parentStation + "_" + platformCode, stopId);
+                    } else {
+                        Assert.assertEquals(parentStation + "_0", stopId);
+                    }
+                }
+
+                Assert.assertNull(stopCode);
+
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
     private void assertTripStops(Trip trip, String departureStopId, String arrivalStopId) {
         Assertions.assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
         Assertions.assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
@@ -500,5 +650,32 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals("VR", agency.name);
         Assertions.assertEquals(agencyId, agency.id);
         Assertions.assertEquals("Europe/Helsinki", agency.timezone);
+    }
+
+    private PlatformData getMockPlatformData() throws IOException {
+        final String geometryString = "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
+
+        ObjectMapper mapper = new ObjectMapper();
+        final JsonNode geometryNode = mapper.readTree(geometryString);
+
+        final MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);
+
+        final InfraApiPlatform SNJ_1 = new InfraApiPlatform("", "Laituri SNJ L1", "Suonenjoki laituri: 1", "1", geometry);
+        final InfraApiPlatform HKI_7 = new InfraApiPlatform("", "Laituri HKI L7", "Helsinki laituri: 7", "7", geometry);
+        final InfraApiPlatform MI_1 = new InfraApiPlatform("", "Laituri MI L1", "Mikkeli laituri: 1", "1", geometry);
+        final InfraApiPlatform KV_1 = new InfraApiPlatform("", "Laituri KV L1", "Kouvola laituri: 1", "1", geometry);
+        final InfraApiPlatform MR_2 = new InfraApiPlatform("", "Laituri MR L2", "Martinlaakso laituri: 2", "2", geometry);
+        final InfraApiPlatform SKV_1 = new InfraApiPlatform("", "Laituri SKV L1", "Sukeva laituri: 1", "1", geometry);
+
+        Map<String, List<InfraApiPlatform>> platformsByStation = Map.of(
+                "SNJ", List.of(SNJ_1),
+                "HKI", List.of(HKI_7),
+                "MI", List.of(MI_1),
+                "KV", List.of(KV_1),
+                "MR", List.of(MR_2),
+                "SKV", List.of(SKV_1)
+                );
+
+        return new PlatformData(platformsByStation);
     }
 }

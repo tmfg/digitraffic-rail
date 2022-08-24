@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -21,7 +23,6 @@ import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.google.transit.realtime.GtfsRealtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +31,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
+import com.google.transit.realtime.GtfsRealtime;
+
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 
@@ -67,7 +71,7 @@ public class GTFSWritingService {
     }
 
     @Transactional
-    public List<File> writeGTFSFiles(GTFSDto gtfsDto, String zipFileName) throws IOException {
+    public List<File> writeGTFSFiles(final GTFSDto gtfsDto, final String zipFileName) throws IOException {
         log.info("Generating {}", zipFileName);
 
         final List<File> files = writeGtfsFiles(gtfsDto);
@@ -92,11 +96,10 @@ public class GTFSWritingService {
                 write(getPath("agency.txt"), gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
                         agency -> String.format("%s,%s,%s,%s,%s,fi", agency.id, agency.name, agency.url, agency.timezone, agency.phoneNumber)));
 
-
         files.add(write(getPath("stops.txt"), gtfsDto.stops,
-                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code", stop ->
-                        String.format("%s,%s,,%s,%s,,,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.latitude,
-                                stop.longitude, stop.source != null ? stop.source.shortCode : stop.stopCode)
+                "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
+                        String.format("%s,%s,%s,%s,%s,,%s,%s,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.description != null ? stop.description : "",
+                                stop.latitude, stop.longitude, stop.locationType, stop.locationType == LOCATION_TYPE_STOP && stop.source != null ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
         ));
 
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
@@ -119,7 +122,7 @@ public class GTFSWritingService {
 
         files.add(write(getPath("stop_times.txt"), stopTimes,
                 "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type", st -> String
-                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.stopId,
+                        .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.track != null ? st.stopId + "_" + st.track : st.stopId + "_0",
                                 st.stopSequence, st.pickupType, st.dropoffType)));
 
 

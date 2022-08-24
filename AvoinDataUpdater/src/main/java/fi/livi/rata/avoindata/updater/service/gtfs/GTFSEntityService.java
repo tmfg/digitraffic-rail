@@ -14,8 +14,11 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -43,17 +46,26 @@ public class GTFSEntityService {
     private GTFSShapeService gtfsShapeService;
 
     @Autowired
+    private TimeTableRowService timeTableRowService;
+
+    @Autowired
+    private PlatformDataService platformDataService;
+
+    @Autowired
     private DateProvider dp;
 
+
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
-        Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
+        final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
+        final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
+        final PlatformData platformData = platformDataService.getCurrentPlatformData();
 
         GTFSDto gtfsDto = new GTFSDto();
 
-        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain);
+        final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformData);
         gtfsDto.stops = Lists.newArrayList(stopMap.values());
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
-        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap);
+        gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
         gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
 
@@ -88,7 +100,8 @@ public class GTFSEntityService {
         return scheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end, Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
+    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end,
+                                                                   Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
         Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
 
         Schedule previousSchedule = null;
@@ -141,4 +154,5 @@ public class GTFSEntityService {
         }
         return correctedTrainsScheduleIntervals;
     }
+
 }

@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
@@ -13,6 +14,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,14 +55,16 @@ public class GTFSService {
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "Europe/Helsinki")
     public void generateGTFS() {
-        try {
-            final LocalDate start = dp.dateInHelsinki().minusDays(7);
-            this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
+        TimingUtil.log(log, "generateGTFS", () -> {
+            try {
+                final LocalDate start = dp.dateInHelsinki().minusDays(7);
+                this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
 
-            lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
-        } catch (ExecutionException | InterruptedException | IOException e) {
-            throw new RuntimeException(e);
-        }
+                lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
+            } catch (final ExecutionException | InterruptedException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     //For generating test json
@@ -125,12 +129,19 @@ public class GTFSService {
         log.info("Successfully wrote GTFS files");
     }
 
-    private List<StopTime> filterOutNonStops(List<StopTime> stopTimes) {
-        List<StopTime> filteredStopTimes = new ArrayList<>();
+    private List<StopTime> filterOutNonStops(final List<StopTime> stopTimes) {
+        final List<StopTime> filteredStopTimes = new ArrayList<>();
 
         for (int i = 0; i < stopTimes.size(); i++) {
             StopTime stopTime = stopTimes.get(i);
-            if (i == 0 || i == (stopTimes.size() - 1) || !stopTime.arrivalTime.equals(stopTime.departureTime)) {
+
+            ScheduleRow scheduleRow = stopTime.source;
+
+            final boolean isLongStop =
+                    scheduleRow.departure == null || scheduleRow.arrival == null ||
+                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
+
+            if (isLongStop) {
                 filteredStopTimes.add(stopTime);
             }
         }

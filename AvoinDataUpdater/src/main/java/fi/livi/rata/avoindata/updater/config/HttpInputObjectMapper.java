@@ -7,10 +7,6 @@ import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
-import fi.livi.rata.avoindata.common.domain.trackwork.*;
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
-import fi.livi.rata.avoindata.updater.deserializers.*;
-
 import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,10 +19,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.localization.Localizations;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
@@ -63,6 +61,7 @@ import fi.livi.rata.avoindata.updater.deserializers.OperatorTrainNumberDeseriali
 import fi.livi.rata.avoindata.updater.deserializers.RoutesectionDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.RoutesetDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.RumaLocationDeserializer;
+import fi.livi.rata.avoindata.updater.deserializers.SimpleTimeTableRowDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.StationDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TimeTableRowDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrackRangeDeserializer;
@@ -124,6 +123,9 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
     @Autowired
     private TimeTableRowDeserializer timeTableRowDeserializer;
+
+    @Autowired
+    private SimpleTimeTableRowDeserializer simpleTimeTableRowDeserializer;
 
     @Autowired
     private CauseDeserializer causeDeserializer;
@@ -241,6 +243,8 @@ public class HttpInputObjectMapper extends ObjectMapper {
         module.addDeserializer(RumaLocation.class, rumaLocationDeserializer);
         module.addDeserializer(IdentifierRange.class, identifierRangeDeserializer);
         module.addDeserializer(ElementRange.class, elementRangeDeserializer);
+
+        module.addDeserializer(SimpleTimeTableRow.class, simpleTimeTableRowDeserializer);
 
         registerModule(module);
     }

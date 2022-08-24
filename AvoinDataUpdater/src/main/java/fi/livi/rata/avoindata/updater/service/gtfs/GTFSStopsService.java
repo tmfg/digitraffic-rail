@@ -1,13 +1,21 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import org.locationtech.jts.geom.Point;
 import org.osgeo.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +23,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Maps;
+
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -57,9 +70,19 @@ public class GTFSStopsService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
-    public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
+    public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
+                                         final List<SimpleTimeTableRow> timeTableRows,
+                                         final PlatformData platformData) {
         List<Stop> stops = new ArrayList<>();
 
+        Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
+
+        timeTableRows.forEach(ttr -> {
+            if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
+                tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
+                tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
+            }
+        });
 
         Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
@@ -76,25 +99,68 @@ public class GTFSStopsService {
             String stationShortCode = stationEmbeddable.stationShortCode;
             final Station station = stationRepository.findByShortCode(stationShortCode);
 
-            Stop stop = new Stop(station);
-            stop.stopId = stationShortCode;
-            stop.stopCode = stationShortCode;
+            Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
+            Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
 
-            if (station != null) {
-                stop.name = station.name.replace("_", " ");
-                stop.latitude = station.latitude.doubleValue();
-                stop.longitude = station.longitude.doubleValue();
-            } else {
-                stop.name = "-";
-                log.warn("Could not find Station for {}", stationShortCode);
+            stops.add(stationEntry);
+            stops.add(tracklessStop);
+
+            for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
+                if (station != null) {
+                    Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
+
+                    Platform platformStop = createPlatformStop(station, infraApiPlatform, scheduledTrack);
+
+                    stops.add(platformStop);
+                }
             }
-
-            setCustomLocations(stationShortCode, stop);
-
-            stops.add(stop);
         }
 
         return Maps.uniqueIndex(stops, s -> s.stopId);
+    }
+
+    private Stop createStationStop(final Station station, final String stationShortCode, final int locationType) {
+        Stop stop = new Stop(station);
+        stop.stopId = locationType == LOCATION_TYPE_STOP ?
+                      stationShortCode + "_0" :
+                      stationShortCode;
+        stop.stopCode = stationShortCode;
+        stop.locationType = locationType;
+
+        if (station != null) {
+            stop.name = station.name.replace("_", " ");
+            stop.latitude = station.latitude.doubleValue();
+            stop.longitude = station.longitude.doubleValue();
+        } else {
+            stop.name = "-";
+            log.warn("Could not find Station for {}", stationShortCode);
+        }
+
+        if (locationType == LOCATION_TYPE_STOP) {
+            stop.description = "Platform information not yet available";
+        }
+
+        setCustomLocations(stationShortCode, stop);
+
+        return stop;
+    }
+
+    private Platform createPlatformStop(final Station station, final Optional<InfraApiPlatform> infraApiPlatform, final String scheduledTrack) {
+        final String stopId = station.shortCode + "_" + scheduledTrack;
+        final String stopCode = station.shortCode;
+        final String track = scheduledTrack;
+
+        final String name = station.name
+                .replace("_", " ")
+                .concat(" raide ")
+                .concat(track);
+
+        final Optional<Point> centroid = infraApiPlatform.map(platform -> platform.geometry.getCentroid());
+
+        final double latitude = centroid.map(location -> location.getY()).orElseGet(() -> station.latitude.doubleValue());
+        final double longitude = centroid.map(location -> location.getX()).orElseGet(() -> station.longitude.doubleValue());
+
+        return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
     }
 
     private double[] liviToWsgArray(double p, double i) {

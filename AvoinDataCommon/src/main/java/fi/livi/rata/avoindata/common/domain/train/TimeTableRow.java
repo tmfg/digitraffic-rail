@@ -200,6 +200,9 @@ public class TimeTableRow {
         return commercialTrackChanged;
     }
 
+    @Hidden
+    public Long getTrainNumber() { return train.id.trainNumber; }
+
     public void setCommercialTrackChanged(ZonedDateTime value) {
         commercialTrackChanged = value;
     }
