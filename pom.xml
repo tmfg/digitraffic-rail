@@ -69,33 +69,8 @@
         </repository>
 
         <repository>
-            <id>com.springsource.repository.bundles.release</id>
-            <name>SpringSource Enterprise Bundle Repository - SpringSource Bundle Releases</name>
-            <url>https://repository.springsource.com/maven/bundles/release</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>download.java.net</id>
-            <url>https://download.java.net/maven/2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
             <id>JBoss repository</id>
             <url>https://repository.jboss.org/nexus/content/repositories/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>Laughing Panda</id>
-            <url>https://maven.laughingpanda.org/maven2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
