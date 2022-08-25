@@ -28,13 +28,6 @@
         <cve>CVE-2022-31159</cve>
     </suppress>
 
-    <suppress until="2022-09-15Z">
-        <!-- No new version of proj4 available. Ticket: DPO-1904 -->
-        <notes><![CDATA[file name: proj4j-*.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.osgeo/proj4j@.*$</packageUrl>
-        <cpe>cpe:/a:trac:trac</cpe>
-    </suppress>
-
     <!--
         Permanent suppressions
     -->
