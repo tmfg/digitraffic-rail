@@ -226,16 +226,20 @@ public class FeedMessageService {
     }
 
     public GtfsRealtime.FeedEntity createTUEntity(final TripFinder tripFinder, final GTFSTrain train) {
-        final GTFSTrip trip = tripFinder.find(train);
+        try {
+            final GTFSTrip trip = tripFinder.find(train);
 
-        if(trip != null) {
-            if (train.cancelled) {
-                return createTUCancelledEntity(trip, train);
-            }
+            if (trip != null) {
+                if (train.cancelled) {
+                    return createTUCancelledEntity(trip, train);
+                }
 
-            if (trip.version != train.version) {
-                return createTUUpdateEntity(trip, train);
+                if (trip.version != train.version) {
+                    return createTUUpdateEntity(trip, train);
+                }
             }
+        } catch (final Exception e) {
+            log.error("exception when creating entity", e);
         }
 
         // new train, we do nothing.  the realtime-spec does not support creation of new trips!
