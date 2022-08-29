@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 @Service
 public class FeedMessageService {
@@ -198,9 +200,10 @@ public class FeedMessageService {
     }
 
     private boolean includeStop(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+
         // include only stops where scheduled times are different and stop is commercial
         return departure == null || (!arrival.scheduledTime.equals(departure.scheduledTime) &&
-                (arrival.commercialStop || departure.commercialStop));
+                (isTrue(arrival.commercialStop) || isTrue(departure.commercialStop)));
     }
 
     private GtfsRealtime.FeedEntity createTUUpdateEntity(final GTFSTrip trip, final GTFSTrain train) {
