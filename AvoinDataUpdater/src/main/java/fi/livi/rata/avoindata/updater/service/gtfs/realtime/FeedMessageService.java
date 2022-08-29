@@ -242,7 +242,7 @@ public class FeedMessageService {
                 }
             }
         } catch (final Exception e) {
-            log.error("exception when creating entity", e);
+            log.error("exception when creating entity " + train.id, e);
         }
 
         // new train, we do nothing.  the realtime-spec does not support creation of new trips!
