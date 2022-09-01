@@ -21,7 +21,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
     @Value("${rami.api-key}")
     String ramiApiKey;
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) {
@@ -34,7 +34,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
             try {
                 chain.doFilter(request, response);
                 return;
-            } catch (IOException | ServletException error) {
+            } catch (final IOException | ServletException error) {
                 logger.error(error.getMessage());
             }
         }
@@ -45,7 +45,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
             try {
                 chain.doFilter(request, response);
                 return;
-            } catch (IOException | ServletException error) {
+            } catch (final IOException | ServletException error) {
                 logger.error(error.getMessage());
             }
         } else {
@@ -58,7 +58,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
 
             try {
                 resp.getWriter().write(errorMessage);
-            } catch (IOException error) {
+            } catch (final IOException error) {
                 logger.error(error.getMessage());
             }
         }

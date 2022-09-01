@@ -18,7 +18,7 @@ public class RamiIntegrationController {
     @PostMapping("/rami/incoming")
     @ResponseBody
     public ResponseEntity handleIncoming(@RequestBody
-                                  JsonNode message) {
+                                  final JsonNode message) {
         logger.info("Received RAMI message: {}", message);
         return ResponseEntity.ok().build();
     }
