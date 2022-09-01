@@ -190,9 +190,9 @@ public class FeedMessageService {
 
                 if (current != null && delaysDiffer(previous, current)) {
                     updates.add(current);
-                }
 
-                previous = current;
+                    previous = current;
+                }
             }
         }
 
@@ -263,9 +263,13 @@ public class FeedMessageService {
 
         log.info("creating TripUpdateFeedMessages for {} train numbers", tripFinder.tripMap.entrySet().size());
 
-        return createBuilderWithHeader()
+        final GtfsRealtime.FeedMessage message = createBuilderWithHeader()
                 .addAllEntity(createTUEntities(tripFinder, trains))
                 .build();
+
+        log.info("created TripUpdateFeedMessages for {} entities", message.getEntityCount());
+
+        return message;
     }
 
     static class TripFinder {
