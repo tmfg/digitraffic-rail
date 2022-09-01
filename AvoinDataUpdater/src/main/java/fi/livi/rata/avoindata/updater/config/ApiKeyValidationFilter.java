@@ -18,10 +18,13 @@ import org.springframework.web.filter.GenericFilterBean;
 @Component
 public class ApiKeyValidationFilter extends GenericFilterBean {
 
-    @Value("${rami.api-key}")
-    String ramiApiKey;
+    final String ramiApiKey;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    public ApiKeyValidationFilter(@Value("${rami.api-key}") final String key) {
+        this.ramiApiKey = key;
+    }
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) {

@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Controller
 public class RamiIntegrationController {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostMapping("/rami/incoming")
     @ResponseBody
