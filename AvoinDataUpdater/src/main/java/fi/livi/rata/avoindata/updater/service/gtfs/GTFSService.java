@@ -132,6 +132,7 @@ public class GTFSService {
     private List<StopTime> filterOutNonStops(final List<StopTime> stopTimes) {
         final List<StopTime> filteredStopTimes = new ArrayList<>();
 
+        int stopSequence = 1;
         for (int i = 0; i < stopTimes.size(); i++) {
             StopTime stopTime = stopTimes.get(i);
 
@@ -143,6 +144,7 @@ public class GTFSService {
 
             if (isLongStop) {
                 filteredStopTimes.add(stopTime);
+                stopTime.stopSequence = stopSequence++;
             }
         }
 
