@@ -598,6 +598,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         } catch (Exception e) {
             e.printStackTrace();
+            Assertions.fail(e.getMessage());
         }
 
 
