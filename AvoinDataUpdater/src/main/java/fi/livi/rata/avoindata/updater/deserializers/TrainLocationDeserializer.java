@@ -25,20 +25,21 @@ public class TrainLocationDeserializer extends AEntityDeserializer<TrainLocation
 
     @Override
     public TrainLocation deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        TrainLocation trainLocation = new TrainLocation();
+        final TrainLocation trainLocation = new TrainLocation();
         trainLocation.trainLocationId = new TrainLocationId(node.get("junanumero").asLong(), getNodeAsLocalDate(node.get("lahtopaiva")),
                 getNodeAsDateTime(node.get("aikaleima")));
         trainLocation.speed = node.get("nopeus").asInt();
 
         final double iKoordinaatti = node.get("sijainti").get("longitude").asDouble();
         final double pKoordinaatti = node.get("sijainti").get("latitude").asDouble();
+        trainLocation.liikeLocation = geometryFactory.createPoint(new Coordinate(iKoordinaatti, pKoordinaatti));
+
         final ProjCoordinate projCoordinate = wgs84ConversionService.liviToWgs84(iKoordinaatti, pKoordinaatti);
         trainLocation.location = geometryFactory.createPoint(new Coordinate(projCoordinate.x, projCoordinate.y));
 
-        trainLocation.liikeLocation = geometryFactory.createPoint(new Coordinate(iKoordinaatti, pKoordinaatti));
+        trainLocation.accuracy = getNullableInteger(node, "tarkkuus");
 
         return trainLocation;
     }
