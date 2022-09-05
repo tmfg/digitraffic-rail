@@ -23,6 +23,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public ApiKeyValidationFilter(@Value("${rami.api-key}") final String key) {
+        super();
         this.ramiApiKey = key;
     }
 

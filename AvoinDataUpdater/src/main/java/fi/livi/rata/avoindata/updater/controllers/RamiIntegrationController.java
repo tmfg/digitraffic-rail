@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +16,7 @@ public class RamiIntegrationController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @PostMapping("/rami/incoming")
+    @PostMapping(value = "/rami/incoming", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity handleIncoming(@RequestBody
                                   final JsonNode message) {
