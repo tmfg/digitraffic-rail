@@ -550,24 +550,24 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
         gtfsWritingService.writeGTFSFiles(gtfsDto);
 
-        try (InputStream stopsFile = new FileInputStream("stops.txt"))
+        try (final InputStream stopsFile = new FileInputStream("stops.txt"))
         {
-            CsvParser csvParser = new CsvParser(new CsvParserSettings());
+            final CsvParser csvParser = new CsvParser(new CsvParserSettings());
 
-            List<String[]> parsedRows = csvParser.parseAll(stopsFile);
+            final List<String[]> parsedRows = csvParser.parseAll(stopsFile);
 
-            String[] headers = parsedRows.get(0);
-            Map<String, Integer> gtfsFieldIndices = IntStream
+            final String[] headers = parsedRows.get(0);
+            final Map<String, Integer> gtfsFieldIndices = IntStream
                     .range(0, headers.length)
                     .boxed()
                     .collect(Collectors.toMap(i -> headers[i], i -> i));
 
             parsedRows.subList(1, parsedRows.size()).forEach(row -> {
-                String locationType = row[gtfsFieldIndices.get("location_type")];
-                String parentStation = row[gtfsFieldIndices.get("parent_station")];
-                String stopId = row[gtfsFieldIndices.get("stop_id")];
-                String platformCode = row[gtfsFieldIndices.get("platform_code")];
-                String stopCode = row[gtfsFieldIndices.get("stop_code")];
+                final String locationType = row[gtfsFieldIndices.get("location_type")];
+                final String parentStation = row[gtfsFieldIndices.get("parent_station")];
+                final String stopId = row[gtfsFieldIndices.get("stop_id")];
+                final String platformCode = row[gtfsFieldIndices.get("platform_code")];
+                final String stopCode = row[gtfsFieldIndices.get("stop_code")];
 
                 Assertions.assertNotNull(locationType);
 
