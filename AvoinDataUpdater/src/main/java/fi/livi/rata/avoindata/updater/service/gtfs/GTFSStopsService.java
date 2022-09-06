@@ -136,10 +136,6 @@ public class GTFSStopsService {
             log.warn("Could not find Station for {}", stationShortCode);
         }
 
-        if (locationType == LOCATION_TYPE_STOP) {
-            stop.description = "Platform information not yet available";
-        }
-
         setCustomLocations(stationShortCode, stop);
 
         return stop;
@@ -150,10 +146,7 @@ public class GTFSStopsService {
         final String stopCode = station.shortCode;
         final String track = scheduledTrack;
 
-        final String name = station.name
-                .replace("_", " ")
-                .concat(" raide ")
-                .concat(track);
+        final String name = station.name.replace("_", " ");
 
         final Optional<Point> centroid = infraApiPlatform.map(platform -> platform.geometry.getCentroid());
 
