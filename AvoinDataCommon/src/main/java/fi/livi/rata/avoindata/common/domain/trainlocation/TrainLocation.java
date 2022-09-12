@@ -31,8 +31,6 @@ public class TrainLocation {
 
     public Integer speed;
 
-    public Integer accuracy;
-
     @Transient
     @JsonIgnore
     public Point liikeLocation;
