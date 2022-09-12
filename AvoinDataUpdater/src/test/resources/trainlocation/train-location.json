@@ -8,6 +8,18 @@
     },
     "nopeus": 74,
     "aikaleima": "2017-11-06T08:17:50.000Z",
+    "yhteys": "OK",
+    "tarkkuus": 11
+  },
+  {
+    "junanumero": 9931,
+    "lahtopaiva": "2017-11-06",
+    "sijainti": {
+      "longitude": 380012.416714,
+      "latitude": 6736100.100908
+    },
+    "nopeus": 74,
+    "aikaleima": "2017-11-06T08:17:50.000Z",
     "yhteys": "OK"
   }
 ]
