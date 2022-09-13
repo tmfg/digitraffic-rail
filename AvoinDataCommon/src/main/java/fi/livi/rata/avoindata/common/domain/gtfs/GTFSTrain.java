@@ -20,6 +20,12 @@ public class GTFSTrain {
     @Column
     public Long version;
 
+    @Column
+    public long trainCategoryId;
+
+    @Column
+    public long trainTypeId;
+
     @OneToMany(mappedBy = "train", fetch = FetchType.EAGER)
     public List<GTFSTimeTableRow> timeTableRows = new ArrayList<>();
 }

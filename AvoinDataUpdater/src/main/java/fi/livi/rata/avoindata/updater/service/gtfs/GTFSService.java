@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 public class GTFSService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
+    public static int FIRST_STOP_SEQUENCE = 1;
+
     @Autowired
     private GTFSEntityService gtfsEntityService;
 
@@ -132,7 +134,7 @@ public class GTFSService {
     private List<StopTime> filterOutNonStops(final List<StopTime> stopTimes) {
         final List<StopTime> filteredStopTimes = new ArrayList<>();
 
-        int stopSequence = 1;
+        int stopSequence = FIRST_STOP_SEQUENCE;
         for (int i = 0; i < stopTimes.size(); i++) {
             StopTime stopTime = stopTimes.get(i);
 
