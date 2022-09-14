@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>2.7.2</spring.boot.version>
+        <spring.boot.version>2.7.3</spring.boot.version>
         <com.google.guava.version>31.1-jre</com.google.guava.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
@@ -49,7 +49,7 @@
                         <artifactId>dependency-check-maven</artifactId>
                         <version>7.1.0</version>
                         <configuration>
-                            <failBuildOnCVSS>5</failBuildOnCVSS>
+                            <failBuildOnCVSS>7</failBuildOnCVSS>
                             <suppressionFile>owasp-suppressions.xml</suppressionFile>
                             <formats>html,xml</formats>
                         </configuration>
