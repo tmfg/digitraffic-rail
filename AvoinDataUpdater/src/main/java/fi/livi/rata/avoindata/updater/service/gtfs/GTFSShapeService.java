@@ -84,39 +84,45 @@ public class GTFSShapeService {
     }
 
 
-    private List<Coordinate> getCoordinates(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, List<StopTime> stopTimes, Trip trip) {
-        List<Coordinate> tripPoints = new ArrayList<>();
+    private List<Coordinate> getCoordinates(final Map<String, Stop> stopMap, final Map<String, JsonNode> trakediaNodes, final List<StopTime> stopTimes, final Trip trip) {
+        final List<Coordinate> tripPoints = new ArrayList<>();
         for (int i = 0; i < stopTimes.size() - 1; i++) {
-            StopTime startStopTime = stopTimes.get(i);
-            StopTime endStopTime = stopTimes.get(i + 1);
+            final StopTime startStopTime = stopTimes.get(i);
+            final StopTime endStopTime = stopTimes.get(i + 1);
 
-            Stop startStop = stopMap.get(startStopTime.stopId);
-            Stop endStop = stopMap.get(endStopTime.stopId);
+            final Stop startStop = stopMap.get(startStopTime.stopId);
+            final Stop endStop = stopMap.get(endStopTime.stopId);
+
+            List<Coordinate> route = null;
 
             try {
-                JsonNode startTrakediaNode = trakediaNodes.get(startStop.stopId);
-                JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
+                final JsonNode startTrakediaNode = trakediaNodes.get(startStop.stopId);
+                final JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
 
-                String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
-                String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
-
-//                log.info("Creating shape for {} -> {}", startStop.stopCode, endStop.stopCode);
-                List<Coordinate> route = this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste);
-                if (!route.isEmpty()) {
-                    tripPoints.addAll(route);
+                if (startTrakediaNode == null || startTrakediaNode.size() == 0) {
+                    log.warn("No nodes found for %s", startStop.stopId);
+                } else if (endTrakediaNode == null || endTrakediaNode.size() == 0) {
+                    log.warn("No nodes found for %s", endStop.stopId);
                 } else {
-                    tripPoints.addAll(createDummyRoute(startStop, endStop));
+                    final String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
+                    final String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
+
+                    route = this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste);
                 }
-            } catch (HttpStatusCodeException e) {
+            } catch (final HttpStatusCodeException e) {
                 if (e.getRawStatusCode() == 400 || e.getRawStatusCode() == 503 || e.getRawStatusCode() == 504) {
                     log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
                 } else {
                     log.error(String.format("Creating route failed for %s %s -> %s: %s %s ", trip.tripId, startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
                 }
-                tripPoints.addAll(createDummyRoute(startStop, endStop));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error(String.format("Creating route failed for %s %s -> %s: %s %s", trip.tripId, startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
+            }
+
+            if (route == null || route.isEmpty()) {
                 tripPoints.addAll(createDummyRoute(startStop, endStop));
+            } else {
+                tripPoints.addAll(route);
             }
         }
 

@@ -67,14 +67,16 @@ public class TrainLocationUpdater {
         try {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                 final ZonedDateTime start = dateProvider.nowInHelsinki();
-                final List<TrainLocation> trainLocations = Arrays.asList(this.restTemplate.getForObject(liikeinterfaceUrl + "/kuplas", TrainLocation[].class));
+
+                List<TrainLocation> trainLocations = Arrays.asList(this.restTemplate.getForObject(liikeinterfaceUrl + "/kuplas", TrainLocation[].class));
+
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
                 try {
                     mqttPublishService.publish(
                             s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
                             filteredTrainLocations, null);
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     log.error("MQTT updated failed. Still trying to update database.", e);
                 }
 
@@ -87,7 +89,7 @@ public class TrainLocationUpdater {
 
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS);
             }
-        } catch (final Exception e) {
+        } catch (Exception e) {
             log.error("Error updating train locations", e);
         }
     }

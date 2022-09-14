@@ -6,7 +6,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSService.FIRST_STOP_SEQUENCE;
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
@@ -172,7 +172,7 @@ public class FeedMessageService {
 
     private List<GtfsRealtime.TripUpdate.StopTimeUpdate> createStopTimeUpdates(final GTFSTrain train) {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
-        int stopSequence = 0;
+        int stopSequence = FIRST_STOP_SEQUENCE;
 
         GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(1), true);
         if(previous != null) {
