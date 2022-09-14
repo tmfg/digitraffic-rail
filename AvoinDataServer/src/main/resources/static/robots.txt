@@ -26,3 +26,5 @@ Disallow: /jeti-api/1
 Disallow: /jeti-api/2
 Disallow: /jeti-api/3
 Disallow: /jeti-api/4
+
+Disallow: /api/
