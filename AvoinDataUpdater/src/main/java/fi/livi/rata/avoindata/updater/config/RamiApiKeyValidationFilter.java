@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.config;
 
+import static fi.livi.rata.avoindata.updater.controllers.RamiIntegrationController.BASE_PATH;
+
 import java.io.IOException;
 
 import javax.servlet.FilterChain;
@@ -16,13 +18,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 
 @Component
-public class ApiKeyValidationFilter extends GenericFilterBean {
+public class RamiApiKeyValidationFilter extends GenericFilterBean {
 
-    final String ramiApiKey;
+    private final String ramiApiKey;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public ApiKeyValidationFilter(@Value("${rami.api-key}") final String key) {
+    public static final String INVALID_API_KEY_ERROR = "Invalid API-KEY";
+
+    public RamiApiKeyValidationFilter(@Value("${rami.api-key}") final String key) {
         super();
         this.ramiApiKey = key;
     }
@@ -34,7 +38,7 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
 
         final String path = req.getRequestURI();
 
-        if (!path.startsWith("/rami")) {
+        if (!path.startsWith(BASE_PATH)) {
             try {
                 chain.doFilter(request, response);
                 return;
@@ -54,14 +58,13 @@ public class ApiKeyValidationFilter extends GenericFilterBean {
             }
         } else {
             final HttpServletResponse resp = (HttpServletResponse) response;
-            final String errorMessage = "Invalid API-KEY";
 
             resp.reset();
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            resp.setContentLength(errorMessage.length());
+            resp.setContentLength(INVALID_API_KEY_ERROR.length());
 
             try {
-                resp.getWriter().write(errorMessage);
+                resp.getWriter().write(INVALID_API_KEY_ERROR);
             } catch (final IOException error) {
                 logger.error(error.getMessage());
             }
