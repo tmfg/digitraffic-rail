@@ -38,7 +38,7 @@ public class SwaggerConfig {
     }
 
     private String apiDescription() {
-        return "[OpenAPI document](/swagger/openapi.json)\n" +
+        return "[OpenAPI document](/swagger/openapi.json) \n\n" +
                 "Digitraffic is a service operated by the [Fintraffic](https://www.fintraffic.fi) offering real time traffic information. \n" +
                 "Currently the service covers *road, marine and rail* traffic. More information can be found at the [Digitraffic website](https://www.digitraffic.fi/) \n\n\n" +
                 "The service has a public Google-group [rail.digitraffic.fi](https://groups.google.com/forum/#!forum/rata_digitraffic_fi) for \n" +
