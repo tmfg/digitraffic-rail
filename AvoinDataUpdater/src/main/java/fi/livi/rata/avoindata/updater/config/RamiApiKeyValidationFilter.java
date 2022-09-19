@@ -47,9 +47,9 @@ public class RamiApiKeyValidationFilter extends GenericFilterBean {
             }
         }
 
-        final String apiKey = req.getHeader("API-KEY") == null ? "" : req.getHeader("API-KEY");
-
-        if (apiKey.equals(ramiApiKey)) {
+        final String apiKey = req.getHeader("API-KEY");
+        
+        if (ramiApiKey.equals(apiKey)) {
             try {
                 chain.doFilter(request, response);
                 return;

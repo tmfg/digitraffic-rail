@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.controllers;
 
-import java.io.IOException;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -36,17 +35,12 @@ public class RamiIntegrationController {
     public ResponseEntity handleMessage(
             @RequestBody
             final JsonNode body) {
-        try {
-            final Set<ValidationMessage> errors = ramiValidationService.validateRamiMessage(body);
-            if (errors.isEmpty()) {
-                logger.info("Received valid RAMI message: {}", body);
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body(errors.toString());
-            }
-        } catch (final IOException error) {
-            logger.error(error.getMessage());
-            return ResponseEntity.internalServerError().build();
+        final Set<ValidationMessage> errors = ramiValidationService.validateRamiMessage(body);
+        if (errors.isEmpty()) {
+            logger.info("Received valid RAMI message: {}", body);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body(errors.toString());
         }
     }
 
@@ -56,17 +50,12 @@ public class RamiIntegrationController {
     public ResponseEntity handleSituation(
             @RequestBody
             final JsonNode body) {
-        try {
-            final Set<ValidationMessage> errors = ramiValidationService.validateRamiSituation(body);
-            if (errors.isEmpty()) {
-                logger.info("Received valid RAMI situation: {}", body);
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body(errors.toString());
-            }
-        } catch (final IOException error) {
-            logger.error(error.getMessage());
-            return ResponseEntity.internalServerError().build();
+        final Set<ValidationMessage> errors = ramiValidationService.validateRamiSituation(body);
+        if (errors.isEmpty()) {
+            logger.info("Received valid RAMI situation: {}", body);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body(errors.toString());
         }
     }
 
