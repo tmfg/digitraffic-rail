@@ -67,7 +67,7 @@ public class TrainLocationUpdater {
         try {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                 final ZonedDateTime start = dateProvider.nowInHelsinki();
-                final String kuplaUrl = liikeinterfaceUrl.replace("laadunvarmistus", "tuotanto") + "/kuplas"; // temporary fix
+                final String kuplaUrl = liikeinterfaceUrl + "/kuplas";
                 final List<TrainLocation> trainLocations = Arrays.asList(this.restTemplate.getForObject(kuplaUrl, TrainLocation[].class));
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
