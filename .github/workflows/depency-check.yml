@@ -30,7 +30,6 @@ jobs:
         uses: tmfg/digitraffic-actions@gh-pages-publish/v1
         with:
           GH_PAGES_BRANCH: gh-pages
-          GH_PAGES_URL: ${{ secrets.PAGES_URL }}
           FILE_PATH: target/dependency-check-report.html
           COMMIT_MESSAGE: Upload dependency check report
           LINK_TEXT: Dependency check report
