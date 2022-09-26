@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import com.networknt.schema.ValidationMessage;
 import fi.livi.rata.avoindata.updater.service.rami.RamiValidationService;
 
 @Controller
+@ConditionalOnProperty(prefix="rami", name="enabled", havingValue="true")
 public class RamiIntegrationController {
 
     public static final String BASE_PATH = "/api/rami/incoming";
