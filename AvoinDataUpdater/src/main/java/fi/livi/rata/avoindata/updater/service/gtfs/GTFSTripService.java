@@ -29,7 +29,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Table;
-
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
@@ -229,8 +228,10 @@ public class GTFSTripService {
     private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix,
                             final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber,
                             final PlatformData platformData) {
-        final String tripId = String.format("%s_%s_%s%s", schedule.trainNumber, startDate.format(DateTimeFormatter.BASIC_ISO_DATE),
-                endDate.format(DateTimeFormatter.BASIC_ISO_DATE), scheduleSuffix);
+        final String tripId = String.format("%s_%s%s",
+                schedule.trainNumber,
+                endDate.format(DateTimeFormatter.BASIC_ISO_DATE),
+                scheduleSuffix);
         final String serviceId = tripId;
 
         Trip trip = new Trip(schedule);
