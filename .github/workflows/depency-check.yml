@@ -25,12 +25,14 @@ jobs:
             ${{ runner.os }}-dependency-check-
       - name: Dependency check
         run: mvn -Pdepcheck
-      - name: Upload report
-        uses: actions/upload-artifact@v3
+      - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
+        uses: tmfg/digitraffic-actions@gh-pages-publish/v1
         with:
-          name: dependency-check-report.html
-          path: target/dependency-check-report.html
+          GH_PAGES_BRANCH: gh-pages
+          FILE_PATH: target/dependency-check-report.html
+          COMMIT_MESSAGE: Upload dependency check report
+          LINK_TEXT: Dependency check report
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3

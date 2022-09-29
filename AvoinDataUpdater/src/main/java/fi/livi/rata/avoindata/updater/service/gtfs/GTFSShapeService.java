@@ -47,8 +47,6 @@ public class GTFSShapeService {
 
         Map<String, List<Shape>> shapeCache = new HashMap<>();
         for (Trip trip : trips) {
-            log.info("Creating shape for trip {}", trip.tripId);
-
             String stops = trip.stopTimes.stream().map(s -> s.stopId).collect(Collectors.joining(">"));
 
             List<Shape> shapes = shapeCache.get(stops);

@@ -109,8 +109,6 @@ public class StoptimesSplitterService {
             actualStops.add(lastStop);
         }
 
-        log.info("Split {} to {}", trip.stopTimes, actualStops);
-
         return actualStops;
     }
 
