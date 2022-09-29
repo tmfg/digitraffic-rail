@@ -4,8 +4,10 @@ import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.Type;
+import org.joda.time.Seconds;
 
 import javax.persistence.*;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -42,10 +44,11 @@ public class GTFSTimeTableRow {
 
     @Column
     @Type(type="org.hibernate.type.ZonedDateTimeType")
-    public ZonedDateTime liveEstimateTime;
+    public ZonedDateTime actualTime;
 
     @Column
-    public Long differenceInMinutes;
+    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    public ZonedDateTime liveEstimateTime;
 
     @Column
     public Boolean commercialStop;
@@ -55,4 +58,19 @@ public class GTFSTimeTableRow {
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false, insertable = false, updatable = false),
             @JoinColumn(name = "trainNumber", referencedColumnName = "trainNumber", nullable = false, insertable = false, updatable = false)})
     public GTFSTrain train;
+
+    public int differenceInSeconds() {
+        if(actualTime != null) {
+            return (int) Duration.between(scheduledTime, actualTime).getSeconds();
+        }
+        if(liveEstimateTime != null) {
+            return (int) Duration.between(scheduledTime, liveEstimateTime).getSeconds();
+        }
+
+        return 0;
+    }
+
+    public boolean hasEstimateOrActualTime() {
+        return liveEstimateTime != null || actualTime != null;
+    }
 }

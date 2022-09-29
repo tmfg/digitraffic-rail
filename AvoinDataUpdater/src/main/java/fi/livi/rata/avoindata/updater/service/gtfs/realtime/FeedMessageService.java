@@ -25,6 +25,7 @@ import static org.apache.commons.lang3.BooleanUtils.isTrue;
 @Service
 public class FeedMessageService {
     private static final Logger log = LoggerFactory.getLogger(FeedMessageService.class);
+    private static final int PAST_LIMIT_MINUTES = 30;
 
     private final GTFSTripRepository gtfsTripRepository;
 
@@ -103,7 +104,7 @@ public class FeedMessageService {
     }
 
     private boolean isInThePast(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(30);
+        final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES);
 
         final boolean isArrivalInPast = arrival == null || isBefore(arrival, limit);
         final boolean isDepartureInPast = departure == null || isBefore(departure, limit);
@@ -117,22 +118,16 @@ public class FeedMessageService {
     }
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure, final boolean updatesEmpty) {
-        // it's in the past, don't report it!
+        // it's in the past(PAST_LIMIT_MINUTES), don't report it!
         if(isInThePast(arrival, departure)) {
             return null;
         }
 
-        final Long arrivalDifference = arrival == null ? null : arrival.differenceInMinutes;
-        final Long departureDifference = departure == null ? null : departure.differenceInMinutes;
-
-        // it's not late, don't report it!
-        // must report first stop though
-        if(!updatesEmpty && (arrivalDifference == null || arrivalDifference == 0) && (departureDifference == null || departureDifference == 0)) {
-            return null;
-        }
+        final boolean arrivalHasTime = arrival != null && arrival.hasEstimateOrActualTime();
+        final boolean departureHasTime = departure != null && departure.hasEstimateOrActualTime();
 
         // if there's no estimates yet, do not report
-        if(arrivalDifference == null && departureDifference == null) {
+        if(!arrivalHasTime && !departureHasTime) {
             return null;
         }
 
@@ -142,14 +137,14 @@ public class FeedMessageService {
                 .setStopSequence(stopSequence);
 
         // GTFS delay is seconds, our difference is minutes
-        if(arrivalDifference != null) {
+        if(arrivalHasTime) {
             builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
-                    .setDelay((int)(arrivalDifference * 60))
+                    .setDelay(arrival.differenceInSeconds())
                     .build());
         }
-        if(departureDifference != null) {
+        if(departureHasTime) {
             builder.setDeparture(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
-                    .setDelay((int)(departureDifference * 60))
+                    .setDelay(departure.differenceInSeconds())
                     .build());
         }
 
