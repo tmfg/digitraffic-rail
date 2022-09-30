@@ -117,7 +117,7 @@ public class FeedMessageService {
         return row.liveEstimateTime != null && row.liveEstimateTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
     }
 
-    private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure, final boolean updatesEmpty) {
+    private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         // it's in the past(PAST_LIMIT_MINUTES), don't report it!
         if(isInThePast(arrival, departure)) {
             return null;
@@ -169,7 +169,7 @@ public class FeedMessageService {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
         int stopSequence = FIRST_STOP_SEQUENCE;
 
-        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(1), true);
+        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(1));
         if(previous != null) {
 //            System.out.println("train " + train.id.trainNumber + " adding stop" + (stopSequence - 1));
             updates.add(previous);
@@ -181,7 +181,7 @@ public class FeedMessageService {
 
             // skip stations where train does not stop
             if(includeStop(arrival, departure)) {
-                final GtfsRealtime.TripUpdate.StopTimeUpdate current = createStopTimeUpdate(stopSequence++, arrival, departure, updates.isEmpty());
+                final GtfsRealtime.TripUpdate.StopTimeUpdate current = createStopTimeUpdate(stopSequence++, arrival, departure);
 
                 if (current != null && delaysDiffer(previous, current)) {
                     updates.add(current);
