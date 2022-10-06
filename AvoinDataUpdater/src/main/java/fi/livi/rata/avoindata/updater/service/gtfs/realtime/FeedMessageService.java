@@ -139,12 +139,20 @@ public class FeedMessageService {
         // GTFS delay is seconds, our difference is minutes
         if(arrivalHasTime) {
             builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
-                    .setDelay(arrival.differenceInSeconds())
+                    .setDelay(arrival.delayInSeconds())
                     .build());
         }
         if(departureHasTime) {
+            // sometimes departure has live estimate that is before arrival's scheduled time(and departure has no estimate or actual time)
+            // in that case, fake a delay for arrival that's equals to departure's delay
+            if(arrival != null && !arrivalHasTime && arrival.scheduledTime.isAfter(departure.getActualOrEstimate())) {
+                builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
+                        .setDelay(departure.delayInSeconds())
+                        .build());
+            }
+
             builder.setDeparture(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
-                    .setDelay(departure.differenceInSeconds())
+                    .setDelay(departure.delayInSeconds())
                     .build());
         }
 

@@ -4,7 +4,6 @@ import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.Type;
-import org.joda.time.Seconds;
 
 import javax.persistence.*;
 import java.time.Duration;
@@ -59,15 +58,18 @@ public class GTFSTimeTableRow {
             @JoinColumn(name = "trainNumber", referencedColumnName = "trainNumber", nullable = false, insertable = false, updatable = false)})
     public GTFSTrain train;
 
-    public int differenceInSeconds() {
+    public int delayInSeconds() {
+        return (int) Duration.between(scheduledTime, getActualOrEstimate()).getSeconds();
+    }
+
+    public ZonedDateTime getActualOrEstimate() {
         if(actualTime != null) {
-            return (int) Duration.between(scheduledTime, actualTime).getSeconds();
-        }
-        if(liveEstimateTime != null) {
-            return (int) Duration.between(scheduledTime, liveEstimateTime).getSeconds();
+            return actualTime;
+        } else if(liveEstimateTime != null) {
+            return liveEstimateTime;
         }
 
-        return 0;
+        return scheduledTime;
     }
 
     public boolean hasEstimateOrActualTime() {
