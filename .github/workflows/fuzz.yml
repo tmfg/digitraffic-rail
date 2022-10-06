@@ -10,7 +10,7 @@ jobs:
       - name: Fuzz
         uses: mprencipe/waggers-action@v2
         with:
-          url: https://rata-beta.digitraffic.fi/swagger/swagger-spec.json
+          url: https://rata-beta.digitraffic.fi/swagger/openapi.json
           fuzzcount: 5
       - name: Notify Slack
         if: failure()
