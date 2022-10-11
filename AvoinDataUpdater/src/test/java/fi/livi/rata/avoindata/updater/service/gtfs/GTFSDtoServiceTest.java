@@ -38,9 +38,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
-
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -144,7 +142,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
 
-        List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_20210110_replacement")).collect(Collectors.toList());
+        List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_replacement")).collect(Collectors.toList());
         assertTrips(trips, 1);
     }
 
@@ -170,9 +168,9 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         assertTrips(gtfsDto.trips, 3);
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        Assertions.assertNotNull(tripsByServiceId.get("781_20210328_20211030"));
-        Assertions.assertNotNull(tripsByServiceId.get("781_20211031_20211211"));
-        Assertions.assertNotNull(tripsByServiceId.get("781_20201213_20210327"));
+        Assertions.assertNotNull(tripsByServiceId.get("781_20211030"));
+        Assertions.assertNotNull(tripsByServiceId.get("781_20211211"));
+        Assertions.assertNotNull(tripsByServiceId.get("781_20210327"));
     }
 
     @Test
@@ -185,7 +183,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         assertTrips(gtfsDto.trips, 1);
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        Assertions.assertNotNull(tripsByServiceId.get("9924_20191215_20201212"));
+        Assertions.assertNotNull(tripsByServiceId.get("9924_20201212"));
     }
 
     @Test
@@ -197,9 +195,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        Trip normalTrip = tripsByServiceId.get("66_20191125_20191214");
-        Trip KAJTrip = tripsByServiceId.get("66_20191201_20191201_replacement");
-        Trip KUOTrip = tripsByServiceId.get("66_20191202_20191202_replacement");
+        Trip normalTrip = tripsByServiceId.get("66_20191214");
+        Trip KAJTrip = tripsByServiceId.get("66_20191201_replacement");
+        Trip KUOTrip = tripsByServiceId.get("66_20191202_replacement");
 
         Assertions.assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
         Assertions.assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
@@ -271,7 +269,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         assertTrips(gtfsDto.trips, 3);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        final Trip firstTrip = tripsByServiceId.get("1_20170902_20171209");
+        final Trip firstTrip = tripsByServiceId.get("1_20171209");
 
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), true, true, true, true, true, true, true);
 
@@ -375,9 +373,9 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        Assertions.assertNotNull(trips.get(String.format("%s_%s_%s", 141L, "20191202", "20191214")));
-        Assertions.assertNotNull(trips.get(String.format("%s_%s_%s", 151L, "20191202", "20191213")));
-        Assertions.assertNotNull(trips.get(String.format("%s_%s_%s", 151L, "20191215", "20201211")));
+        Assertions.assertNotNull(trips.get(String.format("%s_%s", 141L, "20191214")));
+        Assertions.assertNotNull(trips.get(String.format("%s_%s", 151L, "20191213")));
+        Assertions.assertNotNull(trips.get(String.format("%s_%s", 151L, "20201211")));
     }
 
     @Test
@@ -389,9 +387,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         assertTrips(gtfsDto.trips, 3);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        final Trip firstTrip = tripsByServiceId.get("1_20170902_20171209");
-        final Trip secondTrip = tripsByServiceId.get("1_20171210_20180617");
-        final Trip thirdTrip = tripsByServiceId.get("1_20180618_20181208");
+        final Trip firstTrip = tripsByServiceId.get("1_20171209");
+        final Trip secondTrip = tripsByServiceId.get("1_20180617");
+        final Trip thirdTrip = tripsByServiceId.get("1_20181208");
 
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), true, true, true, true, true, true, true);
         assertTrip(secondTrip, LocalDate.of(2017, 12, 10), LocalDate.of(2018, 6, 17), true, true, true, true, true, true, true);
@@ -410,31 +408,31 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        Assertions.assertNotNull(trips.get(String.format("%s_%s_%s", 9L, "20180618", "20181208")));
+        Assertions.assertNotNull(trips.get(String.format("%s_%s", 9L, "20181208")));
 
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180611")));        // ma
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180612")));        // ti
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180613")));        // ke
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180614")));        // to
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180615")));        // pe
-        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, "20180616")));     // la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180617")));        // su
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180611")));        // ma
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180612")));        // ti
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180613")));        // ke
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180614")));        // to
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180615")));        // pe
+        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_replacement", 9L, "20180616")));     // la
+        Assertions.assertNotNull(trips.get(String.format("%s_%2$s", 9L, "20180617")));        // su
 
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180618")));        // ma
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180619")));        // ti
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180620")));        // ke
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180621")));        // to
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180622")));        // pe
-        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, "20180623")));     // la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180624")));        // su
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180618")));        // ma
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180619")));        // ti
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180620")));        // ke
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180621")));        // to
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180622")));        // pe
+        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_replacement", 9L, "20180623")));     // la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180624")));        // su
 
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180625")));        // ma
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180626")));        // ti
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180627")));        // ke
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180628")));        // to
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180629")));        // pe
-        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_%2$s_replacement", 9L, "20180630")));     // la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 9L, "20180701")));         // su
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180625")));        // ma
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180626")));        // ti
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180627")));        // ke
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180628")));        // to
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180629")));        // pe
+        Assertions.assertNotNull(trips.get(String.format("%s_%2$s_replacement", 9L, "20180630")));     // la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 9L, "20180701")));         // su
     }
 
     @Test
@@ -454,7 +452,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        assertTripStops(trips.get(String.format("%s_%s_%s_replacement", 27L, "20171007", "20171007")), HELSINKI_UIC, TAMPERE_UIC);
+        assertTripStops(trips.get(String.format("%s_%s_replacement", 27L, "20171007")), HELSINKI_UIC, TAMPERE_UIC);
     }
 
     @Test
@@ -467,34 +465,34 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, "20170902", "20171209")), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s", 20L, "20171209")), OULU_UIC,
                 HELSINKI_UIC);
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20170909")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20170909")), KOKKOLA_UIC,
                 HELSINKI_UIC);    // 9.9. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20170916")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20170916")), KOKKOLA_UIC,
                 HELSINKI_UIC);         // 16.9. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20170923")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20170923")), KOKKOLA_UIC,
                 HELSINKI_UIC);      // 23.9. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20170930")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20170930")), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 30.9. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20171007")), TAMPERE_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20171007")), TAMPERE_UIC,
                 HELSINKI_UIC);         // 7.10. la TPE-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20171014")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20171014")), KOKKOLA_UIC,
                 HELSINKI_UIC);      // 14.10. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20171021")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20171021")), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 21.10. la KOK-HKI
-        assertTripStops(trips.get(String.format("%s_%2$s_%2$s_replacement", 20L, "20171028")), KOKKOLA_UIC,
+        assertTripStops(trips.get(String.format("%s_%2$s_replacement", 20L, "20171028")), KOKKOLA_UIC,
                 HELSINKI_UIC);       // 28.10. la YVI-HKI
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171104")));            // 4.11. la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171111")));           // 11.11. la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171118")));           // 18.11. la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171125")));           // 25.11. la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171202")));            // 2.12. la
-        Assertions.assertNull(trips.get(String.format("%s_%2$s_%2$s", 20L, "20171209")));            // 9.12. la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 20L, "20171104")));            // 4.11. la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 20L, "20171111")));           // 11.11. la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 20L, "20171118")));           // 18.11. la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 20L, "20171125")));           // 25.11. la
+        Assertions.assertNull(trips.get(String.format("%s_%2$s", 20L, "20171202")));            // 2.12. la
+        Assertions.assertNotNull(trips.get(String.format("%s_%2$s", 20L, "20171209")));            // 9.12. la
 
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, "20171211", "20180616")), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s", 20L, "20180616")), OULU_UIC,
                 HELSINKI_UIC);
-        assertTripStops(trips.get(String.format("%s_%s_%s", 20L, "20180618", "20181208")), OULU_UIC,
+        assertTripStops(trips.get(String.format("%s_%s", 20L, "20181208")), OULU_UIC,
                 HELSINKI_UIC);
     }
 
@@ -519,7 +517,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
 
-        final Trip firstTrip = tripsByServiceId.get("263_20170902_20171209");
+        final Trip firstTrip = tripsByServiceId.get("263_20171209");
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), false, false, true, false, true, true,
                 false);
 
@@ -527,13 +525,13 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(2, firstTrip.calendar.calendarDates.iterator().next().exceptionType);
         Assertions.assertEquals(LocalDate.of(2017, 10, 7), firstTrip.calendar.calendarDates.iterator().next().date);
 
-        final Trip secondTrip = tripsByServiceId.get("263_20171215_20180420");
+        final Trip secondTrip = tripsByServiceId.get("263_20180420");
         assertTrip(secondTrip, LocalDate.of(2017, 12, 15), LocalDate.of(2018, 4, 20), true, false, true, false, true, false, false);
         Assertions.assertEquals(35, secondTrip.calendar.calendarDates.size());
         Assertions.assertEquals(1, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 1).size());
         Assertions.assertEquals(34, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 2).size());
 
-        final Trip thirdTrip = tripsByServiceId.get("263_20180618_20181208");
+        final Trip thirdTrip = tripsByServiceId.get("263_20181208");
         assertTrip(thirdTrip, LocalDate.of(2018, 06, 18), LocalDate.of(2018, 12, 8), true, false, false, false, true, true, false);
         Assertions.assertEquals(0, thirdTrip.calendar.calendarDates.size());
 
