@@ -42,6 +42,7 @@ public class RamiIntegrationController {
             logger.info("Received valid RAMI message: {}", body);
             return ResponseEntity.ok().build();
         } else {
+            logger.warn("Received invalid RAMI message: {} with validation errors: {}", body, errors);
             return ResponseEntity.badRequest().body(errors.toString());
         }
     }
@@ -57,6 +58,7 @@ public class RamiIntegrationController {
             logger.info("Received valid RAMI situation: {}", body);
             return ResponseEntity.ok().build();
         } else {
+            logger.warn("Received invalid RAMI situation: {} with validation errors: {}", body, errors);
             return ResponseEntity.badRequest().body(errors.toString());
         }
     }
