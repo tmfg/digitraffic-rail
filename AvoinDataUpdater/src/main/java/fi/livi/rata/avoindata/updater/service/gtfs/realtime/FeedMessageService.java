@@ -177,9 +177,28 @@ public class FeedMessageService {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
         int stopSequence = FIRST_STOP_SEQUENCE;
 
+        // this is then previous stop that was added to updates-list
         GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(0));
         if(previous != null) {
-//            System.out.println("train " + train.id.trainNumber + " adding stop" + (stopSequence - 1));
+            // if first stop and delay is negative, then
+            // we generate a new stop with fabricated arrival that has the same delay as the departure
+            // this is done because stop_times.txt has arrival and departure times for each stop, even for the first and last
+            if(previous.getDeparture().getDelay() < 0) {
+                final GtfsRealtime.TripUpdate.StopTimeUpdate.Builder builder = GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
+                        .setStopId(previous.getStopId())
+                        .setStopSequence(previous.getStopSequence());
+
+                builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
+                        .setDelay(previous.getDeparture().getDelay())
+                        .build());
+
+                builder.setDeparture(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
+                        .setDelay(previous.getDeparture().getDelay())
+                        .build());
+
+                previous = builder.build();
+            }
+
             updates.add(previous);
         }
 
