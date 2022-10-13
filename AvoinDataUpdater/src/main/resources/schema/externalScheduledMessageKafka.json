@@ -1,0 +1,145 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "externalScheduledMessageKafka",
+    "description": "RAMI  Messages for external systems- Kafka topic",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "headers": {
+            "type": "object",
+            "required": [
+                "e2eId",
+                "eventType",
+                "source",
+                "recordedAtTime",
+                "organisation"
+            ],
+            "description": "Header of the message",
+            "properties": {
+                "e2eId": {
+                    "type": "string",
+                    "format": "UUID",
+                    "example": "c45c7f92-5f96-4059-b0b3-20295388e4f6",
+                    "description": "Correlational event unique identifier"
+                },
+                "organisation": {
+                    "type": "string",
+                    "example": "",
+                    "description": "Identifier of external organization that sends the message"
+                },
+                "source": {
+                    "type": "string",
+                    "description": "Module identifier that publishes the message"
+                },
+                "eventType": {
+                    "type": "string",
+                    "description": "Type of event"
+                },
+                "recordedAtTime": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2019-02-07T07:30:00.000Z",
+                    "description": "Registration date in ISO 8601 format"
+                }
+            }
+        },
+        "payload": {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "enum": [
+                        "NEW",
+                        "UPDATE",
+                        "DELETE"
+                    ]
+                },
+                "messageId": {
+                    "type": "string"
+                },
+                "messageVersion": {
+                    "type": "integer",
+                    "description": "it is empty in case of creation of a new message"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "startValidity": {
+                    "description": "Start validity date in ISO 8601 format",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "endValidity": {
+                    "description": "End validity date in ISO 8601 format",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "externalPoints": {
+                    "type": "array",
+                    "description": "Stop Points related to this message",
+                    "items": {
+                        "description": "Stop points related to this message",
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "nameLong": {
+                                "type": "string"
+                            },
+                            "nameShort": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "messageContent": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "language": {
+                                "type": "string",
+                                "description": "ISO-639  language code with ISO contry code",
+                                "example": "fi-FI en-GB"
+                            },
+                            "text": {
+                                "description": "text of the message",
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "situation": {
+                    "type": "array",
+                    "description": "Situations related to the message: It can be empy",
+                    "items": {
+                        "type": "object",
+                        "description": "A Scheduled message optionally can be related to a Situation (SIRI)",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [
+                "messageId",
+                "title",
+                "messageVersion",
+                "startValidity",
+                "endValidity",
+                "messageContent",
+                "operation"
+            ]
+        }
+    },
+    "required": [
+        "headers",
+        "payload"
+    ]
+}
