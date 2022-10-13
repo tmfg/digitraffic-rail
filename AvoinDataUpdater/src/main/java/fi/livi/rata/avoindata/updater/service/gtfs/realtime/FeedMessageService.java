@@ -177,7 +177,7 @@ public class FeedMessageService {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
         int stopSequence = FIRST_STOP_SEQUENCE;
 
-        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(1));
+        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(0));
         if(previous != null) {
 //            System.out.println("train " + train.id.trainNumber + " adding stop" + (stopSequence - 1));
             updates.add(previous);
