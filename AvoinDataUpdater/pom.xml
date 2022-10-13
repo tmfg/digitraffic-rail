@@ -136,6 +136,12 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.21.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.0.72</version>
+        </dependency>
     </dependencies>
 
     <build>
