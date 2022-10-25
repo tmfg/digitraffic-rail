@@ -29,7 +29,7 @@ jobs:
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Checkout CI-repo
         uses: actions/checkout@v3
         with:

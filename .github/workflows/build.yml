@@ -5,9 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Java
-        uses: actions/setup-java@v2.5.0
+        uses: actions/setup-java@v3
         with:
           java-version: 11
           distribution: temurin
@@ -27,7 +27,7 @@ jobs:
         run: |
           mvn org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report -pl AvoinDataServer test
       - name: Publish test results
-        uses: dorny/test-reporter@0d00bb14cb0cc2c9b8985df6e81dd333188224e1
+        uses: dorny/test-reporter@v1.6.0
         if: success() || failure()
         with:
           name: jUnit tests
