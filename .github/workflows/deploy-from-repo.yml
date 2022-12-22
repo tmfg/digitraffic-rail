@@ -1,0 +1,65 @@
+name: Deploy from other repo
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment'
+        required: true
+        type: environment
+        default: 'beta'
+      application-name:
+        description: 'Application to install'
+        required: true
+        type: choice
+        options:
+          - infra-api
+          - etj2-api
+      config-branch:
+        description: 'Config repo branch'
+        default: master
+        required: true
+        type: string
+jobs:
+  deploy:
+    environment: ${{ github.event.inputs.env }}
+    runs-on: ubuntu-20.04
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Update ${{ github.event.inputs.application-name }} task definition
+        uses: tmfg/digitraffic-actions@update-task-def/v1
+        with:
+          task-def-file-name: rail-${{ github.event.inputs.env }}-${{ github.event.inputs.application-name }}
+          family-name: ${{ github.event.inputs.application-name }}
+          image-arn: ${{ secrets.FIRA_ECR_URL }}/${{ github.event.inputs.application-name }}:digitraffic-${{ github.event.inputs.env }}
+          aws-role: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
+          ci-repo-branch: ${{ github.event.inputs.config-branch }}
+          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+      - name: Update ${{ github.event.inputs.application-name }} ECS service
+        uses: tmfg/digitraffic-actions@ecs-service-update/v1
+        with:
+          aws-role: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          task-definition: ${{ github.event.inputs.application-name }}
+          service-name: ${{ github.event.inputs.application-name }}
+          cluster-name: ${{ secrets.CLUSTER_NAME }}
+          desired-count: 1
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: FAILED ${{ github.event.inputs.application-name }} deploy on ${{ github.event.inputs.env }}
+          fields: repo, job, took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
