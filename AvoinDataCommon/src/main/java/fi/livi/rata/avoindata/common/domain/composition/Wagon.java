@@ -10,7 +10,6 @@ import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
@@ -30,10 +29,10 @@ public class Wagon {
     @Schema(example = "1")
     public int location;
     @Column
-    @Schema(description = "wagon number in customer's ticket", example = "1")
+    @Schema(description = "Wagon number in customer's ticket", example = "1")
     public int salesNumber;
     @Column
-    @Schema(description = "Wagon length in decimeters", example = "2640")
+    @Schema(description = "Wagon length in centimeters", example = "2640")
     public int length;
     @Column
     public Boolean playground;
