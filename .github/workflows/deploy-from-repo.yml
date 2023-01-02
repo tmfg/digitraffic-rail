@@ -19,6 +19,10 @@ on:
         default: master
         required: true
         type: string
+      suffix:
+        description: 'Username suffix'
+        required: true
+        type: string
 jobs:
   deploy:
     environment: ${{ github.event.inputs.env }}
@@ -28,12 +32,15 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials for rail-${{ github.event.inputs.env }}
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
+      - name: Set suffix in ${{ github.event.inputs.application-name }} task-def
+        run: |
+          sed -i 's/INSERT_SUFFIX/${{ github.event.inputs.suffix }}/g' digitraffic-ci/aws/task-def/rail-${{ github.event.inputs.env }}-${{ github.event.inputs.application-name }}-task-def.json
       - name: Update ${{ github.event.inputs.application-name }} task definition
         uses: tmfg/digitraffic-actions@update-task-def/v1
         with:
