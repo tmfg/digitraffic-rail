@@ -32,25 +32,16 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Checkout CI-repo
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ secrets.CONFIG_REPO_NAME }}
-          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-          ref: ${{ inputs.config-repo-branch }}
-          path: config
       - name: Configure AWS credentials for rail-${{ github.event.inputs.env }}
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Set suffix in ${{ github.event.inputs.application-name }} task-def
-        run: jq -c '.containerDefinitions[0].environment[0].value = "${{ github.event.inputs.suffix }}"' config/aws/task-def/rail-${{ github.event.inputs.env }}-${{ github.event.inputs.application-name }}-task-def.json > local-task-def.json
       - name: Update ${{ github.event.inputs.application-name }} task definition
         uses: tmfg/digitraffic-actions@update-task-def/v2
         with:
-          task-def-file-name: local-task-def.json
+          task-def-file-name: rail-${{ github.event.inputs.env }}-${{ github.event.inputs.application-name }}
           family-name: ${{ github.event.inputs.application-name }}
           image-arn: ${{ secrets.FIRA_ECR_URL }}/${{ github.event.inputs.application-name }}:digitraffic-${{ github.event.inputs.env }}
           aws-role: ${{ secrets.AWS_ROLE }}
@@ -58,6 +49,7 @@ jobs:
           ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
           ci-repo-branch: ${{ github.event.inputs.config-branch }}
           ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          environment-value: ${{ github.event.inputs.suffix }}
       - name: Update ${{ github.event.inputs.application-name }} ECS service
         uses: tmfg/digitraffic-actions@ecs-service-update/v1
         with:
