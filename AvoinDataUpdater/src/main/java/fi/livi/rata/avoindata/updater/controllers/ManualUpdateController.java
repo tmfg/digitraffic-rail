@@ -2,11 +2,10 @@ package fi.livi.rata.avoindata.updater.controllers;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import fi.livi.rata.avoindata.updater.service.gtfs.GTFSRealtimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +20,7 @@ import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.gtfs.GTFSRealtimeService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
@@ -123,7 +123,9 @@ public class ManualUpdateController {
         logger.info("Starting manual gtfs");
         final LocalDate start = dp.dateInHelsinki().minusDays(7);
 
-        gtfsService.createVRTreGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(s->this.isPassengerTrain(s)).collect(Collectors.toList()));
+        Predicate<Schedule> lambda = s -> true;
+
+        gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
         return true;
     }
 

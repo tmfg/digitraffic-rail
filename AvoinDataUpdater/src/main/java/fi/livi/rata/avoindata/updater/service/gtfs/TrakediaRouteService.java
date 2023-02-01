@@ -112,7 +112,7 @@ public class TrakediaRouteService {
         Coordinate startStopPoint = new Coordinate(startProjCoordinate.x, startProjCoordinate.y);
         Coordinate endStopPoint = new Coordinate(endProjCoordinate.x, endProjCoordinate.y);
 
-        List<Coordinate> coordinates = lines.stream().flatMap(x -> List.of(x.get(0), x.get(x.size() - 1)).stream()).collect(Collectors.toList());
+        List<Coordinate> coordinates = lines.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
 
         List<Coordinate> startPoints = this.nearestPointsService.kClosest(coordinates, startStopPoint, 20);
         List<Coordinate> endPoints = this.nearestPointsService.kClosest(coordinates, endStopPoint, 20);
@@ -150,25 +150,26 @@ public class TrakediaRouteService {
         ArrayList<Edge> edges = new ArrayList<>();
 
         for (List<Coordinate> line : lines) {
-            int total = line.size();
-            Coordinate startNode = line.get(0);
-            Coordinate endNode = line.get(total - 1);
+            for (int i = 0; i < line.size()-1; i++) {
+                Coordinate startNode = line.get(i);
+                Coordinate endNode = line.get(i+1);
 
-            String startVertexName = getVertexName(startNode);
-            String endVertexName = getVertexName(endNode);
+                String startVertexName = getVertexName(startNode);
+                String endVertexName = getVertexName(endNode);
 
-            Vertex lineStartVertex = new Vertex(startVertexName, startVertexName);
-            Vertex lineEndVertex = new Vertex(endVertexName, endVertexName);
+                Vertex lineStartVertex = new Vertex(startVertexName, startVertexName);
+                Vertex lineEndVertex = new Vertex(endVertexName, endVertexName);
 
-            vertices.add(lineStartVertex);
-            vertices.add(lineEndVertex);
+                vertices.add(lineStartVertex);
+                vertices.add(lineEndVertex);
 
-            int weight = (int) (distanceBetweenTwoPoints(startNode, endNode) * 100);
-            edges.add(new Edge(getEdgeId(startVertexName, endVertexName), lineStartVertex, lineEndVertex, weight, line));
+                int weight = (int) (distanceBetweenTwoPoints(startNode, endNode) * 100);
+                edges.add(new Edge(getEdgeId(startVertexName, endVertexName), lineStartVertex, lineEndVertex, weight, List.of(startNode, endNode)));
 
-            List<Coordinate> lineReversed = new ArrayList<>(line);
-            Collections.reverse(lineReversed);
-            edges.add(new Edge(getEdgeId(endVertexName, startVertexName), lineEndVertex, lineStartVertex, weight, lineReversed));
+                List<Coordinate> lineReversed = new ArrayList<>(line);
+                Collections.reverse(lineReversed);
+                edges.add(new Edge(getEdgeId(endVertexName, startVertexName), lineEndVertex, lineStartVertex, weight, List.of(endNode, startNode)));
+            }
         }
 
         ArrayList<Vertex> verticeList = new ArrayList<>(vertices);

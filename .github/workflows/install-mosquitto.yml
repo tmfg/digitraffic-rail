@@ -94,4 +94,4 @@ jobs:
           text: FAILED Mosquitto rail-${{ github.event.inputs.env }} config on install
           fields: job
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
