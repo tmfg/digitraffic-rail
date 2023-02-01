@@ -1,5 +1,4 @@
 name: 'S3 poll'
-description: 'Poll S3 bucket for changes'
 on:
   workflow_dispatch:
     inputs:
