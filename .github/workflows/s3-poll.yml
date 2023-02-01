@@ -7,8 +7,8 @@ on:
         required: true
         type: environment
         default: 'beta'
-      bucket-arn:
-        description: 'Bucket arn'
+      bucket-name:
+        description: 'Bucket name'
         required: true
         type: string
 
@@ -24,11 +24,11 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-to-assume: ${{ secrets.S3_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Check bucket
         id: revision
         run: |
-          aws s3 ls s3://${{ github.event.inputs.bucket-arn }}
+          aws s3 ls s3://${{ github.event.inputs.bucket-name }}
         shell: bash
