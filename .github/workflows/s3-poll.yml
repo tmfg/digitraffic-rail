@@ -36,21 +36,21 @@ jobs:
       - name: Check file count
         id: file_count
         run: |
-          echo "file_count=$((ls -1q  | wc -l))" >> $GITHUB_OUTPUT
+          echo "file_count=$(ls -1q | grep -c "")" >> $GITHUB_OUTPUT
         shell: bash
       - name: Get etj2 schema version
         if: steps.file_count.file_count > 0
         id: etj2_schema_version
         run: |          
           # set version from file to output
-          echo "schema_version=$((cat etj2_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
+          echo "schema_version=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Get infra schema version
         if: steps.file_count.file_count > 0
         id: infra_schema_version
         run: |
           # set version from file to output
-          echo "schema_version=$((cat infra_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
+          echo "schema_version=$(cat infra_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Update etj2-api
         if: steps.file_count.file_count > 0
