@@ -34,20 +34,21 @@ jobs:
       - name: Get version files from S3
         run: |
           mkdir imported
-          aws s3 cp s3://${{ github.event.inputs.bucket-name }}/ ./imported --exclude "*" --include "etj2_*.imported"
+          aws s3 cp s3://${{ github.event.inputs.bucket-name }}/ ./imported
+          ls -lha
           ls -lha imported
         shell: bash
       - name: Get etj2 schema version
         id: etj2_schema_version
         run: |          
           # set version from file to output
-          echo "schema_version=$((cat imported/etj2_*.imported))" >> $GITHUB_OUTPUT
+          echo "schema_version=$((cat imported/etj2_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
         shell: bash
       - name: Get infra schema version
         id: infra_schema_version
         run: |
           # set version from file to output
-          echo "schema_version=$((cat imported/infra_*.imported))" >> $GITHUB_OUTPUT
+          echo "schema_version=$((cat imported/infra_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
         shell: bash
       - name: Update etj2-api
         run: |
