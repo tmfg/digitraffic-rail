@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  check_bucket:
+  update_applications:
     environment: ${{ github.event.inputs.env }}
     runs-on: ubuntu-latest
     permissions:
@@ -27,33 +27,38 @@ jobs:
           role-to-assume: ${{ secrets.S3_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Check bucket
-        run: |
-          aws s3 ls s3://${{ github.event.inputs.bucket-name }}
-        shell: bash
       - name: Get version files from S3
         run: |
-          mkdir imported
-          aws s3 cp s3://${{ github.event.inputs.bucket-name }} .
+          aws s3 ls s3://${{ github.event.inputs.bucket-name }}
+          aws s3 sync s3://${{ github.event.inputs.bucket-name }} .
           ls -lha
         shell: bash
+      - name: Check file count
+        id: file_count
+        run: |
+          echo "file_count=$((ls -1q  | wc -l))" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Get etj2 schema version
+        if: steps.file_count.file_count > 0
         id: etj2_schema_version
         run: |          
           # set version from file to output
           echo "schema_version=$((cat etj2_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
         shell: bash
       - name: Get infra schema version
+        if: steps.file_count.file_count > 0
         id: infra_schema_version
         run: |
           # set version from file to output
           echo "schema_version=$((cat infra_*.imported|cut -d'_' -f 3))" >> $GITHUB_OUTPUT
         shell: bash
       - name: Update etj2-api
+        if: steps.file_count.file_count > 0
         run: |
           echo updating etj2-api to version ${{ steps.etj2_schema_version.outputs.schema_version }}
         shell: bash
       - name: Update infra-api
+        if: steps.file_count.file_count > 0
         run: |
           echo updating infra-api to version ${{ steps.infra_schema_version.outputs.schema_version }}
         shell: bash
