@@ -56,9 +56,15 @@ jobs:
         if: ${{ steps.file_count.outputs.file_count > 0 }}
         run: |
           echo updating etj2-api to version ${{ steps.etj2_schema_version.outputs.schema_version }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.etj2_schema_version.outputs.schema_version }}
+        shell: bash
+      - name: Remove schema version files
+        run: |
+          for file in *.imported; do asw s3 rm s3://${{ github.event.inputs.bucket-name }}/${file}; done
         shell: bash
       - name: Update infra-api
         if: ${{ steps.file_count.outputs.file_count > 0 }}
         run: |
           echo updating infra-api to version ${{ steps.infra_schema_version.outputs.schema_version }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.etj2_schema_version.outputs.schema_version }}
         shell: bash
