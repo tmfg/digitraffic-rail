@@ -19,7 +19,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      actions: read
+      actions: write
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
