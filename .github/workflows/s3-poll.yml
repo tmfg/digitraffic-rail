@@ -52,6 +52,9 @@ jobs:
           # set version from file to output
           echo "schema_version=$(cat infra_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
         shell: bash
+      - name: Checkout
+        if: ${{ steps.file_count.outputs.file_count > 0 }}
+        uses: actions/checkout@v3
       - name: Update etj2-api
         if: ${{ steps.file_count.outputs.file_count > 0 }}
         env:
