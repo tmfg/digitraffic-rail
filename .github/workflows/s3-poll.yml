@@ -34,8 +34,11 @@ jobs:
       - name: Set schema versions
         id: versions
         run: |
-          test -f etj2_${{ github.event.inputs.env }}_imported && echo "etj2=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
-          test -f infra_${{ github.event.inputs.env }}_imported && echo "infra=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f etj2_${{ github.event.inputs.env }}.imported && echo "etj2=$(cat etj2_${{ github.event.inputs.env }}.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f infra_${{ github.event.inputs.env }}.imported && echo "infra=$(cat infra_${{ github.event.inputs.env }}.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          
+          # to reset exit code
+          echo "Versions are set"
         shell: bash
       - name: Checkout
         if: ${{ steps.versions.infra || steps.versions.etj2 }}
