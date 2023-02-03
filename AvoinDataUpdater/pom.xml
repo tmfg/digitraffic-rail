@@ -15,6 +15,7 @@
 
     <properties>
         <start-class>fi.livi.rata.avoindata.updater.DatabaseUpdaterApplication</start-class>
+        <proj4j.version>1.2.3</proj4j.version>
     </properties>
 
     <dependencies>
@@ -116,7 +117,13 @@
         <dependency>
             <groupId>org.locationtech.proj4j</groupId>
             <artifactId>proj4j</artifactId>
-            <version>1.1.5</version>
+            <version>${proj4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.locationtech.proj4j</groupId>
+            <artifactId>proj4j-epsg</artifactId>
+            <version>${proj4j.version}</version>
         </dependency>
 
         <dependency>
@@ -134,13 +141,13 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.21.9</version>
+            <version>3.21.12</version>
         </dependency>
 
         <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
-            <version>1.0.73</version>
+            <version>1.0.76</version>
         </dependency>
     </dependencies>
 
