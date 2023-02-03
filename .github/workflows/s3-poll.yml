@@ -29,50 +29,35 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Get version files from S3
         run: |
-          aws s3 ls s3://${{ github.event.inputs.bucket-name }}
           aws s3 sync s3://${{ github.event.inputs.bucket-name }} .
-          ls -lha
         shell: bash
-      - name: Check file count
-        id: file_count
+      - name: Set schema versions
+        id: versions
         run: |
-          echo "file_count=$(ls -1q | grep -c "")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Get etj2 schema version
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
-        id: etj2_schema_version
-        run: |          
-          # set version from file to output
-          echo "schema_version=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Get infra schema version
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
-        id: infra_schema_version
-        run: |
-          # set version from file to output
-          echo "schema_version=$(cat infra_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f etj2_${{ github.event.inputs.env }}_imported && echo "etj2=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f infra_${{ github.event.inputs.env }}_imported && echo "infra=$(cat etj2_*.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Checkout
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
+        if: ${{ steps.versions.infra || steps.versions.etj2 }}
         uses: actions/checkout@v3
       - name: Update etj2-api
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
+        if: ${{ steps.versions.etj2 }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo updating etj2-api to version ${{ steps.etj2_schema_version.outputs.schema_version }}
-          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.etj2_schema_version.outputs.schema_version }}
+          echo updating etj2-api to version ${{ steps.versions.etj2 }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.etj2 }}
         shell: bash
       - name: Update infra-api
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
+        if: ${{ steps.versions.infra }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo updating infra-api to version ${{ steps.infra_schema_version.outputs.schema_version }}
-          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.etj2_schema_version.outputs.schema_version }}
+          echo updating infra-api to version ${{ steps.versions.infra }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.infra }}
         shell: bash
       - name: Remove schema version files
-        if: ${{ steps.file_count.outputs.file_count > 0 }}
+        if: ${{ steps.versions.infra || steps.versions.etj2 }}
         run: |
-          for file in *.imported; do asw s3 rm s3://${{ github.event.inputs.bucket-name }}/${file}; done
+          for file in *.imported; do aws s3 rm s3://${{ github.event.inputs.bucket-name }}/${file}; done
         shell: bash
