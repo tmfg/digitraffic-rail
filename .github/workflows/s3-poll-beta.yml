@@ -1,20 +1,11 @@
-name: 'S3 poll'
+name: 'Infra/Etj2 schema version poll for beta'
 on:
-  workflow_dispatch:
-    inputs:
-      env:
-        description: 'Environment'
-        required: true
-        type: environment
-        default: 'beta'
-      bucket-name:
-        description: 'Bucket name'
-        required: true
-        type: string
+  schedule:
+    - cron:  '*/5 * * * *'
 
 jobs:
   update_applications:
-    environment: ${{ github.event.inputs.env }}
+    environment: 'beta'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -29,7 +20,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Get version files from S3
         run: |
-          aws s3 sync s3://${{ github.event.inputs.bucket-name }} .
+          aws s3 sync s3://${{ secrets.EXPORT_BUCKET_NAME }} .
         shell: bash
       - name: Set schema versions
         id: versions
@@ -50,7 +41,7 @@ jobs:
         run: |
           echo updating etj2-api to version ${{ steps.versions.outputs.etj2 }}
           gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
-          aws s3 rm s3://${{ github.event.inputs.bucket-name }}/etj2_${{ github.event.inputs.env }}.imported
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_${{ github.event.inputs.env }}.imported
         shell: bash
       - name: Update infra-api
         if: ${{ steps.versions.outputs.infra }}
@@ -59,6 +50,5 @@ jobs:
         run: |
           echo updating infra-api to version ${{ steps.versions.outputs.infra }}
           gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
-          aws s3 rm s3://${{ github.event.inputs.bucket-name }}/infra_${{ github.event.inputs.env }}.imported
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_${{ github.event.inputs.env }}.imported
         shell: bash
-        
