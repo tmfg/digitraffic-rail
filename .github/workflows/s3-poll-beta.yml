@@ -1,13 +1,11 @@
-env:
-  ENVIRONMENT: 'beta'
-name: 'Infra/Etj2 schema version poll for $ENVIRONMENT'
+name: 'Infra/Etj2 schema version poll for beta'
 on:
   schedule:
     - cron:  '*/5 * * * *'
 
 jobs:
   update_applications:
-    environment: $ENVIRONMENT
+    environment: beta
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -18,7 +16,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.S3_ROLE }}
-          role-session-name: gh-actions-deploy-rail-$ENVIRONMENT
+          role-session-name: gh-actions-deploy-rail-beta
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Get version files from S3
         run: |
@@ -27,8 +25,8 @@ jobs:
       - name: Set schema versions
         id: versions
         run: |
-          test -f etj2_$ENVIRONMENT.imported && echo "etj2=$(cat etj2_$ENVIRONMENT.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
-          test -f infra_$ENVIRONMENT.imported && echo "infra=$(cat infra_$ENVIRONMENT.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f etj2_beta.imported && echo "etj2=$(cat etj2_beta.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
+          test -f infra_beta.imported && echo "infra=$(cat infra_beta.imported|cut -d'_' -f 3)" >> $GITHUB_OUTPUT
           
           # to reset exit code
           echo "Versions are set"
@@ -42,8 +40,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo updating etj2-api to version ${{ steps.versions.outputs.etj2 }}
-          gh workflow run deploy-from-repo.yml -f env=$ENVIRONMENT -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
-          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_$ENVIRONMENT.imported
+          gh workflow run deploy-from-repo.yml -f env=beta -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_beta.imported
         shell: bash
       - name: Update infra-api
         if: ${{ steps.versions.outputs.infra }}
@@ -51,6 +49,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo updating infra-api to version ${{ steps.versions.outputs.infra }}
-          gh workflow run deploy-from-repo.yml -f env=$ENVIRONMENT -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
-          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_$ENVIRONMENT.imported
+          gh workflow run deploy-from-repo.yml -f env=beta -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_beta.imported
         shell: bash
