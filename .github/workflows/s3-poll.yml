@@ -41,26 +41,24 @@ jobs:
           echo "Versions are set"
         shell: bash
       - name: Checkout
-        if: ${{ steps.versions.infra || steps.versions.etj2 }}
+        if: ${{ steps.versions.outputs.infra || steps.versions.outputs.etj2 }}
         uses: actions/checkout@v3
       - name: Update etj2-api
-        if: ${{ steps.versions.etj2 }}
+        if: ${{ steps.versions.outputs.etj2 }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo updating etj2-api to version ${{ steps.versions.etj2 }}
-          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.etj2 }}
+          echo updating etj2-api to version ${{ steps.versions.outputs.etj2 }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
+          aws s3 rm s3://${{ github.event.inputs.bucket-name }}/etj2_${{ github.event.inputs.env }}.imported
         shell: bash
       - name: Update infra-api
-        if: ${{ steps.versions.infra }}
+        if: ${{ steps.versions.outputs.infra }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo updating infra-api to version ${{ steps.versions.infra }}
-          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.infra }}
+          echo updating infra-api to version ${{ steps.versions.outputs.infra }}
+          gh workflow run deploy-from-repo.yml -f env=${{ github.event.inputs.env }} -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
+          aws s3 rm s3://${{ github.event.inputs.bucket-name }}/infra_${{ github.event.inputs.env }}.imported
         shell: bash
-      - name: Remove schema version files
-        if: ${{ steps.versions.infra || steps.versions.etj2 }}
-        run: |
-          for file in *.imported; do aws s3 rm s3://${{ github.event.inputs.bucket-name }}/${file}; done
-        shell: bash
+        
