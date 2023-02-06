@@ -21,6 +21,7 @@ on:
         type: string
 jobs:
   install:
+    if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-latest
     permissions:
       id-token: write

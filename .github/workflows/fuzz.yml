@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   fuzz:
+    if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-latest
     steps:
       - name: Fuzz

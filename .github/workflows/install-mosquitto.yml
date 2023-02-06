@@ -13,6 +13,7 @@ on:
         default: 'master'
 jobs:
   log-parameters:
+    if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-20.04
     steps:
       -   name: Create parameters.txt
@@ -26,6 +27,7 @@ jobs:
             name: parameters.txt
             path: parameters.txt
   image:
+    if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-20.04
     permissions:
       id-token: write

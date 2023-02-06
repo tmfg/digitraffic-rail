@@ -25,6 +25,7 @@ on:
         type: string
 jobs:
   deploy:
+    if: github.repository != 'tmfg/digitraffic-rail'
     environment: ${{ github.event.inputs.env }}
     runs-on: ubuntu-latest
     permissions:

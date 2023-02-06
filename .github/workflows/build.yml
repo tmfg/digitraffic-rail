@@ -2,6 +2,7 @@ name: Build
 on: [push]
 jobs:
   build:
+    if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
