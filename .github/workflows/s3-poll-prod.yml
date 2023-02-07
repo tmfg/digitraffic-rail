@@ -5,6 +5,7 @@ on:
 
 jobs:
   update_applications:
+    if: github.repository != 'tmfg/digitraffic-rail'
     environment: prod
     runs-on: ubuntu-latest
     permissions:
