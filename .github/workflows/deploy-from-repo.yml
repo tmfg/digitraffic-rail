@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       suffix:
-        description: 'Username suffix'
+        description: 'Username suffix (db schema revision for the application)'
         required: true
         type: string
 jobs:
