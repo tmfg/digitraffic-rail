@@ -19,6 +19,11 @@ on:
         default: master
         required: true
         type: string
+      desired-count:
+        description: 'Desired count for the service'
+        default: 1
+        required: true
+        type: number
       suffix:
         description: 'Username suffix'
         required: true
@@ -59,7 +64,7 @@ jobs:
           task-definition: ${{ github.event.inputs.application-name }}
           service-name: ${{ github.event.inputs.application-name }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
+          desired-count: ${{ github.event.inputs.desired-count }}
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
