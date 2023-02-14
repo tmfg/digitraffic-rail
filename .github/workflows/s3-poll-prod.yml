@@ -41,7 +41,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo updating etj2-api to version ${{ steps.versions.outputs.etj2 }}
-          gh workflow run deploy-from-repo.yml -f env=prod -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }} -f desired-count=2
+          gh workflow run deploy-from-repo.yml -f env=prod -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
           aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_prd.imported
         shell: bash
       - name: Update infra-api
@@ -50,6 +50,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo updating infra-api to version ${{ steps.versions.outputs.infra }}
-          gh workflow run deploy-from-repo.yml -f env=prod -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }} -f desired-count=2
+          gh workflow run deploy-from-repo.yml -f env=prod -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
           aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_prd.imported
         shell: bash
