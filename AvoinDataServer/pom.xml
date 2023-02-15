@@ -197,6 +197,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <skip>false</skip>
                     <mainClass>${start-class}</mainClass>
                 </configuration>
             </plugin>
