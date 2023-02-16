@@ -4,6 +4,20 @@ jobs:
   build:
     if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-latest
+    services:
+      dt-rail-mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD:
+        # Set health checks to wait until mysql has started
+        options: >-
+          --health-cmd mysqladmin\ ping
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306:3306
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -16,10 +30,7 @@ jobs:
       - name: Compile
         run: mvn -f pom.xml -T1.5C install -e -U -DskipTests=true -Ddependency-check.skip=true
       - name: Setup database
-        run: |
-          docker run --rm -p 3306:3306 --name dt-rail-mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_PASSWORD= -d mysql:8.0
-          while ! docker exec -i dt-rail-mysql mysql -uroot -e "SELECT 1"; do sleep 1; echo 'Waiting for database to start'; done
-          docker exec -i dt-rail-mysql mysql -uroot -e "CREATE DATABASE avoindata_test;"
+        run: mysql --protocol=TCP --host=localhost --port=3306 --user=root --execute="CREATE DATABASE avoindata_test;"
       # Creates database, has to be run before AvoinDataServer tests
       - name: Run AvoinDataUpdater tests
         run: |
