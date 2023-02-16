@@ -12,7 +12,7 @@ jobs:
           MYSQL_ROOT_PASSWORD:
         # Set health checks to wait until mysql has started
         options: >-
-          --health-cmd mysqladmin\ ping
+          --health-cmd 'mysqladmin ping'
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
