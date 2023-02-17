@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       suffix:
-        description: 'Username suffix'
+        description: 'Username suffix (db schema revision for the application)'
         required: true
         type: string
 jobs:
@@ -59,7 +59,7 @@ jobs:
           task-definition: ${{ github.event.inputs.application-name }}
           service-name: ${{ github.event.inputs.application-name }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
+          desired-count: ${{ github.event.inputs.env == 'prod' && 2 || 1 }}
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3

@@ -4,3 +4,4 @@
 **/main/resources/application.properties
 .DS_Store
 **pom.xml.versionsBackup
+**/profiles/dev/*
