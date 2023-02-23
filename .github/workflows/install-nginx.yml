@@ -55,10 +55,6 @@ jobs:
           cd digitraffic-ci/aws/nginx-rail
           docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=${{ env.ENVIRONMENT }} .
           docker run --rm -t nginx-rail-${{ github.event.inputs.env }} nginx -t
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -71,15 +67,11 @@ jobs:
         run: |
           cd digitraffic-ci/aws/nginx-rail
 
-          docker buildx build \
-              --no-cache \
+          docker build --no-cache \
               --build-arg ENVIRONMENT=${{ env.ENVIRONMENT}} \
               --build-arg APPNAME=rail \
-              --platform linux/arm64 \
-              --output type=docker \
-              --tag ${{ secrets.ECR_URL }}/rata-nginx:latest \
-              --pull=true \
-              --file=Dockerfile .
+              -t ${{ secrets.ECR_URL }}/rata-nginx:latest \
+              --pull=true --file=Dockerfile .
           docker push ${{ secrets.ECR_URL }}/rata-nginx:latest
       - name: Update nginx task-def
         id: update
