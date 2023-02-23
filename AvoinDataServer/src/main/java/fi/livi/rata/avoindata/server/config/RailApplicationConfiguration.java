@@ -18,7 +18,7 @@ public class RailApplicationConfiguration {
     @Bean
     @Primary
     public DataSource dataSource(final @Autowired(required = false) AWSDataSourceCredentials awsDataSourceCredentials) {
-        final String url = awsDataSourceCredentials != null ? awsDataSourceCredentials.getUrl() : env.getProperty("spring.datasource.url");
+        final String url = env.getProperty("spring.datasource.url");
         final String username = awsDataSourceCredentials != null ? awsDataSourceCredentials.getUsername() : env.getProperty("spring.datasource.username");
         final String password = awsDataSourceCredentials != null ? awsDataSourceCredentials.getPassword() : env.getProperty("spring.datasource.password");
 
