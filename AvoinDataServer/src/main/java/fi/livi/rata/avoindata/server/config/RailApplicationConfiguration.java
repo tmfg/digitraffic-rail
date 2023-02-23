@@ -22,6 +22,10 @@ public class RailApplicationConfiguration {
         final String username = awsDataSourceCredentials != null ? awsDataSourceCredentials.getUsername() : env.getProperty("spring.datasource.username");
         final String password = awsDataSourceCredentials != null ? awsDataSourceCredentials.getPassword() : env.getProperty("spring.datasource.password");
 
+        System.out.println("URL is null?: " + (url == null));
+        System.out.println("username is null?: " + (username == null));
+        System.out.println("password is null?: " + (password == null));
+
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create(); 
         dataSourceBuilder.url(url);
         dataSourceBuilder.username(username); 
