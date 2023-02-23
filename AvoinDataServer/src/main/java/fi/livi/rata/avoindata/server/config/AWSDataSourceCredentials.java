@@ -12,7 +12,11 @@ public class AWSDataSourceCredentials {
 
     // Database credentials are fetched from the AWS Secrets Manager
     AWSDataSourceCredentials(final @Value("${username}") String username,
-                             final @Value("${password}") String password) {
+                             final @Value("${password}") String password,
+                             final @Value("${foo}") String foo,
+                             final @Value("${test.bar.baz}") String t) {
+        System.out.println("FOO: " + foo);
+        System.out.println("BAZ: " + t);
         this.username = username;
         this.password = password;
     }
