@@ -14,7 +14,7 @@ on:
         options:
           - server
           - updater
-      config-branch:
+      config-repo-branch:
         description: 'Config repo branch'
         default: master
         required: true
