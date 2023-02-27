@@ -50,10 +50,6 @@ jobs:
           else
             echo "ENVIRONMENT=${{ github.event.inputs.env }}" >> $GITHUB_ENV
           fi
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -66,14 +62,10 @@ jobs:
         run: |
           cd digitraffic-ci/aws/mqtt
 
-          docker buildx build \
-              --no-cache \
+          docker build --no-cache \
               --build-arg ENVIRONMENT=rail \
-              --platform linux/arm64 \
-              --output type=docker \
-              --tag ${{ secrets.ECR_URL }}/rata-mqtt:latest \
-              --pull=true \
-              --file=Dockerfile-rail .
+              -t ${{ secrets.ECR_URL }}/rata-mqtt:latest \
+              --pull=true --file=Dockerfile-rail .
           docker push ${{ secrets.ECR_URL }}/rata-mqtt:latest
       - name: Update rata-mqtt task-def
         id: update
