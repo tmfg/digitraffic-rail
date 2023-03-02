@@ -1,0 +1,15 @@
+name: 'Mirror accepted pull requests to private'
+on:
+  pull_request_target:
+    types:
+      - closed
+jobs:
+  Mirror-action:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master' && github.repository == 'tmfg/digitraffic-rail'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror
+        uses: tmfg/digitraffic-actions@mirror/v2
+        with:
+          mirror-repo: ${{ secrets.PRIVATE_REPOSITORY_URL }}
+          ssh-private-key: ${{ secrets.SSH_MIRROR_PRM_KEY }}
