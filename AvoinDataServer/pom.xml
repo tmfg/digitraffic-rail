@@ -16,7 +16,7 @@
     <properties>
         <start-class>fi.livi.rata.avoindata.server.ServerApplication</start-class>
         <spring.cloud.aws.version>2.4.3</spring.cloud.aws.version>
-        <spring.cloud.commons.version>3.1.4</spring.cloud.commons.version>
+        <spring.cloud.commons.version>3.1.6</spring.cloud.commons.version>
     </properties>
 
     <dependencies>
