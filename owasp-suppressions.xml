@@ -5,22 +5,7 @@
         Temporary suppressions, check and update these periodically
     -->
 
-    <suppress until="2022-12-01">
-        <!-- parsing protobuf is vulnerable, we only generate protobuf -->
-        <notes><![CDATA[file name: protobuf-java-3.21.4.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
-        <cve>CVE-2022-3171</cve>
-    </suppress>
-
-    <suppress until="2022-12-01">
-        <!-- vulnerable feature not enabled -->
-        <notes><![CDATA[file name: jackson-databind-2.13.3.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
-        <cve>CVE-2022-42003</cve>
-        <cve>CVE-2022-42004</cve>
-    </suppress>
-
-    <suppress until="2022-12-01">
+    <suppress until="2023-05-01">
         <!-- Requires update in upstream org.springframework.boot/spring-boot-starter-parent -->
         <notes><![CDATA[file name: snakeyaml-1.30.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
@@ -29,17 +14,27 @@
         <cve>CVE-2022-38750</cve>
         <cve>CVE-2022-38751</cve>
         <cve>CVE-2022-38752</cve>
+        <cve>CVE-2022-1471</cve>
+        <cve>CVE-2022-41854</cve>
     </suppress>
 
-    <suppress until="2022-12-01">
+    <suppress until="2023-05-01">
         <!-- Only problem with spring versions <=5.3.16. -->
-        <notes><![CDATA[file name: spring-*-5.3.22.jar]]></notes>
+        <notes><![CDATA[file name: spring-*-5.3.23.jar]]></notes>
         <!--(spring\-tx|spring\-aop|spring\-jcl|spring\-orm|spring\-web|spring\-jdbc|spring\-core|spring\-beans|spring\-webmvc) -->
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-.*@.*$</packageUrl>
         <cve>CVE-2016-1000027</cve>
     </suppress>
 
-    <suppress until="2022-12-01">
+    <suppress until="2023-05-01">
+        <notes><![CDATA[file name: spring-security-crypto-*.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring\-security\-crypto@.*$</packageUrl>
+
+        <!-- Crypto vulnerability, not using vulnerable version of Spring Security -->
+        <cve>CVE-2020-5408</cve>
+    </suppress>
+
+    <suppress until="2023-05-01">
         <!-- we don't use com.amazonaws.services.s3.transfer.TransferManager::downloadDirectory
         This is found multiple times, but the reasoning is the same for all of them-->
         <notes><![CDATA[file name: aws-java-sdk-*.jar]]></notes>
@@ -47,11 +42,26 @@
         <cve>CVE-2022-31159</cve>
     </suppress>
 
-    <suppress until="2022-12-01">
+    <suppress until="2023-05-01">
         <!-- same as above -->
         <notes><![CDATA[file name: jmespath-java-*.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.amazonaws/jmespath\-java@.*$</packageUrl>
         <cve>CVE-2022-31159</cve>
+    </suppress>
+
+    <suppress until="2023-05-01">
+        <!-- same as above -->
+        <notes><![CDATA[file name: aws-java-sdk-secretsmanager-1.12.252.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.amazonaws/aws\-java\-sdk\-secretsmanager@.*$</packageUrl>
+        <cve>CVE-2022-31159</cve>
+    </suppress>
+
+    <suppress until="2023-05-01">
+        <notes><![CDATA[file name: guava-31.1-jre.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
+
+        <!-- Currently not using vulnerability-creating method com.google.common.io.Files.createTempDir() -->
+        <cve>CVE-2020-8908</cve>
     </suppress>
 
     <!--
