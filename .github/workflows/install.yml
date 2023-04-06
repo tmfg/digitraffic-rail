@@ -3,14 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment'
+        description: "Environment"
         required: true
         type: environment
-        default: 'beta'
+        default: "beta"
       ref:
-        description: 'Branch/tag/SHA of digitraffic-road-private'
+        description: "Branch/tag/SHA of digitraffic-road-private"
         required: true
-        default: 'master'
+        default: "master"
       app:
         description: Application
         required: true
@@ -19,14 +19,14 @@ on:
           - server
           - updater
       config-repo-branch:
-        description: 'Config repo branch'
+        description: "Config repo branch"
         default: master
         required: true
         type: string
 jobs:
   install:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       id-token: write
       contents: read
@@ -45,7 +45,7 @@ jobs:
           ref: ${{ inputs.config-repo-branch }}
           path: config
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}

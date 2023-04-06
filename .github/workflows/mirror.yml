@@ -1,4 +1,4 @@
-name: 'Mirror repo to public'
+name: "Mirror repo to public"
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
 jobs:
   Mirror-action:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Mirror
         uses: tmfg/digitraffic-actions@mirror/v2

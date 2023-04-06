@@ -3,11 +3,11 @@ on:
   push:
     branches: [master]
   schedule:
-    - cron: '0 8 * * *' # UTC
+    - cron: "0 8 * * *" # UTC
 jobs:
   dependency-check:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3

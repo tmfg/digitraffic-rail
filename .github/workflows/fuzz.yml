@@ -1,12 +1,12 @@
 name: Fuzz
 on:
   schedule:
-    - cron: '0 8 * * *' # UTC
+    - cron: "0 8 * * *" # UTC
   workflow_dispatch:
 jobs:
   fuzz:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Fuzz
         uses: mprencipe/waggers-action@v2

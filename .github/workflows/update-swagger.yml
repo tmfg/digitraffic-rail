@@ -3,22 +3,22 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment'
+        description: "Environment"
         required: true
         type: environment
-        default: 'test'
+        default: "test"
 jobs:
   update-swagger:
     if: github.repository != 'tmfg/digitraffic-rail'
     environment: ${{ github.event.inputs.env }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       id-token: write
       contents: read
       actions: read
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_SWAGGER_ROLE }}
           role-session-name: gh-actions-update-swagger-rail-${{ github.event.inputs.env }}

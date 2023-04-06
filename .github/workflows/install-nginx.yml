@@ -3,32 +3,32 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment'
+        description: "Environment"
         required: true
         type: environment
-        default: 'beta'
+        default: "beta"
       config-repo-branch:
-        description: 'Branch or tag of CI-repo'
+        description: "Branch or tag of CI-repo"
         required: true
-        default: 'master'
+        default: "master"
 jobs:
   log-parameters:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      -   name: Create parameters.txt
-          run: |
-            echo "User ${{ github.actor }} started install on $(date)" > parameters.txt
-            echo "Environment ${{ github.event.inputs.env }}" >> parameters.txt
-            echo "config-repo-branch ${{ github.event.inputs.config-repo-branch }}" >> parameters.txt
-      -   name: Upload parameters.txt
-          uses: actions/upload-artifact@v3
-          with:
-            name: parameters.txt
-            path: parameters.txt
+      - name: Create parameters.txt
+        run: |
+          echo "User ${{ github.actor }} started install on $(date)" > parameters.txt
+          echo "Environment ${{ github.event.inputs.env }}" >> parameters.txt
+          echo "config-repo-branch ${{ github.event.inputs.config-repo-branch }}" >> parameters.txt
+      - name: Upload parameters.txt
+        uses: actions/upload-artifact@v3
+        with:
+          name: parameters.txt
+          path: parameters.txt
   image:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       id-token: write
       contents: read
@@ -56,11 +56,11 @@ jobs:
           docker build -t nginx-rail-${{ github.event.inputs.env }} --build-arg APPNAME=rail --build-arg ENVIRONMENT=${{ env.ENVIRONMENT }} .
           docker run --rm -t nginx-rail-${{ github.event.inputs.env }} nginx -t
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-image-rail-nginx-${{ github.event.inputs.env }}
@@ -83,7 +83,7 @@ jobs:
           docker push ${{ secrets.ECR_URL }}/rata-nginx:latest
       - name: Update nginx task-def
         id: update
-        uses: tmfg/digitraffic-actions@update-task-def/v1
+        uses: tmfg/digitraffic-actions@update-task-def/v2
         with:
           task-def-file-name: rail-${{ github.event.inputs.env }}-nginx
           family-name: rail-${{ github.event.inputs.env }}-nginx

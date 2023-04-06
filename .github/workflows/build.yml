@@ -3,7 +3,7 @@ on: [push]
 jobs:
   build:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       dt-rail-mysql:
         image: mysql:8.0

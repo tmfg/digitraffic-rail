@@ -2,17 +2,17 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron: '22 20 * * 0'
+    - cron: "22 20 * * 0"
 
 jobs:
   analyze:
     if: github.repository == 'tmfg/digitraffic-rail'
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     permissions:
       security-events: write
@@ -20,21 +20,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java' ]
+        language: ["java"]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
-      with:
-        category: "/language:${{matrix.language}}"
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{matrix.language}}"

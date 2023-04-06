@@ -3,38 +3,38 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment'
+        description: "Environment"
         required: true
         type: environment
-        default: 'beta'
+        default: "beta"
       application-name:
-        description: 'Application to install'
+        description: "Application to install"
         required: true
         type: choice
         options:
           - infra-api
           - etj2-api
       config-branch:
-        description: 'Config repo branch'
+        description: "Config repo branch"
         default: master
         required: true
         type: string
       suffix:
-        description: 'Username suffix (db schema revision for the application)'
+        description: "Username suffix (db schema revision for the application)"
         required: true
         type: string
 jobs:
   deploy:
     if: github.repository != 'tmfg/digitraffic-rail'
     environment: ${{ github.event.inputs.env }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       id-token: write
       contents: read
       actions: read
     steps:
       - name: Configure AWS credentials for rail-${{ github.event.inputs.env }}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
