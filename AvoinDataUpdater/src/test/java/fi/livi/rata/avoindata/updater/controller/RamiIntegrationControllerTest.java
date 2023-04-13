@@ -6,11 +6,16 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.IOException;
+import java.nio.file.Files;
+
 import org.apache.http.HttpHeaders;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -23,13 +28,24 @@ public class RamiIntegrationControllerTest extends BaseTest {
     @Autowired
     private MockMvc mvc;
 
-    @Value("${rami.api-key}")
-    private String testApiKey;
 
-    private final String validRamiMessage = "{ \"headers\": { \"e2eId\": \"f8635d35-216a-4f1d-bd8b-2d994a4e0f72\", \"eventType\": \"ExternalScheduledMessage\", \"source\": \"mop-mms-ifmb-schedule-scheduledmsgmgr\", \"eventId\": \"123\", \"recordedAtTime\": \"2022-09-14T10:26:04.624Z\" }, \"payload\": { \"messageVersion\": 1, \"messageId\": \"SHM20211217103239796\", \"title\": \"Title message\", \"messageType\": \"SCHEDULED_MESSAGE\", \"operation\": \"INSERT\", \"startValidity\": \"2023-04-06T13:04:13.321Z\", \"endValidity\": \"2023-04-08T13:04:13.321Z\", \"creationDateTime\": \"2023-04-06T13:04:13.321Z\", \"messageContent\": \"liirum laarum\" } }";
-    private final String invalidRamiMessage = "{ \"headers\": { \"eventType\": \"ExternalScheduledMessage\", \"source\": \"mop-mms-ifmb-schedule-scheduledmsgmgr\", \"eventId\": \"123\", \"recordedAtTime\": \"2022-09-14T10:26:04.624Z\" }, \"payload\": { \"messageVersion\": 1, \"messageId\": \"SHM20211217103239796\", \"title\": \"Title message\", \"messageType\": \"SCHEDULED_MESSAGE\", \"operation\": \"INSERT\", \"startValidity\": \"2023-04-06T13:04:13.321Z\", \"endValidity\": \"2023-04-08T13:04:13.321Z\", \"creationDateTime\": \"2023-04-06T13:04:13.321Z\", \"messageContent\": \"liirum laarum\" } }";
+    private static String testApiKey;
+    private static String validRamiMessage;
+    private static String invalidRamiMessage;
+    private final String validationError = "e2eId: is missing";
 
-      private final String validationError = "e2eId: is missing";
+    @BeforeAll
+    public static void setupTests(
+            @Value("classpath:rami/validRamiMessage.json")
+            final Resource validRamiMessageJson,
+            @Value("classpath:rami/invalidRamiMessage.json")
+            final Resource invalidRamiMessageJson,
+            @Value("${rami.api-key}")
+            final String testApiKeyValue) throws IOException {
+        validRamiMessage = new String(Files.readAllBytes(validRamiMessageJson.getFile().toPath()));
+        invalidRamiMessage = new String(Files.readAllBytes(invalidRamiMessageJson.getFile().toPath()));
+        testApiKey = testApiKeyValue;
+    }
 
     @Test
     public void correctApiKeyIsRequired() throws Exception {
