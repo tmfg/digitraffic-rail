@@ -21,7 +21,7 @@ import fi.livi.rata.avoindata.updater.service.rami.RamiValidationService;
 @ConditionalOnProperty(prefix="rami", name="enabled", havingValue="true")
 public class RamiIntegrationController {
 
-    public static final String BASE_PATH = "/api/rami/incoming";
+    public static final String BASE_PATH = "/api/v1/rami/incoming";
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -43,22 +43,6 @@ public class RamiIntegrationController {
             return ResponseEntity.ok().build();
         } else {
             logger.warn("Received invalid RAMI message: {} with validation errors: {}", body, errors);
-            return ResponseEntity.badRequest().body(errors.toString());
-        }
-    }
-
-    @PostMapping(value = BASE_PATH + "/situation",
-                 consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ResponseEntity handleSituation(
-            @RequestBody
-            final JsonNode body) {
-        final Set<ValidationMessage> errors = ramiValidationService.validateRamiSituation(body);
-        if (errors.isEmpty()) {
-            logger.info("Received valid RAMI situation: {}", body);
-            return ResponseEntity.ok().build();
-        } else {
-            logger.warn("Received invalid RAMI situation: {} with validation errors: {}", body, errors);
             return ResponseEntity.badRequest().body(errors.toString());
         }
     }
