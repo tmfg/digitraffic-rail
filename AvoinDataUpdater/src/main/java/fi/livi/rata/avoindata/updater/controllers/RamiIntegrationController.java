@@ -22,6 +22,7 @@ import fi.livi.rata.avoindata.updater.service.rami.RamiValidationService;
 public class RamiIntegrationController {
 
     public static final String BASE_PATH = "/api/v1/rami/incoming";
+    public static final String BASE_PATH_ALTERNATE = "/api/rami/incoming";
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -31,7 +32,7 @@ public class RamiIntegrationController {
         this.ramiValidationService = ramiValidationService;
     }
 
-    @PostMapping(value = BASE_PATH + "/message",
+    @PostMapping(value = { BASE_PATH + "/message",  BASE_PATH_ALTERNATE + "/message"},
                  consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity handleMessage(
