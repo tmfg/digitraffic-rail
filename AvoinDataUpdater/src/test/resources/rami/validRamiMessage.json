@@ -15,6 +15,19 @@
     "startValidity": "2023-04-06T13:04:13.321Z",
     "endValidity": "2023-04-08T13:04:13.321Z",
     "creationDateTime": "2023-04-06T13:04:13.321Z",
-    "messageContent": "liirum laarum"
+    "scheduledMessage": {
+      "situations": null,
+      "deliveryChannels": ["ONGROUND"],
+      "onGroundRecipient": {
+        "deliveryPoints": [
+          {
+            "id": "someid",
+            "nameLong": "somename"
+          }
+        ],
+        "messageContentType": "AUDIO"
+      }
+    },
+    "monitoredJourneyScheduledMessage": null
   }
 }

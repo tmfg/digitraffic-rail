@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
@@ -21,10 +22,12 @@ public class RamiValidationService {
     private final JsonSchemaFactory jsonSchemaFactory;
 
     public RamiValidationService(
-            @Value("classpath:schema/ramiScheduledMessage.json")
+            @Value("classpath:schema/ramiOperatorScheduledMessage.json")
             final Resource ramiMessageSchema) throws IOException {
+        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
+        config.setHandleNullableField(true);
         this.jsonSchemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
-        this.ramiMessageSchema = jsonSchemaFactory.getSchema(ramiMessageSchema.getInputStream());
+        this.ramiMessageSchema = jsonSchemaFactory.getSchema(ramiMessageSchema.getInputStream(), config);
     }
 
     public Set<ValidationMessage> validateRamiMessage(final JsonNode requestBody) {

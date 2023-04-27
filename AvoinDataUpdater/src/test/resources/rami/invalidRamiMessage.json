@@ -1,6 +1,5 @@
 {
   "headers": {
-    "eventType": "OperatorScheduledMessage",
     "source": "mop-mms-ifmb-schedule-scheduledmsgmgr",
     "eventId": "123",
     "recordedAtTime": "2022-09-14T10:26:04.624Z"
@@ -10,10 +9,9 @@
     "messageId": "SHM20211217103239796",
     "title": "Title message",
     "messageType": "SCHEDULED_MESSAGE",
-    "operation": "INSERT",
+    "operation": null,
     "startValidity": "2023-04-06T13:04:13.321Z",
     "endValidity": "2023-04-08T13:04:13.321Z",
-    "creationDateTime": "2023-04-06T13:04:13.321Z",
-    "messageContent": "liirum laarum"
+    "creationDateTime": "2023-04-06T13:04:13.321Z"
   }
 }
