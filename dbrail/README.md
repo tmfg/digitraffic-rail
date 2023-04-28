@@ -1,4 +1,4 @@
-# Digitraffic-road database
+# Digitraffic-rail database
 
 ## ;TL;TR
 

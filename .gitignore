@@ -5,3 +5,15 @@
 .DS_Store
 **pom.xml.versionsBackup
 **/profiles/dev/*
+
+# Test generated files
+/AvoinDataUpdater/agency.txt
+/AvoinDataUpdater/calendar.txt
+/AvoinDataUpdater/calendar_dates.txt
+/AvoinDataUpdater/feed_info.txt
+/AvoinDataUpdater/gtfs.zip
+/AvoinDataUpdater/routes.txt
+/AvoinDataUpdater/shapes.txt
+/AvoinDataUpdater/stop_times.txt
+/AvoinDataUpdater/stops.txt
+/AvoinDataUpdater/trips.txt

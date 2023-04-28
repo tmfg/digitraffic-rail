@@ -15,7 +15,7 @@
 
     <properties>
         <start-class>fi.livi.rata.avoindata.server.ServerApplication</start-class>
-        <spring.cloud.aws.version>2.4.3</spring.cloud.aws.version>
+        <spring.cloud.aws.version>2.4.4</spring.cloud.aws.version>
         <spring.cloud.commons.version>3.1.6</spring.cloud.commons.version>
     </properties>
 
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.15.3</version>
+            <version>1.15.4</version>
             <scope>test</scope>
         </dependency>
 
@@ -168,12 +168,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M7</version>
+                <version>3.0.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-junit-platform</artifactId>
-                        <version>3.0.0-M7</version>
+                        <version>3.0.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
