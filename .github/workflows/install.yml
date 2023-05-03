@@ -44,6 +44,10 @@ jobs:
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           ref: ${{ inputs.config-repo-branch }}
           path: config
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -61,13 +65,18 @@ jobs:
           mvn install -DskipTests=true -Ddependency-check.skip=true
           cp AvoinData${{ env.APP_CAPITALIZED }}/target/AvoinData${{ env.APP_CAPITALIZED }}-*-SNAPSHOT.jar config/aws/app.jar
           cd config/aws
-          docker build --no-cache \
+          docker buildx build \
+            --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=app.jar \
             --build-arg PROPERTY_FILE=conf/avoindata${{ github.event.inputs.app }}-${{ github.event.inputs.env }}.properties \
             --build-arg LOGCONF_FILE=conf/avoindata${{ github.event.inputs.app }}-logback.xml \
-            -t ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA} \
-            --pull=true --file=Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
+            --platform linux/arm64 \
+            --output type=docker \
+            --tag ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA} \
+            --pull=true \
+            --file=Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
+          
           docker push ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA}
       - name: Notify Slack
         if: failure()
