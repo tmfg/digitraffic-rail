@@ -1,0 +1,209 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Passenger Information API",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/active": {
+      "get": {
+        "tags": [
+          "passenger-information"
+        ],
+        "summary": "Currently active messages",
+        "parameters": [
+          {
+            "name": "station",
+            "in": "query",
+            "description": "Station short name",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "PSL"
+            }
+          },
+          {
+            "name": "trainNumber",
+            "in": "query",
+            "description": "Number of train",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 933
+            }
+          },
+          {
+            "name": "trainDepartureDate",
+            "in": "path",
+            "description": "Date of departure for train",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2023-04-27"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PassengerInformationMessage"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/updated-after": {
+      "get": {
+        "tags": [
+          "passenger-information"
+        ],
+        "summary": "Messages updated after time",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Date and time",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2023-04-27T10:55:07.842Z"
+            }
+          },
+          {
+            "name": "station",
+            "in": "query",
+            "description": "Station short name",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "PSL"
+            }
+          },
+          {
+            "name": "trainNumber",
+            "in": "query",
+            "description": "Number of train",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 933
+            }
+          },
+          {
+            "name": "trainDepartureDate",
+            "in": "path",
+            "description": "Date of departure for train",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2023-04-27"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PassengerInformationMessage"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PassengerInformationMessage": {
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "creationDateTime",
+          "startValidity",
+          "endValidity",
+          "message"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "MVM20230427185850100"
+          },
+          "version": {
+            "type": "integer",
+            "example": 1
+          },
+          "creationDateTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-04-27T10:55:07.842Z"
+          },
+          "startValidity": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-04-27T10:55:07.842Z"
+          },
+          "endValidity": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-04-29T00:00:00.000Z"
+          },
+          "trainNumber": {
+            "type": "integer",
+            "example": 933
+          },
+          "trainDepartureDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2023-04-27"
+          },
+          "stations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "PSL",
+              "TKL",
+              "LH"
+            ]
+          },
+          "message": {
+            "type": "object",
+            "properties": {
+              "fi": {
+                "type": "string",
+                "example": "Junassa vaunut 1-6 Kajaaniin ja vaunut 7-12 Joensuuhun."
+              },
+              "sv": {
+                "type": "string",
+                "example": "Vagnarna 1-6 till Kajana och vagnarna 7-12 till Joensuu."
+              },
+              "en": {
+                "type": "string",
+                "example": "Cars 1-6 to Kajaani and cars 7-12 to Joensuu."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
