@@ -151,12 +151,6 @@
         </dependency>
 
         <dependency>
-            <groupId>technology.dice.open</groupId>
-            <artifactId>dice-fairlink</artifactId>
-            <version>1.2.4</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>

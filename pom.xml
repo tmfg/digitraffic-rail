@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>2.7.11</spring.boot.version>
+        <spring.boot.version>2.7.12</spring.boot.version>
         <com.google.guava.version>31.1-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.7</aws.msql.driver.version>
         <logstash-logback-encoder.version>5.1</logstash-logback-encoder.version>
