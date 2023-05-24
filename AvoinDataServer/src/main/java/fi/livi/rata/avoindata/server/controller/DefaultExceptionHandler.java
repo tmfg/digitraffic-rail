@@ -23,9 +23,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
-import com.mysql.cj.jdbc.exceptions.MySQLTimeoutException;
+import java.sql.SQLTimeoutException;
 
 @ControllerAdvice
 @ResponseBody
@@ -35,22 +34,26 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(AbstractNotFoundException.class)
     @ResponseStatus(HttpStatus.OK)
-    public ExceptionMessage handleException(AbstractNotFoundException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleException(final AbstractNotFoundException e,
+                                            final HttpServletResponse response,
+                                            final HttpServletRequest request) {
         return createAndLogReturn(request, response, e.getMessage(), e.getCode());
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ExceptionMessage handleHttpMediaTypeNotAcceptableException(HttpMediaTypeNotAcceptableException e, HttpServletResponse response,
-            HttpServletRequest request) {
+    public ExceptionMessage handleHttpMediaTypeNotAcceptableException(final HttpMediaTypeNotAcceptableException e,
+                                                                      final HttpServletResponse response,
+                                                                      final HttpServletRequest request) {
         CacheControl.clearCacheMaxAgeSeconds(response);
 
         return createAndLogReturn(request, response, "HttpMediaTypeNotAcceptableException", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
-    private ExceptionMessage createAndLogReturn(HttpServletRequest request, HttpServletResponse response, String message,
-            ExceptionMessage.ErrorCodeEnum code) {
+    private ExceptionMessage createAndLogReturn(final HttpServletRequest request,
+                                                final HttpServletResponse response,
+                                                final String message,
+                                                final ExceptionMessage.ErrorCodeEnum code) {
         setResponseTypeToJson(response);
         ExceptionMessage exceptionMessage = new ExceptionMessage(message, code, request.getRequestURL().toString(),
                 request.getQueryString());
@@ -60,8 +63,9 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionMessage handleIllegalArgumentException(IllegalArgumentException e, HttpServletResponse response,
-                                                           HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleIllegalArgumentException(final IllegalArgumentException e,
+                                                           final HttpServletResponse response,
+                                                           final HttpServletRequest request) {
         setResponseTypeToJson(response);
         log.info(String.format("Threw IllegalArgumentException from url %s?%s", request.getRequestURL().toString(), request.getQueryString()), e);
         return new ExceptionMessage(e.getMessage(), ExceptionMessage.ErrorCodeEnum.ILLEGAL_ARGUMENT_EXCEPTION, request.getRequestURL().toString(), request.getQueryString());
@@ -69,8 +73,9 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(AbstractException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionMessage handleException(AbstractException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleException(final AbstractException e,
+                                            final HttpServletResponse response,
+                                            final HttpServletRequest request) {
         setResponseTypeToJson(response);
         log.info(String.format("Threw AbstractException from url %s?%s", request.getRequestURL().toString(), request.getQueryString()), e);
         return new ExceptionMessage(e.getMessage(), e.getCode(), request.getRequestURL().toString(), request.getQueryString());
@@ -78,10 +83,11 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(TypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionMessage handleConversionFailedException(TypeMismatchException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
-        String value = e.getValue().toString();
-        String targetTypeName = e.getRequiredType().getSimpleName();
+    public ExceptionMessage handleConversionFailedException(final TypeMismatchException e,
+                                                            final HttpServletResponse response,
+                                                            final HttpServletRequest request) {
+        final String value = e.getValue().toString();
+        final String targetTypeName = e.getRequiredType().getSimpleName();
 
         return createAndLogReturn(request, response,
                 String.format("Invalid format for parameter. Target type: %s, parameter: %s", targetTypeName, value),
@@ -90,9 +96,10 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(JpaSystemException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ExceptionMessage handleJpaSystemException(JpaSystemException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
-        if (e.getCause().getCause() instanceof MySQLTimeoutException) {
+    public ExceptionMessage handleJpaSystemException(final JpaSystemException e,
+                                                     final HttpServletResponse response,
+                                                     final HttpServletRequest request) {
+        if (e.getCause().getCause() instanceof SQLTimeoutException) {
             log.error(HttpUtils.getFullURL(request), e);
             return createAndLogReturn(request, response, "Server load too high. Please try again later",
                     ExceptionMessage.ErrorCodeEnum.TOO_MUCH_LOAD_IN_SYSTEM);
@@ -104,8 +111,10 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ExceptionMessage handleMissingServletRequestParameterException(MissingServletRequestParameterException e,
-            HttpServletResponse response, HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleMissingServletRequestParameterException(
+            final MissingServletRequestParameterException e,
+            final HttpServletResponse response,
+            final HttpServletRequest request) {
         log.debug("Debug handleMissingServletRequestParameterException exception {}",e);
         return createAndLogReturn(request, response,
                 String.format("The request was missing mandatory parameter. Parameter name is '%s' and type '%s'. Url: %s",
@@ -115,8 +124,9 @@ public class DefaultExceptionHandler {
 
     @ExceptionHandler({ClientAbortException.class})
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
-    public ExceptionMessage handleClientAbortException(ClientAbortException e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleClientAbortException(final ClientAbortException e,
+                                                       final HttpServletResponse response,
+                                                       final HttpServletRequest request) {
         log.warn("HandleClientAbortException exception {}",e);
         return createAndLogReturn(request, response, "Client aborted connection error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
@@ -124,13 +134,14 @@ public class DefaultExceptionHandler {
     @ExceptionHandler({Exception.class, RuntimeException.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @Order(Ordered.LOWEST_PRECEDENCE)
-    public ExceptionMessage handleRuntimeException(Exception e, HttpServletResponse response,
-            HttpServletRequest request) throws IOException {
+    public ExceptionMessage handleRuntimeException(final Exception e,
+                                                   final HttpServletResponse response,
+                                                   final HttpServletRequest request) {
         log.error(HttpUtils.getFullURL(request), e);
         return createAndLogReturn(request, response, "Internal error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
-    private static void setResponseTypeToJson(HttpServletResponse response) {
+    private static void setResponseTypeToJson(final HttpServletResponse response) {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     }
 

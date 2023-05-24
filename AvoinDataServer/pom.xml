@@ -84,9 +84,9 @@
             <version>3.0.1</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.connector.version}</version>
+            <groupId>software.aws.rds</groupId>
+            <artifactId>aws-mysql-jdbc</artifactId>
+            <version>${aws.msql.driver.version}</version>
         </dependency>
         <dependency>
             <groupId>net.rossillo.mvc.cache</groupId>
