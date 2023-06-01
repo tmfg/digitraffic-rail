@@ -61,12 +61,12 @@ public class RamiIntegrationController {
     }
 
     private void sendToQueue(final JsonNode ramiMessage) {
-        AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-        SendMessageRequest send_msg_request = new SendMessageRequest()
+        final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+        final SendMessageRequest request = new SendMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMessageBody(ramiMessage.toString())
                 .withDelaySeconds(5);
-        sqs.sendMessage(send_msg_request);
+        sqs.sendMessage(request);
     }
 
 }
