@@ -293,7 +293,7 @@
                           ]
                         },
                         "repetitions": {
-                          "minimum": 1,
+                          "minimum": 0,
                           "type": "integer",
                           "nullable": true,
                           "description": "number of times the audio message must be repeated each occurens. It is only used for REPEAT_EVERY type scheduling",
@@ -1028,7 +1028,8 @@
                   "description": "delivery type of message associated with vehicle journeys",
                   "enum": [
                     "ON_EVENT",
-                    "ON_SCHEDULE"
+                    "ON_SCHEDULE",
+                    null
                   ]
                 }
               },
@@ -1372,7 +1373,8 @@
       "description": "delivery type of message associated with vehicle journeys",
       "enum": [
         "ON_EVENT",
-        "ON_SCHEDULE"
+        "ON_SCHEDULE",
+        null
       ]
     },
     "MonitoredJourneyAudioMessageContents": {
@@ -1460,7 +1462,8 @@
           "description": "delivery type of message associated with vehicle journeys",
           "enum": [
             "ON_EVENT",
-            "ON_SCHEDULE"
+            "ON_SCHEDULE",
+            null
           ]
         }
       },
@@ -1648,7 +1651,8 @@
               "description": "delivery type of message associated with vehicle journeys",
               "enum": [
                 "ON_EVENT",
-                "ON_SCHEDULE"
+                "ON_SCHEDULE",
+                null
               ]
             }
           },
@@ -3340,7 +3344,8 @@
                   "description": "delivery type of message associated with vehicle journeys",
                   "enum": [
                     "ON_EVENT",
-                    "ON_SCHEDULE"
+                    "ON_SCHEDULE",
+                    null
                   ]
                 }
               },
@@ -4409,7 +4414,8 @@
                       "description": "delivery type of message associated with vehicle journeys",
                       "enum": [
                         "ON_EVENT",
-                        "ON_SCHEDULE"
+                        "ON_SCHEDULE",
+                        null
                       ]
                     }
                   },
