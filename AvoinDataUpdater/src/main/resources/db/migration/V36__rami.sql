@@ -41,7 +41,7 @@ CREATE TABLE rami_message_video
     end_date_time DATETIME NULL,
     start_time TIME NULL,
     end_time TIME NULL,
-    days_of_week BIT(7) NULL,
+    days_of_week BIT(7) DEFAULT b'0000000',
     CONSTRAINT FK_rami_message_video
         FOREIGN KEY (rami_message_id, rami_message_version) REFERENCES rami_message (id, version)
             ON UPDATE CASCADE ON DELETE CASCADE
@@ -57,11 +57,12 @@ CREATE TABLE rami_message_audio
     text_sv TEXT NULL,
     text_en TEXT NULL,
     delivery_type ENUM('ON_EVENT', 'ON_SCHEDULE', 'NOW', 'DELIVERY_AT', 'REPEAT_EVERY') NULL,
+    event_type ENUM('ARRIVING', 'DEPARTING') NULL,
     start_date_time DATETIME NULL,
     end_date_time DATETIME NULL,
     start_time TIME NULL,
     end_time TIME NULL,
-    days_of_week BIT(7) NULL,
+    days_of_week BIT(7) DEFAULT b'0000000',
     delivery_at DATETIME NULL,
     repetitions SMALLINT UNSIGNED NULL,
     repeat_every MEDIUMINT UNSIGNED NULL,
