@@ -25,7 +25,7 @@ import static org.apache.commons.lang3.BooleanUtils.isTrue;
 @Service
 public class FeedMessageService {
     private static final Logger log = LoggerFactory.getLogger(FeedMessageService.class);
-    private static final int PAST_LIMIT_MINUTES = 30;
+    public static final int PAST_LIMIT_MINUTES = 30;
 
     private final GTFSTripRepository gtfsTripRepository;
 
@@ -143,7 +143,7 @@ public class FeedMessageService {
                     .build());
         }
         if(departureHasTime) {
-            // sometimes departure has live estimate that is before arrival's scheduled time(and departure has no estimate or actual time)
+            // sometimes departure has live estimate that is before arrival's scheduled time(and arrival has no estimate or actual time)
             // in that case, fake a delay for arrival that's equals to departure's delay
             if(arrival != null && !arrivalHasTime && arrival.scheduledTime.isAfter(departure.getActualOrEstimate())) {
                 builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
@@ -173,12 +173,23 @@ public class FeedMessageService {
         return current.hasDeparture() && current.getDeparture().getDelay() != previousDelay;
     }
 
+    private List<GTFSTimeTableRow> getActiveTimetableRows(final GTFSTrain train) {
+        return train.timeTableRows.stream()
+                .filter(row -> !row.cancelled)
+                .toList();
+    }
+
     private List<GtfsRealtime.TripUpdate.StopTimeUpdate> createStopTimeUpdates(final GTFSTrain train) {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
+        final List<GTFSTimeTableRow> activeRows = getActiveTimetableRows(train);
         int stopSequence = FIRST_STOP_SEQUENCE;
 
+        if(activeRows.isEmpty()) {
+            return updates; // return empty list, yes
+        }
+
         // this is then previous stop that was added to updates-list
-        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, train.timeTableRows.get(0));
+        GtfsRealtime.TripUpdate.StopTimeUpdate previous = createStopTimeUpdate(stopSequence++, null, activeRows.get(0));
         if(previous != null) {
             // if first stop and delay is negative, then
             // we generate a new stop with fabricated arrival that has the same delay as the departure
@@ -202,9 +213,9 @@ public class FeedMessageService {
             updates.add(previous);
         }
 
-        for(int i = 1; i < train.timeTableRows.size();) {
-            final GTFSTimeTableRow arrival = train.timeTableRows.get(i++);
-            final GTFSTimeTableRow departure = train.timeTableRows.size() == i ? null : train.timeTableRows.get(i++);
+        for(int i = 1; i < activeRows.size();) {
+            final GTFSTimeTableRow arrival = activeRows.get(i++);
+            final GTFSTimeTableRow departure = activeRows.size() == i ? null : activeRows.get(i++);
 
             // skip stations where train does not stop
             if(includeStop(arrival, departure)) {
