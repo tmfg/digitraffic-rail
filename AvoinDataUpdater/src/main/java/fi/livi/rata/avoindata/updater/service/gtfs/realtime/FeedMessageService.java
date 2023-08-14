@@ -176,7 +176,7 @@ public class FeedMessageService {
     private List<GTFSTimeTableRow> getActiveTimetableRows(final GTFSTrain train) {
         return train.timeTableRows.stream()
                 .filter(row -> !row.cancelled)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private List<GtfsRealtime.TripUpdate.StopTimeUpdate> createStopTimeUpdates(final GTFSTrain train) {

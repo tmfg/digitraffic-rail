@@ -126,13 +126,13 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
     @Test
     public void createEntity() {
-        final GTFSTrain train1 = createTestTrain();
+        final GTFSTrain train2 = createTestTrain2();
 
-        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train1));
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
 
         assertFeedMessage(message, 1);
-        assertStopUpdates(message, 0, 2,
-                0, 600, 1200, 0);
+        assertStopUpdates(message, 0, 3,
+                0, 600, 1200, 600, 1200, 0);
     }
 
     @Test
