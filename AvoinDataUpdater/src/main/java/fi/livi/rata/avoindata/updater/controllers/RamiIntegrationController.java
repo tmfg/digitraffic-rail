@@ -76,8 +76,7 @@ public class RamiIntegrationController {
         final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
         final SendMessageRequest request = new SendMessageRequest()
                 .withQueueUrl(queueUrl)
-                .withMessageBody(ramiMessage.toString())
-                .withDelaySeconds(5);
+                .withMessageBody(ramiMessage.toString());
         return sqs.sendMessage(request);
     }
 
