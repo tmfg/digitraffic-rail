@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.controller;
 
 import static fi.livi.rata.avoindata.updater.config.RamiApiKeyValidationFilter.INVALID_API_KEY_ERROR;
 import static fi.livi.rata.avoindata.updater.controllers.RamiIntegrationController.BASE_PATH;
-import static fi.livi.rata.avoindata.updater.controllers.RamiIntegrationController.BASE_PATH_ALTERNATE;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,7 +27,6 @@ public class RamiIntegrationControllerTest extends BaseTest {
 
     @Autowired
     private MockMvc mvc;
-
 
     private static String testApiKey;
     private static String validRamiMessage;
@@ -79,17 +77,6 @@ public class RamiIntegrationControllerTest extends BaseTest {
                         .content(invalidRamiMessage))
                 .andExpect(content().string(containsString(validationError)))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void validRamiMessageReturns200FromAlternatePath() throws Exception {
-        mvc.perform(MockMvcRequestBuilders
-                        .post(BASE_PATH_ALTERNATE + "/message")
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                        .header("API-KEY", testApiKey)
-                        .content(validRamiMessage))
-                .andExpect(content().string(""))
-                .andExpect(status().isOk());
     }
 
 }
