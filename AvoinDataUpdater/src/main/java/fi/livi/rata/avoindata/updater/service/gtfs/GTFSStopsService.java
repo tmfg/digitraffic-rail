@@ -56,12 +56,19 @@ public class GTFSStopsService {
         customCoordinates.put("MVA", new double[]{55.776115, 37.655077});
         customCoordinates.put("PRK", new double[]{61.783872, 34.344124});
 
-        // Infra 2013
+        // Infra 2023
         customCoordinates.put("KSN", this.liviToWsgArray(7140104, 546725));
         customCoordinates.put("ILH", this.liviToWsgArray(6974203, 534546));
         customCoordinates.put("MKN", this.liviToWsgArray(7287986, 400875));
         customCoordinates.put("LHS", this.liviToWsgArray(7254117, 424951));
         customCoordinates.put("SHS", this.liviToWsgArray(7294961, 386825));
+
+        // Infra 2024
+        customCoordinates.put("RLA", new double[]{62.757093, 22.944153});
+        customCoordinates.put("PVL", new double[]{60.646683, 24.841208});
+        customCoordinates.put("NUA", new double[]{64.561799, 26.678054});
+        customCoordinates.put("KPP", new double[]{62.572101, 29.792191});
+        customCoordinates.put("KOM", new double[]{63.663573, 26.153949});
     }
 
     @Autowired
@@ -73,9 +80,8 @@ public class GTFSStopsService {
     public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                          final List<SimpleTimeTableRow> timeTableRows,
                                          final PlatformData platformData) {
-        List<Stop> stops = new ArrayList<>();
-
-        Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
+        final List<Stop> stops = new ArrayList<>();
+        final Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
 
         timeTableRows.forEach(ttr -> {
             if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
@@ -84,7 +90,7 @@ public class GTFSStopsService {
             }
         });
 
-        Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
+        final Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
         for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
             final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
             for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
@@ -96,20 +102,19 @@ public class GTFSStopsService {
         }
 
         for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
-            String stationShortCode = stationEmbeddable.stationShortCode;
+            final String stationShortCode = stationEmbeddable.stationShortCode;
             final Station station = stationRepository.findByShortCode(stationShortCode);
 
-            Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
-            Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
+            final Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
+            final Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
 
             stops.add(stationEntry);
             stops.add(tracklessStop);
 
-            for (String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
+            for (final String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
                 if (station != null) {
-                    Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
-
-                    Platform platformStop = createPlatformStop(station, infraApiPlatform, scheduledTrack);
+                    final Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
+                    final Platform platformStop = createPlatformStop(station, infraApiPlatform, scheduledTrack);
 
                     stops.add(platformStop);
                 }
@@ -120,7 +125,7 @@ public class GTFSStopsService {
     }
 
     private Stop createStationStop(final Station station, final String stationShortCode, final int locationType) {
-        Stop stop = new Stop(station);
+        final Stop stop = new Stop(station);
         stop.stopId = locationType == LOCATION_TYPE_STOP ?
                       stationShortCode + "_0" :
                       stationShortCode;
@@ -156,13 +161,13 @@ public class GTFSStopsService {
         return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
     }
 
-    private double[] liviToWsgArray(double p, double i) {
-        ProjCoordinate wsg84 = this.wgs84ConversionService.liviToWgs84(i, p);
+    private double[] liviToWsgArray(final double p, final double i) {
+        final ProjCoordinate wsg84 = this.wgs84ConversionService.liviToWgs84(i, p);
         return new double[] { wsg84.y, wsg84.x };
     }
 
-    private void setCustomLocations(String stationShortCode, Stop stop) {
-        double[] coordinates = customCoordinates.get(stationShortCode);
+    private void setCustomLocations(final String stationShortCode, final Stop stop) {
+        final double[] coordinates = customCoordinates.get(stationShortCode);
         if (coordinates != null) {
             stop.latitude = coordinates[0];
             stop.longitude = coordinates[1];

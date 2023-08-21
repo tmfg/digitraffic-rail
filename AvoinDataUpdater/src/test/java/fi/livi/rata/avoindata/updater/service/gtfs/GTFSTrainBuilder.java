@@ -42,7 +42,7 @@ public class GTFSTrainBuilder {
 
     public GTFSTrainBuilder rowCancelled() {
         if(this.rows.isEmpty()) {
-            throw new IllegalArgumentException("now rows");
+            throw new IllegalArgumentException("no row to cancel");
         }
 
         this.rows.get(this.rows.size() - 1).cancelled = true;
@@ -53,7 +53,7 @@ public class GTFSTrainBuilder {
     /// set the estimate, offset from the scheduled time
     public GTFSTrainBuilder rowEstimate(final long offsetMinutes) {
         if(this.rows.isEmpty()) {
-            throw new IllegalArgumentException("now rows");
+            throw new IllegalArgumentException("no row to estimate");
         }
 
         this.rows.get(this.rows.size() - 1).actualTime = this.rows.get(this.rows.size() - 1).scheduledTime.plusMinutes(offsetMinutes);
@@ -64,10 +64,10 @@ public class GTFSTrainBuilder {
     private GTFSTrainBuilder addRow(final TimeTableRow.TimeTableRowType type, final String stationCode, final long offsetMinutes) {
         if(this.rows.isEmpty()) {
             if(type == TimeTableRow.TimeTableRowType.ARRIVAL) {
-                throw new IllegalArgumentException("first row must be departure!");
+                throw new IllegalArgumentException("first row must be departure");
             }
         } else if(this.rows.get(this.rows.size() - 1).type == type) {
-            throw new IllegalArgumentException("fix row types!");
+            throw new IllegalArgumentException("fix row types");
         }
 
         final GTFSTimeTableRow row = new GTFSTimeTableRow();
