@@ -5,7 +5,9 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,11 +15,13 @@ public class GTFSTrainBuilder {
     private final TrainId trainId;
 
     private final List<GTFSTimeTableRow> rows = new ArrayList<>();
+    private final LocalTime startTime;
     private boolean cancelled = false;
     private long version = 1;
 
-    public GTFSTrainBuilder(final TrainId trainId) {
+    public GTFSTrainBuilder(final TrainId trainId, final LocalTime startTime) {
         this.trainId = trainId;
+        this.startTime = startTime;
     }
 
     public GTFSTrainBuilder cancelled() {
@@ -50,8 +54,8 @@ public class GTFSTrainBuilder {
         return this;
     }
 
-    /// set the estimate, offset from the scheduled time
-    public GTFSTrainBuilder rowEstimate(final long offsetMinutes) {
+    /// set the actual time, offset from the scheduled time
+    public GTFSTrainBuilder rowActualTime(final long offsetMinutes) {
         if(this.rows.isEmpty()) {
             throw new IllegalArgumentException("no row to estimate");
         }
@@ -74,7 +78,7 @@ public class GTFSTrainBuilder {
         row.type = type;
         row.stationShortCode = stationCode;
         row.commercialStop = true;
-        row.scheduledTime = this.trainId.departureDate.atStartOfDay(ZoneId.of("UTC")).plusMinutes(offsetMinutes);
+        row.scheduledTime = ZonedDateTime.of(trainId.departureDate, startTime, ZoneId.of("UTC")).plusMinutes(offsetMinutes);
 
         this.rows.add(row);
 

@@ -145,10 +145,19 @@ public class FeedMessageService {
         if(departureHasTime) {
             // sometimes departure has live estimate that is before arrival's scheduled time(and arrival has no estimate or actual time)
             // in that case, fake a delay for arrival that's equals to departure's delay
-            if(arrival != null && !arrivalHasTime && arrival.scheduledTime.isAfter(departure.getActualOrEstimate())) {
-                builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
-                        .setDelay(departure.delayInSeconds())
-                        .build());
+            if(arrival != null) {
+                if (!arrivalHasTime && arrival.scheduledTime.isAfter(departure.getActualOrEstimate())) {
+                    builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
+                            .setDelay(departure.delayInSeconds())
+                            .build());
+                }
+                // sometimes departure might have estimate or actual that is before the arrival's actual or estimate
+                // in that case, fake arrival to match departure
+                if(arrivalHasTime && arrival.getActualOrEstimate().isAfter(departure.getActualOrEstimate())) {
+                    builder.setArrival(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()
+                            .setDelay(departure.delayInSeconds())
+                            .build());
+                }
             }
 
             builder.setDeparture(GtfsRealtime.TripUpdate.StopTimeEvent.newBuilder()

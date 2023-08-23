@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -74,10 +75,10 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
     private GTFSTrain createTestTrain() {
         // create test train with row estimates
-        final GTFSTrain train1 = new GTFSTrainBuilder(new TrainId(1, TEST_DATE_TODAY))
+        final GTFSTrain train1 = new GTFSTrainBuilder(new TrainId(1, TEST_DATE_TODAY), LocalTime.now())
                 .version(1)
-                .departure("S1", 10).rowEstimate(10)
-                .arrival("S2", 20).rowEstimate(20)
+                .departure("S1", 10).rowActualTime(10)
+                .arrival("S2", 20).rowActualTime(20)
                 .build();
         final GTFSTrip trip1 = createTrip(1, TEST_DATE_TODAY, GTFS_TRIP_VERSION); // 2 > 1
 
@@ -89,12 +90,12 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
     private GTFSTrain createTestTrain2() {
         // create test train with row estimates
-        final GTFSTrain train1 = new GTFSTrainBuilder(new TrainId(2, TEST_DATE_TODAY))
+        final GTFSTrain train1 = new GTFSTrainBuilder(new TrainId(2, TEST_DATE_TODAY), LocalTime.now())
                 .version(1)
-                .departure("S1", 10).rowEstimate(10)
-                .arrival("S2", 20).rowEstimate(20)
-                .departure("S2", 22).rowEstimate(10)
-                .arrival("S3", 27).rowEstimate(20)
+                .departure("S1", 10).rowActualTime(10)
+                .arrival("S2", 20).rowActualTime(11)
+                .departure("S2", 22).rowActualTime(10)
+                .arrival("S3", 27).rowActualTime(20)
                 .build();
         final GTFSTrip trip1 = createTrip(2, TEST_DATE_TODAY, GTFS_TRIP_VERSION); // 2 > 1
 
@@ -132,7 +133,7 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
         assertFeedMessage(message, 1);
         assertStopUpdates(message, 0, 3,
-                0, 600, 1200, 600, 1200, 0);
+                0, 600, 660, 600, 1200, 0);
     }
 
     @Test
@@ -155,6 +156,7 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train1));
 
+        // there should be only one stopUpdate, because the delay is same, so it won't be duplicated
         assertFeedMessage(message, 1);
         assertStopUpdates(message, 0, 1,
                 0, 600);
@@ -214,5 +216,24 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         assertFeedMessage(message, 1);
         assertStopUpdates(message, 0, 3,
                 0, 600, -240, -240, 1200, 0);
+    }
+
+    @Test
+    public void departureEstimateBeforeArrivalEstimate() {
+        final GTFSTrain train2 = createTestTrain2();
+        // arrival has no estimate, but departures estimate is before arrivals scheduled time
+        final GTFSTimeTableRow r1a = getRow(train2, 1, TimeTableRow.TimeTableRowType.ARRIVAL);
+        final GTFSTimeTableRow r1d = getRow(train2, 2, TimeTableRow.TimeTableRowType.DEPARTURE);
+
+        r1a.liveEstimateTime = r1a.actualTime;
+        r1d.actualTime = null;
+        r1d.liveEstimateTime = r1a.liveEstimateTime.minusMinutes(1); // departure estimate is 1 minute before arrival estimate
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        assertStopUpdates(message, 0, 3,
+                0, 600, 480, 480, 1200, 0);
+        // before 0, 600, 1200, 600, 1200, 0
     }
 }
