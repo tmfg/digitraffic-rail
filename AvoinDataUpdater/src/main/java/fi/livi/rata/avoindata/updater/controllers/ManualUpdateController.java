@@ -58,9 +58,6 @@ public class ManualUpdateController {
     private ScheduleProviderService scheduleProviderService;
 
     @Autowired
-    private GTFSRealtimeService gtfsRealtimeService;
-
-    @Autowired
     private DateProvider dp;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -127,9 +124,5 @@ public class ManualUpdateController {
 
         gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
         return true;
-    }
-
-    private boolean isPassengerTrain(Schedule s) {
-        return s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true);
     }
 }

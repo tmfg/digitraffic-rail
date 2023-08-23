@@ -90,7 +90,7 @@ public class GTFSWritingService {
     }
 
     private List<File> writeGtfsFiles(final GTFSDto gtfsDto) {
-        List<File> files = new ArrayList<>();
+        final List<File> files = new ArrayList<>();
 
         files.add(
                 write(getPath("agency.txt"), gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
@@ -111,9 +111,9 @@ public class GTFSWritingService {
         files.add(write(getPath("shapes.txt"), gtfsDto.shapes, "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence",
                 shape -> String.format("%s,%s,%s,%s", shape.shapeId, shape.latitude, shape.longitude, shape.sequence)));
 
-        List<StopTime> stopTimes = new ArrayList<>();
-        List<Calendar> calendars = new ArrayList<>();
-        Set<CalendarDate> calendarDates = new HashSet<>();
+        final List<StopTime> stopTimes = new ArrayList<>();
+        final List<Calendar> calendars = new ArrayList<>();
+        final Set<CalendarDate> calendarDates = new HashSet<>();
         for (final Trip trip : gtfsDto.trips) {
             stopTimes.addAll(trip.stopTimes);
             calendars.add(trip.calendar);
@@ -150,8 +150,8 @@ public class GTFSWritingService {
     }
 
     private void writeGtfsZipFile(final List<File> files, final String zipFileName) throws IOException {
-        FileOutputStream fos = new FileOutputStream(zipFileName);
-        ZipOutputStream zos = new ZipOutputStream(fos);
+        final FileOutputStream fos = new FileOutputStream(zipFileName);
+        final ZipOutputStream zos = new ZipOutputStream(fos);
 
         for (final File file : files) {
             zos.putNextEntry(new ZipEntry(file.getName()));
@@ -173,23 +173,24 @@ public class GTFSWritingService {
             return "";
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
         return localDateTime.format(formatter);
     }
 
-    public static String format(Duration duration) {
+    public static String format(final Duration duration) {
         if (duration == null) {
             return "";
         }
 
-        long seconds = duration.getSeconds();
-        long absSeconds = Math.abs(seconds);
-        String positive = String.format("%d:%02d:%02d", absSeconds / 3600, (absSeconds % 3600) / 60, absSeconds % 60);
+        final long seconds = duration.getSeconds();
+        final long absSeconds = Math.abs(seconds);
+        final String positive = String.format("%d:%02d:%02d", absSeconds / 3600, (absSeconds % 3600) / 60, absSeconds % 60);
+
         return seconds < 0 ? "-" + positive : positive;
     }
 
-    public static String formatBoolean(Boolean object) {
+    public static String formatBoolean(final Boolean object) {
         if (object == null) {
             return "";
         }
@@ -197,7 +198,7 @@ public class GTFSWritingService {
         return object ? "1" : "0";
     }
 
-    private String nullableToString(Object o) {
+    private String nullableToString(final Object o) {
         if (o == null) {
             return "";
         } else {

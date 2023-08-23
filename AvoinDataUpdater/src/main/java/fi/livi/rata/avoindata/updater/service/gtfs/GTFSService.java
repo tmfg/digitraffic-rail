@@ -82,18 +82,21 @@ public class GTFSService {
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
 
-    public GTFSDto createGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules, String zipFileName, boolean filterOutNonStops) throws IOException {
-        GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+    public GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
+                              final List<Schedule> passengerRegularSchedules,
+                              final String zipFileName,
+                              final boolean filterOutNonStops) throws IOException {
+        final GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
 
-        for (Stop stop : gfsDto.stops) {
+        for (final Stop stop : gfsDto.stops) {
             stop.name = stop.name.replace(" asema", "");
         }
 
-        for (Trip trip : gfsDto.trips) {
+        for (final Trip trip : gfsDto.trips) {
             trip.headsign = trip.headsign.replace(" asema", "");
         }
 
-        for (Trip trip : gfsDto.trips) {
+        for (final Trip trip : gfsDto.trips) {
             if (trip.stopTimes != null) {
                 if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
                     trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
@@ -104,7 +107,7 @@ public class GTFSService {
         }
 
         if (filterOutNonStops) {
-            for (Trip trip : gfsDto.trips) {
+            for (final Trip trip : gfsDto.trips) {
                 trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
             }
         }

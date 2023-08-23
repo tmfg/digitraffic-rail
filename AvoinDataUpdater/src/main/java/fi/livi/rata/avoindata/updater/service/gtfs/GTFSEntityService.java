@@ -59,10 +59,10 @@ public class GTFSEntityService {
         final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
         final PlatformData platformData = platformDataService.getCurrentPlatformData();
-
-        GTFSDto gtfsDto = new GTFSDto();
-
         final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformData);
+
+        final GTFSDto gtfsDto = new GTFSDto();
+
         gtfsDto.stops = Lists.newArrayList(stopMap.values());
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
         gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
@@ -74,10 +74,10 @@ public class GTFSEntityService {
 
     private Map<Long, Map<List<LocalDate>, Schedule>> createScheduleIntervals(final List<Schedule> adhocSchedules,
                                                                               final List<Schedule> regularSchedules) {
-        LocalDate start = dp.dateInHelsinki().minusDays(7);
-        LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
+        final LocalDate start = dp.dateInHelsinki().minusDays(7);
+        final LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
 
-        Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber = HashBasedTable.create();
+        final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber = HashBasedTable.create();
 
         for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
             final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules, regularSchedules);
@@ -88,12 +88,12 @@ public class GTFSEntityService {
             }
         }
 
-        Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervals = new HashMap<>();
+        final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervals = new HashMap<>();
 
         for (final Long trainNumber : daysSchedulesByTrainNumber.columnKeySet()) {
-            Map<List<LocalDate>, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
-            Map<List<LocalDate>, Schedule> endCorrectedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
-            Map<List<LocalDate>, Schedule> startCorrectedTrainsScheduleIntervals = correctIntervalStarts(endCorrectedTrainsScheduleIntervals);
+            final Map<List<LocalDate>, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
+            final Map<List<LocalDate>, Schedule> endCorrectedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
+            final Map<List<LocalDate>, Schedule> startCorrectedTrainsScheduleIntervals = correctIntervalStarts(endCorrectedTrainsScheduleIntervals);
 
             scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, startCorrectedTrainsScheduleIntervals);
         }
