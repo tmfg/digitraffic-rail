@@ -37,6 +37,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.inputs.ref }}
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
       - name: Checkout CI-repo
         uses: actions/checkout@v3
         with:
@@ -75,7 +81,7 @@ jobs:
             --output type=docker \
             --tag ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA} \
             --pull=true \
-            --file=Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
+            --file=docker/Dockerfile-rail-avoindata${{ github.event.inputs.app }} .
           
           docker push ${{ secrets.ECR_URL }}/avoindata-${{ github.event.inputs.app }}:${GITHUB_SHA}
       - name: Notify Slack
