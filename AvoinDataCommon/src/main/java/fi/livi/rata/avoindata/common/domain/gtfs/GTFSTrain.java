@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import org.hibernate.annotations.Immutable;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

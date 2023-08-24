@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api.metadata;
 
 import java.util.Collection;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -5,18 +5,20 @@ import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
@@ -89,13 +91,13 @@ public class TimeTableRow {
 
     @Column
     @JsonView({LiveTrains.class, ScheduleTrains.class})
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "Scheduled time for departure/arrival of the train")
     public ZonedDateTime scheduledTime;
 
     @Column
     @JsonView(LiveTrains.class)
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "Estimated time for departure/arrival of the train")
     public ZonedDateTime liveEstimateTime;
 
@@ -113,7 +115,7 @@ public class TimeTableRow {
     @Nullable
     @Column
     @JsonView(LiveTrains.class)
-    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "Actual time when train departured or arrived on the station")
     public ZonedDateTime actualTime;
 

@@ -5,7 +5,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.common.domain.trackwork;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 

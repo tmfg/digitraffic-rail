@@ -17,7 +17,6 @@ public class JourneyCompositionRow {
         this.type = type;
     }
 
-    @Type(type="org.hibernate.type.LocalDateTimeType")
     public LocalDateTime scheduledTime;
     public String stationShortCode;
     public int stationUICCode;

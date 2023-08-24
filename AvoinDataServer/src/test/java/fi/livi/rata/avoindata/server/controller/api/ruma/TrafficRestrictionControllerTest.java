@@ -47,12 +47,10 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void all() throws Exception {
-        int amount = random.nextInt(10);
-        IntStream.rangeClosed(1, amount).forEach(i -> {
-            factory.createPersist(1 + random.nextInt(10));
-        });
+        final int amount = random.nextInt(10);
+        IntStream.rangeClosed(1, amount).forEach(i -> factory.createPersist(1 + random.nextInt(10)));
 
-        ResultActions ra = getJson("/trafficrestriction-notifications/status");
+        final ResultActions ra = getJson("/trafficrestriction-notifications/status");
         ra.andExpect(jsonPath("$", hasSize(amount)));
     }
 
@@ -62,49 +60,49 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
         trn.get(0).limitation = TrafficRestrictionType.OTHER;
         repository.saveAll(trn);
 
-        ResultActions ra = getJson("/trafficrestriction-notifications/status");
+        final ResultActions ra = getJson("/trafficrestriction-notifications/status");
         ra.andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     public void all_after() throws Exception {
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.modified = ZonedDateTime.now().minusDays(10);
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.modified = ZonedDateTime.now().minusDays(5);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trafficrestriction-notifications/status?start=" + ZonedDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE_TIME));
+        final ResultActions ra = getJson("/trafficrestriction-notifications/status?start=" + ZonedDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(after.id.id));
     }
 
     @Test
     public void all_before() throws Exception {
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.modified = ZonedDateTime.now().minusMinutes(5);
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.modified = ZonedDateTime.now().plusMinutes(5);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson("/trafficrestriction-notifications/status?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        final ResultActions ra = getJson("/trafficrestriction-notifications/status?end=" + ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(before.id.id));
     }
 
     @Test
     public void all_between() throws Exception {
-        ZonedDateTime start = ZonedDateTime.now().minusHours(1);
-        ZonedDateTime end = ZonedDateTime.now().plusHours(1);
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final ZonedDateTime start = ZonedDateTime.now().minusHours(1);
+        final ZonedDateTime end = ZonedDateTime.now().plusHours(1);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.modified = start.minusMinutes(1);
-        TrafficRestrictionNotification between = factory.create(1).get(0);
+        final TrafficRestrictionNotification between = factory.create(1).get(0);
         between.modified = ZonedDateTime.now();
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.modified = end.plusMinutes(1);
         repository.saveAll(Arrays.asList(before, between, after));
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/status?start=%s&end=%s",
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/status?start=%s&end=%s",
                 start.format(DateTimeFormatter.ISO_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -113,10 +111,10 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void versions() throws Exception {
-        List<TrafficRestrictionNotification> trnVersions = factory.createPersist(1 + random.nextInt(10));
-        TrafficRestrictionNotification trn = trnVersions.get(0);
+        final List<TrafficRestrictionNotification> trnVersions = factory.createPersist(1 + random.nextInt(10));
+        final TrafficRestrictionNotification trn = trnVersions.get(0);
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s", trn.id.id));
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s", trn.id.id));
 
         ra.andExpect(jsonPath("$.id").value(trn.id.id));
         for (TrafficRestrictionNotification v : trnVersions) {
@@ -126,8 +124,8 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void versions_empty() throws Exception {
-        int trnId = random.nextInt(99999);
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s", trnId));
+        final int trnId = random.nextInt(99999);
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s", trnId));
 
         ra.andExpect(jsonPath("$.id").value(trnId));
         ra.andExpect(jsonPath("$.versions", empty()));
@@ -135,9 +133,9 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void singleVersion() throws Exception {
-        TrafficRestrictionNotification trn = factory.createPersist(1).get(0);
+        final TrafficRestrictionNotification trn = factory.createPersist(1).get(0);
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/%s", trn.id.id, trn.id.version));
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/%s", trn.id.id, trn.id.version));
 
         ra.andExpect(jsonPath("$[0]id").value(trn.id.id));
         ra.andExpect(jsonPath("$[0]version").value(trn.id.version));
@@ -145,17 +143,17 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void singleVersion_empty() throws Exception {
-        int trnId = random.nextInt(99999);
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/%s", trnId, random.nextInt(99999)));
+        final int trnId = random.nextInt(99999);
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/%s", trnId, random.nextInt(99999)));
 
         ra.andExpect(jsonPath("$", empty()));
     }
 
     @Test
     public void latestVersion() throws Exception {
-        TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
+        final TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest.json", trn.id.id));
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest.json", trn.id.id));
 
         ra.andExpect(jsonPath("$[0]id").value(trn.id.id));
         ra.andExpect(jsonPath("$[0]version").value(trn.id.version));
@@ -163,9 +161,9 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void latestVersionGeoJson() throws Exception {
-        TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
+        final TrafficRestrictionNotification trn = factory.createPersist(10).get(9);
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest.geojson", trn.id.id));
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications/%s/latest.geojson", trn.id.id));
 
         ra.andExpect(jsonPath("$.features", hasSize(1)));
         ra.andExpect(jsonPath("$.features[0].properties.id").value(trn.id.id));
@@ -174,25 +172,25 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void byState() throws Exception {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
+        final TrafficRestrictionNotification trn = factory.create(1).get(0);
         repository.save(trn);
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s", trn.state.name()));
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s", trn.state.name()));
 
         ra.andExpect(jsonPath("$[0]id").value(trn.id.id));
     }
 
     @Test
     public void byState_after() throws Exception {
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.state = TrafficRestrictionNotificationState.DRAFT;
         before.modified = ZonedDateTime.now().minusDays(10);
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.state = TrafficRestrictionNotificationState.DRAFT;
         after.modified = ZonedDateTime.now().minusDays(5);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&start=%s",
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&start=%s",
                 TrafficRestrictionNotificationState.DRAFT.name(),
                 ZonedDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -201,15 +199,15 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void byState_before() throws Exception {
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.state = TrafficRestrictionNotificationState.DRAFT;
         before.modified = ZonedDateTime.now().minusDays(6);
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.state = TrafficRestrictionNotificationState.DRAFT;
         after.modified = ZonedDateTime.now().minusDays(3);
         repository.saveAll(Arrays.asList(before, after));
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&end=%s",
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&end=%s",
                 TrafficRestrictionNotificationState.DRAFT.name(),
                 ZonedDateTime.now().minusDays(4).format(DateTimeFormatter.ISO_DATE_TIME)));
         ra.andExpect(jsonPath("$", hasSize(1)));
@@ -218,20 +216,20 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void byState_between() throws Exception {
-        ZonedDateTime start = ZonedDateTime.now().minusHours(1);
-        ZonedDateTime end = ZonedDateTime.now().plusHours(1);
-        TrafficRestrictionNotification before = factory.create(1).get(0);
+        final ZonedDateTime start = ZonedDateTime.now().minusHours(1);
+        final ZonedDateTime end = ZonedDateTime.now().plusHours(1);
+        final TrafficRestrictionNotification before = factory.create(1).get(0);
         before.state = TrafficRestrictionNotificationState.SENT;
         before.modified = start.minusMinutes(1);
-        TrafficRestrictionNotification between = factory.create(1).get(0);
+        final TrafficRestrictionNotification between = factory.create(1).get(0);
         between.state = TrafficRestrictionNotificationState.SENT;
         between.modified = ZonedDateTime.now();
-        TrafficRestrictionNotification after = factory.create(1).get(0);
+        final TrafficRestrictionNotification after = factory.create(1).get(0);
         after.state = TrafficRestrictionNotificationState.SENT;
         after.modified = end.plusMinutes(1);
         repository.saveAll(Arrays.asList(before, between, after));
 
-        ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&start=%s&end=%s",
+        final ResultActions ra = getJson(String.format("/trafficrestriction-notifications.json?state=%s&start=%s&end=%s",
                 TrafficRestrictionNotificationState.SENT,
                 start.format(DateTimeFormatter.ISO_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_DATE_TIME)));
@@ -241,10 +239,10 @@ public class TrafficRestrictionControllerTest extends MockMvcBaseTest {
 
     @Test
     public void geoJson() throws Exception {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
+        final TrafficRestrictionNotification trn = factory.create(1).get(0);
         repository.save(trn);
 
-        ResultActions ra = getGeoJson(String.format("/trafficrestriction-notifications.geojson?state=%s", trn.state.name()));
+        final ResultActions ra = getGeoJson(String.format("/trafficrestriction-notifications.geojson?state=%s", trn.state.name()));
 
         ra.andExpect(jsonPath("$.features", hasSize(1)));
     }

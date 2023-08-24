@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.server.controller.utils;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class CacheControl {
 

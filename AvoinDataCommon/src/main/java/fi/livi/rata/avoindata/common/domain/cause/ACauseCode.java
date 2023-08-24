@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.cause;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;

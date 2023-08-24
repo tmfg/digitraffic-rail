@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import org.springframework.beans.factory.annotation.Autowired;

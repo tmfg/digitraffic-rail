@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.server.config;
 
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 @Configuration
 public class DNSConfig {

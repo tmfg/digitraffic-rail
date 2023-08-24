@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocationId;
 
-import javax.persistence.Embedded;
+import jakarta.persistence.Embedded;
 
 public class TrainLocationV2 {
     @Embedded

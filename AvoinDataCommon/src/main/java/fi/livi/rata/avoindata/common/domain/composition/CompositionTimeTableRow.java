@@ -6,9 +6,11 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.*;
 
 @Entity
@@ -27,7 +29,7 @@ public class CompositionTimeTableRow {
     public TimeTableRow.TimeTableRowType type;
 
     @Column
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime scheduledTime;
 
     protected CompositionTimeTableRow() {

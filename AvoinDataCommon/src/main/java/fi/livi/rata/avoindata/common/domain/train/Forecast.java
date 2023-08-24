@@ -1,13 +1,15 @@
 package fi.livi.rata.avoindata.common.domain.train;
 
 import java.time.ZonedDateTime;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,7 +26,7 @@ public class Forecast {
     @Transient
     public ZonedDateTime lastModified;
 
-    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime forecastTime;
 
     @ManyToOne

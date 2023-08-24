@@ -122,15 +122,15 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "    ORDER BY t.actual_time DESC , t.predict_time ASC) inner_table " +
             "GROUP BY departure_date , train_number " +
             " ", nativeQuery = true)
-    List<Object[]> findLiveTrains(long version, int minutes);
+    List<Object[]> findLiveTrains(final long version, final int minutes);
 
-    @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and (?2 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
+    @Query(BASE_TRAIN_SELECT + " where train.id in (?1) " + BASE_TRAIN_ORDER)
     @Transactional(readOnly = true)
-    List<Train> findTrains(Collection<TrainId> trainIds, Boolean include_deleted);
+    List<Train> findTrainsIncludeDeleted(final Collection<TrainId> trainIds);
 
     @Query(BASE_TRAIN_SELECT + " where train.id in (?1) and " + IS_NOT_DELETED + " " + BASE_TRAIN_ORDER)
     @Transactional(readOnly = true)
-    List<Train> findTrains(Collection<TrainId> trainIds);
+    List<Train> findTrains(final Collection<TrainId> trainIds);
 
     @Query(BASE_TRAIN_SELECT + " " +
             " where " +

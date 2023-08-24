@@ -10,8 +10,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
+import org.hibernate.dialect.MySQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,21 +70,22 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional
-    public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version, HttpServletResponse response) {
+    public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version,
+                                          final HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
 
-        List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
-        List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
+        final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
+        final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
         final List<Train> trains = new LinkedList<>();
         if (!trainIds.isEmpty()) {
             bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
         }
 
-        List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
-        List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
+        final List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
+        final List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
         if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
             log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
         }
@@ -93,10 +95,10 @@ public class TrainController extends ADataController {
         return trains;
     }
 
-    private List<TrainId> createTrainIdsFromRawIds(List<Object[]> rawIds) {
+    private List<TrainId> createTrainIdsFromRawIds(final List<Object[]> rawIds) {
         return rawIds.stream().map(s -> {
-            long trainNumber = ((BigInteger) s[0]).longValue();
-            LocalDate departureDate = ((Date) s[1]).toLocalDate();
+            final long trainNumber = ((Long) s[0]).longValue();
+            final LocalDate departureDate = ((Date) s[1]).toLocalDate();
 
             return new TrainId(trainNumber, departureDate);
         }).collect(Collectors.toList());
@@ -106,7 +108,8 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/latest/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumber(@PathVariable final long train_number,
-                                             @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
+                                             @RequestParam(required = false, defaultValue = "0") final long version,
+                                             final HttpServletResponse response) {
         return this.getTrainByTrainNumberAndDepartureDate(train_number, null, false, version, response);
     }
 
@@ -114,9 +117,10 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     public List<Train> getTrainByTrainNumberAndDepartureDate(@PathVariable final long train_number,
-                                                             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-                                                             @RequestParam(required = false, defaultValue = "false") boolean include_deleted,
-                                                             @RequestParam(required = false, defaultValue = "0") long version, HttpServletResponse response) {
+                                                             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
+                                                             @RequestParam(required = false, defaultValue = "false") final boolean include_deleted,
+                                                             @RequestParam(required = false, defaultValue = "0") final long version,
+                                                             final HttpServletResponse response) {
 
         List<Train> trains = new ArrayList<>();
 
@@ -141,38 +145,45 @@ public class TrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
     public List<Train> getTrainsByDepartureDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-            @RequestParam(required = false, defaultValue = "false") boolean include_deleted, HttpServletResponse response) {
+            @PathVariable("departure_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departureDate,
+            @RequestParam(name = "include_deleted", required = false, defaultValue = "false") final boolean includeDeleted,
+            final HttpServletResponse response) {
 
-        List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departure_date);
+        final List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departureDate);
 
-        List<Train> trainsResponse;
+        final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
-            trainsResponse = findByIdService.findById(s -> trainRepository.findTrains(s, include_deleted), trainIds, Train::compareTo);
+            if(includeDeleted) {
+                trainsResponse = findByIdService.findById(s -> trainRepository.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
+            } else {
+                trainsResponse = findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+            }
         } else {
             trainsResponse = Lists.newArrayList();
         }
 
-        CacheControl.addHistoryCacheParametersForDailyResult(departure_date, response);
+        CacheControl.addHistoryCacheParametersForDailyResult(departureDate, response);
 
         return trainsResponse;
     }
 
-    private List<Train> getTrainWithoutDepartureDate(long train_number, long version, Boolean include_deleted) {
-        final List<Object[]> liveTrains = trainRepository.findLiveTrainByTrainNumber(train_number);
-        List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
+    private List<Train> getTrainWithoutDepartureDate(final long trainNumber,
+                                                     final long version,
+                                                     final boolean includeDeleted) {
+        final List<Object[]> liveTrains = trainRepository.findLiveTrainByTrainNumber(trainNumber);
+        final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return trainRepository.findTrains(trainsToRetrieve, include_deleted);
+            return includeDeleted ? trainRepository.findTrainsIncludeDeleted(trainsToRetrieve) : trainRepository.findTrains(trainsToRetrieve);
         }
 
         return Collections.EMPTY_LIST;
     }
 
-    private List<TrainId> extractNewerTrainIds(long version, List<Object[]> liveTrains) {
-        return liveTrains.stream().filter(train -> ((BigInteger) train[3]).longValue() > version).map(tuple -> {
-            LocalDate departureDate = LocalDate.from(((Date) tuple[1]).toLocalDate());
-            BigInteger trainNumber = (BigInteger) tuple[2];
+    private List<TrainId> extractNewerTrainIds(final long version, final List<Object[]> liveTrains) {
+        return liveTrains.stream().filter(train -> ((Long) train[3]).longValue() > version).map(tuple -> {
+            final LocalDate departureDate = LocalDate.from(((Date) tuple[1]).toLocalDate());
+            final Long trainNumber = (Long) tuple[2];
             return new TrainId(trainNumber.longValue(), departureDate);
         }).collect(Collectors.toList());
     }

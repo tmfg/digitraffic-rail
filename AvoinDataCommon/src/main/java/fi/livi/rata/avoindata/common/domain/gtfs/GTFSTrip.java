@@ -3,9 +3,9 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.time.LocalDate;
 
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "gtfs_trip")

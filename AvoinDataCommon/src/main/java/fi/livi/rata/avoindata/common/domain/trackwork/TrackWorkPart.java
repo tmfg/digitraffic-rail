@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.common.domain.trackwork;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import fi.livi.rata.avoindata.common.converter.StringListConverter;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;

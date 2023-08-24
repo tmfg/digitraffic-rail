@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.updater.updaters;
 
 import java.util.function.Consumer;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -10,14 +10,15 @@ import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.util.Timeout;
 import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,47 +48,48 @@ class RestTemplateFactory {
 
     @Bean
     public RequestConfig requestConfig() {
-        RequestConfig result = RequestConfig.custom()
-                .setConnectTimeout(CONNECTION_TIMEOUT)
-                .setSocketTimeout(READ_TIMEOUT)
+        return RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+               // .setSocketTimeout(READ_TIMEOUT)
                 .build();
-        return result;
     }
 
     @Bean
-    public CloseableHttpClient httpClient(RequestConfig requestConfig) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public CloseableHttpClient httpClient(final RequestConfig requestConfig) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         log.info("Creating trustStore");
 
-        TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+        final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
 
-        SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
-                .loadTrustMaterial(null, acceptingTrustStrategy)
+        final SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
+                .loadTrustMaterial(acceptingTrustStrategy)
                 .build();
 
-        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-
-        CloseableHttpClient result = HttpClientBuilder
+        final SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+        final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().setSSLSocketFactory(csf).build();
+        return HttpClientBuilder
                 .create()
-                .setSSLSocketFactory(csf)
+                .setConnectionManager(hccm)
                 .setDefaultRequestConfig(requestConfig)
                 .build();
-        return result;
     }
 
     @Bean(name = "normalRestTemplate")
-    public RestTemplate restTemplate(HttpClient httpClient) {
-        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+    public RestTemplate restTemplate(final HttpClient httpClient) {
+        final HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
-        RestTemplate restTemplate = new RestTemplate(requestFactory);
+
+        final RestTemplate restTemplate = new RestTemplate(requestFactory);
         restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor()));
         restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
+
         return restTemplate;
     }
 
     @Bean(name = "ripaRestTemplate")
-    public RestTemplate ripaRestTemplate(HttpClient httpClient) {
-        RestTemplate template = this.restTemplate(httpClient);
+    public RestTemplate ripaRestTemplate(final HttpClient httpClient) {
+        final RestTemplate template = this.restTemplate(httpClient);
         template.setInterceptors(List.of(new UserHeaderReqInterceptor(), new ApiKeyReqInterceptor(this.apiKey)));
+
         return template;
     }
 }

@@ -2,8 +2,8 @@ package fi.livi.rata.avoindata.common.domain.metadata;
 
 import java.math.BigDecimal;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

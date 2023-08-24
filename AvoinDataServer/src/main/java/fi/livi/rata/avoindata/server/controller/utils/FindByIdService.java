@@ -14,9 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Entity;
-import com.amazonaws.xray.entities.Subsegment;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -28,27 +25,24 @@ public class FindByIdService {
 
     public static final int ENTITY_FETCH_SIZE = 100;
 
-    public <ID_TYPE extends Serializable, ENTITY_TYPE> List<ENTITY_TYPE> findById(Function<List<ID_TYPE>, List<ENTITY_TYPE>> entityProvider, List<ID_TYPE> ids, Comparator<ENTITY_TYPE> order) {
-        List<Future<List<ENTITY_TYPE>>> streamFutures = new ArrayList<>();
+    public <ID_TYPE extends Serializable, ENTITY_TYPE> List<ENTITY_TYPE> findById(
+            final Function<List<ID_TYPE>, List<ENTITY_TYPE>> entityProvider,
+            final List<ID_TYPE> ids,
+            final Comparator<ENTITY_TYPE> order) {
+        final List<Future<List<ENTITY_TYPE>>> streamFutures = new ArrayList<>();
 
-        Entity traceEntity = AWSXRay.getGlobalRecorder().getTraceEntity();
-
-        ArrayList<ID_TYPE> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(ids));
-        for (List<ID_TYPE> subIds : Lists.partition(uniqueIds, ENTITY_FETCH_SIZE)) {
-            Future<List<ENTITY_TYPE>> streamFuture = executor.submit(() -> {
-                AWSXRay.getGlobalRecorder().setTraceEntity(traceEntity);
-
-                Subsegment subsegment = AWSXRay.beginSubsegment(String.format("## Execute findById for %s items", subIds.size()));
-                List<ENTITY_TYPE> entities = entityProvider.apply(subIds);
-                subsegment.end();
+        final ArrayList<ID_TYPE> uniqueIds = Lists.newArrayList(Sets.newLinkedHashSet(ids));
+        for (final List<ID_TYPE> subIds : Lists.partition(uniqueIds, ENTITY_FETCH_SIZE)) {
+            final Future<List<ENTITY_TYPE>> streamFuture = executor.submit(() -> {
+                final List<ENTITY_TYPE> entities = entityProvider.apply(subIds);
 
                 return entities;
             });
             streamFutures.add(streamFuture);
         }
 
-        List<ENTITY_TYPE> entities = new ArrayList<>();
-        for (Future<List<ENTITY_TYPE>> streamFuture : streamFutures) {
+        final List<ENTITY_TYPE> entities = new ArrayList<>();
+        for (final Future<List<ENTITY_TYPE>> streamFuture : streamFutures) {
             try {
                 entities.addAll(streamFuture.get());
             } catch (Exception e) {

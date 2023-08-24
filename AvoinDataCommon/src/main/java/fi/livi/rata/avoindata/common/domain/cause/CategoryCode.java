@@ -6,13 +6,13 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Transient;
 
 import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
@@ -39,13 +39,11 @@ public class CategoryCode extends ACauseCode {
     public String categoryName;
 
     @Column
-    @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
     @Schema(description = "Start date when this code is used",required = true)
     public LocalDate validFrom;
 
     @Column
-    @Type(type = "org.hibernate.type.LocalDateType")
     @JsonView(CategoryCodeJsonView.All.class)
     @Schema(description = "End date when this code is used. Empty means category is used until further notice")
     public LocalDate validTo;

@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.time.LocalDate;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.io.Serializable;
 import java.util.Objects;
 

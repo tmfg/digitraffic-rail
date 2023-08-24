@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.common;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

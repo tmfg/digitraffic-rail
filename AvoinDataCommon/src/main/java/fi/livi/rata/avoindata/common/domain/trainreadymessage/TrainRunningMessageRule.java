@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.trainreadymessage;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import io.swagger.v3.oas.annotations.media.Schema;

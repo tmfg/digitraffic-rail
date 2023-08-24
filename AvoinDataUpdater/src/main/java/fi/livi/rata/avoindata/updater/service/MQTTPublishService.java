@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

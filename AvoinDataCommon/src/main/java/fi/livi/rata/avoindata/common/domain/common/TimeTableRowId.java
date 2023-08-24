@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.common.domain.common;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 
 import org.hibernate.annotations.Type;
 
@@ -19,7 +19,6 @@ public class TimeTableRowId implements Serializable {
     public Long trainNumber;
     @NonNull
     @Column
-    @Type(type="org.hibernate.type.LocalDateType")
     public LocalDate departureDate;
 
     protected TimeTableRowId() {

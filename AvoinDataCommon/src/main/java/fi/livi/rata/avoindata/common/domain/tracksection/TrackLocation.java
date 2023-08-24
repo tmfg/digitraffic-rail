@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.tracksection;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

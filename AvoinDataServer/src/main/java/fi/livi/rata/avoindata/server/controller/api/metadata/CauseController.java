@@ -3,8 +3,8 @@ package fi.livi.rata.avoindata.server.controller.api.metadata;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

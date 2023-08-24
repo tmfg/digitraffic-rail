@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.common.dao;
 
 import java.io.Serializable;
 import java.util.Collection;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.support.JpaMetamodelEntityInformation;

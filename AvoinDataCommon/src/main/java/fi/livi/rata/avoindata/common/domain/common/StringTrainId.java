@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.common.domain.common;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 
 import org.hibernate.annotations.Type;
 
@@ -18,7 +18,6 @@ public class StringTrainId implements Serializable {
     public String trainNumber;
 
     @Column
-    @Type(type = "org.hibernate.type.LocalDateType")
     @Schema(description = "Date of the train's first departure", required = true, example = "2017-12-01")
     public LocalDate departureDate;
 

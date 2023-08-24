@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.server.controller.api.exception;
 import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
 import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class UnknownParametersException extends AbstractException {
 

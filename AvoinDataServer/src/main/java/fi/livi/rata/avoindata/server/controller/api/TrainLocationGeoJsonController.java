@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Function;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import org.slf4j.Logger;

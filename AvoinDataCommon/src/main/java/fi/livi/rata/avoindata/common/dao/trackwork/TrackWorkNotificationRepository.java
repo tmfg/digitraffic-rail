@@ -18,20 +18,20 @@ import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState
 @Repository
 public interface TrackWorkNotificationRepository extends CustomGeneralRepository<TrackWorkNotification, TrackWorkNotification.TrackWorkNotificationId> {
 
-    @Query("SELECT t.id.id AS id, t.id.version AS version FROM TrackWorkNotification t WHERE t.id.id IN (:ids) ORDER by id, version ASC")
-    List<RumaNotificationIdAndVersion> findIdsAndVersions(@Param("ids") Set<String> ids);
+    @Query("SELECT t.id.id AS id, t.id.version AS version FROM TrackWorkNotification t WHERE t.id.id IN (:ids) ORDER by t.id.id, t.id.version ASC")
+    List<RumaNotificationIdAndVersion> findIdsAndVersions(@Param("ids") final Set<String> ids);
 
-    @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id ORDER by id, version ASC")
-    List<TrackWorkNotification> findByTwnId(@Param("id") String id);
+    @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id ORDER by t.id.id, t.id.version ASC")
+    List<TrackWorkNotification> findByTwnId(@Param("id") final String id);
 
-    @Query(value = "SELECT * FROM track_work_notification t WHERE t.id = :id ORDER by version DESC LIMIT 1", nativeQuery = true)
-    Optional<TrackWorkNotification> findByTwnIdLatest(@Param("id") String id);
+    @Query(value = "SELECT * FROM track_work_notification t WHERE t.id = :id ORDER by t.version DESC LIMIT 1", nativeQuery = true)
+    Optional<TrackWorkNotification> findByTwnIdLatest(@Param("id") final String id);
 
     @Query("SELECT t FROM TrackWorkNotification t WHERE t.id.id = :id AND t.id.version = :version")
-    Optional<TrackWorkNotification> findByTwnIdAndVersion(@Param("id") String id, @Param("version") long version);
+    Optional<TrackWorkNotification> findByTwnIdAndVersion(@Param("id") final String id, @Param("version") final long version);
 
-    @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrackWorkNotification t WHERE t.modified BETWEEN :start AND :end GROUP BY t.id.id ORDER BY modified ASC, id ASC")
-    List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end, Pageable pageable);
+    @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrackWorkNotification t WHERE t.modified BETWEEN :start AND :end GROUP BY t.id.id ORDER BY modified ASC, t.id.id ASC")
+    List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") final ZonedDateTime start, @Param("end") final ZonedDateTime end, final Pageable pageable);
 
     @Query("SELECT t FROM TrackWorkNotification t " +
             "LEFT JOIN FETCH t.trackWorkParts twp " +
@@ -42,8 +42,8 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
             "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
             "ORDER BY t.modified ASC, t.id.id ASC")
     List<TrackWorkNotification> findByState(
-            @Param("states") Set<TrackWorkNotificationState> states,
-            @Param("start") ZonedDateTime start,
-            @Param("end") ZonedDateTime end,
-            Pageable pageable);
+            @Param("states") final Set<TrackWorkNotificationState> states,
+            @Param("start") final ZonedDateTime start,
+            @Param("end") final ZonedDateTime end,
+            final Pageable pageable);
 }

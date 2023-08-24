@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.config;
 
-import net.rossillo.spring.web.mvc.CacheControlHandlerInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -31,19 +30,19 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(executeTimeInterceptor);
         registry.addInterceptor(parameterValidationInterceptor);
         registry.addInterceptor(contentTypeInterceptor);
-        registry.addInterceptor(new CacheControlHandlerInterceptor());
     }
 
     @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
+    public void addViewControllers(final ViewControllerRegistry registry) {
         registry.addRedirectViewController("/configuration/ui", "/swagger-resources/configuration/ui");
         registry.addRedirectViewController("/configuration/security", "/swagger-resources/configuration/security");
     }
 
     @Override
-    public void configurePathMatch(PathMatchConfigurer configurer) {
-        UrlPathHelper urlPathHelper = new UrlPathHelper();
+    public void configurePathMatch(final PathMatchConfigurer configurer) {
+        final UrlPathHelper urlPathHelper = new UrlPathHelper();
         urlPathHelper.setUrlDecode(false);
+
         configurer.setUrlPathHelper(urlPathHelper);
     }
 }

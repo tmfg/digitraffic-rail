@@ -3,9 +3,11 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 
@@ -38,15 +40,15 @@ public class GTFSTimeTableRow {
     public boolean cancelled;
 
     @Column
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime scheduledTime;
 
     @Column
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime actualTime;
 
     @Column
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime liveEstimateTime;
 
     @Column

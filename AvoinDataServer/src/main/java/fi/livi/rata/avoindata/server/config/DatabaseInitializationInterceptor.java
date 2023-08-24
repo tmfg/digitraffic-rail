@@ -4,11 +4,11 @@ import fi.livi.rata.avoindata.common.ESystemStateProperty;
 import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,7 +16,7 @@ import java.util.Set;
 
 
 @Component
-public class DatabaseInitializationInterceptor extends HandlerInterceptorAdapter {
+public class DatabaseInitializationInterceptor implements HandlerInterceptor {
     private static final Set<String> INITIALIZATION_DISALLOWED_PARAMETER_NAMES = new HashSet<>(Arrays.asList("departure_date",
             "departureDate", "date"));
 

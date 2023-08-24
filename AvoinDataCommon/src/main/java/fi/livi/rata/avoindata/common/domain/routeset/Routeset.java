@@ -6,9 +6,11 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -23,7 +25,7 @@ public class Routeset {
 
     public Long version;
 
-    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime messageTime;
 
     @Embedded
@@ -33,7 +35,6 @@ public class Routeset {
     @Column(insertable = false,updatable = false)
     @NonNull
     @JsonIgnore
-    @Type(type="org.hibernate.type.LocalDateType")
     public LocalDate virtualDepartureDate;
 
     public String routeType;

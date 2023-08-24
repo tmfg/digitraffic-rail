@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.localization;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fi.livi.rata.avoindata.common.domain.common.NamedEntity;

@@ -6,16 +6,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Index;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -87,7 +89,7 @@ public class Train implements Comparable<Train> {
     @Schema(description = "Is the train ADHOC or REGULAR. REGULAR trains are run for example every monday, ADHOC trains are one-time trains")
     public TimetableType timetableType;
 
-    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "When was this train accepted to run on Finnish railways by the FTA")
     public ZonedDateTime timetableAcceptanceDate;
 

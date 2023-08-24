@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -12,7 +14,7 @@ public class GTFS {
     @Column(length=1024*1024*100)
     public byte[] data;
 
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @CreatedDate
     public ZonedDateTime created;
 

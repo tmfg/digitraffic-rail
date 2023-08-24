@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.trackwork;
 
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.HashSet;

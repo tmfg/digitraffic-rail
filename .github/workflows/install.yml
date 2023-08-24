@@ -8,7 +8,7 @@ on:
         type: environment
         default: "beta"
       ref:
-        description: "Branch/tag/SHA of digitraffic-road-private"
+        description: "Branch/tag/SHA of digitraffic-rail-private"
         required: true
         default: "master"
       app:

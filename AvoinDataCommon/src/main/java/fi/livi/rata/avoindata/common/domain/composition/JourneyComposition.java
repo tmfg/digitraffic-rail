@@ -13,7 +13,7 @@ import fi.livi.rata.avoindata.common.domain.common.Operator;
 public class JourneyComposition {
     public final Operator operator;
     public final Long trainNumber;
-    @Type(type = "org.hibernate.type.LocalDateType")
+
     public final LocalDate departureDate;
     public final long trainCategoryId;
     public final long trainTypeId;

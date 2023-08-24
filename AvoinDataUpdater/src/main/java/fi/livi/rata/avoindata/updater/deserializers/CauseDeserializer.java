@@ -3,8 +3,8 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import java.io.IOException;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import org.springframework.stereotype.Component;
 

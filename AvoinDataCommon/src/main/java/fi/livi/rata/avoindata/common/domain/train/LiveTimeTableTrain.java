@@ -6,11 +6,13 @@ import com.fasterxml.jackson.annotation.JsonView;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -29,16 +31,16 @@ public class LiveTimeTableTrain {
     public boolean trainStopping;
 
     @JsonView({TrainJsonView.LiveTrains.class, TrainJsonView.ScheduleTrains.class})
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime scheduledTime;
 
     @JsonView(TrainJsonView.LiveTrains.class)
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime liveEstimateTime;
 
     @Nullable
     @JsonView(TrainJsonView.LiveTrains.class)
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime actualTime;
 
     @JsonIgnore

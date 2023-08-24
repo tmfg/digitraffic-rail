@@ -60,9 +60,6 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     private ThirdCategoryCodeRepository thirdCategoryCodeRepository;
 
     @Autowired
-    private LiveTrainController liveTrainController;
-
-    @Autowired
     private DateProvider dp;
 
     @Autowired

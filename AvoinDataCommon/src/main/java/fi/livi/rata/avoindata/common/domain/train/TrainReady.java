@@ -2,14 +2,10 @@ package fi.livi.rata.avoindata.common.domain.train;
 
 import java.time.ZonedDateTime;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.*;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.annotations.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -39,11 +35,11 @@ public class TrainReady {
     @Schema(description = "How was the permission given")
     public TrainReadySource source;
 
-    @Type(type = "org.hibernate.type.NumericBooleanType")
+    @Convert(converter = org.hibernate.type.NumericBooleanConverter.class)
     @Schema(description = "Was the permission given")
     public boolean accepted;
 
-    @Type(type = "org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "When was the permission given")
     public ZonedDateTime timestamp;
 

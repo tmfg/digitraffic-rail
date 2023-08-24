@@ -3,14 +3,15 @@ package fi.livi.rata.avoindata.common.domain.trainreadymessage;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
@@ -34,11 +35,10 @@ public class TrainRunningMessage {
     @Column(insertable = false,updatable = false)
     @NonNull
     @JsonIgnore
-    @Type(type="org.hibernate.type.LocalDateType")
     public LocalDate virtualDepartureDate;
 
     @Column
-    @Type(type="org.hibernate.type.ZonedDateTimeType")
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "Timestamp when the message was generated")
     public ZonedDateTime timestamp;
 

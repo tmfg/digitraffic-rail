@@ -24,11 +24,11 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: 17
           distribution: temurin
           cache: maven
       - name: Compile
-        run: mvn -f pom.xml -T1.5C install -e -U -DskipTests=true -Ddependency-check.skip=true
+        run: mvn -f pom.xml install -e -U -DskipTests=true -Ddependency-check.skip=true
       - name: Setup database
         run: mysql --protocol=TCP --host=localhost --port=3306 --user=root --execute="CREATE DATABASE avoindata_test;"
       # Creates database, has to be run before AvoinDataServer tests

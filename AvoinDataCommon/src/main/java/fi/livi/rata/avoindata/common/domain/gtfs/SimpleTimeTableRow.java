@@ -3,10 +3,10 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 import org.springframework.data.annotation.Immutable;
 
