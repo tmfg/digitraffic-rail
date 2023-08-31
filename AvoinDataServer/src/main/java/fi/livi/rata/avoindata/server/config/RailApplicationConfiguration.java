@@ -17,13 +17,13 @@ public class RailApplicationConfiguration {
 
     @Bean
     @Primary
-    public DataSource dataSource(final @Autowired(required = false) AWSDataSourceCredentials awsDataSourceCredentials) {
+    public DataSource dataSource(@Autowired(required = false) final AWSDataSourceCredentials awsDataSourceCredentials) {
         final String url = env.getProperty("spring.datasource.url");
         final String driverClassName = env.getProperty("spring.datasource.driver-class-name");
         final String username = awsDataSourceCredentials != null ? awsDataSourceCredentials.getUsername() : env.getProperty("spring.datasource.username");
         final String password = awsDataSourceCredentials != null ? awsDataSourceCredentials.getPassword() : env.getProperty("spring.datasource.password");
 
-        DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create(); 
+        final DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.url(url);
         dataSourceBuilder.username(username); 
         dataSourceBuilder.password(password); 

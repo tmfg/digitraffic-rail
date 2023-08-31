@@ -11,5 +11,5 @@ import org.springframework.data.repository.NoRepositoryBean;
 public interface CustomGeneralRepository<T, ID extends Serializable>
         extends JpaRepository<T, ID> {
 
-    void persist(Collection<T> objects);
+    void persist(final Collection<T> objects);
 }
