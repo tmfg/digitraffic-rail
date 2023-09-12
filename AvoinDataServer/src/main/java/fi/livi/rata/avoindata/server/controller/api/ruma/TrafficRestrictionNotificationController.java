@@ -145,8 +145,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @RequestParam(value = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
-            @Parameter(description = "Start time. If missing, current date - 7 days.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            @Parameter(description = "Start time. If missing, current date - 7 days.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime start,
+            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime end,
             final HttpServletResponse response) {
         final List<SpatialTrafficRestrictionNotificationDto> twns = getByState(state, start, end)
                 .stream()
@@ -169,8 +169,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @RequestParam(name = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(name = "schema", required = false, defaultValue = "false") final Boolean schema,
-            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end,
+            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime start,
+            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime end,
             final HttpServletResponse response) {
         final FeatureCollection features = new FeatureCollection(getByState(state, start, end)
                 .stream()
@@ -180,19 +180,19 @@ public class TrafficRestrictionNotificationController extends ADataController {
         return features;
     }
 
-    private List<TrafficRestrictionNotification> getByState(final Set<TrafficRestrictionNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
-        Set<TrafficRestrictionNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
-        return trafficRestrictionNotificationRepository.findByState(states,
+    private List<TrafficRestrictionNotification> getByState(final Set<TrafficRestrictionNotificationState> state, final ZonedDateTime start, final ZonedDateTime end) {
+        final Set<TrafficRestrictionNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
+        return trafficRestrictionNotificationRepository.findByState(states.stream().map(s -> s.ordinal()).collect(Collectors.toSet()),
                 getStartTime(start),
                 getEndTime(end),
                 PageRequest.of(0, MAX_RESULTS));
     }
 
-    private ZonedDateTime getStartTime(ZonedDateTime start) {
+    private ZonedDateTime getStartTime(final ZonedDateTime start) {
         return start != null ? start : ZonedDateTime.now().minusDays(7);
     }
 
-    private ZonedDateTime getEndTime(ZonedDateTime end) {
+    private ZonedDateTime getEndTime(final ZonedDateTime end) {
         return end != null ? end : ZonedDateTime.now();
     }
 

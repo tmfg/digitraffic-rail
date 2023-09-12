@@ -31,12 +31,18 @@ public interface TrafficRestrictionNotificationRepository extends CustomGeneralR
 
     @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrafficRestrictionNotification t WHERE t.modified BETWEEN :start AND :end AND t.limitation <> fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.OTHER GROUP BY t.id.id ORDER BY modified ASC, t.id.id ASC")
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") final ZonedDateTime start, @Param("end") final ZonedDateTime end, final Pageable pageable);
-
-    @Query("SELECT t FROM TrafficRestrictionNotification t WHERE t.state IN (:states) AND t.limitation <> fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.OTHER AND (t.id.id, t.id.version) IN " +
-             "(SELECT t2.id.id, MAX(t2.id.version) FROM TrafficRestrictionNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
-           "ORDER BY t.modified ASC, t.id.id ASC")
+    @Query(value = "select id, version, axle_weight_max, created, end_date, finished, limitation, location_map, location_schema, modified, organization, start_date, state, twn_id " +
+            "from traffic_restriction_notification t1_0 " +
+            "where t1_0.state in(:states) " +
+            "and t1_0.limitation != 7 and (t1_0.id, t1_0.version) in (" +
+                "select t2_0.id, max(t2_0.version) " +
+                "from traffic_restriction_notification t2_0 " +
+                "where t2_0.modified between :start and :end " +
+                "group by t2_0.id) " +
+            "order by t1_0.modified asc, t1_0.id asc " +
+            "#pageable", nativeQuery = true)
     List<TrafficRestrictionNotification> findByState(
-            @Param("states") final Set<TrafficRestrictionNotificationState> states,
+            @Param("states") final Set<Integer> states,
             @Param("start") final ZonedDateTime start,
             @Param("end") final ZonedDateTime end,
             final Pageable pageable);
