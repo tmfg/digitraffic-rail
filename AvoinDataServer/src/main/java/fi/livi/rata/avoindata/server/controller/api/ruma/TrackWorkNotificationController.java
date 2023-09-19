@@ -175,11 +175,11 @@ public class TrackWorkNotificationController extends ADataController {
     }
 
     private List<TrackWorkNotification> getByState(final Set<TrackWorkNotificationState> state, ZonedDateTime start, ZonedDateTime end) {
-        Set<TrackWorkNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
-        ZonedDateTime startTime = getStartTime(start);
-        ZonedDateTime endTime = getEndTime(end);
+        final Set<TrackWorkNotificationState> states = state != null && !state.isEmpty() ? state : DEFAULT_STATES;
+        final ZonedDateTime startTime = getStartTime(start);
+        final ZonedDateTime endTime = getEndTime(end);
 
-        Duration duration = Duration.between(startTime, endTime);
+        final Duration duration = Duration.between(startTime, endTime);
         if (duration.isNegative()) {
             throw new IllegalArgumentException("Duration between start and end time is negative");
         }
@@ -187,10 +187,12 @@ public class TrackWorkNotificationController extends ADataController {
             throw new IllegalArgumentException("Duration between start and end time is more than 30 days");
         }
 
-        return trackWorkNotificationRepository.findByState(states,
-                startTime,
-                endTime,
-                PageRequest.of(0, MAX_RESULTS));
+        final List<TrackWorkNotification.TrackWorkNotificationId> ids =
+                trackWorkNotificationRepository.findLatestBetween(startTime, endTime).stream()
+                        .map(o -> new TrackWorkNotification.TrackWorkNotificationId((String)o[0], (Long)o[1]))
+                        .toList();
+
+        return trackWorkNotificationRepository.findByStateAndId(states, startTime, endTime, ids);
     }
 
     private ZonedDateTime getStartTime(ZonedDateTime start) {

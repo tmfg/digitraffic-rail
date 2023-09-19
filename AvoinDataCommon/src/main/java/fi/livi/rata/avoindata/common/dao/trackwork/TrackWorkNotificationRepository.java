@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.hibernate.annotations.NamedNativeQuery;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,17 +34,25 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
     @Query("SELECT t.id.id AS id, MAX(t.id.version) AS version, MAX(t.modified) AS modified FROM TrackWorkNotification t WHERE t.modified BETWEEN :start AND :end GROUP BY t.id.id ORDER BY modified ASC, t.id.id ASC")
     List<RumaNotificationIdAndVersion> findByModifiedBetween(@Param("start") final ZonedDateTime start, @Param("end") final ZonedDateTime end, final Pageable pageable);
 
+    @Query(value = "SELECT t.id, MAX(t.version) " +
+            "FROM track_work_notification t " +
+            "WHERE t.modified BETWEEN :start AND :end GROUP BY t.id", nativeQuery = true)
+    List<Object[]> findLatestBetween(
+            @Param("start") final ZonedDateTime start,
+            @Param("end") final ZonedDateTime end);
+
     @Query("SELECT t FROM TrackWorkNotification t " +
             "LEFT JOIN FETCH t.trackWorkParts twp " +
             "LEFT JOIN FETCH twp.locations rl " +
             "LEFT JOIN FETCH rl.identifierRanges ir " +
             "LEFT JOIN FETCH ir.elementRanges " +
-            "WHERE t.state IN (:states) AND (t.modified BETWEEN :start and :end) AND (t.id.id, t.id.version) IN " +
-            "(SELECT t2.id.id, MAX(t2.id.version) FROM TrackWorkNotification t2 WHERE t2.modified BETWEEN :start AND :end GROUP BY t2.id.id) " +
+            "WHERE t.state IN (:states) AND (t.modified BETWEEN :start and :end) " +
+            "AND t.id IN (:ids) " +
             "ORDER BY t.modified ASC, t.id.id ASC")
-    List<TrackWorkNotification> findByState(
+    List<TrackWorkNotification> findByStateAndId(
             @Param("states") final Set<TrackWorkNotificationState> states,
             @Param("start") final ZonedDateTime start,
             @Param("end") final ZonedDateTime end,
-            final Pageable pageable);
+            @Param("ids") final List<TrackWorkNotification.TrackWorkNotificationId> ids
+    );
 }
