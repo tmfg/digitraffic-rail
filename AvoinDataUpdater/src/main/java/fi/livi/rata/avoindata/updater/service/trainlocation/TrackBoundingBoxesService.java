@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.geo.Point;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -48,6 +49,11 @@ public class TrackBoundingBoxesService {
     @Value("${infra-api.url}")
     private String infraApiUrl;
 
+    private final RetryTemplate retryTemplate = RetryTemplate.builder()
+            .exponentialBackoff(1000, 2, 10000)
+            .maxAttempts(5)
+            .build();
+
     @Cacheable("trackBoundingBoxes")
     public RTree<TrainBoundary, Geometry> getBoundingBoxes() {
         try {
@@ -56,7 +62,7 @@ public class TrackBoundingBoxesService {
             tree = createPrivateTracks(tree);
 
             return tree;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error forming Tracks", e);
             return RTree.star().maxChildren(6).create();
         }
@@ -128,7 +134,7 @@ public class TrackBoundingBoxesService {
     }
 
     private RTree<TrainBoundary, Geometry> createInfraApiTracks(RTree<TrainBoundary, Geometry> tree) throws IOException, URISyntaxException {
-        JsonNode trackNodes = restTemplate.getForObject(new URI(infraApiUrl), JsonNode.class);
+        final JsonNode trackNodes = getTracksFromInfraApi();
 
         for (final JsonNode featureNode : trackNodes.get("features")) {
             final JsonNode geometryNode = featureNode.get("geometry");
@@ -148,6 +154,12 @@ public class TrackBoundingBoxesService {
         log.info("Created rtree with {} nodes from {}", tree.size(), infraApiUrl);
 
         return tree;
+    }
+
+    private JsonNode getTracksFromInfraApi() throws URISyntaxException {
+        final URI apiURI = new URI(infraApiUrl);
+        return retryTemplate.execute((retryContext) -> restTemplate.getForObject(apiURI, JsonNode.class));
+
     }
 
     private RTree<TrainBoundary, Geometry> createPrivateTrack(RTree<TrainBoundary, Geometry> tree,
@@ -172,14 +184,13 @@ public class TrackBoundingBoxesService {
         return tree;
     }
 
-    private RTree<TrainBoundary, Geometry> createAndAddBoundingBoxToTree(RTree<TrainBoundary, Geometry> tree, final Point startingPoint,
+    private RTree<TrainBoundary, Geometry> createAndAddBoundingBoxToTree(final RTree<TrainBoundary, Geometry> tree, final Point startingPoint,
                                                                          final Point endingPoint) {
         final List<Point> boundingBox = boundingBoxService.createBoundingBox(startingPoint, endingPoint, DISTANCE_FROM_LINE);
 
         final Rectangle minMaxRectangle = createMinMaxRectangle(boundingBox);
 
-        tree = tree.add(new TrainBoundary(boundingBox), minMaxRectangle);
-        return tree;
+        return tree.add(new TrainBoundary(boundingBox), minMaxRectangle);
     }
 
     private Rectangle createMinMaxRectangle(final List<Point> boundingBox) {

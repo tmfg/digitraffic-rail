@@ -18,8 +18,7 @@ public class TrainLocationNearTrackFilterService {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-    public boolean isTrainLocationNearTrack(TrainLocation trainLocation) {
-
+    public boolean isTrainLocationNearTrack(final TrainLocation trainLocation) {
             final RTree<TrainBoundary, Geometry> tree = trackBoundingBoxesService.getBoundingBoxes();
 
             if (isTrackLocationNearTrack(trainLocation.liikeLocation.getX(), trainLocation.liikeLocation.getY(), tree)) {
@@ -33,7 +32,7 @@ public class TrainLocationNearTrackFilterService {
 
     }
 
-    private boolean isTrackLocationNearTrack(double x, double y, final RTree<TrainBoundary, Geometry> tree) {
+    private boolean isTrackLocationNearTrack(final double x, final double y, final RTree<TrainBoundary, Geometry> tree) {
         final Iterable<Entry<TrainBoundary, Geometry>> searchResult = tree.search(Geometries.point(x, y)).toBlocking().toIterable();
 
         for (final Entry<TrainBoundary, Geometry> trainBoundaryGeometryEntry : searchResult) {
