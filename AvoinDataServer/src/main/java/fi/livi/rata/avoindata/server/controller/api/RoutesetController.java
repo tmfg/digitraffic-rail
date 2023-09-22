@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +25,10 @@ import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Tag(name = "routesets", description = "Returns routesets")
 @RequestMapping(WebConfig.CONTEXT_PATH + "routesets")
-@Transactional(timeout = 30, readOnly = true)
 @RestController
 public class RoutesetController extends ADataController {
     @Autowired
@@ -47,6 +45,7 @@ public class RoutesetController extends ADataController {
 
     @Operation(summary = "Returns routesets for {train_number} and {departure_date}")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
+    @Transactional(timeout = 30, readOnly = true)
     public List<Routeset> getRoutesetsByTrainNumber(
             HttpServletResponse response,
             @Parameter(description = "train_number") @PathVariable final String train_number,
@@ -61,6 +60,7 @@ public class RoutesetController extends ADataController {
 
     @Operation(summary = "Returns routesets for {station} and {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}", method = RequestMethod.GET)
+    @Transactional(timeout = 30, readOnly = true)
     public List<Routeset> getRoutesetsByStationAndDepartureDate(
             HttpServletResponse response,
             @Parameter(description = "station") @PathVariable final String station,
@@ -74,6 +74,7 @@ public class RoutesetController extends ADataController {
 
     @Operation(summary = "Returns routesets that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET)
+    @Transactional(timeout = 30, readOnly = true)
     public List<Routeset> getRoutesetsByVersion(final HttpServletResponse response,
                                                 @RequestParam(required = false) Long version) {
         if (version == null) {

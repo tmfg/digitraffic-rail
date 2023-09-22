@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -10,9 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletResponse;
-
-import org.hibernate.dialect.MySQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +40,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 // Tag has same name with a tag in GtfsController.
 // Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
@@ -69,7 +66,7 @@ public class TrainController extends ADataController {
     @Operation(summary = "Returns trains that are newer than {version}", ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "")
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version,
                                           final HttpServletResponse response) {
         if (version == null) {
@@ -107,6 +104,7 @@ public class TrainController extends ADataController {
     @Operation(summary = "Returns latest train", ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/latest/{train_number}", method = RequestMethod.GET)
+    @Transactional(readOnly = true)
     public List<Train> getTrainByTrainNumber(@PathVariable final long train_number,
                                              @RequestParam(required = false, defaultValue = "0") final long version,
                                              final HttpServletResponse response) {
@@ -116,6 +114,7 @@ public class TrainController extends ADataController {
     @Operation(summary = "Returns a specific train", ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
+    @Transactional(readOnly = true)
     public List<Train> getTrainByTrainNumberAndDepartureDate(@PathVariable final long train_number,
                                                              @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
                                                              @RequestParam(required = false, defaultValue = "false") final boolean include_deleted,
@@ -144,6 +143,7 @@ public class TrainController extends ADataController {
                     array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
+    @Transactional(readOnly = true)
     public List<Train> getTrainsByDepartureDate(
             @PathVariable("departure_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departureDate,
             @RequestParam(name = "include_deleted", required = false, defaultValue = "false") final boolean includeDeleted,
