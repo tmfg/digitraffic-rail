@@ -5,6 +5,7 @@
 .DS_Store
 **pom.xml.versionsBackup
 **/profiles/dev/*
+.gitmodules
 
 # Test generated files
 /AvoinDataUpdater/agency.txt
