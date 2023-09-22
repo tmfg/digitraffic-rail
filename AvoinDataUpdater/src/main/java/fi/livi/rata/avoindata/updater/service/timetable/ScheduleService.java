@@ -48,7 +48,9 @@ public class ScheduleService {
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public synchronized void extractSchedules() {
-        ZonedDateTime startDate = dp.nowInHelsinki();
+        final ZonedDateTime startDate = dp.nowInHelsinki();
+        log.info("Starting extract");
+
         try {
             final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);
@@ -56,8 +58,12 @@ public class ScheduleService {
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
+            log.info("Schedules fetched adHoc {} regular {}", adhocSchedules.size(), regularSchedules.size());
+
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                ZonedDateTime nowInHelsinki = dp.nowInHelsinki();
+                final ZonedDateTime nowInHelsinki = dp.nowInHelsinki();
+                log.info("Extracting for date {}", date);
+
                 if (startDate.isAfter(nowInHelsinki.minusHours(3))) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
                     extractForDate(adhocSchedules, regularSchedules, date);
                 } else {
@@ -67,15 +73,16 @@ public class ScheduleService {
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.FUTURE_TRAINS);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error extracting schedules", e);
+        } finally {
+            log.info("Ending extract");
         }
-
     }
 
     private void extractForDate(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
                                 final LocalDate date) throws InterruptedException {
-        List<Schedule> allSchedules = new ArrayList<Schedule>(adhocSchedules);
+        final List<Schedule> allSchedules = new ArrayList<Schedule>(adhocSchedules);
         allSchedules.addAll(regularSchedules);
 
         final LocalDate finalDate = date;
@@ -84,7 +91,7 @@ public class ScheduleService {
 
         if (!extractedTrains.isEmpty()) {
             //Sleep for a while so clients do not choke on new json
-            Thread.sleep(60000 * 2);
+            Thread.sleep(60000 * 1);
         }
     }
 }
