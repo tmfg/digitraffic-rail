@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
@@ -30,18 +29,18 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Tag(name = "compositions", description = "Returns compositions of trains")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "compositions")
-@Transactional(timeout = 30, readOnly = true)
 public class CompositionController extends ADataController {
     @Autowired
     private CompositionRepository compositionRepository;
 
-
     @Operation(summary = "Returns all compositions that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET, path = "")
+    @Transactional(timeout = 30, readOnly = true)
     public List<Composition> getCompositionsByVersion(@Parameter(description = "version") @RequestParam(required = false) Long version, HttpServletResponse response) {
         if (version == null) {
             version = compositionRepository.getMaxVersion() - 1;
@@ -60,9 +59,9 @@ public class CompositionController extends ADataController {
         }
     }
 
-
     @Operation(summary = "Returns all compositions for trains run on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
+    @Transactional(timeout = 30, readOnly = true)
     public Collection<Composition> getCompositionsByDepartureDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
             HttpServletResponse response) {
@@ -80,9 +79,9 @@ public class CompositionController extends ADataController {
         return list;
     }
 
-
     @Operation(summary = "Returns composition for a specific train")
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
+    @Transactional(timeout = 30, readOnly = true)
     public Composition getCompositionByTrainNumberAndDepartureDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
             @PathVariable("train_number") Long train_number, HttpServletResponse response) {

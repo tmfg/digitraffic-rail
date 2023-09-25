@@ -7,8 +7,6 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,13 +33,13 @@ import fi.livi.rata.avoindata.server.controller.api.exception.TrainNotFoundExcep
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 // Tag has same name with a tag in LiveTrainController.
 // Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
 @Tag(name = "live-trains")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
-@Transactional(timeout = 30, readOnly = true)
 public class ScheduleController extends ADataController {
     private static final int MAX_ROUTE_SEARCH_RESULT_SIZE = 1000;
     public static final int DAYS_BETWEEN_LIMIT = 2;
@@ -52,6 +50,7 @@ public class ScheduleController extends ADataController {
     @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}", ignoreJsonView = true)
     @JsonView(ScheduleTrains.class)
     @RequestMapping(path = "station/{departure_station}/{arrival_station}", method = RequestMethod.GET)
+    @Transactional(timeout = 30, readOnly = true)
     public List<Train> getTrainsFromDepartureToArrivalStation(
             @Parameter(description = "departure_station") @PathVariable String departure_station,
             @Parameter(description = "arrival_station") @PathVariable String arrival_station,
