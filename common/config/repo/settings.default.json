@@ -1,0 +1,8 @@
+{
+    "git-submodules": [
+        {
+            "path": "lib/digitraffic-common-java",
+            "url": "https://github.com/tmfg/digitraffic-common-java.git"
+        }
+    ]
+}
