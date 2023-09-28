@@ -81,11 +81,11 @@ public class TrainRunningMessageController extends ADataController {
 
     @Operation(summary = "Returns train running messages for trains that have passed {station} on {departure_date}")
     @RequestMapping(method = RequestMethod.GET, path = "station/{station}/{departure_date}")
-    public List<TrainRunningMessage> getTrainTrackingByStationAndDepartureDate(HttpServletResponse response,
-                                                                               @PathVariable final String station, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+    public List<TrainRunningMessage> getTrainTrackingByStationAndDepartureDate(final HttpServletResponse response,
+                                                                               @PathVariable final String station, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date) {
 
-        ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
-        List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndDepartureDate(station,
+        final ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
+        final List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndDepartureDate(station,
                 departure_date, nullDepartureDateInterval[0].toLocalDate(), nullDepartureDateInterval[0], nullDepartureDateInterval[1]);
 
         cacheControl.setCacheParameter(response, trainRunningMessages, -1);
@@ -94,12 +94,12 @@ public class TrainRunningMessageController extends ADataController {
 
     @Operation(summary = "Returns train running messages for trains that have passed {station}, {track_section} on {departure_date}")
     @RequestMapping(path = "station/{station}/{departure_date}/{track_section}", method = RequestMethod.GET)
-    public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndDate(HttpServletResponse response,
+    public List<TrainRunningMessage> getTrainTrackingByStationAndTrackSectionAndDate(final HttpServletResponse response,
                                                                                      @PathVariable final String station, @PathVariable final String track_section,
-                                                                                     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+                                                                                     @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date) {
 
-        ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
-        List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSectionAndDepartureDate(station,
+        final ZonedDateTime[] nullDepartureDateInterval = getNullDepartureDateInterval(departure_date);
+        final List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSectionAndDepartureDate(station,
                 track_section, departure_date, nullDepartureDateInterval[0].toLocalDate(), nullDepartureDateInterval[0],
                 nullDepartureDateInterval[1]);
 
@@ -116,7 +116,7 @@ public class TrainRunningMessageController extends ADataController {
             limit = MAX_LIMIT;
         }
 
-        List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSection(station, track_section,
+        final List<TrainRunningMessage> trainRunningMessages = trainRunningMessageRepository.findByStationAndTrackSection(station, track_section,
                 PageRequest.of(0, limit));
 
         cacheControl.setCacheParameter(response, trainRunningMessages, -1);

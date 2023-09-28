@@ -26,16 +26,15 @@ public class TrainRunningMessageControllerTest extends MockMvcBaseTest {
     public void baseFieldsShouldBeCorrect() throws Exception {
         trainRunningMessageFactory.create();
 
-        ResultActions r1 = getJson("/train-tracking/station/PSL/2018-01-01/RAIDE_1");
-
-        r1.andExpect(jsonPath("$[0].id").value("1"));
-        r1.andExpect(jsonPath("$[0].version").value("1"));
-        r1.andExpect(jsonPath("$[0].trainNumber").value("1"));
-        r1.andExpect(jsonPath("$[0].departureDate").value("2018-01-01"));
-        r1.andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00.000Z"));
-        r1.andExpect(jsonPath("$[0].trackSection").value("RAIDE_1"));
-        r1.andExpect(jsonPath("$[0].station").value("PSL"));
-        r1.andExpect(jsonPath("$[0].type").value("OCCUPY"));
+        getJson("/train-tracking/station/PSL/2018-01-01/RAIDE_1")
+                .andExpect(jsonPath("$[0].id").value("1"))
+                .andExpect(jsonPath("$[0].version").value("1"))
+                .andExpect(jsonPath("$[0].trainNumber").value("1"))
+                .andExpect(jsonPath("$[0].departureDate").value("2018-01-01"))
+                .andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00.000Z"))
+                .andExpect(jsonPath("$[0].trackSection").value("RAIDE_1"))
+                .andExpect(jsonPath("$[0].station").value("PSL"))
+                .andExpect(jsonPath("$[0].type").value("OCCUPY"));
     }
 
     @Test
@@ -50,25 +49,24 @@ public class TrainRunningMessageControllerTest extends MockMvcBaseTest {
 
     @Test
     public void trackSectionWithSlashesShouldWork() throws Exception {
-        TrainRunningMessage trainRunningMessage = trainRunningMessageFactory.create();
+        final TrainRunningMessage trainRunningMessage = trainRunningMessageFactory.create();
         trainRunningMessage.trackSection = "PSL/1";
         trainRunningMessageRepository.save(trainRunningMessage);
 
-        URI url = UriComponentsBuilder.fromUriString("/api/v1/train-tracking/station/PSL/2018-01-01").pathSegment(trainRunningMessage.trackSection).build().encode().toUri();
+        final URI url = UriComponentsBuilder.fromUriString("/api/v1/train-tracking/station/PSL/2018-01-01").pathSegment(trainRunningMessage.trackSection).build().encode().toUri();
 
-        ResultActions resultActions = getJson(url);
-        resultActions.andExpect(jsonPath("$.length()").value(1));
+        getJson(url)
+            .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
     public void withoutVersionShouldReturnNewest() throws Exception {
-        TrainRunningMessage trainRunningMessage1 = trainRunningMessageFactory.create();
-        TrainRunningMessage trainRunningMessage2 = trainRunningMessageFactory.create();
+        final TrainRunningMessage trainRunningMessage1 = trainRunningMessageFactory.create();
+        final TrainRunningMessage trainRunningMessage2 = trainRunningMessageFactory.create();
         trainRunningMessage2.version = 2L;
 
-        ResultActions resultActions = getJson("/train-tracking");
-        resultActions.andExpect(jsonPath("$.length()").value(1));
-        resultActions.andExpect(jsonPath("$[0].version").value("2"));
-
+        getJson("/train-tracking")
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].version").value("2"));
     }
 }

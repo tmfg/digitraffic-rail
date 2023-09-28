@@ -48,7 +48,7 @@
     </suppress>
 
     <suppress until="2023-12-01">
-        <notes><![CDATA[file name: tomcat-embed-websocket-10.1.10.jar   ]]></notes>
+        <notes><![CDATA[file name: tomcat-embed-websocket-10.1.10.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-websocket@.*$</packageUrl>
         <cve>CVE-2023-34981</cve>
         <cve>CVE-2023-41080</cve>

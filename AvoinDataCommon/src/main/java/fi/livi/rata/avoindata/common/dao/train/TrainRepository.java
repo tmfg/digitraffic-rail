@@ -148,20 +148,20 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "               and ttrArrival.scheduledTime >= ttrDeparture.scheduledTime " +
             "               ) "
             + BASE_TRAIN_ORDER)
-    List<Train> findByStationsAndScheduledDate(String departureStation, TimeTableRow.TimeTableRowType departure, String arrivalStation,
-                                               final TimeTableRow.TimeTableRowType arrival, ZonedDateTime scheduledStart, ZonedDateTime scheduledEnd,
+    List<Train> findByStationsAndScheduledDate(final String departureStation, final TimeTableRow.TimeTableRowType departure, final String arrivalStation,
+                                               final TimeTableRow.TimeTableRowType arrival, final ZonedDateTime scheduledStart, final ZonedDateTime scheduledEnd,
                                                final LocalDate departureDateStart, final LocalDate departureDateEnd, final Boolean includeNonstopping);
 
     @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and (?3 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
-    Train findByDepartureDateAndTrainNumber(LocalDate departureDate, Long trainNumber, Boolean include_deleted);
+    Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Boolean include_deleted);
 
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id in ?1")
-    void removeByTrainId(List<TrainId> trainIds);
+    void removeByTrainId(final List<TrainId> trainIds);
 
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id.departureDate = ?1")
-    void removeByDepartureDate(LocalDate departureDate);
+    void removeByDepartureDate(final LocalDate departureDate);
 
     @Query(value = "SELECT DISTINCT " +
             "    '1', ttr.departure_date, ttr.train_number, t.version, ttr.scheduled_time " +
@@ -174,23 +174,23 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "    AND ttr.scheduled_time BETWEEN (UTC_TIMESTAMP() - INTERVAL 4 HOUR) AND (UTC_TIMESTAMP() + INTERVAL 16 HOUR) " +
             "ORDER BY ABS(timediff(scheduled_time,UTC_TIMESTAMP())) ASC " +
             "LIMIT 1", nativeQuery = true)
-    List<Object[]> findLiveTrainByTrainNumber(long trainNumber);
+    List<Object[]> findLiveTrainByTrainNumber(final long trainNumber);
 
     @Query("select coalesce(max(train.version),0) from Train train")
     long getMaxVersion();
 
     @Query("select count(train) from Train train where train.id.departureDate = ?1")
-    int countByDepartureDate(LocalDate departureDate);
+    int countByDepartureDate(final LocalDate departureDate);
 
     @Query("select distinct train.id,train.version from Train train where train.id.departureDate = ?1")
-    List<Object[]> findByDepartureDateLite(LocalDate date);
+    List<Object[]> findByDepartureDateLite(final LocalDate date);
 
     @Query("select train.id from Train train where train.id.departureDate = ?1")
-    List<TrainId> findTrainIdByDepartureDate(LocalDate date);
+    List<TrainId> findTrainIdByDepartureDate(final LocalDate date);
 
     @Query("select distinct train from Train train left join fetch train.timeTableRows timeTableRow where train.id.departureDate = ?1")
-    List<Train> findByDepartureDateFull(LocalDate date);
+    List<Train> findByDepartureDateFull(final LocalDate date);
 
     @Query("select train from Train train where train.id.departureDate < ?1 and train.runningCurrently = true")
-    List<Train> findRunningTrains(LocalDate maxDepartureDate);
+    List<Train> findRunningTrains(final LocalDate maxDepartureDate);
 }

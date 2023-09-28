@@ -29,34 +29,29 @@ import java.util.TimeZone;
 public class ServerApplication {
     private static Logger log = LoggerFactory.getLogger(ServerApplication.class);
 
-    public static void main(String[] args) {
-        System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH","true");
-
+    public static void main(final String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
 
-        SpringApplication application = createApplication();
-
+        final SpringApplication application = createApplication();
         application.run(args);
     }
 
     private static SpringApplication createApplication() {
-        SpringApplication application = new SpringApplication(ServerApplication.class);
-        Properties properties = new Properties();
+        final SpringApplication application = new SpringApplication(ServerApplication.class);
+        final Properties properties = new Properties();
 
         properties.put("myHostname", getHostname());
-
         application.setDefaultProperties(properties);
+
         return application;
     }
 
     private static String getHostname() {
         try {
-            InetAddress addr = InetAddress.getLocalHost();
+            final InetAddress addr = InetAddress.getLocalHost();
             return addr.getHostName();
-        } catch (UnknownHostException ex) {
+        } catch (final UnknownHostException ex) {
             return "unknown";
         }
     }
-
-
 }
