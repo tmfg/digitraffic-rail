@@ -7,7 +7,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-
 import javax.net.ssl.SSLContext;
 
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -69,6 +68,7 @@ class RestTemplateFactory {
         return HttpClientBuilder
                 .create()
                 .setConnectionManager(hccm)
+                .setConnectionReuseStrategy((httpRequest, httpResponse, httpContext) -> false)
                 .setDefaultRequestConfig(requestConfig)
                 .build();
     }
