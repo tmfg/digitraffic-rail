@@ -11,10 +11,12 @@ import org.springframework.http.client.ClientHttpResponse;
 public class UserHeaderReqInterceptor implements ClientHttpRequestInterceptor {
 
     @Override
-    public ClientHttpResponse intercept(HttpRequest request, byte[] body,
-                                        ClientHttpRequestExecution execution) throws IOException {
-        HttpHeaders headers = request.getHeaders();
+    public ClientHttpResponse intercept(final HttpRequest request,
+                                        final byte[] body,
+                                        final ClientHttpRequestExecution execution) throws IOException {
+        final HttpHeaders headers = request.getHeaders();
         headers.add("Digitraffic-User", "Updater/rata.digitraffic.fi");
+
         return execution.execute(request, body);
     }
 }

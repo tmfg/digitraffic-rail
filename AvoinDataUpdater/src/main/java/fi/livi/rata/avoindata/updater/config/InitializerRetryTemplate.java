@@ -6,7 +6,7 @@ import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.AlwaysRetryPolicy;
+import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -19,8 +19,8 @@ public class InitializerRetryTemplate extends RetryTemplate {
 
     public InitializerRetryTemplate() {
 
-        // Retry forever with a fixed period
-        final RetryPolicy retryPolicy = new AlwaysRetryPolicy();
+        // Retry once with a fixed period
+        final RetryPolicy retryPolicy = new MaxAttemptsRetryPolicy(1);
         setRetryPolicy(retryPolicy);
         final FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
         backOffPolicy.setBackOffPeriod(RETRY_PERIOD);

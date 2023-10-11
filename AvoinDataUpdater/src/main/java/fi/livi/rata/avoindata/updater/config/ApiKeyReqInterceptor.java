@@ -11,15 +11,17 @@ import org.springframework.http.client.ClientHttpResponse;
 public class ApiKeyReqInterceptor implements ClientHttpRequestInterceptor {
     private String apiKey;
 
-    public ApiKeyReqInterceptor(String apiKey) {
+    public ApiKeyReqInterceptor(final String apiKey) {
         this.apiKey = apiKey;
     }
 
     @Override
-    public ClientHttpResponse intercept(HttpRequest request, byte[] body,
-                                        ClientHttpRequestExecution execution) throws IOException {
-        HttpHeaders headers = request.getHeaders();
+    public ClientHttpResponse intercept(final HttpRequest request,
+                                        final byte[] body,
+                                        final ClientHttpRequestExecution execution) throws IOException {
+        final HttpHeaders headers = request.getHeaders();
         headers.add("API-KEY", this.apiKey);
+
         return execution.execute(request, body);
     }
 }
