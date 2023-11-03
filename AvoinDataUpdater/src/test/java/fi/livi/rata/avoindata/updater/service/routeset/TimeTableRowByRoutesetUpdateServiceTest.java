@@ -51,7 +51,7 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
     public void setup() {
         //Direct execution because of test transactions
         when(trainLockExecutor.executeInTransactionLock(anyString(), any())).then(invocationOnMock -> {
-            final Callable callable = invocationOnMock.getArgument(0);
+            final Callable callable = invocationOnMock.getArgument(1);
             return callable.call();
         });
     }
