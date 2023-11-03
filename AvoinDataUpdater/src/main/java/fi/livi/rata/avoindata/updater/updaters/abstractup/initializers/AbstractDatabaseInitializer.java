@@ -58,7 +58,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
     public abstract AbstractPersistService<EntityType> getPersistService();
 
-    public List<EntityType> modifyEntitiesBeforePersist(List<EntityType> entities) {
+    public List<EntityType> modifyEntitiesBeforePersist(final List<EntityType> entities) {
         return entities;
     }
 
@@ -86,7 +86,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
 
-    public void startUpdating(int delay) {
+    public void startUpdating(final int delay) {
         scheduleAtFixedRate(() -> startUpdate(), delay);
     }
 
@@ -97,7 +97,11 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     }
 
     protected void startUpdate() {
-        doUpdate();
+        try {
+            doUpdate();
+        } catch(final Throwable t) {
+            log.error("update failed!", t);
+        }
     }
 
     protected List<EntityType> doUpdate() {
@@ -129,14 +133,14 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         persistService.clearEntities();
     }
 
-    public static void waitUntilTasksAreDone(ExecutorService executorService) throws InterruptedException {
+    public static void waitUntilTasksAreDone(final ExecutorService executorService) throws InterruptedException {
         executorService.shutdown();
 
         executorService.awaitTermination(20, TimeUnit.MINUTES);
     }
 
     public ExecutorService addDataInitializeTasks(final LocalDate startDate, final LocalDate endDate) {
-        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_THREADS_TO_INITIALIZE_WITH);
+        final ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_THREADS_TO_INITIALIZE_WITH);
 
         log.info("Adding initialization tasks from {} to {}", startDate, endDate);
 

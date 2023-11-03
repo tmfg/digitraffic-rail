@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.routeset;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -49,40 +50,40 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
     @BeforeEach
     public void setup() {
         //Direct execution because of test transactions
-        when(trainLockExecutor.executeInTransactionLock(any())).then(invocationOnMock -> {
-            Callable callable = invocationOnMock.getArgument(0);
+        when(trainLockExecutor.executeInTransactionLock(anyString(), any())).then(invocationOnMock -> {
+            final Callable callable = invocationOnMock.getArgument(0);
             return callable.call();
         });
     }
 
     @Test
     public void oneMatchUpdateShouldWork() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
-        Routeset routeset = routesetFactory.create();
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        final Routeset routeset = routesetFactory.create();
         routeset.messageTime = train.timeTableRows.get(0).scheduledTime;
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "ABC123";
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("ABC123", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
     @Test
     public void trainWithDoubleStopFirstStopUpdated() {
-        Train train = replaceLastRow();
+        final Train train = replaceLastRow();
 
-        Routeset routeset = routesetFactory.create();
+        final Routeset routeset = routesetFactory.create();
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "UPD";
         routeset.messageTime = train.timeTableRows.get(0).scheduledTime;
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
 
         Assertions.assertEquals("HKI", returnedTrain.timeTableRows.get(0).station.stationShortCode);
         Assertions.assertEquals("HKI", Iterables.getLast(returnedTrain.timeTableRows).station.stationShortCode);
@@ -93,101 +94,101 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
 
     @Test
     public void trainWithDoubleStopLastStopUpdated() {
-        Train train = replaceLastRow();
+        final Train train = replaceLastRow();
 
-        Routeset routeset = routesetFactory.create();
+        final Routeset routeset = routesetFactory.create();
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "UPD";
         routeset.messageTime = Iterables.getLast(train.timeTableRows).scheduledTime;
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
         Assertions.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     @Test
     public void twoConsecutiveTimeTableRowsShouldBeUpdated() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
-        Routeset routeset = routesetFactory.create();
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        final Routeset routeset = routesetFactory.create();
         routeset.routesections.get(0).stationCode = "TPE";
         routeset.routesections.get(0).commercialTrackId = "UPD";
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(3).commercialTrack);
         Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(4).commercialTrack);
     }
 
     @Test
     public void trainWithDoubleStopNearEachOtherShouldNotUpdateBoth() {
-        Train train = replaceLastRow();
+        final Train train = replaceLastRow();
 
-        ZonedDateTime firstScheduledTime = train.timeTableRows.get(0).scheduledTime;
+        final ZonedDateTime firstScheduledTime = train.timeTableRows.get(0).scheduledTime;
         for (int i = 0; i < train.timeTableRows.size(); i++) {
             train.timeTableRows.get(i).scheduledTime = firstScheduledTime.plusSeconds(i);
         }
 
-        Routeset routeset = routesetFactory.create();
+        final Routeset routeset = routesetFactory.create();
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "UPD";
         routeset.messageTime = Iterables.getLast(train.timeTableRows).scheduledTime;
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("1st", returnedTrain.timeTableRows.get(0).commercialTrack);
         Assertions.assertEquals("UPD", Iterables.getLast(returnedTrain.timeTableRows).commercialTrack);
     }
 
     @Test
     public void commercialTrackChangeAfterRoutesetShouldNotUpdate() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
         train.timeTableRows.get(0).setCommercialTrackChanged(ZonedDateTime.now());
 
-        Routeset routeset = routesetFactory.create();
+        final Routeset routeset = routesetFactory.create();
         routeset.messageTime = ZonedDateTime.now().minusDays(1);
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "UPD";
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("1", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
     @Test
     public void commercialTrackChangeBeforeRoutesetShouldUpdate() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
         train.timeTableRows.get(0).setCommercialTrackChanged(ZonedDateTime.now().minusDays(1));
 
-        Routeset routeset = routesetFactory.create();
+        final Routeset routeset = routesetFactory.create();
         routeset.messageTime = ZonedDateTime.now();
         routeset.routesections.get(0).stationCode = "HKI";
         routeset.routesections.get(0).commercialTrackId = "UPD";
 
-        List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
+        final List<Train> trains = service.updateByRoutesets(Lists.newArrayList(routeset));
 
         Assertions.assertEquals(1, trains.size());
-        Train returnedTrain = trains.get(0);
+        final Train returnedTrain = trains.get(0);
         Assertions.assertEquals("UPD", returnedTrain.timeTableRows.get(0).commercialTrack);
     }
 
 
     private Train replaceLastRow() {
-        Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.of(2019, 1, 1)));
 
         train.timeTableRows.get(0).commercialTrack = "1st";
 
-        TimeTableRow lastStop = Iterables.getLast(train.timeTableRows);
+        final TimeTableRow lastStop = Iterables.getLast(train.timeTableRows);
         train.timeTableRows.remove(lastStop);
-        TimeTableRow newLastStop = timeTableRowFactory.create(train, lastStop.scheduledTime, lastStop.actualTime, new StationEmbeddable("HKI", 1234, "fi"), lastStop.type);
+        final TimeTableRow newLastStop = timeTableRowFactory.create(train, lastStop.scheduledTime, lastStop.actualTime, new StationEmbeddable("HKI", 1234, "fi"), lastStop.type);
         newLastStop.commercialTrack = "LAST";
         return train;
     }

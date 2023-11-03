@@ -40,30 +40,30 @@ public class TimeTableRowByRoutesetUpdateService {
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
 
-    public List<Train> updateByRoutesets(List<Routeset> routesets) {
-        return trainLockExecutor.executeInTransactionLock(() -> {
+    public List<Train> updateByRoutesets(final List<Routeset> routesets) {
+        return trainLockExecutor.executeInTransactionLock("routesets", () -> {
 
             try {
-                List<Routeset> routesetsWithValidTrain = getRoutesetsWithValidTrain(routesets);
-                List<TrainId> validTrainIds = Lists.transform(routesetsWithValidTrain, s -> getTrainId(s));
+                final List<Routeset> routesetsWithValidTrain = getRoutesetsWithValidTrain(routesets);
+                final List<TrainId> validTrainIds = Lists.transform(routesetsWithValidTrain, s -> getTrainId(s));
                 if (validTrainIds.isEmpty()) {
                     return new ArrayList<>();
                 }
-                Map<TrainId, Train> trainMap = Maps.uniqueIndex(trainRepository.findTrains(validTrainIds), s -> s.id);
+                final Map<TrainId, Train> trainMap = Maps.uniqueIndex(trainRepository.findTrains(validTrainIds), s -> s.id);
                 updateCommercialTracks(routesetsWithValidTrain, trainMap);
-                List<Train> updatedTrains = Lists.newArrayList(trainMap.values());
+                final List<Train> updatedTrains = Lists.newArrayList(trainMap.values());
 
                 return updatedTrains;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Failed to updated trains with routesets", e);
                 return new ArrayList<>();
             }
         });
     }
 
-    public List<Train> updateByTrains(List<Train> trains) {
-        List<Routeset> routesetsForTrains = new ArrayList<>();
-        for (Train train : trains) {
+    public List<Train> updateByTrains(final List<Train> trains) {
+        final List<Routeset> routesetsForTrains = new ArrayList<>();
+        for (final Train train : trains) {
             routesetsForTrains.addAll(routesetRepository.findByTrainNumberAndDepartureDate(train.id.trainNumber.toString(), train.id.departureDate));
         }
 
@@ -71,24 +71,24 @@ public class TimeTableRowByRoutesetUpdateService {
         return trains;
     }
 
-    private void updateCommercialTracks(List<Routeset> routesets, Map<TrainId, Train> trainMap) {
-        Long maxVersion = trainRepository.getMaxVersion();
+    private void updateCommercialTracks(final List<Routeset> routesets, final Map<TrainId, Train> trainMap) {
+        final Long maxVersion = trainRepository.getMaxVersion();
 
-        for (Routeset routeset : routesets) {
-            Train train = trainMap.get(getTrainId(routeset));
+        for (final Routeset routeset : routesets) {
+            final Train train = trainMap.get(getTrainId(routeset));
             if (train == null) {
                 continue;
             }
 
-            ListMultimap<String, TimeTableRowAndItsIndex> timeTableRowsByStation = LinkedListMultimap.create();
+            final ListMultimap<String, TimeTableRowAndItsIndex> timeTableRowsByStation = LinkedListMultimap.create();
             for (int i = 0; i < train.timeTableRows.size(); i++) {
-                TimeTableRow timeTableRow = train.timeTableRows.get(i);
+                final TimeTableRow timeTableRow = train.timeTableRows.get(i);
                 timeTableRowsByStation.put(timeTableRow.station.stationShortCode, new TimeTableRowAndItsIndex(i, timeTableRow));
             }
 
-            for (Routesection routesection : routeset.routesections) {
+            for (final Routesection routesection : routeset.routesections) {
                 if (!Strings.isNullOrEmpty(routesection.commercialTrackId)) {
-                    List<TimeTableRowAndItsIndex> timeTableRowsToUpdate = timeTableRowsByStation.get(routesection.stationCode);
+                    final List<TimeTableRowAndItsIndex> timeTableRowsToUpdate = timeTableRowsByStation.get(routesection.stationCode);
 
                     //No corresponding time-table-row found
                     if (timeTableRowsToUpdate.size() == 0) {
@@ -111,9 +111,9 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private void updateSingleStopTimeTableRow(Long maxVersion, Train train, Routeset routeset, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
-        for (TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowsToUpdate) {
-            TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
+    private void updateSingleStopTimeTableRow(final Long maxVersion, final Train train, final Routeset routeset, final Routesection routesection, final List<TimeTableRowAndItsIndex> timeTableRowsToUpdate) {
+        for (final TimeTableRowAndItsIndex timeTableRowAndItsIndex : timeTableRowsToUpdate) {
+            final TimeTableRow timeTableRow = timeTableRowAndItsIndex.timeTableRow;
             if (!isUpdatePossible(routeset, routesection, timeTableRow)) {
                 //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
             } else {
@@ -122,13 +122,13 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private boolean isUpdatePossible(Routeset routeset, Routesection routesection, TimeTableRow timeTableRow) {
+    private boolean isUpdatePossible(final Routeset routeset, final Routesection routesection, final TimeTableRow timeTableRow) {
         return !routesection.commercialTrackId.equals(timeTableRow.commercialTrack) && (timeTableRow.getCommercialTrackChanged() == null || timeTableRow.getCommercialTrackChanged().isBefore(routeset.messageTime));
     }
 
-    private void setCommercialTrack(Long maxVersion, Train train, Routesection routesection, TimeTableRow timeTableRow, Train train2) {
-        long possibleNewVersion = maxVersion + 1;
-        String oldCommercialTrack = timeTableRow.commercialTrack;
+    private void setCommercialTrack(final Long maxVersion, final Train train, final Routesection routesection, final TimeTableRow timeTableRow, final Train train2) {
+        final long possibleNewVersion = maxVersion + 1;
+        final String oldCommercialTrack = timeTableRow.commercialTrack;
         timeTableRow.commercialTrack = routesection.commercialTrackId;
 
         if (train.version < possibleNewVersion) {
@@ -140,16 +140,16 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private void updateMultistopTimeTableRow(Routeset routeset, Train train, Long maxVersion, Routesection routesection, List<TimeTableRowAndItsIndex> timeTableRowAndItsIndexList) {
+    private void updateMultistopTimeTableRow(final Routeset routeset, final Train train, final Long maxVersion, final Routesection routesection, final List<TimeTableRowAndItsIndex> timeTableRowAndItsIndexList) {
         Collections.sort(timeTableRowAndItsIndexList, (left, right) -> {
-            Long leftDiff = getDifference(routeset, left.timeTableRow);
-            Long rightDiff = getDifference(routeset, right.timeTableRow);
+            final Long leftDiff = getDifference(routeset, left.timeTableRow);
+            final Long rightDiff = getDifference(routeset, right.timeTableRow);
 
             return leftDiff.compareTo(rightDiff);
         });
 
 
-        TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
+        final TimeTableRow timeTableRow = timeTableRowAndItsIndexList.get(0).timeTableRow;
         if (!isUpdatePossible(routeset, routesection, timeTableRow)) {
             //log.info("Not updating {} - {} because already updated {} vs {}", train, timeTableRow, timeTableRow.commercialTrack, routesection.commercialTrackId);
         } else if (getDifference(routeset, timeTableRow) > (30 * 60)) {
@@ -159,20 +159,20 @@ public class TimeTableRowByRoutesetUpdateService {
         }
     }
 
-    private Long getDifference(Routeset routeset, TimeTableRow ttr) {
+    private Long getDifference(final Routeset routeset, final TimeTableRow ttr) {
         return Math.abs(Duration.between(ttr.scheduledTime, routeset.messageTime).toSeconds());
     }
 
-    private List<Routeset> getRoutesetsWithValidTrain(List<Routeset> routesets) {
-        Iterable<Routeset> routesetsWithValidTrain = Iterables.filter(routesets, s -> {
+    private List<Routeset> getRoutesetsWithValidTrain(final List<Routeset> routesets) {
+        final Iterable<Routeset> routesetsWithValidTrain = Iterables.filter(routesets, s -> {
             try {
-                long idAsLong = Long.parseLong(s.trainId.trainNumber);
+                final long idAsLong = Long.parseLong(s.trainId.trainNumber);
                 if (idAsLong > 0L && (s.trainId.departureDate != null || s.messageTime.toLocalDate() != null)) {
                     return true;
                 } else {
                     return false;
                 }
-            } catch (NumberFormatException e) {
+            } catch (final NumberFormatException e) {
                 return false;
             }
         });
@@ -185,13 +185,13 @@ public class TimeTableRowByRoutesetUpdateService {
         public TimeTableRow timeTableRow;
         public int index;
 
-        public TimeTableRowAndItsIndex(int index, TimeTableRow timeTableRow) {
+        public TimeTableRowAndItsIndex(final int index, final TimeTableRow timeTableRow) {
             this.index = index;
             this.timeTableRow = timeTableRow;
         }
     }
 
-    private TrainId getTrainId(Routeset routeset) {
+    private TrainId getTrainId(final Routeset routeset) {
         if (routeset.trainId.departureDate == null) {
             return new TrainId(Long.parseLong(routeset.trainId.trainNumber), routeset.messageTime.toLocalDate());
         } else {

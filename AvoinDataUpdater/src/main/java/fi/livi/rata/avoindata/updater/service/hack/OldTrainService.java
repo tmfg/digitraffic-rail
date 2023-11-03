@@ -59,8 +59,8 @@ public class OldTrainService {
 
     @Scheduled(cron = "${updater.oldtrainupdater-check-cron}", zone = "Europe/Helsinki")
     public void updateOldTrains() {
-        LocalDate end = LocalDate.now().minusDays(2);
-        LocalDate start = LocalDate.now().minusDays(numberOfDaysToInitialize);
+        final LocalDate end = LocalDate.now().minusDays(2);
+        final LocalDate start = LocalDate.now().minusDays(numberOfDaysToInitialize);
 
         log.info("Starting to check for updated old trains from {} to {}", start, end);
 
@@ -69,7 +69,7 @@ public class OldTrainService {
 
             final List<Train> trainResponse = getChangedTrains(date);
 
-            trainLockExecutor.executeInLock(() -> {
+            trainLockExecutor.executeInLock("oldTrains", () -> {
 
                 if (!trainResponse.isEmpty()) {
                     log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
@@ -90,26 +90,26 @@ public class OldTrainService {
     }
 
     private List<Train> getChangedTrains(final LocalDate date) {
-        List<Train> changedTrains = new ArrayList<>();
+        final List<Train> changedTrains = new ArrayList<>();
 
         final List<Object[]> trains = trainRepository.findByDepartureDateLite(date);
 
-        for (List<Object[]> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
+        for (final List<Object[]> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
             changedTrains.addAll(getChangedTrainsByIds(date, oldTrainPartition));
         }
 
         return changedTrains;
     }
 
-    private List<Train> getChangedTrainsByIds(LocalDate date, List<Object[]> oldTrainPartition) {
-        Map<Long, Long> versions = new HashMap<>(oldTrainPartition.size());
+    private List<Train> getChangedTrainsByIds(final LocalDate date, final List<Object[]> oldTrainPartition) {
+        final Map<Long, Long> versions = new HashMap<>(oldTrainPartition.size());
         for (final Object[] train : oldTrainPartition) {
-            TrainId id = (TrainId) train[0];
-            Long version = (Long) train[1];
+            final TrainId id = (TrainId) train[0];
+            final Long version = (Long) train[1];
             versions.put(id.trainNumber, version);
         }
 
-        HashMap<String, Object> parts = new HashMap<>();
+        final HashMap<String, Object> parts = new HashMap<>();
         parts.put("date", date);
         parts.put("versions", versions);
 

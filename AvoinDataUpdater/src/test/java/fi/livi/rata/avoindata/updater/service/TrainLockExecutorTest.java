@@ -23,30 +23,30 @@ public class TrainLockExecutorTest extends BaseTest {
 
     @Test
     public void singleThreadLockingShouldWork() {
-        List<Integer> order = new ArrayList<>();
+        final List<Integer> order = new ArrayList<>();
 
-        trainLockExecutor.executeInLock(() -> {
+        trainLockExecutor.executeInLock("test", () -> {
             Thread.sleep(400);
             order.add(10);
 
             return new Object();
         });
 
-        trainLockExecutor.executeInLock(() -> {
+        trainLockExecutor.executeInLock("test", () -> {
             Thread.sleep(300);
             order.add(9);
 
             return new Object();
         });
 
-        trainLockExecutor.executeInLock(() -> {
+        trainLockExecutor.executeInLock("test", () -> {
             Thread.sleep(200);
             order.add(8);
 
             return new Object();
         });
 
-        trainLockExecutor.executeInLock(() -> {
+        trainLockExecutor.executeInLock("test", () -> {
             Thread.sleep(100);
             order.add(7);
 
@@ -61,13 +61,13 @@ public class TrainLockExecutorTest extends BaseTest {
 
     @Test
     public void multiThreadLockingShouldWork() throws InterruptedException {
-        List<Integer> order = new ArrayList<>();
+        final List<Integer> order = new ArrayList<>();
 
         final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
         executorService.submit(() -> {
             log.info("1 submitted");
-            trainLockExecutor.executeInLock(() -> {
+            trainLockExecutor.executeInLock("test", () -> {
                 log.info("1 started");
 
                 Thread.sleep(400);
@@ -83,7 +83,7 @@ public class TrainLockExecutorTest extends BaseTest {
 
         executorService.execute(() -> {
             log.info("2 submitted");
-            trainLockExecutor.executeInLock(() -> {
+            trainLockExecutor.executeInLock("test", () -> {
                 log.info("2 started");
 
                 Thread.sleep(300);
@@ -99,7 +99,7 @@ public class TrainLockExecutorTest extends BaseTest {
 
         executorService.execute(() -> {
             log.info("3 submitted");
-            trainLockExecutor.executeInLock(() -> {
+            trainLockExecutor.executeInLock("test", () -> {
                 log.info("3 started");
 
                 Thread.sleep(200);
@@ -115,7 +115,7 @@ public class TrainLockExecutorTest extends BaseTest {
 
         executorService.execute(() -> {
             log.info("4 submitted");
-            trainLockExecutor.executeInLock(() -> {
+            trainLockExecutor.executeInLock("test", () -> {
                 log.info("4 started");
 
                 Thread.sleep(100);

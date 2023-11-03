@@ -64,9 +64,9 @@ public class GTFSTripService {
     public List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                   final Map<String, Stop> stopMap, final List<SimpleTimeTableRow> timeTableRows,
                                   final PlatformData platformData) {
-        List<Trip> trips = new ArrayList<>();
+        final List<Trip> trips = new ArrayList<>();
 
-        Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber = timeTableRows
+        final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber = timeTableRows
                 .stream()
                 .collect(Collectors.groupingBy(SimpleTimeTableRow::getTrainNumber));
 
@@ -77,7 +77,7 @@ public class GTFSTripService {
 
                 final Trip trip = createTrip(schedule, localDates.get(0), localDates.get(1), "", timeTableRowsByTrainNumber, platformData);
 
-                List<Trip> partialCancellationTrips = createPartialCancellationTrips(localDates, schedule, trip, timeTableRowsByTrainNumber, platformData);
+                final List<Trip> partialCancellationTrips = createPartialCancellationTrips(localDates, schedule, trip, timeTableRowsByTrainNumber, platformData);
                 if (!partialCancellationTrips.isEmpty()) {
                     log.trace("Created {} partial cancellation trips: {}", partialCancellationTrips.size(), partialCancellationTrips);
 
@@ -90,7 +90,7 @@ public class GTFSTripService {
             }
         }
 
-        Set<Trip> toBeRemoved = new HashSet<>();
+        final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
             if (trip.stopTimes.isEmpty()) {
                 toBeRemoved.add(trip);
@@ -106,22 +106,20 @@ public class GTFSTripService {
         return trips;
     }
 
-    private boolean isTripFullyCancelled(Trip trip, List<Trip> partialCancellationTrips) {
-        boolean isFullyCancelled = false;
-        for (Trip partialCancellationTrip : partialCancellationTrips) {
+    private boolean isTripFullyCancelled(final Trip trip, final List<Trip> partialCancellationTrips) {
+        for (final Trip partialCancellationTrip : partialCancellationTrips) {
             if ((partialCancellationTrip.calendar.startDate.equals(trip.calendar.startDate) && partialCancellationTrip.calendar.endDate.equals(trip.calendar.endDate))) {
-                isFullyCancelled = true;
+                return true;
             }
         }
-        return isFullyCancelled;
+        return false;
     }
 
     private List<Trip> createPartialCancellationTrips(final List<LocalDate> localDates, final Schedule schedule, final Trip trip,
                                                       final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber,
                                                       final PlatformData platformData) {
-        List<Trip> partialCancellationTrips = new ArrayList<>();
-
-        Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = getFilteredCancellations(schedule);
+        final List<Trip> partialCancellationTrips = new ArrayList<>();
+        final Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = getFilteredCancellations(schedule);
 
         for (final ScheduleCancellation scheduleCancellation : cancellations.values()) {
             if (!DateUtils.isInclusivelyBetween(scheduleCancellation.startDate, localDates.get(0), localDates.get(1)) && !DateUtils
@@ -129,9 +127,9 @@ public class GTFSTripService {
                 continue;
             }
 
-            LocalDate cancellationStartDate = DateUtils.isInclusivelyBetween(scheduleCancellation.startDate, localDates.get(0),
+            final LocalDate cancellationStartDate = DateUtils.isInclusivelyBetween(scheduleCancellation.startDate, localDates.get(0),
                     localDates.get(1)) ? scheduleCancellation.startDate : localDates.get(0);
-            LocalDate cancellationEndDate = DateUtils.isInclusivelyBetween(scheduleCancellation.endDate, localDates.get(0),
+            final LocalDate cancellationEndDate = DateUtils.isInclusivelyBetween(scheduleCancellation.endDate, localDates.get(0),
                     localDates.get(1)) ? scheduleCancellation.endDate : localDates.get(1);
 
             for (LocalDate date = cancellationStartDate; date.isBefore(cancellationEndDate) || date.isEqual(
@@ -146,7 +144,7 @@ public class GTFSTripService {
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(
                     Collections2.filter(scheduleCancellation.cancelledRows, s -> s != null), s -> s.id);
 
-            List<StopTime> removedStopTimes = new ArrayList<>();
+            final List<StopTime> removedStopTimes = new ArrayList<>();
             for (final StopTime stopTime : partialCancellationTrip.stopTimes) {
                 if (isStoptimeCancelled(stopTime, cancelledScheduleRowsMap)) {
                     removedStopTimes.add(stopTime);
@@ -225,7 +223,10 @@ public class GTFSTripService {
         return departureCancelled && !arrivalExists || arrivalCancelled && !departureExists || arrivalCancelled && departureCancelled;
     }
 
-    private Trip createTrip(final Schedule schedule, final LocalDate startDate, final LocalDate endDate, String scheduleSuffix,
+    private Trip createTrip(final Schedule schedule,
+                            final LocalDate startDate,
+                            final LocalDate endDate,
+                            final String scheduleSuffix,
                             final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber,
                             final PlatformData platformData) {
         final String tripId = String.format("%s_%s%s",
@@ -234,7 +235,7 @@ public class GTFSTripService {
                 scheduleSuffix);
         final String serviceId = tripId;
 
-        Trip trip = new Trip(schedule);
+        final Trip trip = new Trip(schedule);
         trip.serviceId = serviceId;
         trip.tripId = tripId;
 
@@ -294,10 +295,11 @@ public class GTFSTripService {
     private List<StopTime> createStopTimes(final Schedule schedule, final String tripId,
                                            final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber,
                                            final PlatformData platformData) {
-        List<StopTime> stopTimes = new ArrayList<>();
+        final List<StopTime> stopTimes = new ArrayList<>();
+
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {
-            ScheduleRow scheduleRow = schedule.scheduleRows.get(i);
-            StopTime stopTime = new StopTime(scheduleRow);
+            final ScheduleRow scheduleRow = schedule.scheduleRows.get(i);
+            final StopTime stopTime = new StopTime(scheduleRow);
             stopTime.tripId = tripId;
 
             if (scheduleRow.departure != null) {
@@ -311,7 +313,7 @@ public class GTFSTripService {
                 stopTime.arrivalTime = scheduleRow.departure.timestamp;
             }
 
-            Optional<String> trackNumber = findTrack(scheduleRow, timeTableRowsByTrainNumber);
+            final Optional<String> trackNumber = findTrack(scheduleRow, timeTableRowsByTrainNumber);
             if (trackNumber.isPresent()
                     && platformData.isValidTrack(scheduleRow.station.stationShortCode, trackNumber.get())) {
                 stopTime.track = trackNumber.get();

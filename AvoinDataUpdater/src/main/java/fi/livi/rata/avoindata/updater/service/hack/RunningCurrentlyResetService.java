@@ -29,12 +29,12 @@ public class RunningCurrentlyResetService {
 
 //    @Scheduled(cron = "${updater.running-currently-reset-cron}", zone = "Europe/Helsinki")
     public void resetOldRunningTrains() {
-        LocalDate maxDepartureDate = dateProvider.dateInHelsinki().minusDays(2);
-        trainLockExecutor.executeInLock(() -> {
-            List<Train> oldRunningTrains = trainRepository.findRunningTrains(maxDepartureDate);
-            long maxVersion = trainRepository.getMaxVersion();
+        final LocalDate maxDepartureDate = dateProvider.dateInHelsinki().minusDays(2);
+        trainLockExecutor.executeInLock("resetOldRunningTrains", () -> {
+            final List<Train> oldRunningTrains = trainRepository.findRunningTrains(maxDepartureDate);
+            final long maxVersion = trainRepository.getMaxVersion();
 
-            for (Train oldRunningTrain : oldRunningTrains) {
+            for (final Train oldRunningTrain : oldRunningTrains) {
                 oldRunningTrain.runningCurrently = false;
                 oldRunningTrain.version = maxVersion + 1;
 

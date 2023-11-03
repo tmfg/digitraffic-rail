@@ -70,7 +70,7 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
 
     @Override
     protected List<Forecast> doUpdate() {
-        return trainLockExecutor.executeInLock(() -> super.doUpdate());
+        return trainLockExecutor.executeInLock(this.getPrefix(), () -> super.doUpdate());
     }
 
     @Override
@@ -84,10 +84,10 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
 
     private void mergeForecasts(final List<Forecast> deserializedForecasts) {
         if (!deserializedForecasts.isEmpty()) {
-            List<Forecast> totalForecasts = getTotalForecasts(deserializedForecasts);
+            final List<Forecast> totalForecasts = getTotalForecasts(deserializedForecasts);
 
             final ImmutableListMultimap<TrainId, Forecast> trainMap = Multimaps.index(totalForecasts, forecast -> {
-                TimeTableRowId timeTableRowId = forecast.timeTableRow.getIdDirect(forecast.timeTableRow);
+                final TimeTableRowId timeTableRowId = forecast.timeTableRow.getIdDirect(forecast.timeTableRow);
                 return new TrainId(timeTableRowId.trainNumber, timeTableRowId.departureDate);
             });
 
@@ -95,7 +95,7 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
 
             final Map<TrainId, Train> fetchedTrainMap = Maps.uniqueIndex(trains, s -> s.id);
 
-            List<Train> savedTrains = new ArrayList<>(trainMap.size());
+            final List<Train> savedTrains = new ArrayList<>(trainMap.size());
             for (final TrainId trainId : trainMap.keySet()) {
                 final Train fetchedTrain = fetchedTrainMap.get(trainId);
                 if (fetchedTrain != null) {
@@ -122,9 +122,9 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
     }
 
     private List<Forecast> getTotalForecasts(final List<Forecast> deserializedForecasts) {
-        List<TrainId> affectedTrains = new ArrayList<>();
+        final List<TrainId> affectedTrains = new ArrayList<>();
         for (final Forecast deserializedForecast : deserializedForecasts) {
-            TimeTableRowId timeTableRowId = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
+            final TimeTableRowId timeTableRowId = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
             affectedTrains.add(new TrainId(timeTableRowId.trainNumber, timeTableRowId.departureDate));
         }
 
@@ -132,7 +132,7 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
 
         final HashSet<Long> deserializedIds = Sets.newHashSet(Iterables.transform(deserializedForecasts, f -> f.id));
 
-        List<Forecast> totalForecasts = new ArrayList<>();
+        final List<Forecast> totalForecasts = new ArrayList<>();
         totalForecasts.addAll(deserializedForecasts);
         for (final Forecast forecast : forecastsFromDatabase) {
             if (!deserializedIds.contains(forecast.id)) {

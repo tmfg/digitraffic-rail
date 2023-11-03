@@ -64,8 +64,8 @@ public class ManualUpdateController {
 
     @RequestMapping("/reinitialize")
     @ResponseBody
-    public boolean reinitializeTrainsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        trainLockExecutor.executeInLock(() -> {
+    public boolean reinitializeTrainsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
+        trainLockExecutor.executeInLock("manualReinitialize", () -> {
             logger.info("Starting manual train update for day {}", date);
 
             trainRepository.removeByDepartureDate(date);
@@ -83,7 +83,7 @@ public class ManualUpdateController {
 
     @RequestMapping("/reinitialize-compositions")
     @ResponseBody
-    public boolean reinitializeCompositionsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public boolean reinitializeCompositionsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
         logger.info("Starting manual composition update for day {}", date);
 
         compositionRepository.removeByDepartureDate(date);
@@ -120,7 +120,7 @@ public class ManualUpdateController {
         logger.info("Starting manual gtfs");
         final LocalDate start = dp.dateInHelsinki().minusDays(7);
 
-        Predicate<Schedule> lambda = s -> true;
+        final Predicate<Schedule> lambda = s -> true;
 
         gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
         return true;

@@ -86,7 +86,7 @@ public class ScheduleService {
         allSchedules.addAll(regularSchedules);
 
         final LocalDate finalDate = date;
-        final List<Train> extractedTrains = trainLockExecutor.executeInLock(
+        final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
                 () -> singleDayScheduleExtractService.extract(allSchedules, finalDate, true));
 
         if (!extractedTrains.isEmpty()) {

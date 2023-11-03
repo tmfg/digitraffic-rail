@@ -21,47 +21,63 @@ public class TrainLockExecutor {
 
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public <T> T executeInTransactionLock(Callable<T> callable) {
-        ZonedDateTime submittedAt = ZonedDateTime.now();
+    public <T> T executeInTransactionLock(final String context, final Callable<T> callable) {
+        final ZonedDateTime submittedAt = ZonedDateTime.now();
 
-        Callable<T> wrappedCallable = () -> {
-            ZonedDateTime executionStartedAt = ZonedDateTime.now();
-            T returnValue = simpleTransactionManager.executeInTransaction(callable);
+        final Callable<T> wrappedCallable = () -> {
+            log.info("Executing callable for " + context);
+
+            final ZonedDateTime executionStartedAt = ZonedDateTime.now();
+            final T returnValue = simpleTransactionManager.executeInTransaction(callable);
             if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt), Duration.between(executionStartedAt, ZonedDateTime.now()));
+                log.info("Waited: {}, Executed: {}, Context: {}",
+                        Duration.between(submittedAt, executionStartedAt),
+                        Duration.between(executionStartedAt, ZonedDateTime.now()),
+                        context);
             }
             return returnValue;
         };
 
-        final Future<T> future = executorService.submit(wrappedCallable);
+        final Future<T> future = submitCallable(context, wrappedCallable);
 
         try {
             return future.get();
-        } catch (Exception e) {
-            log.error("Error executing callable in TrainLockExecutor", e);
+        } catch (final Exception e) {
+            log.error("Error executing callable in TrainLockExecutor, context: " + context, e);
             return null;
         }
     }
 
-    public <T> T executeInLock(Callable<T> callable) {
-        ZonedDateTime submittedAt = ZonedDateTime.now();
+    public <T> T executeInLock(final String context, final Callable<T> callable) {
+        final ZonedDateTime submittedAt = ZonedDateTime.now();
 
-        Callable<T> wrappedCallable = () -> {
-            ZonedDateTime executionStartedAt = ZonedDateTime.now();
-            T returnValue = callable.call();
+        final Callable<T> wrappedCallable = () -> {
+            log.info("Executing callable for " + context);
+
+            final ZonedDateTime executionStartedAt = ZonedDateTime.now();
+            final T returnValue = callable.call();
             if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt), Duration.between(executionStartedAt, ZonedDateTime.now()));
+                log.info("Waited: {}, Executed: {}, Context: {}",
+                        Duration.between(submittedAt, executionStartedAt),
+                        Duration.between(executionStartedAt, ZonedDateTime.now()),
+                        context);
             }
             return returnValue;
         };
 
-        final Future<T> future = executorService.submit(wrappedCallable);
+        final Future<T> future = submitCallable(context, wrappedCallable);
 
         try {
             return future.get();
-        } catch (Exception e) {
-            log.error("Error executing callable in TrainLockExecutor", e);
+        } catch (final Exception e) {
+            log.error("Error executing callable in TrainLockExecutor, context: " + context, e);
             return null;
         }
+    }
+
+    private <T> Future<T> submitCallable(final String context, final Callable<T> callable) {
+        log.info("Submitting callable for " + context);
+
+        return executorService.submit(callable);
     }
 }

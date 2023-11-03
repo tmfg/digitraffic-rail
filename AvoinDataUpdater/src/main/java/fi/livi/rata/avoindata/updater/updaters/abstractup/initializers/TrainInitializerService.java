@@ -62,8 +62,8 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @Override
     protected List<Train> doUpdate() {
-        return trainLockExecutor.executeInLock(() -> {
-            List<Train> updatedTrains = super.doUpdate();
+        return trainLockExecutor.executeInLock(this.getPrefix(), () -> {
+            final List<Train> updatedTrains = super.doUpdate();
 
             trainPublishingService.publish(updatedTrains);
 
@@ -84,12 +84,12 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         return entities;
     }
 
-    private void mergeRoutesets(List<Train> entities) {
+    private void mergeRoutesets(final List<Train> entities) {
         timeTableRowByRoutesetUpdateService.updateByTrains(entities);
     }
 
-    private void mergeForecasts(List<Train> entities, List<TrainId> trainIds) {
-        List<Forecast> forecasts = bes.transform(trainIds, t -> forecastRepository.findByTrains(t));
+    private void mergeForecasts(final List<Train> entities, final List<TrainId> trainIds) {
+        final List<Forecast> forecasts = bes.transform(trainIds, t -> forecastRepository.findByTrains(t));
 
         final ImmutableListMultimap<Train, Forecast> trainMap = Multimaps.index(forecasts, forecast -> forecast.timeTableRow.train);
 
