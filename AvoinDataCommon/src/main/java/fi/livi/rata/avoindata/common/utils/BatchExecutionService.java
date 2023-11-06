@@ -18,9 +18,13 @@ public class BatchExecutionService {
     }
 
     public <I, O> List<O> transform(List<I> originalCollection, Function<List<I>, List<O>> batchFunction) {
+        return this.transform(originalCollection,batchFunction, BATCH_SIZE);
+    }
+
+    public <I, O> List<O> transform(List<I> originalCollection, Function<List<I>, List<O>> batchFunction, int batchSize) {
         List<O> outputList = new ArrayList<>(originalCollection.size());
 
-        final List<List<I>> partitions = Lists.partition(originalCollection, BATCH_SIZE);
+        final List<List<I>> partitions = Lists.partition(originalCollection, batchSize);
         for (final List<I> partition : partitions) {
             outputList.addAll(batchFunction.apply(partition));
         }
