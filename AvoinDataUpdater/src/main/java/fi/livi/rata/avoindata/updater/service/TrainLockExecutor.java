@@ -21,42 +21,33 @@ public class TrainLockExecutor {
 
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    private static final int LIMIT_MILLIS_WAITING = 10000;
+    private static final int LIMIT_MILLIS_EXECUTING = 20000;
+
     public <T> T executeInTransactionLock(final String context, final Callable<T> callable) {
-        final ZonedDateTime submittedAt = ZonedDateTime.now();
-
-        final Callable<T> wrappedCallable = () -> {
-            log.info("Executing callable for " + context);
-
-            final ZonedDateTime executionStartedAt = ZonedDateTime.now();
-            final T returnValue = simpleTransactionManager.executeInTransaction(callable);
-            if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                log.info("Waited: {}, Executed: {}, Context: {}",
-                        Duration.between(submittedAt, executionStartedAt),
-                        Duration.between(executionStartedAt, ZonedDateTime.now()),
-                        context);
-            }
-            return returnValue;
-        };
-
-        final Future<T> future = submitCallable(context, wrappedCallable);
-
-        try {
-            return future.get();
-        } catch (final Exception e) {
-            log.error("Error executing callable in TrainLockExecutor, context: " + context, e);
-            return null;
-        }
+        return execute(context, true, callable);
     }
 
     public <T> T executeInLock(final String context, final Callable<T> callable) {
+        return execute(context, false, callable);
+    }
+
+    private <T> T execute(final String context, final boolean inTransaction, final Callable<T> callable) {
         final ZonedDateTime submittedAt = ZonedDateTime.now();
 
         final Callable<T> wrappedCallable = () -> {
             log.info("Executing callable for " + context);
 
             final ZonedDateTime executionStartedAt = ZonedDateTime.now();
-            final T returnValue = callable.call();
-            if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
+
+            final T returnValue;
+            if(inTransaction) {
+                returnValue = simpleTransactionManager.executeInTransaction(callable);
+            } else {
+                returnValue = callable.call();
+            }
+
+            if (shouldLog(submittedAt, executionStartedAt)) {
                 log.info("Waited: {}, Executed: {}, Context: {}",
                         Duration.between(submittedAt, executionStartedAt),
                         Duration.between(executionStartedAt, ZonedDateTime.now()),
@@ -74,6 +65,11 @@ public class TrainLockExecutor {
             return null;
         }
     }
+
+    private boolean shouldLog(final ZonedDateTime submittedAt, final ZonedDateTime executionStartedAt) {
+        return Duration.between(submittedAt, executionStartedAt).toMillis() > LIMIT_MILLIS_WAITING
+            || Duration.between(executionStartedAt, ZonedDateTime.now()).toMillis() > LIMIT_MILLIS_EXECUTING;
+        }
 
     private <T> Future<T> submitCallable(final String context, final Callable<T> callable) {
         log.info("Submitting callable for " + context);
