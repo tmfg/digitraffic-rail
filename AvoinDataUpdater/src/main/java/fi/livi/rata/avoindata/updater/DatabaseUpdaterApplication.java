@@ -1,15 +1,13 @@
 package fi.livi.rata.avoindata.updater;
 
-import com.google.common.base.Strings;
-import fi.livi.rata.avoindata.common.ESystemStateProperty;
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
-import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
-import fi.livi.rata.avoindata.updater.service.CompositionService;
-import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
-import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.*;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +21,22 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClientException;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
+import com.google.common.base.Strings;
+import fi.livi.rata.avoindata.common.ESystemStateProperty;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
+import fi.livi.rata.avoindata.common.service.SystemStatePropertyService;
+import fi.livi.rata.avoindata.updater.service.CompositionService;
+import fi.livi.rata.avoindata.updater.service.TrainRunningMessageService;
+import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.AbstractDatabaseInitializer;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.CompositionInitializerService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.RoutesetInitializerService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainInitializerService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.initializers.TrainRunningMessageInitializerService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @SpringBootApplication
 @EnableCaching
@@ -103,9 +107,6 @@ public class DatabaseUpdaterApplication {
         private CompositionInitializerService compositionInitializerService;
 
         @Autowired
-        private ForecastInitializerService forecastInitializerService;
-
-        @Autowired
         private ScheduleService scheduleService;
 
         @Autowired
@@ -157,7 +158,6 @@ public class DatabaseUpdaterApplication {
             compositionInitializerService.startUpdating(UPDATE_COMPOSITIONS_DELAY);
             trainRunningMessageInitializerService.startUpdating(UPDATE_TRAINRUNNINGMESSAGES_DELAY);
             routesetInitializerService.startUpdating(UPDATE_ROUTESETS_DELAY);
-            forecastInitializerService.startUpdating(10000);
         }
 
         private void startLazyUpdate() {
@@ -165,7 +165,6 @@ public class DatabaseUpdaterApplication {
             compositionInitializerService.initializeInLazyMode();
             trainRunningMessageInitializerService.initializeInLazyMode();
             routesetInitializerService.initializeInLazyMode();
-            forecastInitializerService.initializeInLazyMode();
         }
 
         private void initializeInLockMode() throws InterruptedException {
@@ -183,8 +182,6 @@ public class DatabaseUpdaterApplication {
                 AbstractDatabaseInitializer.waitUntilTasksAreDone(executor);
             }
 
-            forecastInitializerService.initializeInLockMode();
-
             systemStatePropertyService.setValue(ESystemStateProperty.DATABASE_LOCKED_MODE, Boolean.FALSE);
             log.info("Ending in lock mode!");
         }
@@ -195,7 +192,6 @@ public class DatabaseUpdaterApplication {
             compositionInitializerService.clearEntities();
             trainRunningMessageInitializerService.clearEntities();
             routesetInitializerService.clearEntities();
-            forecastInitializerService.clearEntities();
         }
 
         private boolean isInitializationNeeded() {

@@ -5,8 +5,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
-import jakarta.annotation.PostConstruct;
-
 import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,7 +17,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
-
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
@@ -43,7 +40,6 @@ import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
-import fi.livi.rata.avoindata.common.domain.train.Forecast;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
@@ -51,7 +47,6 @@ import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessag
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
 import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.ElementRangeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.ForecastDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.IdentifierRangeDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.LocalizationsDeserializer;
@@ -88,6 +83,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancell
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class HttpInputObjectMapper extends ObjectMapper {
@@ -150,9 +146,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
     @Autowired
     private RoutesectionDeserializer routesectionDeserializer;
-
-    @Autowired
-    private ForecastDeserializer forecastDeserializer;
 
     @Autowired
     private ScheduleDeserializer scheduleDeserializer;
@@ -223,8 +216,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
         module.addDeserializer(Routeset.class, routesetDeserializer);
         module.addDeserializer(Routesection.class, routesectionDeserializer);
-
-        module.addDeserializer(Forecast.class, forecastDeserializer);
 
         module.addDeserializer(Schedule.class, scheduleDeserializer);
         module.addDeserializer(ScheduleCancellation.class, scheduleCancellationDeserializer);

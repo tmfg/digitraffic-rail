@@ -1,15 +1,21 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
-import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
-import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
-import org.hibernate.annotations.Type;
 
-import jakarta.persistence.*;
-import java.time.Duration;
-import java.time.ZonedDateTime;
+import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Immutable
@@ -18,13 +24,6 @@ public class GTFSTimeTableRow {
     public enum TimeTableRowType {
         ARRIVAL,
         DEPARTURE
-    }
-    public enum EstimateSourceEnum {
-        LIIKE_USER,
-        MIKU_USER,
-        LIIKE_AUTOMATIC,
-        UNKNOWN,
-        COMBOCALC
     }
 
     @EmbeddedId
