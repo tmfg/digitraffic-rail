@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,13 +129,16 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
     }
 
     private List<Forecast> getTotalForecasts(final List<Forecast> deserializedForecasts) {
-        final List<TrainId> affectedTrains = new ArrayList<>();
-        for (final Forecast deserializedForecast : deserializedForecasts) {
-            final TimeTableRowId timeTableRowId = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
-            affectedTrains.add(new TrainId(timeTableRowId.trainNumber, timeTableRowId.departureDate));
-        }
+        final List<TrainId> affectedTrains = deserializedForecasts.stream()
+            .map(deserializedForecast -> {
+                var ttr = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
+                return new TrainId(ttr.trainNumber,ttr.departureDate);
+            })
+            .collect(Collectors.toSet())
+            .stream().sorted()
+            .collect(Collectors.toList());
 
-        final List<Forecast> forecastsFromDatabase = bes.transform(affectedTrains, l -> forecastRepository.findByTrains(l), 300);
+        final List<Forecast> forecastsFromDatabase = bes.transform(affectedTrains, l -> forecastRepository.findByTrains(l), 100);
 
         final HashSet<Long> deserializedIds = Sets.newHashSet(Iterables.transform(deserializedForecasts, f -> f.id));
 

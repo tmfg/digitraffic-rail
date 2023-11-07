@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +95,10 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     private void mergeForecasts(List<Train> entities, List<TrainId> trainIds) {
-        List<Forecast> forecasts = bes.transform(trainIds, t -> forecastRepository.findByTrains(t), 300);
+        List<Forecast> forecasts = bes.transform(trainIds
+            .stream().collect(Collectors.toSet())
+            .stream().sorted()
+            .collect(Collectors.toList()), t -> forecastRepository.findByTrains(t), 100);
 
         final ImmutableListMultimap<Train, Forecast> trainMap = Multimaps.index(forecasts, forecast -> forecast.timeTableRow.train);
 

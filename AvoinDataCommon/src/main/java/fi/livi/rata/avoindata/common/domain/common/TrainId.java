@@ -1,18 +1,18 @@
 package fi.livi.rata.avoindata.common.domain.common;
 
+import static java.util.Comparator.comparing;
+
 import java.io.Serializable;
 import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-
-import org.hibernate.annotations.Type;
+import java.util.Comparator;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 
 @Schema(required = true)
-public class TrainId implements Serializable {
+public class TrainId implements Serializable, Comparable {
     @NonNull
     @Column
     @Schema(description = "Identifies the train inside a single departure date", example = "1", required = true)
@@ -63,5 +63,15 @@ public class TrainId implements Serializable {
     @Override
     public String toString() {
         return String.format("%s: %s", departureDate, trainNumber);
+    }
+
+    @Override
+    public int compareTo(final Object o) {
+        if (!(o instanceof final TrainId another)) {
+            throw new IllegalStateException("Can only compare against another TrainId");
+        }
+
+        final Comparator<TrainId> comparing = comparing(s -> s.departureDate);
+        return comparing.thenComparing(s -> s.trainNumber).compare(this, another);
     }
 }
