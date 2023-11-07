@@ -1,6 +1,22 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
-import com.google.common.collect.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.dao.train.ForecastRepository;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -15,15 +31,6 @@ import fi.livi.rata.avoindata.updater.service.miku.ForecastMergingService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenForecastFilter;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.ForecastPersistService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class ForecastInitializerService extends AbstractDatabaseInitializer<Forecast> {
@@ -122,13 +129,16 @@ public class ForecastInitializerService extends AbstractDatabaseInitializer<Fore
     }
 
     private List<Forecast> getTotalForecasts(final List<Forecast> deserializedForecasts) {
-        final List<TrainId> affectedTrains = new ArrayList<>();
-        for (final Forecast deserializedForecast : deserializedForecasts) {
-            final TimeTableRowId timeTableRowId = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
-            affectedTrains.add(new TrainId(timeTableRowId.trainNumber, timeTableRowId.departureDate));
-        }
+        final List<TrainId> affectedTrains = deserializedForecasts.stream()
+            .map(deserializedForecast -> {
+                var ttr = deserializedForecast.timeTableRow.getIdDirect(deserializedForecast.timeTableRow);
+                return new TrainId(ttr.trainNumber,ttr.departureDate);
+            })
+            .collect(Collectors.toSet())
+            .stream().sorted()
+            .collect(Collectors.toList());
 
-        final List<Forecast> forecastsFromDatabase = bes.transform(affectedTrains, l -> forecastRepository.findByTrains(l));
+        final List<Forecast> forecastsFromDatabase = bes.transform(affectedTrains, l -> forecastRepository.findByTrains(l), 100);
 
         final HashSet<Long> deserializedIds = Sets.newHashSet(Iterables.transform(deserializedForecasts, f -> f.id));
 

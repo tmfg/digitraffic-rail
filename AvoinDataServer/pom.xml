@@ -16,7 +16,7 @@
     <properties>
         <start-class>fi.livi.rata.avoindata.server.ServerApplication</start-class>
         <spring.cloud.aws.version>2.4.4</spring.cloud.aws.version>
-        <spring.cloud.commons.version>4.0.3</spring.cloud.commons.version>
+        <spring.cloud.commons.version>4.0.4</spring.cloud.commons.version>
     </properties>
 
     <dependencies>
@@ -103,6 +103,7 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
+            <version>6.1.7.Final</version>
             <exclusions>
                 <exclusion>
                     <artifactId>postgresql</artifactId>
@@ -133,7 +134,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.16.1</version>
+            <version>1.16.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -155,12 +156,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.1</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-junit-platform</artifactId>
-                        <version>3.1.2</version>
+                        <version>3.2.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
