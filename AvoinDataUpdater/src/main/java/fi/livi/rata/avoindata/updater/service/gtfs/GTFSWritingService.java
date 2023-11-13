@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
 import com.google.transit.realtime.GtfsRealtime;
-
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -74,9 +73,12 @@ public class GTFSWritingService {
     public List<File> writeGTFSFiles(final GTFSDto gtfsDto, final String zipFileName) throws IOException {
         log.info("Generating {}", zipFileName);
 
+        log.info("Creating files {}", zipFileName);
         final List<File> files = writeGtfsFiles(gtfsDto);
+        log.info("Writing zip {}", zipFileName);
         writeGtfsZipFile(files, zipFileName);
 
+        log.info("Persist {}", zipFileName);
         persist(Files.readAllBytes(new File(zipFileName).toPath()), zipFileName);
 
         return files;
