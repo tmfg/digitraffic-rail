@@ -17,6 +17,7 @@ import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 
 @Component
 public class TrainLocationDeserializer extends AEntityDeserializer<TrainLocation> {
+    public static final int MAX_ACCURACY = 32000; // Mysql smallint
 
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
@@ -40,6 +41,9 @@ public class TrainLocationDeserializer extends AEntityDeserializer<TrainLocation
         trainLocation.location = geometryFactory.createPoint(new Coordinate(projCoordinate.x, projCoordinate.y));
 
         trainLocation.accuracy = getNullableInteger(node, "tarkkuus");
+        if (trainLocation.accuracy != null) {
+            trainLocation.accuracy = Math.min(trainLocation.accuracy, MAX_ACCURACY);
+        }
 
         return trainLocation;
     }
