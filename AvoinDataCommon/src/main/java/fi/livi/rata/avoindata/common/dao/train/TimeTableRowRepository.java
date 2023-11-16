@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.common.dao.train;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -16,6 +17,15 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTableRow, TimeTableRowId> {
 
     @Query("SELECT sttr FROM SimpleTimeTableRow sttr " +
-            "WHERE sttr.scheduledTime > :start AND sttr.scheduledTime < :end")
-    List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(@Param("start") ZonedDateTime start, @Param("end") ZonedDateTime end);
+            "WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND " +
+            "sttr.scheduledTime > :scheduledTimeStart AND sttr.scheduledTime < :scheduledTimeEnd")
+    List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(
+            @Param("departureDateStart")
+            LocalDate departureDateStart,
+            @Param("departureDateEnd")
+            LocalDate departureDateEnd,
+            @Param("scheduledTimeStart")
+            ZonedDateTime scheduledTimeStart,
+            @Param("scheduledTimeEnd")
+            ZonedDateTime scheduledTimeEnd);
 }

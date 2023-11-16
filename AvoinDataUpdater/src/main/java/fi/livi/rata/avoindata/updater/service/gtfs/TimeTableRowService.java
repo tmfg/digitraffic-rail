@@ -19,14 +19,14 @@ public class TimeTableRowService {
     @Autowired
     private DateProvider dp;
 
-
     public List<SimpleTimeTableRow> getNextTenDays() {
-        final ZonedDateTime currentDate = dp.nowInHelsinki();
-        return timeTableRowRepository.findSimpleByScheduledTimeBetween(currentDate, currentDate.plusDays(10));
-    }
-
-    public List<SimpleTimeTableRow> getBetween(ZonedDateTime from, ZonedDateTime to) {
-       return timeTableRowRepository.findSimpleByScheduledTimeBetween(from, to);
+        final ZonedDateTime currentDateTime = dp.nowInHelsinki();
+        return timeTableRowRepository.
+                findSimpleByScheduledTimeBetween(
+                        currentDateTime.minusDays(1).toLocalDate(),
+                        currentDateTime.plusDays(10).toLocalDate(),
+                        currentDateTime,
+                        currentDateTime.plusDays(10));
     }
 
 }

@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import org.locationtech.jts.geom.MultiLineString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -75,7 +78,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @MockBean
     private GTFSShapeService gtfsShapeService;
 
-    @MockBean
+    @SpyBean
     private TimeTableRowService timeTableRowService;
 
     @MockBean
@@ -123,13 +126,12 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/59.json")
     private Resource schedules_59;
 
-
     @BeforeEach
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
-        given(gtfsShapeService.createShapesFromTrips(any(),any())).willReturn(new ArrayList<>());
+        given(gtfsShapeService.createShapesFromTrips(any(), any())).willReturn(new ArrayList<>());
 
         given(platformDataService.getCurrentPlatformData()).willReturn(getMockPlatformData());
     }
@@ -140,7 +142,8 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 12, 11));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(),
+                schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
 
         List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_replacement")).collect(Collectors.toList());
         assertTrips(trips, 1);
@@ -212,9 +215,6 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train66StopTimesHaveCorrectPlatforms() throws IOException {
-        LocalDate startDate = LocalDate.of(2019, 1, 1);
-        given(dp.dateInHelsinki()).willReturn(startDate);
-
         final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
         given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
 
@@ -237,10 +237,18 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Test
     @Transactional
-    public void allStopTracksAreFoundInStopTimes() throws IOException {
-        LocalDate startDate = LocalDate.of(2019, 1, 1);
-        given(dp.dateInHelsinki()).willReturn(startDate);
+    @Sql({ "/gtfs/import_test_time_table_rows.sql" })
+    public void timeTableRowServiceTimeIntervalsAreCorrect() throws IOException {
+        final ZonedDateTime startDateTime = ZonedDateTime.of(2019, 1, 1, 8, 0, 0, 0, ZoneId.of("Europe/Helsinki"));
+        given(dp.nowInHelsinki()).willReturn(startDateTime);
+        final List<SimpleTimeTableRow> rows = timeTableRowService.getNextTenDays();
+        Assertions.assertEquals(4, rows.size());
+        Assertions.assertTrue(rows.stream().map(row -> row.getAttapId()).collect(Collectors.toList()).containsAll(List.of(2L, 3L, 4L, 5L)));
+    }
 
+    @Test
+    @Transactional
+    public void allStopTracksAreFoundInStopTimes() throws IOException {
         final List<SimpleTimeTableRow> timeTableRows = testDataService.parseEntityList(timetablerows_66.getFile(), SimpleTimeTableRow[].class);
         given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
 
@@ -548,8 +556,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
         gtfsWritingService.writeGTFSFiles(gtfsDto);
 
-        try (final InputStream stopsFile = new FileInputStream("stops.txt"))
-        {
+        try (final InputStream stopsFile = new FileInputStream("stops.txt")) {
             final CsvParser csvParser = new CsvParser(new CsvParserSettings());
 
             final List<String[]> parsedRows = csvParser.parseAll(stopsFile);
@@ -598,7 +605,6 @@ public class GTFSDtoServiceTest extends BaseTest {
             e.printStackTrace();
             Assertions.fail(e.getMessage());
         }
-
 
     }
 
@@ -649,7 +655,8 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private PlatformData getMockPlatformData() throws IOException {
-        final String geometryString = "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
+        final String geometryString =
+                "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
 
         ObjectMapper mapper = new ObjectMapper();
         final JsonNode geometryNode = mapper.readTree(geometryString);
@@ -670,7 +677,7 @@ public class GTFSDtoServiceTest extends BaseTest {
                 "KV", List.of(KV_1),
                 "MR", List.of(MR_2),
                 "SKV", List.of(SKV_1)
-                );
+        );
 
         return new PlatformData(platformsByStation);
     }
