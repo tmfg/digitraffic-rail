@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -8,10 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -43,6 +38,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Tag(name = "live-trains", description = "Returns trains that have been recently active")
 @RestController
@@ -53,6 +49,9 @@ public class LiveTrainController extends ADataController {
 
     @Autowired
     private FindByIdService findByIdService;
+
+    @Autowired
+    private FindByTrainIdService findByTrainIdService;
 
     @Autowired
     private TrainCategoryRepository trainCategoryRepository;
@@ -72,7 +71,7 @@ public class LiveTrainController extends ADataController {
         final List<Object[]> liveTrains = trainRepository.findLiveTrains(version, 60 * 4);
         final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
-        final List<Train> trains = !trainsToRetrieve.isEmpty() ? trainRepository.findTrains(trainsToRetrieve) : new LinkedList<>();
+        final List<Train> trains = !trainsToRetrieve.isEmpty() ? findByTrainIdService.findTrains(trainsToRetrieve) : new LinkedList<>();
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
@@ -139,7 +138,7 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return findByIdService.findById(s -> trainRepository.findTrains(s), trainsToRetrieve, Train::compareTo);
+            return findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainsToRetrieve, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
@@ -165,7 +164,7 @@ public class LiveTrainController extends ADataController {
 
         if (!liveTrains.isEmpty()) {
             final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
-            return findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+            return findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }

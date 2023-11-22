@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -57,6 +57,8 @@ public class TrainController extends ADataController {
     private BatchExecutionService bes;
     @Autowired
     private FindByIdService findByIdService;
+    @Autowired
+    private FindByTrainIdService findByTrainIdService;
 
     private Logger log = LoggerFactory.getLogger(TrainController.class);
 
@@ -154,9 +156,9 @@ public class TrainController extends ADataController {
         final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
             if(includeDeleted) {
-                trainsResponse = findByIdService.findById(s -> trainRepository.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
+                trainsResponse = findByIdService.findById(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
             } else {
-                trainsResponse = findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+                trainsResponse = findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
             }
         } else {
             trainsResponse = Lists.newArrayList();
@@ -174,7 +176,7 @@ public class TrainController extends ADataController {
         final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return includeDeleted ? trainRepository.findTrainsIncludeDeleted(trainsToRetrieve) : trainRepository.findTrains(trainsToRetrieve);
+            return includeDeleted ? findByTrainIdService.findTrainsIncludeDeleted(trainsToRetrieve) : findByTrainIdService.findTrains(trainsToRetrieve);
         }
 
         return Collections.EMPTY_LIST;

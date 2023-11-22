@@ -18,6 +18,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
@@ -35,6 +36,9 @@ public class TimeTableRowByRoutesetUpdateService {
     private TrainRepository trainRepository;
 
     @Autowired
+    private FindByTrainIdService findByTrainIdService;
+
+    @Autowired
     private RoutesetRepository routesetRepository;
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
@@ -49,7 +53,7 @@ public class TimeTableRowByRoutesetUpdateService {
                 if (validTrainIds.isEmpty()) {
                     return new ArrayList<>();
                 }
-                final Map<TrainId, Train> trainMap = Maps.uniqueIndex(trainRepository.findTrains(validTrainIds), s -> s.id);
+                final Map<TrainId, Train> trainMap = Maps.uniqueIndex(findByTrainIdService.findTrains(validTrainIds), s -> s.id);
                 updateCommercialTracks(routesetsWithValidTrain, trainMap);
                 final List<Train> updatedTrains = Lists.newArrayList(trainMap.values());
 
