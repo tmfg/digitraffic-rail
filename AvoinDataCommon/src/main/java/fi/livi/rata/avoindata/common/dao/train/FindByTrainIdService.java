@@ -2,15 +2,16 @@ package fi.livi.rata.avoindata.common.dao.train;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -23,23 +24,24 @@ public class FindByTrainIdService {
     @Autowired
     private TrainRepository trainRepository;
 
-    @Transactional
-    public List<Train> findTrains(final Collection<TrainId> trainIds) {
-        Set<LocalDate> departureDates = new HashSet<>();
-        for (final TrainId trainId : trainIds) {
-            departureDates.add(trainId.departureDate);
-        }
-
-        return this.trainRepository.findTrains(trainIds, departureDates);
+    private static List<TrainId> getSortedTrainIds(final Collection<TrainId> trainIds) {
+        final List<TrainId> sortedTrainIds = trainIds.stream().sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+        return sortedTrainIds;
     }
 
-    @Transactional
-    public List<Train> findTrainsIncludeDeleted(final Collection<TrainId> trainIds) {
+    private static Set<LocalDate> findUniqueDepartureDates(final Collection<TrainId> trainIds) {
         Set<LocalDate> departureDates = new HashSet<>();
         for (final TrainId trainId : trainIds) {
             departureDates.add(trainId.departureDate);
         }
+        return departureDates;
+    }
 
-        return this.trainRepository.findTrainsIncludeDeleted(trainIds, departureDates);
+    public List<Train> findTrains(final Collection<TrainId> trainIds) {
+        return this.trainRepository.findTrains(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
+    }
+
+    public List<Train> findTrainsIncludeDeleted(final Collection<TrainId> trainIds) {
+        return this.trainRepository.findTrainsIncludeDeleted(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
     }
 }
