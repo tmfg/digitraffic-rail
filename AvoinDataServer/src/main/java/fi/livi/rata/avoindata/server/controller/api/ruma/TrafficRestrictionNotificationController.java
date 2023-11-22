@@ -144,8 +144,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
                        array = @ArraySchema(
                                schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
                                                 enumAsRef = true,
-                                                type = "string"),
-                               arraySchema = @Schema(defaultValue = "[SENT,FINISHED]")))
+                                                type = "string")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
@@ -169,8 +168,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
                        array = @ArraySchema(
                                schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
                                                 enumAsRef = true,
-                                                type = "string"),
-                               arraySchema = @Schema(defaultValue = "[SENT,FINISHED]")))
+                                                type = "string")))
             @RequestParam(name = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(name = "schema", required = false, defaultValue = "false") final Boolean schema,

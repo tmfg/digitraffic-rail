@@ -141,8 +141,7 @@ public class TrackWorkNotificationController extends ADataController {
     public List<SpatialTrackWorkNotificationDto> getTrackWorkNotificationsByStateJson(
             @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
                        array = @ArraySchema(
-                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
-                               arraySchema = @Schema(type = "array", defaultValue = "[SENT,ACTIVE,PASSIVE]")))
+                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class)))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
@@ -165,8 +164,7 @@ public class TrackWorkNotificationController extends ADataController {
     public FeatureCollection getTrackWorkNotificationsByStateGeoJson(
             @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
                        array = @ArraySchema(
-                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
-                               arraySchema = @Schema(type = "array", defaultValue = "SENT,ACTIVE,PASSIVE")))
+                               schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class)))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
