@@ -142,7 +142,7 @@ public class TrackWorkNotificationController extends ADataController {
             @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
                        array = @ArraySchema(
                                schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
-                               arraySchema = @Schema(defaultValue = "[SENT,ACTIVE,PASSIVE]")))
+                               arraySchema = @Schema(type = "array", defaultValue = "[SENT,ACTIVE,PASSIVE]")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
@@ -166,7 +166,7 @@ public class TrackWorkNotificationController extends ADataController {
             @Parameter(description = "State of track work notification", example = "SENT,ACTIVE,PASSIVE",
                        array = @ArraySchema(
                                schema = @Schema(enumAsRef = true, implementation = TrackWorkNotificationState.class),
-                               arraySchema = @Schema(defaultValue = "SENT,ACTIVE,PASSIVE")))
+                               arraySchema = @Schema(type = "array", defaultValue = "SENT,ACTIVE,PASSIVE")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,ACTIVE,PASSIVE") final Set<TrackWorkNotificationState> state,
             @Parameter(description = "Show map or schema locations", example = "false",
                        schema = @Schema(example = "false", defaultValue = "false", type = "boolean"))
