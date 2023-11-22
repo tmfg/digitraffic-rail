@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -22,6 +23,7 @@ public class FindByTrainIdService {
     @Autowired
     private TrainRepository trainRepository;
 
+    @Transactional
     public List<Train> findTrains(final Collection<TrainId> trainIds) {
         Set<LocalDate> departureDates = new HashSet<>();
         for (final TrainId trainId : trainIds) {
@@ -31,6 +33,7 @@ public class FindByTrainIdService {
         return this.trainRepository.findTrains(trainIds, departureDates);
     }
 
+    @Transactional
     public List<Train> findTrainsIncludeDeleted(final Collection<TrainId> trainIds) {
         Set<LocalDate> departureDates = new HashSet<>();
         for (final TrainId trainId : trainIds) {
