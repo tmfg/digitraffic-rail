@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.common.dao.train;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,8 +24,7 @@ public class FindByTrainIdService {
     private TrainRepository trainRepository;
 
     private static List<TrainId> getSortedTrainIds(final Collection<TrainId> trainIds) {
-        final List<TrainId> sortedTrainIds = trainIds.stream().sorted(Comparator.naturalOrder()).collect(Collectors.toList());
-        return sortedTrainIds;
+        return trainIds.stream().sorted((l,r) -> l.compareTo(r)).collect(Collectors.toList());
     }
 
     private static Set<LocalDate> findUniqueDepartureDates(final Collection<TrainId> trainIds) {
