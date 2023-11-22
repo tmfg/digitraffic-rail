@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.entities;
 
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-
 import java.util.List;
+
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 public class Trip extends GTFSEntity<Schedule> {
     public Calendar calendar;
@@ -14,7 +14,7 @@ public class Trip extends GTFSEntity<Schedule> {
     public String shortName;
     public String headsign;
 
-    public String shapeId;
+    public Integer shapeId;
 
     public Trip(final Schedule source) {
         super(source);
