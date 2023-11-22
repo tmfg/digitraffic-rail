@@ -58,8 +58,8 @@ public class TrafficRestrictionNotificationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = PATH + "/status")
     @Transactional(timeout = 30, readOnly = true)
     public List<RumaNotificationIdAndVersion> getAllTrafficRestrictionNotifications(
-            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime start,
-            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime end) {
+            @Parameter(description = "Start time. If missing, current date - 7 days is used.", example = "2019-01-01T00:00:00.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime start,
+            @Parameter(description = "End time. If missing, current date is used.", example = "2019-02-02T10:10:10.000Z") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime end) {
         return trafficRestrictionNotificationRepository.findByModifiedBetween(
                 getStartTime(start),
                 getEndTime(end),
@@ -73,7 +73,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
-            HttpServletResponse response) {
+            final HttpServletResponse response) {
         final List<TrafficRestrictionNotification> versions = trafficRestrictionNotificationRepository.findByTrnId(id);
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
         return new TrafficRestrictionNotificationWithVersions(id,
@@ -87,7 +87,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
-            HttpServletResponse response) {
+            final HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
         if (trafficRestrictionNotification.isEmpty()) {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -105,7 +105,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @Parameter(description = "Traffic restriction notification identifier", required = true) @PathVariable final String id,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
-            HttpServletResponse response) {
+            final HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdLatest(id);
         if (trafficRestrictionNotification.isEmpty()) {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -124,7 +124,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
             @Parameter(description = "Traffic restriction notification version", required = true) @PathVariable final long version,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
-            HttpServletResponse response) {
+            final HttpServletResponse response) {
         final Optional<TrafficRestrictionNotification> trafficRestrictionNotification = trafficRestrictionNotificationRepository.findByTrnIdAndVersion(id, version);
         if (trafficRestrictionNotification.isEmpty()) {
             CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_SECONDS);
@@ -145,7 +145,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
                                schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
                                                 enumAsRef = true,
                                                 type = "string"),
-                               arraySchema = @Schema(defaultValue = "SENT,FINISHED")))
+                               arraySchema = @Schema(defaultValue = "[SENT,FINISHED]")))
             @RequestParam(value = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(value = "schema", required = false, defaultValue = "false") final Boolean schema,
@@ -170,7 +170,7 @@ public class TrafficRestrictionNotificationController extends ADataController {
                                schema = @Schema(implementation = TrafficRestrictionNotificationState.class,
                                                 enumAsRef = true,
                                                 type = "string"),
-                               arraySchema = @Schema(defaultValue = "SENT,FINISHED")))
+                               arraySchema = @Schema(defaultValue = "[SENT,FINISHED]")))
             @RequestParam(name = "state", required = false, defaultValue = "SENT,FINISHED") final Set<TrafficRestrictionNotificationState> state,
             @Parameter(description = "Show map or schema locations", schema = @Schema(type = "boolean", defaultValue = "false", example = "false"), example = "false")
             @RequestParam(name = "schema", required = false, defaultValue = "false") final Boolean schema,
