@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
@@ -78,16 +76,7 @@ public class TrainController extends ADataController {
         final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
         final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        final List<Train> trains = new LinkedList<>();
-        if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
-        }
-
-        final List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
-        final List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
-        if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
-            log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
-        }
+        List<Train> trains = trainIds.isEmpty() ? List.of() : findByIdService.findById(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 

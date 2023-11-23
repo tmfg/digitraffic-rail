@@ -11,6 +11,7 @@ public class BatchExecutionService {
     public static final int BATCH_SIZE = 1000;
 
     public <I> void consume(List<I> originalCollection, Consumer<List<I>> batchFunction) {
+
         final List<List<I>> partitions = Lists.partition(originalCollection, BATCH_SIZE);
         for (final List<I> partition : partitions) {
             batchFunction.accept(partition);

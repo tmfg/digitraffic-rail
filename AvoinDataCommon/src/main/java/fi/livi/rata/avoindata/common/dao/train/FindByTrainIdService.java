@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 
 // This service adds departureDate as an explicit argument in sql where, because Mysql does not work well with pair arguments in where
@@ -22,6 +24,12 @@ public class FindByTrainIdService {
 
     @Autowired
     private TrainRepository trainRepository;
+
+    @Autowired
+    private CompositionRepository compositionRepository;
+
+    @Autowired
+    private AllTrainsRepository allTrainsRepository;
 
     private static List<TrainId> getSortedTrainIds(final Collection<TrainId> trainIds) {
         return trainIds.stream().sorted((l,r) -> l.compareTo(r)).collect(Collectors.toList());
@@ -39,7 +47,15 @@ public class FindByTrainIdService {
         return this.trainRepository.findTrains(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
     }
 
+    public List<Train> findAllTrainsByIds(final Collection<TrainId> trainIds) {
+        return this.allTrainsRepository.findTrains(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
+    }
+
     public List<Train> findTrainsIncludeDeleted(final Collection<TrainId> trainIds) {
         return this.trainRepository.findTrainsIncludeDeleted(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
+    }
+
+    public List<Composition> findCompositions(final Collection<TrainId> trainIds) {
+        return this.compositionRepository.findByIds(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
     }
 }

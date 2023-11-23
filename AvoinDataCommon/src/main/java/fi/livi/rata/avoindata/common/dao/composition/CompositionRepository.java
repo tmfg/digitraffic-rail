@@ -1,16 +1,18 @@
 package fi.livi.rata.avoindata.common.dao.composition;
 
-import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.composition.Composition;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
+import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
 
 @Repository
 @Transactional
@@ -30,9 +32,9 @@ public interface CompositionRepository extends CustomGeneralRepository<Compositi
     List<Composition> findByDepartureDateBetweenOrderByTrainNumber(LocalDate date);
 
     @Query(SELECT_COMPOSITION +
-            "where composition.id in ?1 " +
+            "where composition.id.departureDate in ?2 and composition.id in ?1 " +
             COMPOSITION_ORDER)
-    List<Composition> findByIds(List<TrainId> trainIds);
+    List<Composition> findByIds(final Collection<TrainId> trainIds, final Collection<LocalDate> departureDates);
 
     @Query("select composition.id from Composition composition " +
             "where composition.version > ?1 " +
