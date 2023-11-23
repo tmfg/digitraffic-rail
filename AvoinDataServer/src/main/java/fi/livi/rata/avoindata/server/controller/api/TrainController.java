@@ -31,7 +31,6 @@ import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -54,8 +53,6 @@ public class TrainController extends ADataController {
     @Autowired
     private BatchExecutionService bes;
     @Autowired
-    private FindByIdService findByIdService;
-    @Autowired
     private FindByTrainIdService findByTrainIdService;
 
     private Logger log = LoggerFactory.getLogger(TrainController.class);
@@ -76,7 +73,7 @@ public class TrainController extends ADataController {
         final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
         final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        List<Train> trains = trainIds.isEmpty() ? List.of() : findByIdService.findById(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
+        List<Train> trains = trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
@@ -145,9 +142,9 @@ public class TrainController extends ADataController {
         final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
             if(includeDeleted) {
-                trainsResponse = findByIdService.findById(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
             } else {
-                trainsResponse = findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
             }
         } else {
             trainsResponse = Lists.newArrayList();

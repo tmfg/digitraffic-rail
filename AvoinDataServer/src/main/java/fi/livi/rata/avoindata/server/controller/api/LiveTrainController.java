@@ -24,13 +24,13 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.LiveTimeTableTrain;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainLimitBelowZeroException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMaximumLimitException;
 import fi.livi.rata.avoindata.server.controller.api.exception.TrainMinimumLimitException;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -48,7 +48,7 @@ public class LiveTrainController extends ADataController {
     private TrainRepository trainRepository;
 
     @Autowired
-    private FindByIdService findByIdService;
+    private BatchExecutionService bes;
 
     @Autowired
     private FindByTrainIdService findByTrainIdService;
@@ -138,7 +138,7 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainsToRetrieve, Train::compareTo);
+            return bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainsToRetrieve, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
@@ -164,7 +164,7 @@ public class LiveTrainController extends ADataController {
 
         if (!liveTrains.isEmpty()) {
             final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
-            return findByIdService.findById(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
+            return bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
