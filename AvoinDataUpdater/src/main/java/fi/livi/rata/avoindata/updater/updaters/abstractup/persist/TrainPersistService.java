@@ -3,9 +3,6 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +22,8 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.train.TrainReady;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 @Service
 public class TrainPersistService extends AbstractPersistService<Train> {
@@ -41,7 +40,7 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     private TrainReadyRepository trainReadyRepository;
 
     @Autowired
-    private BatchExecutionService batchExecutionService;
+    private BatchExecutionService bes;
 
     @PersistenceContext
     private EntityManager entimanager;
@@ -70,7 +69,8 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         }
 
         final List<TrainId> trainIds = Lists.newArrayList(Iterables.transform(entities, train -> train.id));
-        batchExecutionService.consume(trainIds, s -> trainRepository.removeByTrainId(s));
+
+        bes.consume(trainIds, s -> trainRepository.removeByTrainId(s));
 
         addEntities(entities);
 

@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,10 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
@@ -33,7 +31,6 @@ import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -56,7 +53,7 @@ public class TrainController extends ADataController {
     @Autowired
     private BatchExecutionService bes;
     @Autowired
-    private FindByIdService findByIdService;
+    private FindByTrainIdService findByTrainIdService;
 
     private Logger log = LoggerFactory.getLogger(TrainController.class);
 
@@ -76,16 +73,7 @@ public class TrainController extends ADataController {
         final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
         final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        final List<Train> trains = new LinkedList<>();
-        if (!trainIds.isEmpty()) {
-            bes.consume(trainIds, t -> trains.addAll(allTrainsRepository.findTrains(t)));
-        }
-
-        final List<String> returnedIds = rawIds.stream().map(s -> String.format("%s: %s (%s)", s[0], s[1], s[2])).sorted((String::compareTo)).collect(Collectors.toList());
-        final List<String> returnedTrains = trains.stream().map(s -> String.format("%s: %s (%s)", s.id.trainNumber, s.id.departureDate, s.version)).sorted((String::compareTo)).collect(Collectors.toList());
-        if (!Iterables.elementsEqual(returnedIds, returnedTrains)) {
-            log.error("Elements are not equal. Version {}. {} vs {}", version, returnedIds, returnedTrains);
-        }
+        List<Train> trains = trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
@@ -154,9 +142,9 @@ public class TrainController extends ADataController {
         final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
             if(includeDeleted) {
-                trainsResponse = findByIdService.findById(s -> trainRepository.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
             } else {
-                trainsResponse = findByIdService.findById(s -> trainRepository.findTrains(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
             }
         } else {
             trainsResponse = Lists.newArrayList();
@@ -174,7 +162,7 @@ public class TrainController extends ADataController {
         final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return includeDeleted ? trainRepository.findTrainsIncludeDeleted(trainsToRetrieve) : trainRepository.findTrains(trainsToRetrieve);
+            return includeDeleted ? findByTrainIdService.findTrainsIncludeDeleted(trainsToRetrieve) : findByTrainIdService.findTrains(trainsToRetrieve);
         }
 
         return Collections.EMPTY_LIST;

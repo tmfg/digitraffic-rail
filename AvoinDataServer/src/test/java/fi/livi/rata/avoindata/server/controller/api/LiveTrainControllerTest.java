@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
-
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;
@@ -29,9 +28,9 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import fi.livi.rata.avoindata.server.factory.TrainCategoryFactory;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
@@ -63,7 +62,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     private DateProvider dp;
 
     @Autowired
-    private FindByIdService findByIdService;
+    private BatchExecutionService bes;
 
     @Autowired
     private TrainCategoryFactory trainCategoryFactory;
@@ -247,7 +246,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void stationSearchShouldWork() throws Exception {
         trainCategoryFactory.create(1L, "test category");
 
-        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
         trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
@@ -277,7 +276,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 "/live-trains/station/PSL");
         r6.andExpect(jsonPath("$.length()").value(2));
 
-        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
@@ -288,7 +287,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         TrainCategory trainCategory2 = trainCategoryFactory.create(2L, "test cat");
         TrainType trainType = trainTypeFactory.create(trainCategory1);
 
-        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
         Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
         Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
@@ -315,13 +314,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         final ResultActions r6 = getJson("/live-trains/station/PSL?arrived_trains=0&arriving_trains=0&departed_trains=0&departing_trains=2&include_nonstopping=false&train_categories=test category");
         r6.andExpect(jsonPath("$.length()").value(1));
 
-        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain() throws Exception {
-        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
         final Train train = trainFactory.createBaseTrain();
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
@@ -346,13 +345,13 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(0));
         getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(0));
 
-        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test
     @Transactional
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
-        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
         LocalDate dateNow = LocalDate.now();
         final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, dateNow));
@@ -379,6 +378,6 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         r1.andExpect(jsonPath("$[1].trainNumber").value(4));
         r1.andExpect(jsonPath("$[2].trainNumber").value(5));
 
-        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
 }

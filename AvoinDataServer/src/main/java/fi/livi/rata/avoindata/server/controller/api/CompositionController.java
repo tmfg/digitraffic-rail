@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
@@ -38,6 +38,9 @@ public class CompositionController extends ADataController {
     @Autowired
     private CompositionRepository compositionRepository;
 
+    @Autowired
+    private FindByTrainIdService findByTrainIdService;
+
     @Operation(summary = "Returns all compositions that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional(timeout = 30, readOnly = true)
@@ -49,7 +52,7 @@ public class CompositionController extends ADataController {
         List<TrainId> trainIds = compositionRepository.findIdsByVersionGreaterThan(version, PageRequest.of(0, 1000));
         if (!trainIds.isEmpty()) {
 
-            List<Composition> compositions = compositionRepository.findByIds(trainIds);
+            List<Composition> compositions = findByTrainIdService.findCompositions(trainIds);
 
             CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions, version);
 
@@ -85,7 +88,7 @@ public class CompositionController extends ADataController {
     public Composition getCompositionByTrainNumberAndDepartureDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
             @PathVariable("train_number") Long train_number, HttpServletResponse response) {
-        List<Composition> compositions = compositionRepository.findByIds(Lists.newArrayList(new TrainId(train_number, departure_date)));
+        List<Composition> compositions = findByTrainIdService.findCompositions(Lists.newArrayList(new TrainId(train_number, departure_date)));
 
         if (compositions == null || compositions.isEmpty()) {
             throw new CompositionNotFoundException(train_number, departure_date);

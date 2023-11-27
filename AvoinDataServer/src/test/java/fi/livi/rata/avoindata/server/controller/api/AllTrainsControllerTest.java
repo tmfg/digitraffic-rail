@@ -5,13 +5,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 
@@ -21,6 +25,15 @@ public class AllTrainsControllerTest extends MockMvcBaseTest {
 
     @Autowired
     private TrainController trainController;
+
+    @Autowired
+    private BatchExecutionService bes;
+
+    @BeforeEach
+    public void setup() throws NoSuchFieldException {
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
+    }
+
 
     @Test
     @Transactional

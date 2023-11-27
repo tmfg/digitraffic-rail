@@ -13,11 +13,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
-
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import fi.livi.rata.avoindata.server.factory.RoutesetFactory;
 
 @Transactional
@@ -26,16 +25,16 @@ public class RoutesetControllerTest extends MockMvcBaseTest {
     private RoutesetFactory routesetFactory;
 
     @Autowired
-    private FindByIdService findByIdService;
+    private BatchExecutionService bes;
 
     @BeforeEach
     public void setup() throws NoSuchFieldException {
-        ReflectionTestUtils.setField(findByIdService, "executor", MoreExecutors.newDirectExecutorService());
+        ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
     }
 
     @AfterEach
     public void teardown() throws NoSuchFieldException {
-        ReflectionTestUtils.setField(findByIdService, "executor", Executors.newFixedThreadPool(10));
+        ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
 
     @Test

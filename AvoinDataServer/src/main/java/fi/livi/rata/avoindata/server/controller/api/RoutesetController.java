@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
+import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.FindByIdService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +35,7 @@ public class RoutesetController extends ADataController {
     private RoutesetRepository routesetRepository;
 
     @Autowired
-    private FindByIdService findByIdService;
+    private BatchExecutionService bes;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -88,6 +88,6 @@ public class RoutesetController extends ADataController {
     }
 
     public List<Routeset> findByIds(List<Long> ids) {
-        return findByIdService.findById(s -> routesetRepository.findAllById(s), ids, COMPARATOR);
+        return bes.mapAndSort(s -> routesetRepository.findAllById(s), ids, COMPARATOR);
     }
 }
