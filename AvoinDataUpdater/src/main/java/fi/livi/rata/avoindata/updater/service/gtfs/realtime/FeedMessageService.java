@@ -83,6 +83,9 @@ public class FeedMessageService {
                                 .setLongitude((float)location.location.getX())
                                 .setSpeed(location.speed)
                                 .build())
+                        .setVehicle(GtfsRealtime.VehicleDescriptor.newBuilder()
+                                .setId(trip.id.trainNumber.toString())
+                                .build())
                         .build())
                 .build();
     }
