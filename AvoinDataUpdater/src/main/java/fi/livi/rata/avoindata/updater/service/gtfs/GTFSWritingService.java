@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,6 +84,13 @@ public class GTFSWritingService {
         persist(Files.readAllBytes(new File(zipFileName).toPath()), zipFileName);
 
         return files;
+    }
+
+    @Scheduled(fixedDelay = 1000*60*60, initialDelay = 1000*60)
+    @Transactional
+    public void deleteOldZips() {
+        Integer numberOfDeletedRows =  gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14));
+        log.info(String.format("Deleted %s zips", numberOfDeletedRows));
     }
 
     @Transactional
