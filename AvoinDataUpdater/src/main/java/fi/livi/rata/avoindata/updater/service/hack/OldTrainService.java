@@ -96,6 +96,11 @@ public class OldTrainService {
 
         for (final List<Object[]> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
             changedTrains.addAll(getChangedTrainsByIds(date, oldTrainPartition));
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return changedTrains;
