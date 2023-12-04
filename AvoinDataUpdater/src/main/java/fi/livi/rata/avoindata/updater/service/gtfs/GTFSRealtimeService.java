@@ -38,7 +38,7 @@ public class GTFSRealtimeService {
 
     @Transactional(readOnly = true)
     public GtfsRealtime.FeedMessage createVehiceLocationFeedMessage() {
-        final List<Long> ids = trainLocationRepository.findLatest(ZonedDateTime.now().minusMinutes(30));
+        final List<Long> ids = trainLocationRepository.findLatestForPassengerTrains(ZonedDateTime.now().minusMinutes(30));
         final List<TrainLocation> locations = trainLocationRepository.findAllOrderByTrainNumber(ids);
 
         return feedMessageService.createVehicleLocationFeedMessage(locations);
