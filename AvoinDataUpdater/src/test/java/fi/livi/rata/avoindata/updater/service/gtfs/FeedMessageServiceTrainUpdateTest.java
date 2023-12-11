@@ -65,6 +65,22 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         }
     }
 
+    private void assertCancelled(final GtfsRealtime.FeedMessage message, final int entityIndex, final boolean... cancelled) {
+        Assertions.assertEquals(cancelled.length, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
+
+        final GtfsRealtime.TripUpdate tu = message.getEntity(entityIndex).getTripUpdate();
+
+        for(int tuIndex = 0; tuIndex < cancelled.length; tuIndex++) {
+            final GtfsRealtime.TripUpdate.StopTimeUpdate stu = tu.getStopTimeUpdate(tuIndex);
+            final boolean shouldBeCancelled = cancelled[tuIndex];
+            final GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship expected = shouldBeCancelled
+                    ? GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED
+                    : GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
+
+            Assertions.assertEquals(expected, stu.getScheduleRelationship(), String.format("Row %d(%s) should be %s, was %s", tuIndex, stu.getStopId(), expected, stu.getScheduleRelationship()));
+        };
+    }
+
     private GTFSTimeTableRow getRow(final GTFSTrain train, final int rowNumber, final TimeTableRow.TimeTableRowType type) {
         final GTFSTimeTableRow row = train.timeTableRows.get(rowNumber);
 
@@ -137,14 +153,46 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
     }
 
     @Test
-    public void cancelledRowsNoEntity() {
-        final GTFSTrain train1 = createTestTrain();
-        train1.timeTableRows.get(0).cancelled= true;
-        train1.timeTableRows.get(1).cancelled= true;
+    public void allRowsCancelled() {
+        final GTFSTrain train2 = createTestTrain2();
+        train2.timeTableRows.get(0).cancelled= true;
+        train2.timeTableRows.get(1).cancelled= true;
+        train2.timeTableRows.get(2).cancelled= true;
+        train2.timeTableRows.get(3).cancelled= true;
 
-        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train1));
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
 
-        assertFeedMessage(message, 0);
+        assertFeedMessage(message, 1);
+        assertCancelled(message, 0, true, true, true);
+    }
+
+    @Test
+    public void firstRowCancelled() {
+        final GTFSTrain train2 = createTestTrain2();
+        train2.timeTableRows.get(0).cancelled= true;
+        train2.timeTableRows.get(1).cancelled= true;
+        train2.timeTableRows.get(2).cancelled= false;
+        train2.timeTableRows.get(3).cancelled= false;
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        assertCancelled(message, 0, true, false, false);
+    }
+
+    @Test
+    public void lastRowCancelled() {
+        final GTFSTrain train2 = createTestTrain2();
+        train2.timeTableRows.get(0).cancelled= false;
+        train2.timeTableRows.get(1).cancelled= false;
+        train2.timeTableRows.get(2).cancelled= true;
+        train2.timeTableRows.get(3).cancelled= true;
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        // if last arrival is cancelled, then the following departure is cancelled
+        assertCancelled(message, 0, false, true, true);
     }
 
     @Test

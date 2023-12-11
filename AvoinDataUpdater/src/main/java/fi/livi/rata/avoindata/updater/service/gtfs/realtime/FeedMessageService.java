@@ -120,10 +120,32 @@ public class FeedMessageService {
         return row.liveEstimateTime != null && row.liveEstimateTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
     }
 
+    private GtfsRealtime.TripUpdate.StopTimeUpdate.Builder createStop(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+        final String stopId = arrival == null ? departure.stationShortCode : arrival.stationShortCode;
+        return GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
+                .setStopId(stopId)
+                .setStopSequence(stopSequence);
+    }
+
+    private boolean isSkipped(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+        if(departure != null) {
+            return departure.cancelled;
+        }
+
+        // check cancellation on arrival only when there is no departure
+        return arrival != null && arrival.cancelled;
+    }
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         // it's in the past(PAST_LIMIT_MINUTES), don't report it!
         if(isInThePast(arrival, departure)) {
             return null;
+        }
+
+        // setting cancelled stops as SKIPPED
+        if(isSkipped(arrival, departure)) {
+            return createStop(stopSequence, arrival, departure)
+                    .setScheduleRelationship(GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)
+                    .build();
         }
 
         final boolean arrivalHasTime = arrival != null && arrival.hasEstimateOrActualTime();
@@ -134,10 +156,7 @@ public class FeedMessageService {
             return null;
         }
 
-        final String stopId = arrival == null ? departure.stationShortCode : arrival.stationShortCode;
-        final GtfsRealtime.TripUpdate.StopTimeUpdate.Builder builder = GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
-                .setStopId(stopId)
-                .setStopSequence(stopSequence);
+        final GtfsRealtime.TripUpdate.StopTimeUpdate.Builder builder = createStop(stopSequence, arrival, departure);
 
         // GTFS delay is seconds, our difference is minutes
         if(arrivalHasTime) {
@@ -185,15 +204,9 @@ public class FeedMessageService {
         return current.hasDeparture() && current.getDeparture().getDelay() != previousDelay;
     }
 
-    private List<GTFSTimeTableRow> getActiveTimetableRows(final GTFSTrain train) {
-        return train.timeTableRows.stream()
-                .filter(row -> !row.cancelled)
-                .collect(Collectors.toList());
-    }
-
     private List<GtfsRealtime.TripUpdate.StopTimeUpdate> createStopTimeUpdates(final GTFSTrain train) {
         final List<GtfsRealtime.TripUpdate.StopTimeUpdate> updates = new ArrayList<>();
-        final List<GTFSTimeTableRow> activeRows = getActiveTimetableRows(train);
+        final List<GTFSTimeTableRow> activeRows = train.timeTableRows;
         int stopSequence = FIRST_STOP_SEQUENCE;
 
         if(activeRows.isEmpty()) {
@@ -233,7 +246,8 @@ public class FeedMessageService {
             if(includeStop(arrival, departure)) {
                 final GtfsRealtime.TripUpdate.StopTimeUpdate current = createStopTimeUpdate(stopSequence++, arrival, departure);
 
-                if (current != null && delaysDiffer(previous, current)) {
+                // always include cancelled rows
+                if (current != null && (delaysDiffer(previous, current) || current.getScheduleRelationship() == GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)) {
                     updates.add(current);
 
                     previous = current;
