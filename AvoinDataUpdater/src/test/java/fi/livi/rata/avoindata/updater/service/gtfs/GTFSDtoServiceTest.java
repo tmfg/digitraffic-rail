@@ -40,7 +40,6 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -126,6 +125,9 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/59.json")
     private Resource schedules_59;
 
+    @Value("classpath:gtfs/9705.json")
+    private Resource schedules_9705;
+
     @BeforeEach
     public void setup() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
@@ -210,6 +212,29 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
         Assertions.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
 
+    }
+
+    @Test
+    @Transactional
+    public void train9705ShouldBeOkayWithTwoOverlappingCancels() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2023, 12, 14));
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_9705.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+
+        Assertions.assertEquals(1, gtfsDto.trips.size());
+
+        final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
+        Trip normalTrip = tripsByServiceId.get("9705_20241214");
+
+        Assertions.assertEquals("HKI", normalTrip.stopTimes.get(0).stopId);
+
+        Assertions.assertEquals(LocalDate.of(2023, 12, 10), normalTrip.calendar.startDate);
+        Assertions.assertEquals(LocalDate.of(2024, 12, 14), normalTrip.calendar.endDate);
+
+        Assertions.assertEquals(1, normalTrip.calendar.calendarDates.size());
+        Assertions.assertEquals(2, normalTrip.calendar.calendarDates.get(0).exceptionType);
+        Assertions.assertEquals(LocalDate.of(2023, 12, 14), normalTrip.calendar.calendarDates.get(0).date);
     }
 
     @Test

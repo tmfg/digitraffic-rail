@@ -14,8 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.transaction.Transactional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +44,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancell
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+import jakarta.transaction.Transactional;
 
 @Service
 public class GTFSTripService {
@@ -158,10 +157,17 @@ public class GTFSTripService {
     }
 
     private Table<LocalDate, LocalDate, ScheduleCancellation> getFilteredCancellations(final Schedule schedule) {
-        final Collection<ScheduleCancellation> partialCancellations = Collections2.filter(schedule.scheduleCancellations,
-                sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY);
-        Collection<ScheduleCancellation> differentRouteCancellations = Collections2.filter(schedule.scheduleCancellations,
-                sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE);
+        var wholeDayCancellationsMap = new HashMap<String, ScheduleCancellation>();
+        for (final ScheduleCancellation scheduleCancellation : schedule.scheduleCancellations) {
+            if (scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY) {
+                wholeDayCancellationsMap.put(String.format("%s_%s", scheduleCancellation.startDate, scheduleCancellation.endDate), scheduleCancellation);
+            }
+        }
+
+        var partialCancellations = Collections2.filter(schedule.scheduleCancellations,
+                sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY && !wholeDayCancellationsMap.containsKey(String.format("%s_%s", sc.startDate,sc.endDate)));
+        var differentRouteCancellations = Collections2.filter(schedule.scheduleCancellations,
+                sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE && !wholeDayCancellationsMap.containsKey(String.format("%s_%s", sc.startDate,sc.endDate)));
 
         if (differentRouteCancellations.size() > 1) {
             differentRouteCancellations = cancellationFlattener.flatten(differentRouteCancellations);
