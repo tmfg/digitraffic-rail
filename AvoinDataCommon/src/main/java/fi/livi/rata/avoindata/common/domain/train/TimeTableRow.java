@@ -5,6 +5,24 @@ import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.LazyInitializer;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonView;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -16,27 +34,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.TimeZoneStorageType;
-import org.hibernate.annotations.Type;
-import org.hibernate.proxy.HibernateProxy;
-import org.hibernate.proxy.LazyInitializer;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.annotation.JsonView;
-
-import edu.umd.cs.findbugs.annotations.Nullable;
-import fi.livi.rata.avoindata.common.domain.cause.Cause;
-import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
-import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
-import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(indexes = {
@@ -202,8 +199,6 @@ public class TimeTableRow {
         return commercialTrackChanged;
     }
 
-    @Hidden
-    public Long getTrainNumber() { return train.id.trainNumber; }
 
     public void setCommercialTrackChanged(ZonedDateTime value) {
         commercialTrackChanged = value;
