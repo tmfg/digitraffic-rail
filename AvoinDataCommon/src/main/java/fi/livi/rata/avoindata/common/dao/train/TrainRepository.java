@@ -157,7 +157,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Boolean include_deleted);
 
     @Modifying
-    @Query("DELETE FROM Train train WHERE train.id in (?1) and train.id.departureDate in (?2)")
+    @Query("DELETE FROM Train train WHERE train.id.departureDate in (?2) and train.id in (?1)")
     void removeByTrainId(final List<TrainId> trainIds, final Set<LocalDate> departureDates);
 
     @Modifying
