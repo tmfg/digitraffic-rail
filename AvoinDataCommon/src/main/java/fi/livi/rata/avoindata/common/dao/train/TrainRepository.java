@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -156,8 +157,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Boolean include_deleted);
 
     @Modifying
-    @Query("DELETE FROM Train train WHERE train.id in ?1")
-    void removeByTrainId(final List<TrainId> trainIds);
+    @Query("DELETE FROM Train train WHERE train.id in (?1) and train.id.departureDate in (?2)")
+    void removeByTrainId(final List<TrainId> trainIds, final Set<LocalDate> departureDates);
 
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id.departureDate = ?1")

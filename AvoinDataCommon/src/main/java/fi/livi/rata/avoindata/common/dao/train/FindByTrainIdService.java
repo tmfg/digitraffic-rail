@@ -58,4 +58,8 @@ public class FindByTrainIdService {
     public List<Composition> findCompositions(final Collection<TrainId> trainIds) {
         return this.compositionRepository.findByIds(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
     }
+
+    public void removeByTrainId(final List<TrainId> trainIds) {
+        trainRepository.removeByTrainId(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
+    }
 }

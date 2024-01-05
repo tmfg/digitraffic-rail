@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
+import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainReadyRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -42,6 +43,9 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     @Autowired
     private BatchExecutionService bes;
 
+    @Autowired
+    private FindByTrainIdService findByTrainIdService;
+
     @PersistenceContext
     private EntityManager entimanager;
 
@@ -68,9 +72,9 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             entimanager.detach(entity);
         }
 
-        final List<TrainId> trainIds = Lists.newArrayList(Iterables.transform(entities, train -> train.id));
+        final List<TrainId> trainIds = entities.stream().map(s->s.id).sorted(TrainId::compareTo).collect(Collectors.toList());
 
-        bes.consume(trainIds, s -> trainRepository.removeByTrainId(s));
+        bes.consume(trainIds, s -> findByTrainIdService.removeByTrainId(s));
 
         addEntities(entities);
 
