@@ -83,7 +83,7 @@ class RestTemplateFactory {
         restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor(),
             (request, body, execution) -> {
                 final HttpHeaders headers = request.getHeaders();
-                headers.add(HttpHeaders.CONNECTION, "Close");
+                headers.add(HttpHeaders.CONNECTION, "close");
 
                 return execution.execute(request, body);
             }));
