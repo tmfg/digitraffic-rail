@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -79,7 +80,13 @@ class RestTemplateFactory {
         requestFactory.setHttpClient(httpClient);
 
         final RestTemplate restTemplate = new RestTemplate(requestFactory);
-        restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor()));
+        restTemplate.setInterceptors(List.of(new UserHeaderReqInterceptor(),
+            (request, body, execution) -> {
+                final HttpHeaders headers = request.getHeaders();
+                headers.add(HttpHeaders.CONNECTION, "Close");
+
+                return execution.execute(request, body);
+            }));
         restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
 
         return restTemplate;
@@ -88,7 +95,7 @@ class RestTemplateFactory {
     @Bean(name = "ripaRestTemplate")
     public RestTemplate ripaRestTemplate(final HttpClient httpClient) {
         final RestTemplate template = this.restTemplate(httpClient);
-        template.setInterceptors(List.of(new UserHeaderReqInterceptor(), new ApiKeyReqInterceptor(this.apiKey)));
+        template.getInterceptors().add(new ApiKeyReqInterceptor(this.apiKey));
 
         return template;
     }
