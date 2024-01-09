@@ -307,7 +307,7 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
 
         assertFeedMessage(message, 1);
-        assertStopIds(message, 0, 3, "S1", "S2", "S3");
+        assertStopIds(message, 0, 3, "S1_0", "S2_0", "S3_0");
     }
 
     @Test
