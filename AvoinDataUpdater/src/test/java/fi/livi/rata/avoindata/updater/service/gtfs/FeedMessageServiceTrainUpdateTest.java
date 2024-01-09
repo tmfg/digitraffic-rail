@@ -65,6 +65,22 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         }
     }
 
+    private void assertStopIds(final GtfsRealtime.FeedMessage message, final int entityIndex, final int stopTimeUpdateCount, final String... stopIds) {
+        Assertions.assertEquals(stopTimeUpdateCount, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
+
+        if(stopIds.length > 0) {
+            final GtfsRealtime.TripUpdate tu = message.getEntity(entityIndex).getTripUpdate();
+
+            int tuIndex = 0;
+            for(final String stopId : stopIds) {
+                final GtfsRealtime.TripUpdate.StopTimeUpdate stu = tu.getStopTimeUpdate(tuIndex);
+                Assertions.assertEquals(stopId, stu.getStopId(), String.format("Row %d(%s)", tuIndex, stu.getStopId()));
+
+                tuIndex++;
+            }
+        }
+    }
+
     private void assertCancelled(final GtfsRealtime.FeedMessage message, final int entityIndex, final boolean... cancelled) {
         Assertions.assertEquals(cancelled.length, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
 
@@ -283,5 +299,30 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         assertStopUpdates(message, 0, 3,
                 0, 600, 480, 480, 1200, 0);
         // before 0, 600, 1200, 600, 1200, 0
+    }
+
+    @Test
+    public void stopIdsDefaultStation() {
+        final GTFSTrain train2 = createTestTrain2();
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        assertStopIds(message, 0, 3, "S1", "S2", "S3");
+    }
+
+    @Test
+    public void stopIdsTrack() {
+        final GTFSTrain train2 = createTestTrain2();
+        // set tracks
+        final GTFSTimeTableRow r1d = getRow(train2, 0, TimeTableRow.TimeTableRowType.DEPARTURE);
+        final GTFSTimeTableRow r2a = getRow(train2, 1, TimeTableRow.TimeTableRowType.ARRIVAL);
+
+        r1d.commercialTrack = "1";
+        r2a.commercialTrack = "2";
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        assertStopIds(message, 0, 3, "S1_1", "S2_2", "S3_0");
     }
 }

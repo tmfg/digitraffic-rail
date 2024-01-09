@@ -61,6 +61,16 @@ public class FeedMessageService {
         return String.format("%d_update_%d", train.id.trainNumber, train.version);
     }
 
+    private static String createStopId(final GTFSTimeTableRow row) {
+        // if commercialTrack is set, then create stopId as SHORTCODE_COMMERCIALTRACK
+        // otherwise use SHORTCODE_0
+        if(row.commercialTrack == null || row.commercialTrack.equals("")) {
+            return String.format("%s_0", row.stationShortCode);
+        }
+
+        return String.format("%s_%s", row.stationShortCode, row.commercialTrack);
+    }
+
     private List<GtfsRealtime.FeedEntity> createVLEntities(final TripFinder tripFinder, final List<TrainLocation> locations) {
         return locations.stream().map(location -> createVLEntity(tripFinder, location))
             .filter(Objects::nonNull)
@@ -121,7 +131,7 @@ public class FeedMessageService {
     }
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate.Builder createStop(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        final String stopId = arrival == null ? departure.stationShortCode : arrival.stationShortCode;
+        final String stopId = createStopId(arrival == null ? departure : arrival);
         return GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
                 .setStopId(stopId)
                 .setStopSequence(stopSequence);

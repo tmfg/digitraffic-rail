@@ -53,6 +53,9 @@ public class GTFSTimeTableRow {
     @Column
     public Boolean commercialStop;
 
+    @Column
+    public String commercialTrack;
+
     @ManyToOne
     @JoinColumns({
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false, insertable = false, updatable = false),
