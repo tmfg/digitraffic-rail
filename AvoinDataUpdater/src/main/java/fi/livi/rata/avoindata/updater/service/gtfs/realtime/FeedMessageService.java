@@ -137,7 +137,7 @@ public class FeedMessageService {
                 .setStopSequence(stopSequence);
     }
 
-    private boolean isSkipped(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+    private boolean isCancelled(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         if(departure != null) {
             return departure.cancelled;
         }
@@ -146,16 +146,16 @@ public class FeedMessageService {
         return arrival != null && arrival.cancelled;
     }
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
-        // it's in the past(PAST_LIMIT_MINUTES), don't report it!
-        if(isInThePast(arrival, departure)) {
-            return null;
-        }
-
         // setting cancelled stops as SKIPPED
-        if(isSkipped(arrival, departure)) {
+        if(isCancelled(arrival, departure)) {
             return createStop(stopSequence, arrival, departure)
                     .setScheduleRelationship(GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)
                     .build();
+        }
+
+        // it's in the past(PAST_LIMIT_MINUTES), don't report it!
+        if(isInThePast(arrival, departure)) {
+            return null;
         }
 
         final boolean arrivalHasTime = arrival != null && arrival.hasEstimateOrActualTime();
@@ -270,7 +270,7 @@ public class FeedMessageService {
 
     private boolean includeStop(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
 
-        // include only stops where scheduled times are different and stop is commercial
+        // include only stops where scheduled times are different and stop is commercial(either arrival or departure)
         return departure == null || (!arrival.scheduledTime.equals(departure.scheduledTime) &&
                 (isTrue(arrival.commercialStop) || isTrue(departure.commercialStop)));
     }
