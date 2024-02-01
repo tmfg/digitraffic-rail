@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import jakarta.annotation.PostConstruct;
-
 import org.locationtech.jts.geom.Point;
 import org.locationtech.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
@@ -23,18 +21,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Maps;
-
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
-import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class GTFSStopsService {
@@ -55,20 +53,6 @@ public class GTFSStopsService {
         customCoordinates.put("BOLO", new double[]{57.877987, 34.106246});
         customCoordinates.put("MVA", new double[]{55.776115, 37.655077});
         customCoordinates.put("PRK", new double[]{61.783872, 34.344124});
-
-        // Infra 2023
-        customCoordinates.put("KSN", this.liviToWsgArray(7140104, 546725));
-        customCoordinates.put("ILH", this.liviToWsgArray(6974203, 534546));
-        customCoordinates.put("MKN", this.liviToWsgArray(7287986, 400875));
-        customCoordinates.put("LHS", this.liviToWsgArray(7254117, 424951));
-        customCoordinates.put("SHS", this.liviToWsgArray(7294961, 386825));
-
-        // Infra 2024
-        customCoordinates.put("RLA", new double[]{62.757093, 22.944153});
-        customCoordinates.put("PVL", new double[]{60.646683, 24.841208});
-        customCoordinates.put("NUA", new double[]{64.561799, 26.678054});
-        customCoordinates.put("KPP", new double[]{62.572101, 29.792191});
-        customCoordinates.put("KOM", new double[]{63.663573, 26.153949});
     }
 
     @Autowired
