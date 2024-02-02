@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import jakarta.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import jakarta.annotation.PostConstruct;
 
 // Splits GTFS-trips into smaller sections so that geometries can be successfully fetched from infra-api. Infra-api does not like long distances or Y-shaped routes
 @Service
@@ -72,6 +71,8 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("RAS", "LÄ", "PL"));      // Rasinsuo -> Pulsa (VNA)              Y-shaped
         this.createSplittingLogic(List.of("RHL", "JY", "VRI"));     // Vaajakoski -> Vihtavuori             Y-shaped
         this.createSplittingLogic(List.of("RNN", "ILM", "SOA"));    // Runni -> Soininlahti (Iisalmi)       Y-shaped
+        this.createSplittingLogic(List.of("R702", "RI", "KEK"));    // Sammalisto -> Kekomäki (Riihimäki)   Y-shaped
+        this.createSplittingLogic(List.of("HLT", "LH", "HLT"));     // Hakosilta -> Lahti (kääntyminen LH)  Y-shaped
         this.createSplittingLogic(List.of("RÖY", "TOR", "TRR"));    // Röyttä -> Tornio Raja                Y-shaped
         this.createSplittingLogic(List.of("SKÄ", "PM", "TMU"));     // Siikamäki -> PM -> Temu              Y-shaped
         this.createSplittingLogic(List.of("SMJ", "VNJ", "VIH"));    // Sysmäjärvi (Outokumpi) -> Vihtajärvi Y-shaped
