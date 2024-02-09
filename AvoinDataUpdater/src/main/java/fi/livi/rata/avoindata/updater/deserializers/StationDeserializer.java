@@ -14,7 +14,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
@@ -32,16 +31,11 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
     @Autowired
     private ApplicationContext applicationContext;
 
-    private Map<String, Double[]> trakediaLiikennepaikkaMap;
-
-
     @Override
     public Station deserialize(final JsonParser jsonParser,
-                               final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                               final DeserializationContext deserializationContext) throws IOException {
         // To break circular reference
-        if (trakediaLiikennepaikkaMap == null) {
-            trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas(LocalDate.now().atStartOfDay(ZoneId.of("UTC")));
-        }
+        var trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas(LocalDate.now().atStartOfDay(ZoneId.of("UTC")));
 
         Station station = new Station();
 
@@ -56,7 +50,7 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
 
         station.type = getStationType(node);
 
-        final ProjCoordinate to = getCoordinates(station, node);
+        final ProjCoordinate to = getCoordinates(trakediaLiikennepaikkaMap, station, node);
 
         station.latitude = new BigDecimal(to.y);
         station.longitude = new BigDecimal(to.x);
@@ -64,7 +58,7 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
         return station;
     }
 
-    private ProjCoordinate getCoordinates(Station station, JsonNode node) {
+    private ProjCoordinate getCoordinates(Map<String, Double[]> trakediaLiikennepaikkaMap, Station station, JsonNode node) {
         final Double[] koordinaatit = trakediaLiikennepaikkaMap.get(station.shortCode);
 
         final ProjCoordinate to;
