@@ -194,7 +194,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train66ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 2));
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 1));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
@@ -437,7 +437,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
         gtfsWritingService.writeGTFSFiles(gtfsDto);
-        assertTrips(gtfsDto.trips, 71);
+        assertTrips(gtfsDto.trips, 70);
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
@@ -481,7 +481,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         gtfsWritingService.writeGTFSFiles(gtfsDto);
 
-        assertTrips(gtfsDto.trips, 12);
+        assertTrips(gtfsDto.trips, 11);
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 
@@ -494,7 +494,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_20.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
-        assertTrips(gtfsDto.trips, 12);
+        assertTrips(gtfsDto.trips, 11);
 
         final ImmutableMap<String, Trip> trips = Maps.uniqueIndex(gtfsDto.trips, s -> s.tripId);
 

@@ -31,6 +31,7 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
@@ -57,6 +58,9 @@ public class GTFSTripService {
 
     @Autowired
     private GTFSTripRepository gtfsTripRepository;
+
+    @Autowired
+    private DateProvider dateProvider;
 
     private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
@@ -89,7 +93,7 @@ public class GTFSTripService {
             }
         }
 
-        final LocalDate now = LocalDate.now();
+        final LocalDate now = dateProvider.dateInHelsinki();
         final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
             if (trip.stopTimes.isEmpty() || trip.calendar.endDate.isBefore(now)) {
