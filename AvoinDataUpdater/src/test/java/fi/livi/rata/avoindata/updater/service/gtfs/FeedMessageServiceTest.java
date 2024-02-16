@@ -46,7 +46,8 @@ public class FeedMessageServiceTest extends BaseTest {
 
         when(location.getTrainNumber()).thenReturn(trainNumber);
         when(location.getDepartureDate()).thenReturn(departureDate);
-        when(location.getLocation()).thenReturn(geometryFactory.createPoint(new Coordinate(60, 20)));
+        when(location.getX()).thenReturn(60.0);
+        when(location.getY()).thenReturn(20.0);
 
         return location;
     }

@@ -14,7 +14,9 @@ public interface GTFSTrainLocation {
 
     ZonedDateTime getTimestamp();
 
-    Point getLocation();
+    double getX();
+
+    double getY();
 
     int getSpeed();
 

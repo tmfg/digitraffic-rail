@@ -20,7 +20,7 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
             " and train.id.departureDate in (current_date, (current_date - 1))")
     List<GTFSTrain> findByVersionGreaterThan(final long version);
 
-    @Query(value = "select id, departure_date as departureDate, train_number as trainNumber, timestamp, location, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack from (" +
+    @Query(value = "select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack from (" +
             " select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, rank()" +
             " over (partition by id order by scheduled_time desc, type desc) as r" +
             " from train_location tl" +
