@@ -105,6 +105,10 @@ public class GTFSStopsService {
             }
         }
 
+        for (final Stop stop : stops) {
+            stop.name = stop.name.replace(" asema", "");
+        }
+
         return Maps.uniqueIndex(stops, s -> s.stopId);
     }
 

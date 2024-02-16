@@ -89,9 +89,10 @@ public class GTFSTripService {
             }
         }
 
+        final LocalDate now = LocalDate.now();
         final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
-            if (trip.stopTimes.isEmpty()) {
+            if (trip.stopTimes.isEmpty() || trip.calendar.endDate.isBefore(now)) {
                 toBeRemoved.add(trip);
             } else {
                 trip.headsign = stopMap.get(Iterables.getLast(trip.stopTimes).stopId).name;
@@ -101,6 +102,20 @@ public class GTFSTripService {
         trips.removeAll(toBeRemoved);
 
         encounteredCalendarDates.clear();
+
+        for (final Trip trip : trips) {
+            trip.headsign = trip.headsign.replace(" asema", "");
+        }
+
+        for (final Trip trip : trips) {
+            if (trip.stopTimes != null) {
+                if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
+                    trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
+                }
+            } else {
+                log.error("Encountered trip without stoptimes: {}", trip);
+            }
+        }
 
         return trips;
     }

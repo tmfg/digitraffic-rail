@@ -17,13 +17,11 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -87,24 +85,6 @@ public class GTFSService {
                               final String zipFileName,
                               final boolean filterOutNonStops) throws IOException {
         final GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
-
-        for (final Stop stop : gfsDto.stops) {
-            stop.name = stop.name.replace(" asema", "");
-        }
-
-        for (final Trip trip : gfsDto.trips) {
-            trip.headsign = trip.headsign.replace(" asema", "");
-        }
-
-        for (final Trip trip : gfsDto.trips) {
-            if (trip.stopTimes != null) {
-                if (trip.stopTimes.get(0).stopId.equals("HKI") && Iterables.getLast(trip.stopTimes).stopId.equals("HKI") && trip.stopTimes.stream().map(s -> s.stopId).anyMatch(s -> s.equals("LEN"))) {
-                    trip.headsign = "Helsinki -> Lentoasema -> Helsinki";
-                }
-            } else {
-                log.error("Encountered trip without stoptimes: {}", trip);
-            }
-        }
 
         if (filterOutNonStops) {
             for (final Trip trip : gfsDto.trips) {
