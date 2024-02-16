@@ -11,6 +11,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.integration.support.MessageBuilder;
@@ -34,8 +35,8 @@ public class MQTTPublishService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private Environment environment;
+    @Value("${mqtt.enable:true}")
+    private boolean enableMqtt;
 
     private ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
@@ -47,52 +48,59 @@ public class MQTTPublishService {
         executor.initialize();
     }
 
-    public <E> void publish(Function<E, String> topicProvider, List<E> entities) {
+    public <E> void publish(final Function<E, String> topicProvider, final List<E> entities) {
         this.publish(topicProvider, entities, null);
     }
 
-    public <E> void publish(Function<E, String> topicProvider, List<E> entities, Class viewClass) {
+    public <E> void publish(final Function<E, String> topicProvider, final List<E> entities, final Class viewClass) {
         for (final E entity : entities) {
             publishEntity(topicProvider.apply(entity), entity, viewClass);
         }
     }
 
-    public <E> Future<Message<String>> publishEntity(String topic, E entity, Class viewClass) {
+    public <E> Future<Message<String>> publishEntity(final String topic, final E entity, final Class viewClass) {
         try {
-            String entityAsString = getEntityAsString(entity, viewClass);
+            final String entityAsString = getEntityAsString(entity, viewClass);
 
             return publishString(topic, entityAsString);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error publishing %s to %s".format(topic, entity), e);
         }
+
         return null;
     }
 
-    public Future<Message<String>> publishString(String topic, String entity) {
+    private void publishMessage(final Message<String> message) {
+        if(enableMqtt) {
+            MQTTGateway.sendToMqtt(message);
+        }
+    }
+
+    public Future<Message<String>> publishString(final String topic, final String entity) {
         try {
             final Message<String> message = buildMessage(topic, entity);
 
-            ZonedDateTime submittedAt = ZonedDateTime.now();
+            final ZonedDateTime submittedAt = ZonedDateTime.now();
 
-            Future<Message<String>> future = executor.submit(() -> {
+            final Future<Message<String>> future = executor.submit(() -> {
                 try {
-                    ZonedDateTime executionStartedAt = ZonedDateTime.now();
+                    final ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
-                    MQTTGateway.sendToMqtt(message);
+                    publishMessage(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
                         log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                     return message;
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     log.error("Error sending data to MQTT. Topic: {}", topic, e);
                     return null;
                 }
             });
 
             return future;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error publishing to: " + topic, e);
             return null;
         }
@@ -106,12 +114,12 @@ public class MQTTPublishService {
         return payloadBuilder.setHeader(MqttHeaders.TOPIC, topicToPublishTo).build();
     }
 
-    private String getReplacedTopic(String topic) {
+    private String getReplacedTopic(final String topic) {
         return topic.replace("+", "").replace("#", "").replaceAll("/null/", "//").replaceAll("/null/", "//").replaceFirst("/null$", "/");
     }
 
-    private <E> String getEntityAsString(E entity, Class viewClass) throws JsonProcessingException {
-        String entityAsString;
+    private <E> String getEntityAsString(final E entity, final Class viewClass) throws JsonProcessingException {
+        final String entityAsString;
         if (viewClass != null) {
             entityAsString = objectMapper.writerWithView(viewClass).writeValueAsString(entity);
         } else {

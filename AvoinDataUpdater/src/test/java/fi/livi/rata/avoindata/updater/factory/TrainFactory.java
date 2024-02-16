@@ -32,7 +32,7 @@ public class TrainFactory {
     }
 
     @Transactional
-    public Train createBaseTrain(TrainId id) {
+    public Train createBaseTrain(final TrainId id) {
         final int operatorUICCode = 1;
         final String operatorShortCode = "test";
         final long trainCategoryId = 1;
@@ -51,7 +51,7 @@ public class TrainFactory {
 
         final ZonedDateTime now = ZonedDateTime.now().withYear(departureDate.getYear()).withMonth(departureDate.getMonthValue())
                 .withDayOfMonth(departureDate.getDayOfMonth());
-        List<TimeTableRow> timeTableRowList = new ArrayList<>();
+        final List<TimeTableRow> timeTableRowList = new ArrayList<>();
         timeTableRowList.add(ttrf.create(train, now.plusHours(1), now.plusHours(1).plusMinutes(1), new StationEmbeddable("HKI", 1, "FI"),
                 TimeTableRow.TimeTableRowType.DEPARTURE));
         timeTableRowList.add(ttrf.create(train, now.plusHours(2), now.plusHours(2).plusMinutes(3), new StationEmbeddable("PSL", 2, "FI"),

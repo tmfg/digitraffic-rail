@@ -36,7 +36,7 @@ jobs:
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout CI-repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
@@ -51,9 +51,9 @@ jobs:
             echo "ENVIRONMENT=${{ github.event.inputs.env }}" >> $GITHUB_ENV
           fi
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -61,7 +61,7 @@ jobs:
           role-session-name: gh-actions-install-image-rail-mqtt-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
       - name: Build mqtt image
         run: |
           cd digitraffic-ci/aws/mqtt

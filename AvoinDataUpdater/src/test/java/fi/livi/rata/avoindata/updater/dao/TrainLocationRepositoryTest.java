@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.ZonedDateTime;
 
-public class TrainLocationRepositoryTest  extends BaseTest {
+public class TrainLocationRepositoryTest extends BaseTest {
     @Autowired
     private TrainLocationRepository trainLocationRepository;
 

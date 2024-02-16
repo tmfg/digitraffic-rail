@@ -2,9 +2,8 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import com.google.transit.realtime.GtfsRealtime;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocationId;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import org.junit.jupiter.api.Assertions;
@@ -15,11 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FeedMessageServiceTest extends BaseTest {
@@ -42,13 +41,12 @@ public class FeedMessageServiceTest extends BaseTest {
     @Autowired
     private FeedMessageService feedMessageService;
 
-    private static TrainLocation createTrainLocation(final Long trainNumber, final LocalDate departureDate) {
-        final TrainLocation location = new TrainLocation();
+    private static GTFSTrainLocation createTrainLocation(final Long trainNumber, final LocalDate departureDate) {
+        final GTFSTrainLocation location = mock(GTFSTrainLocation.class);
 
-        location.id = 1L;
-        location.location = geometryFactory.createPoint(new Coordinate(60, 20));
-        location.speed = 100;
-        location.trainLocationId = new TrainLocationId(trainNumber, departureDate, ZonedDateTime.now());
+        when(location.getTrainNumber()).thenReturn(trainNumber);
+        when(location.getDepartureDate()).thenReturn(departureDate);
+        when(location.getLocation()).thenReturn(geometryFactory.createPoint(new Coordinate(60, 20)));
 
         return location;
     }
@@ -66,7 +64,7 @@ public class FeedMessageServiceTest extends BaseTest {
 
     @Test
     public void oneTrip() {
-        final TrainLocation location = createTrainLocation(1L, DATE_1);
+        final GTFSTrainLocation location = createTrainLocation(1L, DATE_1);
         when(gtfsTripRepository.findAll()).thenReturn(List.of(TRIP_1));
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
@@ -78,7 +76,7 @@ public class FeedMessageServiceTest extends BaseTest {
 
     @Test
     public void wrongDepartureDate() {
-        final TrainLocation location = createTrainLocation(1L, DATE_1.minusDays(100));
+        final GTFSTrainLocation location = createTrainLocation(1L, DATE_1.minusDays(100));
         when(gtfsTripRepository.findAll()).thenReturn(List.of(TRIP_1));
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
@@ -88,7 +86,7 @@ public class FeedMessageServiceTest extends BaseTest {
 
     @Test
     public void replacement() {
-        final TrainLocation location = createTrainLocation(1L, DATE_1);
+        final GTFSTrainLocation location = createTrainLocation(1L, DATE_1);
         when(gtfsTripRepository.findAll()).thenReturn(List.of(TRIP_1, TRIP_2));
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));

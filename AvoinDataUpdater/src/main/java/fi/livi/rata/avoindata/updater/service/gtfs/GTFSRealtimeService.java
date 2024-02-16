@@ -5,7 +5,7 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class GTFSRealtimeService {
     @Transactional(readOnly = true)
     public GtfsRealtime.FeedMessage createVehiceLocationFeedMessage() {
         final List<Long> ids = trainLocationRepository.findLatestForPassengerTrains(ZonedDateTime.now().minusMinutes(30));
-        final List<TrainLocation> locations = trainLocationRepository.findAllOrderByTrainNumber(ids);
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(ids);
 
         return feedMessageService.createVehicleLocationFeedMessage(locations);
     }

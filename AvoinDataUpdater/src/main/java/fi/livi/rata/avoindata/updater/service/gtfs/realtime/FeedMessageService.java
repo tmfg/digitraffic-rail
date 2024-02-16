@@ -2,10 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 
 import com.google.transit.realtime.GtfsRealtime;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.domain.gtfs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -41,16 +38,22 @@ public class FeedMessageService {
                         .build());
     }
 
-    public GtfsRealtime.FeedMessage createVehicleLocationFeedMessage(final List<TrainLocation> locations) {
+    public GtfsRealtime.FeedMessage createVehicleLocationFeedMessage(final List<GTFSTrainLocation> locations) {
+        log.info("creating VehiclePositionFeedMessages for {} locations", locations.size());
+
         final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
 
-        return createBuilderWithHeader()
+        final GtfsRealtime.FeedMessage message = createBuilderWithHeader()
                 .addAllEntity(createVLEntities(tripFinder, locations))
                 .build();
+
+        log.info("created VehiclePositionFeedMessages for {} entities", message.getEntityCount());
+
+        return message;
     }
 
-    private static String createVesselLocationId(final TrainLocation location) {
-        return String.format("%d_location_%d", location.trainLocationId.trainNumber, location.id);
+    private static String createVesselLocationId(final GTFSTrainLocation location) {
+        return String.format("%d_location_%d", location.getTrainNumber(), location.getId());
     }
 
     private static String createCancellationId(final GTFSTrain train) {
@@ -62,41 +65,48 @@ public class FeedMessageService {
     }
 
     private static String createStopId(final GTFSTimeTableRow row) {
-        // if commercialTrack is set, then create stopId as SHORTCODE_COMMERCIALTRACK
-        // otherwise use SHORTCODE_0
-        if(row.commercialTrack == null || row.commercialTrack.equals("")) {
-            return String.format("%s_0", row.stationShortCode);
-        }
-
-        return String.format("%s_%s", row.stationShortCode, row.commercialTrack);
+        return GTFSTrainLocation.createStopId(row.stationShortCode, row.commercialTrack);
     }
 
-    private List<GtfsRealtime.FeedEntity> createVLEntities(final TripFinder tripFinder, final List<TrainLocation> locations) {
+    private List<GtfsRealtime.FeedEntity> createVLEntities(final TripFinder tripFinder, final List<GTFSTrainLocation> locations) {
         return locations.stream().map(location -> createVLEntity(tripFinder, location))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
-    private GtfsRealtime.FeedEntity createVLEntity(final TripFinder tripFinder, final TrainLocation location) {
+    private GtfsRealtime.FeedEntity createVLEntity(final TripFinder tripFinder, final GTFSTrainLocation location) {
         final GTFSTrip trip = tripFinder.find(location);
 
-        return trip == null ? null : GtfsRealtime.FeedEntity.newBuilder()
-                .setId(createVesselLocationId(location))
-                .setVehicle(GtfsRealtime.VehiclePosition.newBuilder()
-                        .setTrip(GtfsRealtime.TripDescriptor.newBuilder()
-                                .setRouteId(trip.routeId)
-                                .setTripId(trip.tripId)
-                                .setStartDate(location.trainLocationId.departureDate.format(DateTimeFormatter.BASIC_ISO_DATE))
-                                .build())
-                        .setPosition(GtfsRealtime.Position.newBuilder()
-                                .setLatitude((float)location.location.getY())
-                                .setLongitude((float)location.location.getX())
-                                .setSpeed(location.speed)
-                                .build())
-                        .setVehicle(GtfsRealtime.VehicleDescriptor.newBuilder()
-                                .setId(trip.id.trainNumber.toString())
-                                .build())
+        if(trip == null) {
+            return null;
+        }
+
+        final String stopId = GTFSTrainLocation.createStopId(location.getStationShortCode(), location.getCommercialTrack());
+        final String id = createVesselLocationId(location);
+        final GtfsRealtime.FeedEntity.Builder builder = GtfsRealtime.FeedEntity.newBuilder();
+        final GtfsRealtime.VehiclePosition.Builder vpBuilder = GtfsRealtime.VehiclePosition.newBuilder();
+
+        if(stopId != null) {
+            vpBuilder.setStopId(stopId);
+        }
+
+        vpBuilder.setTrip(GtfsRealtime.TripDescriptor.newBuilder()
+                        .setRouteId(trip.routeId)
+                        .setTripId(trip.tripId)
+                        .setStartDate(location.getDepartureDate().format(DateTimeFormatter.BASIC_ISO_DATE))
                         .build())
+                .setPosition(GtfsRealtime.Position.newBuilder()
+                        .setLatitude((float)location.getLocation().getY())
+                        .setLongitude((float)location.getLocation().getX())
+                        .setSpeed(location.getSpeed())
+                        .build())
+                .setVehicle(GtfsRealtime.VehicleDescriptor.newBuilder()
+                        .setId(trip.id.trainNumber.toString())
+                        .build());
+
+        return builder
+                .setId(id)
+                .setVehicle(vpBuilder.build())
                 .build();
     }
 
@@ -133,8 +143,8 @@ public class FeedMessageService {
     private GtfsRealtime.TripUpdate.StopTimeUpdate.Builder createStop(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         final String stopId = createStopId(arrival == null ? departure : arrival);
         return GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
-                .setStopId(stopId)
-                .setStopSequence(stopSequence);
+                .setStopSequence(stopSequence)
+                .setStopId(stopId);
     }
 
     private boolean isCancelled(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
@@ -361,10 +371,10 @@ public class FeedMessageService {
             return findTripFromList(trips, train.id.trainNumber, train.id.departureDate);
         }
 
-        GTFSTrip find(final TrainLocation location) {
-            final List<GTFSTrip> trips = tripMap.get(location.trainLocationId.trainNumber);
+        GTFSTrip find(final GTFSTrainLocation location) {
+            final List<GTFSTrip> trips = tripMap.get(location.getTrainNumber());
 
-            return findTripFromList(trips, location.trainLocationId.trainNumber, location.trainLocationId.departureDate);
+            return findTripFromList(trips, location.getTrainNumber(), location.getDepartureDate());
         }
 
         GTFSTrip findTripFromList(final List<GTFSTrip> trips, final Long trainNumber, final LocalDate departureDate) {

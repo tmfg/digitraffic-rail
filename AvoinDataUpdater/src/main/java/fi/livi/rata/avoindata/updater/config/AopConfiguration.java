@@ -10,8 +10,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import fi.livi.digitraffic.common.aop.TransactionLoggerAspect;
 
-
-
 @Configuration
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @Aspect
