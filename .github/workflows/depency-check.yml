@@ -18,7 +18,7 @@ jobs:
           distribution: corretto
           cache: maven
       - name: Cache dependency-check files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository/org/owasp
           key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}

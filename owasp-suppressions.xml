@@ -5,55 +5,39 @@
         Temporary suppressions, check and update these periodically
     -->
 
-    <suppress until="2023-12-01Z">
-        <!-- We don't use com.amazonaws.services.s3.transfer.TransferManager::downloadDirectory -->
-        <notes><![CDATA[file name: aws-java-sdk-(secretsmanager|ec2).jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.amazonaws/(aws\-java\-sdk\-secretsmanager|aws\-java\-sdk\-ec2)@.*$</packageUrl>
-        <cve>CVE-2022-31159</cve>
-    </suppress>
-
-    <suppress until="2023-12-01">
-        <notes><![CDATA[file name: bcprov-jdk15on-1.69.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
-    </suppress>
-
-    <suppress until="2023-12-01">
-        <notes><![CDATA[file name: jackson-databind-2.14.3.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
-        <cve>CVE-2023-35116</cve>
-    </suppress>
-
-    <suppress until="2023-12-01">
+    <suppress until="2024-06-01">
         <notes><![CDATA[file name: snakeyaml-1.33.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
         <cve>CVE-2022-1471</cve>
     </suppress>
 
-    <suppress until="2023-12-01">
-        <notes><![CDATA[file name: spring-security-crypto-*.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring\-security\-crypto@.*$</packageUrl>
-
-        <!-- Crypto vulnerability, not using vulnerable version of Spring Security -->
-        <cve>CVE-2020-5408</cve>
-        <cve>CVE-2023-34034</cve>
-        <cve>CVE-2023-34035</cve>
+    <suppress until="2024-06-01">
+        <notes><![CDATA[file name: ion-java-1.0.2.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
+        <!-- we're not using ion-java -->
+        <cve>CVE-2024-21634</cve>
     </suppress>
 
-    <suppress until="2023-12-01">
-        <notes><![CDATA[file name: tomcat-embed-core-10.1.10.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-core@.*$</packageUrl>
-        <cve>CVE-2023-34981</cve>
-        <cve>CVE-2023-41080</cve>
+    <suppress until="2024-06-01">
+        <notes><![CDATA[file name: spring-core-6.0.14.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-core@.*$</packageUrl>
+        <!-- we're not using spring security -->
+        <cve>CVE-2024-22233</cve>
     </suppress>
 
-    <suppress until="2023-12-01">
-        <notes><![CDATA[file name: tomcat-embed-websocket-10.1.10.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-websocket@.*$</packageUrl>
-        <cve>CVE-2023-34981</cve>
-        <cve>CVE-2023-41080</cve>
+    <suppress until="2024-04-01">
+        <notes><![CDATA[file name: logback-classic-1.4.11.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
+        <!-- we should upgrade spring boot asap -->
+        <cve>CVE-2023-6378</cve>
     </suppress>
 
+    <suppress until="2024-04-01">
+        <notes><![CDATA[file name: logback-core-1.4.11.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-core@.*$</packageUrl>
+        <!-- we should upgrade spring boot asap -->
+        <cve>CVE-2023-6378</cve>
+    </suppress>
     <!--
         Permanent suppressions
     -->
