@@ -26,6 +26,8 @@ jobs:
             ${{ runner.os }}-dependency-check-
       - name: Dependency check
         run: mvn -Pdepcheck
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
         uses: tmfg/digitraffic-actions@gh-pages-publish/v1
