@@ -9,13 +9,14 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainLocationFactory;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCollection;
@@ -37,9 +38,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     private Train createTrainWithoutActualTimes() {
         final Train t = trainFactory.createBaseTrain();
 
-        t.timeTableRows.forEach(timeTableRow -> {
-            timeTableRow.actualTime = null;
-        });
+        t.timeTableRows.forEach(timeTableRow -> timeTableRow.actualTime = null);
 
         trainRepository.save(t);
 
@@ -70,7 +69,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     }
 
     @Test
-    public void getTrainLocationsNoActualTime() {
+    public void getTrainLocationsNoEstimates() {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
@@ -80,11 +79,12 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     }
 
     @Test
-    public void getTrainLocationsFirstHasActualTime() {
+    public void getTrainLocationsGetFirstWithEstimate() {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
-        t.timeTableRows.get(0).actualTime = t.timeTableRows.get(0).scheduledTime;
+        t.timeTableRows.get(0).liveEstimateTime = t.timeTableRows.get(0).scheduledTime;
+        t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
         trainRepository.save(t);
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
@@ -92,13 +92,14 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
     }
-
     @Test
-    public void getTrainLocationsOneHasActualTime() {
+    public void getTrainLocationsGetFirstWithEstimateInTheFuture() {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
-        t.timeTableRows.get(4).actualTime = t.timeTableRows.get(4).scheduledTime;
+        // 1 minute in the past should be enough, but is not! some local timezone issue?
+        t.timeTableRows.get(0).liveEstimateTime = ZonedDateTime.now().minusMinutes(300);
+        t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
         trainRepository.save(t);
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
@@ -108,33 +109,18 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     }
 
     @Test
-    public void getTrainLocationsFirstTwoActualTimes() {
+    public void getTrainLocationsSkipCommercial() {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
-        t.timeTableRows.get(0).actualTime = t.timeTableRows.get(0).scheduledTime;
-        t.timeTableRows.get(4).actualTime = t.timeTableRows.get(4).scheduledTime;
+        // should not include 1st row, because it's not commercial stop
+        t.timeTableRows.get(0).liveEstimateTime = t.timeTableRows.get(0).scheduledTime;
+        t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
+        t.timeTableRows.get(0).commercialStop = false;
         trainRepository.save(t);
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
         final TimeTableRow ttr = t.timeTableRows.get(4);
-
-        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
-    }
-
-    @Test
-    public void getTrainLocationsFirstTwoActualTimesFirstIsCommercial() {
-        final Train t = createTrainWithoutActualTimes();
-        final TrainLocation tl = trainLocationFactory.create(t);
-
-        // should not include 4th line, because it's not commercial stop
-        t.timeTableRows.get(0).actualTime = t.timeTableRows.get(0).scheduledTime;
-        t.timeTableRows.get(4).actualTime = t.timeTableRows.get(4).scheduledTime;
-        t.timeTableRows.get(4).commercialStop = false;
-        trainRepository.save(t);
-
-        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
-        final TimeTableRow ttr = t.timeTableRows.get(0);
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
     }
