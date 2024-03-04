@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Fuzz
-        uses: mprencipe/waggers-action@v2
+        uses: mprencipe/waggers-action@v4
         with:
           url: https://rata-beta.digitraffic.fi/swagger/openapi.json
           fuzzcount: 5

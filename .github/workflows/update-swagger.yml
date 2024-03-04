@@ -18,7 +18,7 @@ jobs:
       actions: read
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_SWAGGER_ROLE }}
           role-session-name: gh-actions-update-swagger-rail-${{ github.event.inputs.env }}
