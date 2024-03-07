@@ -2,7 +2,7 @@ version: '2.0' # docker-compose version
 
 services:
   db:
-    image: mysql:8.0
+    image: mysql:8.0.23
     restart: always
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -10,7 +10,7 @@ services:
       - "3306:3306"
 
   db-init:
-    image: flyway/flyway:9.14-alpine
+    image: flyway/flyway:10.8.1-alpine
     volumes:
       - "../AvoinDataUpdater/src/main/resources/db/migration/:/flyway/sql"
       - "~/.m2:/root/.m2"
