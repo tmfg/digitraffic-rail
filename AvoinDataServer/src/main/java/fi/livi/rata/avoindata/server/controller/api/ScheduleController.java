@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,17 +49,17 @@ public class ScheduleController extends ADataController {
     private TrainRepository trainRepository;
 
     @Operation(summary = "Return trains that run from {arrival_station} to {departure_station}", ignoreJsonView = true)
-    @JsonView(ScheduleTrains.class)
+    @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(path = "station/{departure_station}/{arrival_station}", method = RequestMethod.GET)
     @Transactional(timeout = 30, readOnly = true)
     public List<Train> getTrainsFromDepartureToArrivalStation(
             @Parameter(description = "departure_station") @PathVariable String departure_station,
             @Parameter(description = "arrival_station") @PathVariable String arrival_station,
-            @Parameter(description = "departure_date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,
-            @Parameter(description = "include_nonstopping") @RequestParam(required = false, defaultValue = "false") Boolean include_nonstopping,
-            @Parameter(description = "startDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
-            @Parameter(description = "endDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate,
-            @Parameter(description = "limit") @RequestParam(required = false) Integer limit, HttpServletResponse response) {
+            @Parameter(description = "departure_date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
+            @Parameter(description = "include_nonstopping") @RequestParam(required = false, defaultValue = "false") final Boolean include_nonstopping,
+            @Parameter(description = "startDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime startDate,
+            @Parameter(description = "endDate") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final ZonedDateTime endDate,
+            @Parameter(description = "limit") @RequestParam(required = false) Integer limit, final HttpServletResponse response) {
         if (limit == null) {
             limit = MAX_ROUTE_SEARCH_RESULT_SIZE;
         }
@@ -73,7 +74,7 @@ public class ScheduleController extends ADataController {
             }
         }
 
-        List<Train> list = findTrains(departure_station, arrival_station, departure_date, include_nonstopping, startDate, endDate);
+        final List<Train> list = findTrains(departure_station, arrival_station, departure_date, include_nonstopping, startDate, endDate);
 
         CacheConfig.SCHEDULE_STATION_CACHECONTROL.setCacheParameter(response, list, -1);
 
@@ -92,10 +93,10 @@ public class ScheduleController extends ADataController {
 
     private List<Train> findTrains(final String departure_station, final String arrival_station, final LocalDate departure_date,
                                    final Boolean include_nonstopping, final ZonedDateTime from, final ZonedDateTime to) {
-        ZonedDateTime actualTrainStart;
-        ZonedDateTime actualTrainEnd;
-        LocalDate departureDateStart;
-        LocalDate departureDateEnd;
+        final ZonedDateTime actualTrainStart;
+        final ZonedDateTime actualTrainEnd;
+        final LocalDate departureDateStart;
+        final LocalDate departureDateEnd;
         if (departure_date != null) {
             actualTrainStart = departure_date.minusDays(1).atStartOfDay(ZoneId.of("Europe/Helsinki"));
             actualTrainEnd = departure_date.plusDays(2).atStartOfDay(ZoneId.of("Europe/Helsinki"));
@@ -122,7 +123,7 @@ public class ScheduleController extends ADataController {
             departureDateEnd = actualTrainEnd.plusDays(1).toLocalDate();
         }
 
-        List<Train> list = trainRepository.findByStationsAndScheduledDate(departure_station, TimeTableRow.TimeTableRowType.DEPARTURE,
+        final List<Train> list = trainRepository.findByStationsAndScheduledDate(departure_station, TimeTableRow.TimeTableRowType.DEPARTURE,
                 arrival_station, TimeTableRow.TimeTableRowType.ARRIVAL, actualTrainStart, actualTrainEnd, departureDateStart,
                 departureDateEnd, !include_nonstopping);
         return list;
@@ -131,8 +132,8 @@ public class ScheduleController extends ADataController {
     private void sortByDepartureStationScheduledTime(final String departure_station, final List<Train> trains) {
         Collections.sort(trains, (firstTrain, secondTrain) -> {
             final Predicate<TimeTableRow> stationShortCodePredicate = s -> s.station.stationShortCode.equals(departure_station);
-            TimeTableRow departureTimeTableRowFirst = Iterables.find(firstTrain.timeTableRows, stationShortCodePredicate);
-            TimeTableRow departureTimeTableRowSecond = Iterables.find(secondTrain.timeTableRows, stationShortCodePredicate);
+            final TimeTableRow departureTimeTableRowFirst = Iterables.find(firstTrain.timeTableRows, stationShortCodePredicate);
+            final TimeTableRow departureTimeTableRowSecond = Iterables.find(secondTrain.timeTableRows, stationShortCodePredicate);
 
             return departureTimeTableRowFirst.scheduledTime.compareTo(departureTimeTableRowSecond.scheduledTime);
         });

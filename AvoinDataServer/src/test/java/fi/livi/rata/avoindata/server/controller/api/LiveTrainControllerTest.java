@@ -75,16 +75,18 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void baseAttributesShouldBeCorrect() throws Exception {
         trainFactory.createBaseTrain();
 
-        final ResultActions r1 = getJson("/live-trains/51");
-
-        r1.andExpect(jsonPath("$[0].trainNumber").value("51"));
-        r1.andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()));
-        r1.andExpect(jsonPath("$[0].operatorUICCode").value("1"));
-        r1.andExpect(jsonPath("$[0].operatorShortCode").value("test"));
-        r1.andExpect(jsonPath("$[0].commuterLineID").value("Z"));
-        r1.andExpect(jsonPath("$[0].runningCurrently").value("true"));
-        r1.andExpect(jsonPath("$[0].cancelled").value("false"));
-        r1.andExpect(jsonPath("$[0].version").value("1"));
+        getJson("/live-trains/51")
+            .andExpect(jsonPath("$[0].trainNumber").value("51"))
+            .andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$[0].operatorUICCode").value("1"))
+            .andExpect(jsonPath("$[0].operatorShortCode").value("test"))
+            .andExpect(jsonPath("$[0].commuterLineID").value("Z"))
+            .andExpect(jsonPath("$[0].runningCurrently").value("true"))
+            .andExpect(jsonPath("$[0].cancelled").value("false"))
+            .andExpect(jsonPath("$[0].version").value("1"))
+            .andExpect(jsonPath("$[0].timeTableRows").isNotEmpty())
+            .andExpect(jsonPath("$[0].timeTableRows[0].actualTime").isNotEmpty())
+        ;
     }
 
     @Test
@@ -150,7 +152,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void timetableTypeShouldWork() throws Exception {
         trainFactory.createBaseTrain(new TrainId(51L, LocalDate.now()));
 
-        Train train2 = trainFactory.createBaseTrain(new TrainId(52L, LocalDate.now()));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(52L, LocalDate.now()));
         train2.timetableType = Train.TimetableType.ADHOC;
         trainRepository.save(train2);
 
@@ -181,9 +183,9 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     }
 
 
-    private void clearActualTimes(Train... trains) {
-        for (Train train : trains) {
-            for (TimeTableRow timeTableRow : train.timeTableRows) {
+    private void clearActualTimes(final Train... trains) {
+        for (final Train train : trains) {
+            for (final TimeTableRow timeTableRow : train.timeTableRows) {
                 timeTableRow.actualTime = null;
             }
         }
@@ -283,14 +285,14 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Transactional
     @Disabled
     public void trainCategoryFilteringShouldWork() throws Exception {
-        TrainCategory trainCategory1 = trainCategoryFactory.create(1L, "test category");
-        TrainCategory trainCategory2 = trainCategoryFactory.create(2L, "test cat");
-        TrainType trainType = trainTypeFactory.create(trainCategory1);
+        final TrainCategory trainCategory1 = trainCategoryFactory.create(1L, "test category");
+        final TrainCategory trainCategory2 = trainCategoryFactory.create(2L, "test cat");
+        final TrainType trainType = trainTypeFactory.create(trainCategory1);
 
         ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
-        Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
-        Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
+        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
 
         clearActualTimes(train1, train2);
 
@@ -353,7 +355,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
         ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
-        LocalDate dateNow = LocalDate.now();
+        final LocalDate dateNow = LocalDate.now();
         final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, dateNow));
         final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, dateNow));
         final Train train3 = trainFactory.createBaseTrain(new TrainId(3L, dateNow));
@@ -362,7 +364,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         clearActualTimes(train1, train2, train3, train4, train5);
 
-        ZonedDateTime zonedDateTimeNow = ZonedDateTime.now();
+        final ZonedDateTime zonedDateTimeNow = ZonedDateTime.now();
         train1.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(1);
         train2.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(2);
         train3.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(3);

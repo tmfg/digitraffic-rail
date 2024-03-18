@@ -7,6 +7,11 @@ import fi.livi.rata.avoindata.server.factory.TrainFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
 public class ScheduleControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainFactory trainFactory;
@@ -38,5 +43,24 @@ public class ScheduleControllerTest extends MockMvcBaseTest {
 
         //Nothing matches
         assertException("/live-trains/station/TKU/JOE","TRAIN_NOT_FOUND");
+    }
+
+    @Test
+    @Transactional
+    public void attributesPresent() throws Exception {
+        trainFactory.createBaseTrain();
+
+        getJson("/live-trains/station/HKI/OL")
+                .andExpect(jsonPath("$[0].trainNumber").value("51"))
+                .andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()))
+                .andExpect(jsonPath("$[0].operatorUICCode").value("1"))
+                .andExpect(jsonPath("$[0].operatorShortCode").value("test"))
+                .andExpect(jsonPath("$[0].commuterLineID").value("Z"))
+                .andExpect(jsonPath("$[0].runningCurrently").value("true"))
+                .andExpect(jsonPath("$[0].cancelled").value("false"))
+                .andExpect(jsonPath("$[0].version").value("1"))
+                .andExpect(jsonPath("$[0].timeTableRows").isNotEmpty())
+                .andExpect(jsonPath("$[0].timeTableRows[0].actualTime").isNotEmpty())
+        ;
     }
 }

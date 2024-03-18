@@ -21,13 +21,14 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 @Transactional
 public interface TrainRepository extends CustomGeneralRepository<Train, TrainId> {
 
-    String BASE_TRAIN_SELECT = "select distinct train from Train train " +
-            "   inner join fetch train.timeTableRows timeTableRow " +
-            "   left join fetch timeTableRow.causes c " +
-            "   left join fetch c.categoryCode categoryCode " +
-            "   left join fetch c.detailedCategoryCode detailedCategoryCode " +
-            "   left join fetch c.thirdCategoryCode thirdCategoryCode " +
-            "   left join fetch timeTableRow.trainReadies tr ";
+    String BASE_TRAIN_SELECT = """
+            select distinct train from Train train
+            inner join fetch train.timeTableRows timeTableRow
+            left join fetch timeTableRow.causes c
+            left join fetch c.categoryCode categoryCode
+            left join fetch c.detailedCategoryCode detailedCategoryCode
+            left join fetch c.thirdCategoryCode thirdCategoryCode
+            left join fetch timeTableRow.trainReadies tr """;
 
     String BASE_TRAIN_ORDER = " order by train.id.departureDate, train.id.trainNumber, timeTableRow.scheduledTime, timeTableRow.type";
     String IS_NOT_DELETED = "(train.deleted is null or train.deleted = false)";
