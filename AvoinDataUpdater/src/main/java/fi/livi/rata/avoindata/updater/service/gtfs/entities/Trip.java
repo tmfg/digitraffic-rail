@@ -14,6 +14,9 @@ public class Trip extends GTFSEntity<Schedule> {
     public String shortName;
     public String headsign;
 
+    public Integer wheelchair;
+    public Integer bikesAllowed;
+
     public Integer shapeId;
 
     public Trip(final Schedule source) {

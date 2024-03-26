@@ -89,7 +89,7 @@ public class GTFSWritingService {
     @Scheduled(fixedDelay = 1000*60*60, initialDelay = 1000*60)
     @Transactional
     public void deleteOldZips() {
-        Integer numberOfDeletedRows =  gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14));
+        final Integer numberOfDeletedRows =  gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14));
         log.info(String.format("Deleted %s zips", numberOfDeletedRows));
     }
 
@@ -116,8 +116,8 @@ public class GTFSWritingService {
         files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
                 route -> String.format("%s,%s,%s,%s,,%s", route.routeId, route.agencyId, route.shortName, route.longName, route.type)));
 
-        files.add(write(getPath("trips.txt"), gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name,shape_id",
-                trip -> String.format("%s,%s,%s,%s,,%s,%s", trip.routeId, trip.serviceId, trip.tripId, trip.headsign, trip.shortName, trip.shapeId)));
+        files.add(write(getPath("trips.txt"), gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name,shape_id,wheelchair_accessible,bikes_allowed",
+                trip -> String.format("%s,%s,%s,%s,,%s,%s,%s,%s", trip.routeId, trip.serviceId, trip.tripId, trip.headsign, trip.shortName, trip.shapeId, trip.wheelchair, trip.bikesAllowed != null ? trip.bikesAllowed : "")));
 
         files.add(write(getPath("shapes.txt"), gtfsDto.shapes, "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence",
                 shape -> String.format("%s,%s,%s,%s", shape.shapeId, shape.latitude, shape.longitude, shape.sequence)));
@@ -167,7 +167,7 @@ public class GTFSWritingService {
         for (final File file : files) {
             zos.putNextEntry(new ZipEntry(file.getName()));
 
-            byte[] bytes = Files.readAllBytes(file.toPath());
+            final byte[] bytes = Files.readAllBytes(file.toPath());
             zos.write(bytes, 0, bytes.length);
         }
 
@@ -179,7 +179,7 @@ public class GTFSWritingService {
         return gtfsDir + fileName;
     }
 
-    public static String format(LocalDate localDateTime) {
+    public static String format(final LocalDate localDateTime) {
         if (localDateTime == null) {
             return "";
         }
@@ -217,19 +217,19 @@ public class GTFSWritingService {
         }
     }
 
-    private <E> File write(String filename, List<E> entities, String header, Function<E, String> converter) {
+    private <E> File write(final String filename, final List<E> entities, final String header, final Function<E, String> converter) {
         final File file = new File(filename);
 
-        try (OutputStreamWriter writer =
+        try (final OutputStreamWriter writer =
                      new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8)) {
             writer.write(header + "\n");
 
             for (final E entity : entities) {
                 writer.write(converter.apply(entity) + "\n");
             }
-        } catch (FileNotFoundException e1) {
+        } catch (final FileNotFoundException e1) {
             log.error("Error writing GTFS file", e1);
-        } catch (IOException e1) {
+        } catch (final IOException e1) {
             log.error("Error writing GTFS file", e1);
         }
 

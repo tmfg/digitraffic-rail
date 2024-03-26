@@ -17,7 +17,7 @@ public class TrainDeserializerTest extends BaseTest {
 
         assertEquals(1, trains.size());
         final Train train = trains.get(0);
-        assertEquals(new Long(10600L), train.id.trainNumber);
+        assertEquals(10600L, train.id.trainNumber);
         assertEquals(LocalDate.of(2014, 12, 10), train.id.departureDate);
         assertEquals(10, train.operator.operatorUICCode);
         assertEquals("vr", train.operator.operatorShortCode);

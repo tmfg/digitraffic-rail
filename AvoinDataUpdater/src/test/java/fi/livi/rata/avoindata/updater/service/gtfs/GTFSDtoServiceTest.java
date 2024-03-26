@@ -147,8 +147,13 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(),
                 schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
 
-        List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_replacement")).collect(Collectors.toList());
+        final List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_replacement")).collect(Collectors.toList());
         assertTrips(trips, 1);
+
+        // test that wheelchair is 0, create better test when it has other values than 0
+        assert(trips.get(0).wheelchair).equals(0);
+        // the train is type S, so bikesAllowed should be 2 (not allowed)
+        assert(trips.get(0).bikesAllowed).equals(2);
     }
 
     @Test
@@ -200,9 +205,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        Trip normalTrip = tripsByServiceId.get("66_20191214");
-        Trip KAJTrip = tripsByServiceId.get("66_20191201_replacement");
-        Trip KUOTrip = tripsByServiceId.get("66_20191202_replacement");
+        final Trip normalTrip = tripsByServiceId.get("66_20191214");
+        final Trip KAJTrip = tripsByServiceId.get("66_20191201_replacement");
+        final Trip KUOTrip = tripsByServiceId.get("66_20191202_replacement");
 
         Assertions.assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
         Assertions.assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
@@ -225,7 +230,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(1, gtfsDto.trips.size());
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
-        Trip normalTrip = tripsByServiceId.get("9705_20241214");
+        final Trip normalTrip = tripsByServiceId.get("9705_20241214");
 
         Assertions.assertEquals("HKI", normalTrip.stopTimes.get(0).stopId);
 
@@ -253,7 +258,7 @@ public class GTFSDtoServiceTest extends BaseTest {
                 .collect(Collectors.groupingBy(stopTime -> stopTime.source.arrival.id));
 
         timeTableRows.forEach(row -> {
-            List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
+            final List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
             matchingStopTimes.forEach(stopTime ->
                     Assertions.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
             );
@@ -308,7 +313,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         assertTripStops(firstTrip, HELSINKI_UIC, JOENSUU_UIC);
 
-        Map<String, Integer> stopTypes = new HashMap<>();
+        final Map<String, Integer> stopTypes = new HashMap<>();
         stopTypes.put("HAA", 1);
         stopTypes.put("HKH", 1);
         stopTypes.put("HLT", 1);
@@ -377,7 +382,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         stopTypes.put("VLH", 1);
         stopTypes.put("HKI", 0);
 
-        List<StopTime> stopTimes = firstTrip.stopTimes;
+        final List<StopTime> stopTimes = firstTrip.stopTimes;
         Assertions.assertEquals(stopTypes.size(), stopTimes.size());
 
         Assertions.assertEquals(1, stopTimes.get(0).dropoffType);
@@ -474,7 +479,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_27.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
 
-        for (Stop stop : gtfsDto.stops) {
+        for (final Stop stop : gtfsDto.stops) {
             stop.source = new Station();
             stop.source.name = stop.stopCode;
         }
@@ -626,14 +631,14 @@ public class GTFSDtoServiceTest extends BaseTest {
 
             });
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
             Assertions.fail(e.getMessage());
         }
 
     }
 
-    private void assertTripStops(Trip trip, String departureStopId, String arrivalStopId) {
+    private void assertTripStops(final Trip trip, final String departureStopId, final String arrivalStopId) {
         Assertions.assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
         Assertions.assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
     }
@@ -652,14 +657,14 @@ public class GTFSDtoServiceTest extends BaseTest {
         Assertions.assertEquals(sunday, trip.calendar.sunday);
     }
 
-    private void assertTrips(final List<Trip> trips, int expectedTripCount) {
+    private void assertTrips(final List<Trip> trips, final int expectedTripCount) {
         printTrips(trips);
 
         final ImmutableMap<String, Trip> tripsAreUnique = Maps.uniqueIndex(trips, s -> s.tripId);
         Assertions.assertEquals(expectedTripCount, trips.size());
     }
 
-    private void printTrips(List<Trip> trips) {
+    private void printTrips(final List<Trip> trips) {
         //System.out.println("Trips: " + Joiner.on(",").join(trips.stream().map(s -> s.tripId).sorted().collect(Collectors.toList())));
     }
 
@@ -683,7 +688,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final String geometryString =
                 "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
 
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
         final JsonNode geometryNode = mapper.readTree(geometryString);
 
         final MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);
@@ -695,7 +700,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final InfraApiPlatform MR_2 = new InfraApiPlatform("", "Laituri MR L2", "Martinlaakso laituri: 2", "2", geometry);
         final InfraApiPlatform SKV_1 = new InfraApiPlatform("", "Laituri SKV L1", "Sukeva laituri: 1", "1", geometry);
 
-        Map<String, List<InfraApiPlatform>> platformsByStation = Map.of(
+        final Map<String, List<InfraApiPlatform>> platformsByStation = Map.of(
                 "SNJ", List.of(SNJ_1),
                 "HKI", List.of(HKI_7),
                 "MI", List.of(MI_1),

@@ -44,7 +44,7 @@ public class TrainServiceIntegrationTest extends BaseTest {
         final List<Train> trains = trainRepository.findAll();
         Assertions.assertEquals(1, trains.size());
         final Train train = trains.get(0);
-        Assertions.assertEquals(new Long(10600L), train.id.trainNumber);
+        Assertions.assertEquals(10600L, train.id.trainNumber);
         Assertions.assertEquals(LocalDate.of(2014, 12, 10), train.id.departureDate);
         Assertions.assertEquals(10, train.operator.operatorUICCode);
         Assertions.assertEquals("vr", train.operator.operatorShortCode);

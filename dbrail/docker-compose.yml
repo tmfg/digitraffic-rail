@@ -2,7 +2,7 @@ version: '2.0' # docker-compose version
 
 services:
   db:
-    image: mysql:8.0.23
+    image: mysql:8.0.36
     restart: always
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"

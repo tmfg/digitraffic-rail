@@ -176,14 +176,14 @@ public class GTFSTripService {
     }
 
     private Table<LocalDate, LocalDate, ScheduleCancellation> getFilteredCancellations(final Schedule schedule) {
-        var wholeDayCancellationsMap = new HashMap<String, ScheduleCancellation>();
+        final var wholeDayCancellationsMap = new HashMap<String, ScheduleCancellation>();
         for (final ScheduleCancellation scheduleCancellation : schedule.scheduleCancellations) {
             if (scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY) {
                 wholeDayCancellationsMap.put(String.format("%s_%s", scheduleCancellation.startDate, scheduleCancellation.endDate), scheduleCancellation);
             }
         }
 
-        var partialCancellations = Collections2.filter(schedule.scheduleCancellations,
+        final var partialCancellations = Collections2.filter(schedule.scheduleCancellations,
                 sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY && !wholeDayCancellationsMap.containsKey(String.format("%s_%s", sc.startDate,sc.endDate)));
         var differentRouteCancellations = Collections2.filter(schedule.scheduleCancellations,
                 sc -> sc.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE && !wholeDayCancellationsMap.containsKey(String.format("%s_%s", sc.startDate,sc.endDate)));
@@ -196,9 +196,9 @@ public class GTFSTripService {
         return handleEqualDoubleCancellations(partialCancellations, differentRouteCancellations);
     }
 
-    private Table<LocalDate, LocalDate, ScheduleCancellation> handleEqualDoubleCancellations(Collection<ScheduleCancellation> partialCancellations, Collection<ScheduleCancellation> differentRouteCancellations) {
+    private Table<LocalDate, LocalDate, ScheduleCancellation> handleEqualDoubleCancellations(final Collection<ScheduleCancellation> partialCancellations, final Collection<ScheduleCancellation> differentRouteCancellations) {
         final Iterable<ScheduleCancellation> allCancellations = Iterables.concat(partialCancellations, differentRouteCancellations);
-        Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = HashBasedTable.create();
+        final Table<LocalDate, LocalDate, ScheduleCancellation> cancellations = HashBasedTable.create();
         for (final ScheduleCancellation cancellation : allCancellations) {
             final ScheduleCancellation existingCancellation = cancellations.get(cancellation.startDate, cancellation.endDate);
             if (existingCancellation == null) {
@@ -216,14 +216,14 @@ public class GTFSTripService {
         return cancellations;
     }
 
-    private void handleConnectedPartialCancellations(Collection<ScheduleCancellation> partialCancellations) {
-        for (ScheduleCancellation left : partialCancellations) {
-            Range<LocalDate> leftRange = Range.closed(left.startDate, left.endDate);
-            for (ScheduleCancellation right : partialCancellations) {
+    private void handleConnectedPartialCancellations(final Collection<ScheduleCancellation> partialCancellations) {
+        for (final ScheduleCancellation left : partialCancellations) {
+            final Range<LocalDate> leftRange = Range.closed(left.startDate, left.endDate);
+            for (final ScheduleCancellation right : partialCancellations) {
                 if (left != right) {
-                    Range<LocalDate> rightRange = Range.closed(right.startDate, right.endDate);
+                    final Range<LocalDate> rightRange = Range.closed(right.startDate, right.endDate);
                     if (leftRange.isConnected(rightRange) && !leftRange.equals(rightRange)) {
-                        Range<LocalDate> newRange = leftRange.span(rightRange);
+                        final Range<LocalDate> newRange = leftRange.span(rightRange);
 
                         log.info("Collision between two partial cancellations {}->{} and {}->{}", left.startDate, left.endDate, right.startDate, right.endDate);
 
@@ -239,11 +239,11 @@ public class GTFSTripService {
     }
 
     private boolean isStoptimeCancelled(final StopTime stopTime, final Map<Long, ScheduleRowPart> cancelledRows) {
-        boolean arrivalExists = stopTime.source.arrival != null;
-        boolean departureExists = stopTime.source.departure != null;
+        final boolean arrivalExists = stopTime.source.arrival != null;
+        final boolean departureExists = stopTime.source.departure != null;
 
-        boolean arrivalCancelled = arrivalExists && cancelledRows.containsKey(stopTime.source.arrival.id);
-        boolean departureCancelled = departureExists && cancelledRows.containsKey(stopTime.source.departure.id);
+        final boolean arrivalCancelled = arrivalExists && cancelledRows.containsKey(stopTime.source.arrival.id);
+        final boolean departureCancelled = departureExists && cancelledRows.containsKey(stopTime.source.departure.id);
 
         return departureCancelled && !arrivalExists || arrivalCancelled && !departureExists || arrivalCancelled && departureCancelled;
     }
@@ -274,7 +274,44 @@ public class GTFSTripService {
         trip.calendar.calendarDates = createCalendarDatesFromExceptions(schedule, serviceId);
         trip.stopTimes = createStopTimes(schedule, tripId, timeTableRowsByTrainNumber, platformData);
 
+        trip.wheelchair = getWheelchairAccessibility(schedule);
+        trip.bikesAllowed = getBikesAllowed(schedule);
+
         return trip;
+    }
+
+    private Integer getWheelchairAccessibility(final Schedule s) {
+        // at this time, we have no information about wheelchair accessibility
+        return 0;
+    }
+
+    private Integer getBikesAllowed(final Schedule s) {
+        // 0 or empty - No bike information for the trip.
+        // 1 - Vehicle being used on this particular trip can accommodate at least one bicycle.
+        // 2 - No bicycles are allowed on this trip.
+        switch(s.trainType.name) {
+            case "PVS":
+            case "PVV":
+            case "MUS":
+                return 0;
+            case "HL":
+            case "H":
+            case "P":
+            case "HDM":
+            case "IC2":
+            case "IC":
+            case "HSM":
+            case "PYO":
+            case "HLV":
+                return 1;
+            case "S":
+            case "AE":
+                return 2;
+        }
+
+        // for all other types we leave it empty
+
+        return null;
     }
 
     private Calendar createCalendar(final Schedule schedule, final String serviceId, final LocalDate startDate, final LocalDate endDate) {
@@ -292,7 +329,7 @@ public class GTFSTripService {
         return calendar;
     }
 
-    private boolean timeTableRowMatchesScheduleRow(SimpleTimeTableRow simpleTimeTableRow, ScheduleRow scheduleRow) {
+    private boolean timeTableRowMatchesScheduleRow(final SimpleTimeTableRow simpleTimeTableRow, final ScheduleRow scheduleRow) {
         if (scheduleRow.arrival != null) {
             return simpleTimeTableRow.type.equals(TimeTableRow.TimeTableRowType.ARRIVAL)
                     && simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id)
@@ -363,7 +400,7 @@ public class GTFSTripService {
     }
 
     private List<CalendarDate> createCalendarDatesFromExceptions(final Schedule schedule, final String serviceId) {
-        List<CalendarDate> calendarDates = new ArrayList<>();
+        final List<CalendarDate> calendarDates = new ArrayList<>();
         for (final ScheduleException scheduleException : schedule.scheduleExceptions) {
             calendarDates.add(createCalendarDate(serviceId, scheduleException.date, !scheduleException.isRun));
         }
@@ -381,7 +418,7 @@ public class GTFSTripService {
 
 
     private CalendarDate createCalendarDate(final String serviceId, final LocalDate date, final boolean cancelled) {
-        String key = String.format("%s_%s", serviceId, date.toString());
+        final String key = String.format("%s_%s", serviceId, date.toString());
         CalendarDate calendarDate = encounteredCalendarDates.get(key);
 
         if (calendarDate == null) {
@@ -397,7 +434,7 @@ public class GTFSTripService {
         return calendarDate;
     }
 
-    private Boolean runOnDayToString(Boolean runOnDay, DayOfWeek dayOfWeek, LocalDate departureDate) {
+    private Boolean runOnDayToString(final Boolean runOnDay, final DayOfWeek dayOfWeek, final LocalDate departureDate) {
         if (runOnDay != null) {
             return runOnDay;
         } else {
