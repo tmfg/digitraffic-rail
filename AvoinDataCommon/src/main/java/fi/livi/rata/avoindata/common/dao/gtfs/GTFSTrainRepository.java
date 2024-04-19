@@ -24,11 +24,11 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     /// that does not have actual_time yet and the estimate is in the future
     @Query(value = """
 select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack from (
-	select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, rank()
+    select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, rank()
     over (partition by id order by scheduled_time asc, type desc) as r
     from train_location tl
     left join time_table_row tr
-    	on tl.departure_date = tr.departure_date
+        on tl.departure_date = tr.departure_date
         and tl.train_number = tr.train_number
         and tr.commercial_stop is true
         and tr.cancelled is false

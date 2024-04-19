@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.hack;
 
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -37,8 +37,7 @@ public class OldTrainService {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Autowired
-    private InitializerRetryTemplate retryTemplate;
+    private final InitializerRetryTemplate retryTemplate = new InitializerRetryTemplate(3);
 
     @Autowired
     private TrainPersistService trainPersistService;
@@ -55,7 +54,7 @@ public class OldTrainService {
     @Value("${updater.trains.numberOfPastDaysToInitialize}")
     private Integer numberOfDaysToInitialize;
 
-    private Logger log = LoggerFactory.getLogger(OldTrainService.class);
+    private final Logger log = LoggerFactory.getLogger(OldTrainService.class);
 
     @Scheduled(cron = "${updater.oldtrainupdater-check-cron}", zone = "Europe/Helsinki")
     public void updateOldTrains() {
@@ -97,7 +96,7 @@ public class OldTrainService {
         for (final List<Object[]> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
             changedTrains.addAll(getChangedTrainsByIds(date, oldTrainPartition));
             try {
-                Thread.sleep(200);
+                Thread.sleep(400);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
