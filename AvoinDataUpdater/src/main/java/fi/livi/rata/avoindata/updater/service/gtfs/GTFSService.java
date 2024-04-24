@@ -119,9 +119,9 @@ public class GTFSService {
 
         int stopSequence = FIRST_STOP_SEQUENCE;
         for (int i = 0; i < stopTimes.size(); i++) {
-            StopTime stopTime = stopTimes.get(i);
+            final StopTime stopTime = stopTimes.get(i);
 
-            ScheduleRow scheduleRow = stopTime.source;
+            final ScheduleRow scheduleRow = stopTime.source;
 
             final boolean isLongStop =
                     scheduleRow.departure == null || scheduleRow.arrival == null ||
@@ -136,18 +136,18 @@ public class GTFSService {
         return filteredStopTimes;
     }
 
-    private void createVrGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
-        List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
+    private void createVrGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules) throws IOException {
+        final List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
+        final List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
 
         createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip", true);
         createVRTreGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
     }
 
-    private List<Schedule> createVrSchedules(List<Schedule> passengerAdhocSchedules) {
-        Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z", "O");
-        List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
-        for (Schedule schedule : passengerAdhocSchedules) {
+    private List<Schedule> createVrSchedules(final List<Schedule> passengerAdhocSchedules) {
+        final Set<String> acceptedCommuterLineIds = Sets.newHashSet("R", "M", "T", "D", "G", "Z", "O", "H");
+        final List<Schedule> vrPassengerAdhocSchedules = new ArrayList<>();
+        for (final Schedule schedule : passengerAdhocSchedules) {
             if (schedule.operator.operatorUICCode == 10 &&
                     (Strings.isNullOrEmpty(schedule.commuterLineId) || acceptedCommuterLineIds.contains(schedule.commuterLineId))) {
                 vrPassengerAdhocSchedules.add(schedule);
@@ -157,16 +157,16 @@ public class GTFSService {
     }
 
 
-    public void createVRTreGtfs(List<Schedule> passengerAdhocSchedules, List<Schedule> passengerRegularSchedules) throws IOException {
-        Set<String> includedStations = Sets.newHashSet("OV", "OVK", "LPÄ", "NOA");
-        Predicate<Schedule> treFilter = schedule -> schedule.scheduleRows.stream().anyMatch(scheduleRow -> includedStations.contains(scheduleRow.station.stationShortCode));
-        List<Schedule> vrTrePassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(treFilter).collect(Collectors.toList());
-        List<Schedule> vrTreRegularSchedules = passengerRegularSchedules.stream().filter(treFilter).collect(Collectors.toList());
+    public void createVRTreGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules) throws IOException {
+        final Set<String> includedStations = Sets.newHashSet("OV", "OVK", "LPÄ", "NOA");
+        final Predicate<Schedule> treFilter = schedule -> schedule.scheduleRows.stream().anyMatch(scheduleRow -> includedStations.contains(scheduleRow.station.stationShortCode));
+        final List<Schedule> vrTrePassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(treFilter).collect(Collectors.toList());
+        final List<Schedule> vrTreRegularSchedules = passengerRegularSchedules.stream().filter(treFilter).collect(Collectors.toList());
 
         createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip", true);
     }
 
-    private boolean isPassengerTrain(Schedule s) {
+    private boolean isPassengerTrain(final Schedule s) {
         return (s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true)) && Sets.newHashSet("V", "HV", "MV").contains(s.trainType.name) == false;
     }
 }
