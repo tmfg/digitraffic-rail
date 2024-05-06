@@ -60,8 +60,6 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         });
     }
 
-
-
     @Override
     public List<Train> modifyEntitiesBeforePersist(final List<Train> entities) {
         final List<TrainId> trainIds = Lists.newArrayList(Iterables.transform(entities, f -> f.id));

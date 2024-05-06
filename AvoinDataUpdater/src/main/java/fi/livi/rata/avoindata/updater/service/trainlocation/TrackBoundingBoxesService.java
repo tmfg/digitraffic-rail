@@ -1,23 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.trainlocation;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
-
-import org.locationtech.proj4j.ProjCoordinate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.geo.Point;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.rtree.RTree;
@@ -27,6 +9,22 @@ import com.github.davidmoten.rtree.geometry.Rectangle;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.utils.PreviousAndNext;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import org.locationtech.proj4j.ProjCoordinate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.geo.Point;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class TrackBoundingBoxesService {
@@ -39,9 +37,8 @@ public class TrackBoundingBoxesService {
     @Autowired
     private BoundingBoxService boundingBoxService;
 
-    @Qualifier("normalRestTemplate")
     @Autowired
-    protected RestTemplate restTemplate;
+    protected WebClient webClient;
 
     @Autowired
     protected ObjectMapper objectMapper;
@@ -158,8 +155,7 @@ public class TrackBoundingBoxesService {
 
     private JsonNode getTracksFromInfraApi() throws URISyntaxException {
         final URI apiURI = new URI(infraApiUrl);
-        return retryTemplate.execute((retryContext) -> restTemplate.getForObject(apiURI, JsonNode.class));
-
+        return retryTemplate.execute((retryContext) -> webClient.get().uri(apiURI).retrieve().bodyToMono(JsonNode.class).block());
     }
 
     private RTree<TrainBoundary, Geometry> createPrivateTrack(RTree<TrainBoundary, Geometry> tree,
@@ -173,10 +169,10 @@ public class TrackBoundingBoxesService {
 
             if (next != null) {
                 final ProjCoordinate startingProjCoordinate = wgs84ConversionService.wgs84Tolivi(current.get(0), current.get(1));
-                Point startingPoint = new Point(startingProjCoordinate.x, startingProjCoordinate.y);
+                final Point startingPoint = new Point(startingProjCoordinate.x, startingProjCoordinate.y);
 
                 final ProjCoordinate endingProjCoordinate = wgs84ConversionService.wgs84Tolivi(next.get(0), next.get(1));
-                Point endingPoint = new Point(endingProjCoordinate.x, endingProjCoordinate.y);
+                final Point endingPoint = new Point(endingProjCoordinate.x, endingProjCoordinate.y);
 
                 tree = createAndAddBoundingBoxToTree(tree, startingPoint, endingPoint);
             }
@@ -221,7 +217,7 @@ public class TrackBoundingBoxesService {
         return geometryNode != null && geometryNode.get("type") != null && geometryNode.get("type").textValue().equals("MultiLineString");
     }
 
-    private Point nodeToPoint(JsonNode pointNode) {
+    private Point nodeToPoint(final JsonNode pointNode) {
         return new Point(pointNode.get(0).doubleValue(), pointNode.get(1).doubleValue());
     }
 }

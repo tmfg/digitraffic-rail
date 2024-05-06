@@ -1,21 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.ruma;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import jakarta.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 @Service
 public class RemoteTrackWorkNotificationService {
@@ -25,9 +24,8 @@ public class RemoteTrackWorkNotificationService {
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
 
-    @Qualifier("ripaRestTemplate")
     @Autowired
-    protected RestTemplate restTemplate;
+    protected WebClient ripaWebClient;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
@@ -40,16 +38,16 @@ public class RemoteTrackWorkNotificationService {
     }
 
     public RemoteRumaNotificationStatus[] getStatuses() {
-        return retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + rumaUrlFragment;
-            return restTemplate.getForObject(fullUrl, RemoteRumaNotificationStatus[].class);
-        });
+        return retryTemplate.execute(context -> ripaWebClient.get().uri(rumaUrlFragment).retrieve().bodyToMono(RemoteRumaNotificationStatus[].class).block());
     }
 
-    public List<TrackWorkNotification> getTrackWorkNotificationVersions(String id, LongStream versions) {
+    public List<TrackWorkNotification> getTrackWorkNotificationVersions(final String id, final LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
-            String fullUrl = liikeInterfaceUrl + String.format(rumaUrlFragment + "/%s/%s", id, v);
-            return restTemplate.getForObject(fullUrl, TrackWorkNotification.class);
+            final String path = String.format("%s/%s/%s", rumaUrlFragment, id, v);
+
+            return ripaWebClient.get().uri(path)
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                    .retrieve().bodyToMono(TrackWorkNotification.class).block();
         })).collect(Collectors.toList());
     }
 

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
@@ -29,7 +31,13 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Value("${updater.reason.syykoodisto-api-path}")
     private String syykoodiApiPath;
 
-    //Every midnight 1:11
+    private WebClient webClient;
+
+    @PostConstruct
+    private void init() {
+        this.webClient = ripaWebClient.mutate().baseUrl(syykoodiApiPath).build();
+    }
+        //Every midnight 1:11
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
@@ -39,39 +47,38 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
             return;
         }
 
+        final String reasonCodePath = "/v1/reason-codes/latest";
+        final String reasonCategoryPath = "/v1/reason-categories/latest";
 
-        String reasonCodePath = "/v1/reason-codes/latest";
-        String reasonCategoryPath = "/v1/reason-categories/latest";
+        final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve().bodyToMono(JsonNode.class).block();
+        final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class).block();
 
-        ResponseEntity<JsonNode> reasonCategoryEntity = this.restTemplate.getForEntity(syykoodiApiPath + reasonCategoryPath, JsonNode.class);
-        ResponseEntity<JsonNode> reasonCodeEntity = this.restTemplate.getForEntity(syykoodiApiPath + reasonCodePath, JsonNode.class);
-
-        CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity.getBody(), reasonCodeEntity.getBody());
+        final CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity, reasonCodeEntity);
 
         log.info("Found {} categoryCodes", categoryCodes.length);
 
         this.persist(reasonCategoryPath + reasonCodePath, this.categoryCodeService::update, categoryCodes);
     }
 
-    private CategoryCode[] merge(JsonNode reasonCategoryResult, JsonNode reasonCodeResult) {
-        Map<String, CategoryCode> categoryCodes = new HashMap<>();
+    private CategoryCode[] merge(final JsonNode reasonCategoryResult, final JsonNode reasonCodeResult) {
+        final Map<String, CategoryCode> categoryCodes = new HashMap<>();
 
-        for (JsonNode childElement : reasonCategoryResult) {
-            CategoryCode categoryCode = parseCategoryCode(childElement);
+        for (final JsonNode childElement : reasonCategoryResult) {
+            final CategoryCode categoryCode = parseCategoryCode(childElement);
             categoryCodes.put(categoryCode.oid, categoryCode);
         }
 
-        for (JsonNode childElement : reasonCodeResult) {
+        for (final JsonNode childElement : reasonCodeResult) {
             if (childElement.get("visibilityRestricted").asBoolean() == false) {
-                DetailedCategoryCode detailedCategoryCode = parseDetailedCategoryCode(childElement);
-                CategoryCode categoryCode = categoryCodes.get(childElement.get("reasonCategoryOid").asText());
+                final DetailedCategoryCode detailedCategoryCode = parseDetailedCategoryCode(childElement);
+                final CategoryCode categoryCode = categoryCodes.get(childElement.get("reasonCategoryOid").asText());
 
                 detailedCategoryCode.categoryCode = categoryCode;
                 categoryCode.detailedCategoryCodes.add(detailedCategoryCode);
 
-                for (JsonNode detailedReasonCodeElement : childElement.get("detailedReasonCodes")) {
+                for (final JsonNode detailedReasonCodeElement : childElement.get("detailedReasonCodes")) {
                     if (detailedReasonCodeElement.get("visibilityRestricted").asBoolean() == false) {
-                        ThirdCategoryCode thirdCategoryCode = parseThirdCategoryCode(detailedReasonCodeElement);
+                        final ThirdCategoryCode thirdCategoryCode = parseThirdCategoryCode(detailedReasonCodeElement);
 
                         thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;
                         detailedCategoryCode.thirdCategoryCodes.add(thirdCategoryCode);
@@ -83,8 +90,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         return categoryCodes.values().toArray(new CategoryCode[0]);
     }
 
-    private CategoryCode parseCategoryCode(JsonNode categoryCodeElement) {
-        CategoryCode categoryCode = new CategoryCode();
+    private CategoryCode parseCategoryCode(final JsonNode categoryCodeElement) {
+        final CategoryCode categoryCode = new CategoryCode();
         categoryCode.categoryCode = categoryCodeElement.get("code").textValue();
         categoryCode.categoryName = categoryCodeElement.get("name").textValue();
         categoryCode.validFrom = LocalDate.parse(categoryCodeElement.get("validFromDate").textValue());
@@ -93,8 +100,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         return categoryCode;
     }
 
-    private ThirdCategoryCode parseThirdCategoryCode(JsonNode thirdCategoryElement) {
-        ThirdCategoryCode thirdCategoryCode = new ThirdCategoryCode();
+    private ThirdCategoryCode parseThirdCategoryCode(final JsonNode thirdCategoryElement) {
+        final ThirdCategoryCode thirdCategoryCode = new ThirdCategoryCode();
         thirdCategoryCode.thirdCategoryCode = thirdCategoryElement.get("code").textValue();
         thirdCategoryCode.thirdCategoryName = thirdCategoryElement.get("name").textValue();
         thirdCategoryCode.validFrom = LocalDate.parse(thirdCategoryElement.get("validFromDate").textValue());
@@ -103,8 +110,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         return thirdCategoryCode;
     }
 
-    private DetailedCategoryCode parseDetailedCategoryCode(JsonNode detailedCategoryElement) {
-        DetailedCategoryCode detailedCategoryCode = new DetailedCategoryCode();
+    private DetailedCategoryCode parseDetailedCategoryCode(final JsonNode detailedCategoryElement) {
+        final DetailedCategoryCode detailedCategoryCode = new DetailedCategoryCode();
         detailedCategoryCode.detailedCategoryCode = detailedCategoryElement.get("code").textValue();
         detailedCategoryCode.detailedCategoryName = detailedCategoryElement.get("name").textValue();
         detailedCategoryCode.validFrom = LocalDate.parse(detailedCategoryElement.get("validFromDate").textValue());

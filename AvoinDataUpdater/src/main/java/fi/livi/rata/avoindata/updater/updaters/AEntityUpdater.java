@@ -1,20 +1,17 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import java.util.function.Consumer;
-
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import jakarta.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import java.util.function.Consumer;
 
 public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
@@ -25,9 +22,8 @@ public abstract class AEntityUpdater<T> {
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
 
-    @Qualifier("ripaRestTemplate")
     @Autowired
-    protected RestTemplate restTemplate;
+    protected WebClient ripaWebClient;
 
     @Autowired
     private LastUpdateService lastUpdateService;
@@ -38,10 +34,12 @@ public abstract class AEntityUpdater<T> {
         new SimpleAsyncTaskExecutor().execute(this::wrapUpdate);
     }
 
-    protected <T> T getForObjectWithRetry(final String targetUrl, final Class<T> responseType) {
+    protected <T> T getForObjectWithRetry(final String path, final Class<T> responseType) {
         return retryTemplate.execute(context -> {
-            log.info("Requesting data from " + targetUrl);
-            return restTemplate.getForObject(targetUrl, responseType);
+            log.info("Requesting data from " + path);
+
+            return ripaWebClient.get().uri(path)
+                    .retrieve().bodyToMono(responseType).block();
         });
     }
 
@@ -56,12 +54,11 @@ public abstract class AEntityUpdater<T> {
             return;
         }
 
-        final String targetUrl = String.format("%s/%s", liikeInterfaceUrl, path);
-        final T results = getForObjectWithRetry(targetUrl, responseType);
+        final T results = getForObjectWithRetry(path, responseType);
         persist(path, updater, results);
     }
 
-    protected final void persist(String path, Consumer<T> updater, T results) {
+    protected final void persist(final String path, final Consumer<T> updater, final T results) {
         updater.accept(results);
         log.info(String.format("Updated %s", path));
 

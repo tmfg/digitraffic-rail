@@ -1,29 +1,26 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-
 @Component
 public class TrakediaLiikennepaikkaService {
 
-    @Qualifier("normalRestTemplate")
     @Autowired
-    private RestTemplate restTemplate;
+    private WebClient webClient;
 
     private static Logger logger = LoggerFactory.getLogger(TrakediaLiikennepaikkaService.class);
 
@@ -31,20 +28,20 @@ public class TrakediaLiikennepaikkaService {
     private String baseUrl;
 
     @Cacheable("trakediaLiikennepaikka")
-    public Map<String, Double[]> getTrakediaLiikennepaikkas(ZonedDateTime utcDate) {
-        Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
+    public Map<String, Double[]> getTrakediaLiikennepaikkas(final ZonedDateTime utcDate) {
+        final Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
 
         if (Strings.isNullOrEmpty(baseUrl)) {
             return liikennepaikkaMap;
         }
 
         try {
-            String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            URI url = new URI(String.format(baseUrl, now, now));
+            final String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            final URI url = new URI(String.format(baseUrl, now, now));
 
             logger.info("Fetching Trakedia data from {}", url);
 
-            JsonNode jsonNode = restTemplate.getForObject(url, JsonNode.class);
+            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).share().block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
@@ -52,7 +49,7 @@ public class TrakediaLiikennepaikkaService {
                 liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
                         .get(1).asDouble()});
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.error("could not fetch Trakedia data", e);
         }
 
@@ -60,26 +57,26 @@ public class TrakediaLiikennepaikkaService {
     }
 
     @Cacheable("trakediaLiikennepaikkaNodes")
-    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes(ZonedDateTime utcDate) {
-        Map<String, JsonNode> liikennepaikkaMap = new HashMap<>();
+    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes(final ZonedDateTime utcDate) {
+        final Map<String, JsonNode> liikennepaikkaMap = new HashMap<>();
 
         if (Strings.isNullOrEmpty(baseUrl)) {
             return liikennepaikkaMap;
         }
 
         try {
-            String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            URI url = new URI(String.format(baseUrl, now, now));
+            final String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            final URI url = new URI(String.format(baseUrl, now, now));
 
             logger.info("Fetching Trakedia data from {}", url);
 
-            JsonNode jsonNode = restTemplate.getForObject(url, JsonNode.class);
+            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode lyhenne = node.get(0).get("lyhenne");
                 liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.error("could not fetch Trakedia data", e);
         }
 

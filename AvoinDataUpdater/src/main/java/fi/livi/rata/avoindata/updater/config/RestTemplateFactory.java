@@ -30,7 +30,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-@Configuration
 class RestTemplateFactory {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 

@@ -1,24 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.hack;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -26,6 +9,16 @@ import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.LocalDate;
+import java.util.*;
 
 @Service
 public class OldTrainService {
@@ -33,9 +26,8 @@ public class OldTrainService {
     @Autowired
     private TrainRepository trainRepository;
 
-    @Qualifier("ripaRestTemplate")
     @Autowired
-    private RestTemplate restTemplate;
+    private WebClient ripaWebClient;
 
     private final InitializerRetryTemplate retryTemplate = new InitializerRetryTemplate(3);
 
@@ -47,9 +39,6 @@ public class OldTrainService {
 
     @Autowired
     private LastUpdateService lastUpdateService;
-
-    @Value("${updater.liikeinterface-url}")
-    protected String liikeInterfaceUrl;
 
     @Value("${updater.trains.numberOfPastDaysToInitialize}")
     private Integer numberOfDaysToInitialize;
@@ -97,7 +86,7 @@ public class OldTrainService {
             changedTrains.addAll(getChangedTrainsByIds(date, oldTrainPartition));
             try {
                 Thread.sleep(400);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -117,9 +106,12 @@ public class OldTrainService {
         parts.put("date", date);
         parts.put("versions", versions);
 
-        final String targetUrl = String.format("%s/%s", liikeInterfaceUrl, "old-trains");
         log.info("Fetching {} changed trains for {}", oldTrainPartition.size(), date);
 
-        return Arrays.asList(retryTemplate.execute(context -> restTemplate.postForObject(targetUrl, parts, Train[].class)));
+        final Train[] trainArray = ripaWebClient.post().uri("old-trains")
+                .body(parts, HashMap.class)
+                .retrieve().bodyToMono(Train[].class).block();
+
+        return Arrays.asList(trainArray);
     }
 }

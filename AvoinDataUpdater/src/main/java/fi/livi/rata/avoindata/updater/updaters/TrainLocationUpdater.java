@@ -1,21 +1,5 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import java.text.DecimalFormat;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -26,6 +10,20 @@ import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class TrainLocationUpdater {
@@ -43,9 +41,8 @@ public class TrainLocationUpdater {
     @Autowired
     private TrainLocationNearTrackFilterService trainLocationNearTrackFilterService;
 
-    @Qualifier("ripaRestTemplate")
     @Autowired
-    private RestTemplate restTemplate;
+    private WebClient ripaWebClient;
 
     @Value("${updater.liikeinterface-url}")
     private String liikeinterfaceUrl;
@@ -67,8 +64,7 @@ public class TrainLocationUpdater {
         try {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                 final ZonedDateTime start = dateProvider.nowInHelsinki();
-                final String kuplaUrl = liikeinterfaceUrl + "/kuplas";
-                final List<TrainLocation> trainLocations = Arrays.asList(this.restTemplate.getForObject(kuplaUrl, TrainLocation[].class));
+                final List<TrainLocation> trainLocations = Arrays.asList(ripaWebClient.get().uri("kuplas").retrieve().bodyToMono(TrainLocation[].class).block());
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
                 try {
@@ -97,7 +93,7 @@ public class TrainLocationUpdater {
         final List<TrainLocation> recentlySeenTrackLocations = recentlySeenTrainLocationFilter.filter(trainLocations);
         final Iterable<TrainLocation> filterIPLocations = Iterables.filter(recentlySeenTrackLocations, t -> {
             final String yLocation = IP_LOCATION_FILTER_PRECISION.format(t.location.getY());
-            boolean isIPLocation = (yLocation.equals("60,170799") || yLocation.equals("60,170800")) && IP_LOCATION_FILTER_PRECISION.format(
+            final boolean isIPLocation = (yLocation.equals("60,170799") || yLocation.equals("60,170800")) && IP_LOCATION_FILTER_PRECISION.format(
                     t.location.getX()).equals("24,937500");
 
             if (isIPLocation) {

@@ -1,26 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import jakarta.annotation.PostConstruct;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
@@ -28,6 +8,24 @@ import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> {
@@ -40,9 +38,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     @Autowired
     private Environment environment;
 
-    @Qualifier("ripaRestTemplate")
     @Autowired
-    private RestTemplate restTemplate;
+    private WebClient ripaWebClient;
 
     @Autowired
     private LastUpdateService lastUpdateService;
@@ -162,8 +159,9 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     protected abstract <A> Class<A> getEntityCollectionClass();
 
     protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
-        final String targetUrl = String.format("%s/%s?version=%d", liikeInterfaceUrl, path, latestVersion);
-        return Lists.newArrayList(restTemplate.getForObject(targetUrl, responseType));
+        final String targetPath = String.format("%s?version=%d", path, latestVersion);
+
+        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block());
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
@@ -173,11 +171,11 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return Lists.newArrayList(results);
     }
 
-    private EntityType[] getForObjectWithRetry(final String targetUrl, final Class<EntityType[]> responseType) {
+    private EntityType[] getForObjectWithRetry(final String path, final Class<EntityType[]> responseType) {
         return retryTemplate.execute(context -> {
-            log.info("Requesting data from " + targetUrl);
-            final EntityType[] objects = restTemplate.getForObject(targetUrl, responseType);
-            return objects;
+            log.info("Requesting data from " + path);
+
+            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block();
         });
     }
 }

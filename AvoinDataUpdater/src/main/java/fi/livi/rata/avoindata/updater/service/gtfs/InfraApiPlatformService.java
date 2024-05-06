@@ -1,5 +1,17 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import org.locationtech.jts.geom.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -10,31 +22,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
-
 @Component
 public class InfraApiPlatformService {
 
-    @Qualifier("normalRestTemplate")
     @Autowired
-    private RestTemplate restTemplate;
+    private WebClient webClient;
 
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
@@ -48,24 +40,20 @@ public class InfraApiPlatformService {
 
     @Cacheable("infraApiPlatformNodes")
     public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart(final ZonedDateTime fromDate, final ZonedDateTime toDate) {
-        Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = new HashMap<>();
+        final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = new HashMap<>();
 
         try {
-            String from = fromDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            String to = toDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            URI url = new URI(String.format(baseUrl, from, to));
+            logger.info("Fetching Infra-API platform data from {}", baseUrl);
 
-            logger.info("Fetching Infra-API platform data from {}", url);
-
-            JsonNode jsonNode = restTemplate.getForObject(url, JsonNode.class);
+            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block();
 
             for (final JsonNode node : jsonNode) {
-                InfraApiPlatform platform = deserializePlatform(node.get(0));
-                String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
+                final InfraApiPlatform platform = deserializePlatform(node.get(0));
+                final String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
                 platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
                 platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             logger.error("Could not fetch Infra-API platform data", e);
         }
 
@@ -74,11 +62,11 @@ public class InfraApiPlatformService {
 
     private InfraApiPlatform deserializePlatform(final JsonNode node) {
 
-        String liikennepaikkaId;
-        String name;
-        String description;
-        String commercialTrack;
-        Geometry geometry;
+        final String liikennepaikkaId;
+        final String name;
+        final String description;
+        final String commercialTrack;
+        final Geometry geometry;
 
         final JsonNode rautatieliikennepaikka = node.get("rautatieliikennepaikka");
         if (!rautatieliikennepaikka.isNull()) {
@@ -101,11 +89,11 @@ public class InfraApiPlatformService {
     }
 
     public MultiLineString deserializePlatformGeometry(final JsonNode geometryNode) {
-        GeometryFactory geometryFactory = new GeometryFactory();
-        List<LineString> lineStrings = new ArrayList<>();
+        final GeometryFactory geometryFactory = new GeometryFactory();
+        final List<LineString> lineStrings = new ArrayList<>();
 
         geometryNode.elements().forEachRemaining(lineStringElement -> {
-            List<Coordinate> lineStringCoordinates = new ArrayList<>();
+            final List<Coordinate> lineStringCoordinates = new ArrayList<>();
             if (lineStringElement.isArray()) {
                 lineStringElement.elements().forEachRemaining(coordinateElement -> {
                     if (coordinateElement.isArray()) {
@@ -117,7 +105,7 @@ public class InfraApiPlatformService {
             } else {
                 logger.warn("Could not parse platform geometry: expected array, got {}", lineStringElement.getNodeType());
             }
-            LineString lineString = geometryFactory.createLineString(lineStringCoordinates.toArray(new Coordinate[lineStringCoordinates.size()]));
+            final LineString lineString = geometryFactory.createLineString(lineStringCoordinates.toArray(new Coordinate[lineStringCoordinates.size()]));
             lineStrings.add(lineString);
         });
 
@@ -125,7 +113,7 @@ public class InfraApiPlatformService {
     }
 
     public static String extractLiikennepaikkaIdPart(final String id) {
-        Matcher matcher = lastTwoLiikennepaikkaIdPlaces.matcher(id);
+        final Matcher matcher = lastTwoLiikennepaikkaIdPlaces.matcher(id);
         return matcher.find() ? matcher.group() : "";
     }
 
