@@ -13,6 +13,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 import javax.net.ssl.SSLException;
 import java.time.Duration;
@@ -20,17 +21,26 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfiguration {
     private static final String DIGITRAFFIC_USER = "Updater/rata.digitraffic.fi";
+
+    public static final Duration BLOCK_DURATION = Duration.ofMinutes(2);
     @Bean
     public WebClient webClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs,
                                final ObjectMapper objectMapper) throws SSLException {
+        final ConnectionProvider provider =
+                ConnectionProvider.builder("custom")
+                        // do not reuse connections
+                        .evictionPredicate((connection, connectionMetadata) -> true)
+                        .build();
+
         final SslContext sslContext = SslContextBuilder.forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
                 .build();
 
-        final HttpClient httpClient = HttpClient.create()
+        final HttpClient httpClient = HttpClient.create(provider)
                 .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
                 .secure(sslSpec -> sslSpec.sslContext(sslContext))
                 .followRedirect(true)
+                .keepAlive(false)
                 .compress(true);
 
         // more memory for default web-client
@@ -42,7 +52,7 @@ public class WebClientConfiguration {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(codecs -> codecs
-                                .defaultCodecs().maxInMemorySize(30 * 1024 * 1024))
+                                .defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
                         .codecs(codecs -> codecs
                                 .defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper)))
                         .build())

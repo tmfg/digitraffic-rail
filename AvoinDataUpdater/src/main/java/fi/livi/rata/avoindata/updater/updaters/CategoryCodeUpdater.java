@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,8 @@ import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
 
 @Service
 public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
@@ -50,8 +53,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         final String reasonCodePath = "/v1/reason-codes/latest";
         final String reasonCategoryPath = "/v1/reason-categories/latest";
 
-        final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve().bodyToMono(JsonNode.class).block();
-        final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class).block();
+        final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
+        final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
 
         final CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity, reasonCodeEntity);
 

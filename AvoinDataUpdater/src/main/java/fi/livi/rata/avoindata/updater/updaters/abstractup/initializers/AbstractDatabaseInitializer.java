@@ -27,6 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
+
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> {
     private static final Logger log = LoggerFactory.getLogger(AbstractDatabaseInitializer.class);
@@ -97,7 +99,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         try {
             doUpdate();
         } catch(final Throwable t) {
-            log.error("update failed!", t);
+            log.error(String.format("update failed for %s!", this.prefix), t);
         }
     }
 
@@ -161,7 +163,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
         final String targetPath = String.format("%s?version=%d", path, latestVersion);
 
-        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block(Duration.ofMinutes(1)));
+        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block(BLOCK_DURATION));
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
@@ -175,7 +177,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return retryTemplate.execute(context -> {
             log.info("Requesting data from " + path);
 
-            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block(Duration.ofMinutes(1));
+            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block(BLOCK_DURATION);
         });
     }
 }

@@ -13,6 +13,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.function.Consumer;
 
+import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
+
 public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
 
@@ -39,7 +41,7 @@ public abstract class AEntityUpdater<T> {
             log.info("Requesting data from " + path);
 
             return ripaWebClient.get().uri(path)
-                    .retrieve().bodyToMono(responseType).block();
+                    .retrieve().bodyToMono(responseType).block(BLOCK_DURATION);
         });
     }
 
