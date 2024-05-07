@@ -161,7 +161,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
         final String targetPath = String.format("%s?version=%d", path, latestVersion);
 
-        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block());
+        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block(Duration.ofMinutes(1)));
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
@@ -175,7 +175,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return retryTemplate.execute(context -> {
             log.info("Requesting data from " + path);
 
-            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block();
+            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block(Duration.ofMinutes(1));
         });
     }
 }
