@@ -34,6 +34,7 @@ public class WebClientConfiguration {
         final HttpClient httpClient = HttpClient.create(ConnectionProvider.newConnection())
                 .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
                 .secure(sslSpec -> sslSpec.sslContext(sslContext))
+                .keepAlive(false)
                 .followRedirect(true)
                 .compress(true);
 
