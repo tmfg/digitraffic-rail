@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -9,11 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.function.Consumer;
-
-import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
 
 public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
@@ -25,7 +23,7 @@ public abstract class AEntityUpdater<T> {
     protected InitializerRetryTemplate retryTemplate;
 
     @Autowired
-    protected WebClient ripaWebClient;
+    protected RipaService ripaService;
 
     @Autowired
     private LastUpdateService lastUpdateService;
@@ -37,12 +35,7 @@ public abstract class AEntityUpdater<T> {
     }
 
     protected <T> T getForObjectWithRetry(final String path, final Class<T> responseType) {
-        return retryTemplate.execute(context -> {
-            log.info("Requesting data from " + path);
-
-            return ripaWebClient.get().uri(path)
-                    .retrieve().bodyToMono(responseType).block(BLOCK_DURATION);
-        });
+        return retryTemplate.execute(context -> ripaService.getFromRipaRestTemplate(path, responseType));
     }
 
     private void wrapUpdate() {

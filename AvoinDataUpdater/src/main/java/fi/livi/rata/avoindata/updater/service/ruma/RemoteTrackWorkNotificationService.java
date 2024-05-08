@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.service.ruma;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.RipaService;
+import fi.livi.rata.avoindata.updater.service.TrackSectionService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +27,7 @@ public class RemoteTrackWorkNotificationService {
     protected InitializerRetryTemplate retryTemplate;
 
     @Autowired
-    protected WebClient ripaWebClient;
+    protected RipaService ripaService;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
@@ -38,17 +40,14 @@ public class RemoteTrackWorkNotificationService {
     }
 
     public RemoteRumaNotificationStatus[] getStatuses() {
-        return retryTemplate.execute(context -> ripaWebClient.get().uri(rumaUrlFragment).retrieve().bodyToMono(RemoteRumaNotificationStatus[].class).block());
+        return retryTemplate.execute(context -> ripaService.getFromRipa(rumaUrlFragment, RemoteRumaNotificationStatus[].class));
     }
 
     public List<TrackWorkNotification> getTrackWorkNotificationVersions(final String id, final LongStream versions) {
         return versions.mapToObj(v -> retryTemplate.execute(context -> {
             final String path = String.format("%s/%s/%s", rumaUrlFragment, id, v);
 
-            return ripaWebClient.get().uri(path)
-                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                    .retrieve().bodyToMono(TrackWorkNotification.class).block();
+            return ripaService.getFromRipa(path, TrackWorkNotification.class, MediaType.APPLICATION_JSON_VALUE);
         })).collect(Collectors.toList());
     }
-
 }

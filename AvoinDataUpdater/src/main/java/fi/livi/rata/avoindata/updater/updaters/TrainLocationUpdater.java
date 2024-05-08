@@ -7,6 +7,7 @@ import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
@@ -42,7 +43,7 @@ public class TrainLocationUpdater {
     private TrainLocationNearTrackFilterService trainLocationNearTrackFilterService;
 
     @Autowired
-    private WebClient ripaWebClient;
+    private RipaService ripaService;
 
     @Value("${updater.liikeinterface-url}")
     private String liikeinterfaceUrl;
@@ -64,7 +65,7 @@ public class TrainLocationUpdater {
         try {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                 final ZonedDateTime start = dateProvider.nowInHelsinki();
-                final List<TrainLocation> trainLocations = Arrays.asList(ripaWebClient.get().uri("kuplas").retrieve().bodyToMono(TrainLocation[].class).block());
+                final List<TrainLocation> trainLocations = Arrays.asList(ripaService.getFromRipa("kuplas", TrainLocation[].class));
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
                 try {

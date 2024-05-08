@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.timetable;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +13,14 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Component
 public class ScheduleProviderService {
     @Autowired
-    private WebClient ripaWebClient;
+    private RipaService ripaService;
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -42,17 +44,17 @@ public class ScheduleProviderService {
 
     private List<Long> getScheduleIds(final String path) {
         log.info("Fetching schedule ids from {}", path);
-        return Lists.newArrayList(ripaWebClient.get().uri(path).retrieve().bodyToMono(Long[].class).block());
+        return Arrays.asList(ripaService.getFromRipa(path, Long[].class));
     }
 
-    private List<Schedule> getSchedules(final List<Long> scheduleIds) throws InterruptedException, ExecutionException {
+    private List<Schedule> getSchedules(final List<Long> scheduleIds) {
         final List<Schedule> output = new ArrayList<>();
 
         for (final List<Long> idPartition : Lists.partition(scheduleIds, 200)) {
             log.info("Fetching schedules {}", idPartition);
             final String path = String.format("schedules?ids=%s", Joiner.on(",").join(idPartition));
 
-            output.addAll(Lists.newArrayList(ripaWebClient.get().uri(path).retrieve().bodyToMono(Schedule[].class).block()));
+            output.addAll(Arrays.asList(ripaService.getFromRipa(path, Schedule[].class)));
         }
 
         return output;

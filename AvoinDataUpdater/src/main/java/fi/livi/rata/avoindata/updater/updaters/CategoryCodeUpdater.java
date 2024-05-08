@@ -36,8 +36,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
 
     private WebClient webClient;
 
-    @PostConstruct
-    private void init() {
+    public CategoryCodeUpdater(final WebClient ripaWebClient) {
         this.webClient = ripaWebClient.mutate().baseUrl(syykoodiApiPath).build();
     }
         //Every midnight 1:11

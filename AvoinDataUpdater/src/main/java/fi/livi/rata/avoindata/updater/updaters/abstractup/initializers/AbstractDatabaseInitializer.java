@@ -5,6 +5,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.ExceptionLoggingRunnable;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -42,10 +44,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     private Environment environment;
 
     @Autowired
-    private WebClient ripaWebClient;
-
-    @Autowired
-    private RestTemplate ripaRestTemplate;
+    private RipaService ripaService;
 
     @Autowired
     private LastUpdateService lastUpdateService;
@@ -169,8 +168,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
         log.info("Fetching {} from {}", this.prefix, targetPath);
 
-        return Arrays.asList(ripaRestTemplate.getForObject(String.format("%s/%s", liikeInterfaceUrl, targetPath), responseType));
-        //return Arrays.asList(ripaWebClient.mutate().build().get().uri(targetPath).retrieve().bodyToMono(responseType).block(BLOCK_DURATION));
+        return Arrays.asList(ripaService.getFromRipaRestTemplate(targetPath, responseType));
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
@@ -184,7 +182,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
         return retryTemplate.execute(context -> {
             log.info("Requesting data from {}", path);
 
-            return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block(BLOCK_DURATION);
+            return ripaService.getFromRipa(path, responseType);
         });
     }
 }

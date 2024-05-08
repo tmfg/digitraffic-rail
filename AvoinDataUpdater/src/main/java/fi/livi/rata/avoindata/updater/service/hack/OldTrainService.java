@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
@@ -27,9 +28,7 @@ public class OldTrainService {
     private TrainRepository trainRepository;
 
     @Autowired
-    private WebClient ripaWebClient;
-
-    private final InitializerRetryTemplate retryTemplate = new InitializerRetryTemplate(3);
+    private RipaService ripaService;
 
     @Autowired
     private TrainPersistService trainPersistService;
@@ -108,10 +107,6 @@ public class OldTrainService {
 
         log.info("Fetching {} changed trains for {}", oldTrainPartition.size(), date);
 
-        final Train[] trainArray = ripaWebClient.post().uri("old-trains")
-                .body(parts, HashMap.class)
-                .retrieve().bodyToMono(Train[].class).block();
-
-        return Arrays.asList(trainArray);
+        return Arrays.asList(ripaService.postToRipa("old-trains", parts, Train[].class));
     }
 }

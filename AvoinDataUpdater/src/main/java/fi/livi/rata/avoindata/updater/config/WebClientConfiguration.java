@@ -22,29 +22,34 @@ import java.time.Duration;
 public class WebClientConfiguration {
     private static final String DIGITRAFFIC_USER = "Updater/rata.digitraffic.fi";
 
-    public static final Duration BLOCK_DURATION = Duration.ofSeconds(300);
+    public static final Duration BLOCK_DURATION = Duration.ofSeconds(30);
+
     @Bean
-    public WebClient webClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs,
-                               final ObjectMapper objectMapper) throws SSLException {
+    public HttpClient defaultHttpClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs) throws SSLException {
         final SslContext sslContext = SslContextBuilder.forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
                 .build();
 
         // do not reuse connections with NewConnectionProvider
-        final HttpClient httpClient = HttpClient.create(ConnectionProvider.newConnection())
+        return HttpClient.create(ConnectionProvider.newConnection())
                 .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
                 .secure(sslSpec -> sslSpec.sslContext(sslContext))
+                // add connection close
+                .headers(headers -> headers.add(HttpHeaders.CONNECTION, "close"))
+                // add digitraffic-user header
+                .headers(headers -> headers.add("Digitraffic-User", DIGITRAFFIC_USER))
                 .keepAlive(false)
                 .followRedirect(true)
                 .compress(true);
+    }
+
+    @Bean
+    public WebClient webClient(final HttpClient defaultHttpClient,
+                               final ObjectMapper objectMapper) {
 
         // more memory for default web-client
         return WebClient.builder()
-                // add digitraffic-user header
-                .defaultHeader("Digitraffic-User", DIGITRAFFIC_USER)
-                // add connection close
-                .defaultHeader(HttpHeaders.CONNECTION, "close")
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .clientConnector(new ReactorClientHttpConnector(defaultHttpClient))
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(codecs -> codecs
                                 .defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
