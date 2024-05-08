@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
@@ -42,6 +43,9 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
     @Autowired
     private WebClient ripaWebClient;
+
+    @Autowired
+    private RestTemplate ripaRestTemplate;
 
     @Autowired
     private LastUpdateService lastUpdateService;
@@ -165,7 +169,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
         log.info("Fetching {} from {}", this.prefix, targetPath);
 
-        return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block(BLOCK_DURATION));
+        return Arrays.asList(ripaRestTemplate.getForObject(String.format("%s/%s", liikeInterfaceUrl, targetPath), responseType));
+        //return Arrays.asList(ripaWebClient.mutate().build().get().uri(targetPath).retrieve().bodyToMono(responseType).block(BLOCK_DURATION));
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
