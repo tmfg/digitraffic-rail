@@ -163,6 +163,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
     protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
         final String targetPath = String.format("%s?version=%d", path, latestVersion);
 
+        log.info("Fetching {} from {}", this.prefix, targetPath);
+
         return Arrays.asList(ripaWebClient.get().uri(targetPath).retrieve().bodyToMono(responseType).block(BLOCK_DURATION));
     }
 
@@ -175,7 +177,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> {
 
     private EntityType[] getForObjectWithRetry(final String path, final Class<EntityType[]> responseType) {
         return retryTemplate.execute(context -> {
-            log.info("Requesting data from " + path);
+            log.info("Requesting data from {}", path);
 
             return ripaWebClient.get().uri(path).retrieve().bodyToMono(responseType).block(BLOCK_DURATION);
         });

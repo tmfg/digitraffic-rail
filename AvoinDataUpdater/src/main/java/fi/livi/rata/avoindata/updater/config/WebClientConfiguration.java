@@ -22,25 +22,19 @@ import java.time.Duration;
 public class WebClientConfiguration {
     private static final String DIGITRAFFIC_USER = "Updater/rata.digitraffic.fi";
 
-    public static final Duration BLOCK_DURATION = Duration.ofMinutes(2);
+    public static final Duration BLOCK_DURATION = Duration.ofSeconds(300);
     @Bean
     public WebClient webClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs,
                                final ObjectMapper objectMapper) throws SSLException {
-        final ConnectionProvider provider =
-                ConnectionProvider.builder("custom")
-                        // do not reuse connections
-                        .evictionPredicate((connection, connectionMetadata) -> true)
-                        .build();
-
         final SslContext sslContext = SslContextBuilder.forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
                 .build();
 
-        final HttpClient httpClient = HttpClient.create(provider)
+        // do not reuse connections with NewConnectionProvider
+        final HttpClient httpClient = HttpClient.create(ConnectionProvider.newConnection())
                 .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
                 .secure(sslSpec -> sslSpec.sslContext(sslContext))
                 .followRedirect(true)
-                .keepAlive(false)
                 .compress(true);
 
         // more memory for default web-client
