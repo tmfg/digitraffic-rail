@@ -16,7 +16,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>3.0.13</spring.boot.version>
         <com.google.guava.version>32.1.3-jre</com.google.guava.version>
-        <aws.msql.driver.version>1.1.14</aws.msql.driver.version>
+        <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
         <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
     </properties>
