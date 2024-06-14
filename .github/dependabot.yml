@@ -1,29 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 0
-
-  - package-ecosystem: "maven"
-    directory: "/AvoinDataCommon"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 0
-
-  - package-ecosystem: "maven"
-    directory: "/AvoinDataServer"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 0
-
-  - package-ecosystem: "maven"
-    directory: "/AvoinDataUpdater"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 0
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
