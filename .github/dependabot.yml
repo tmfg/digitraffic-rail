@@ -4,25 +4,25 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    versioning-strategy: increase
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "maven"
     directory: "/AvoinDataCommon"
     schedule:
       interval: "daily"
-    versioning-strategy: increase
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "maven"
     directory: "/AvoinDataServer"
     schedule:
       interval: "daily"
-    versioning-strategy: increase
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "maven"
     directory: "/AvoinDataUpdater"
     schedule:
       interval: "daily"
-    versioning-strategy: increase
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "github-actions"
     directory: "/"
