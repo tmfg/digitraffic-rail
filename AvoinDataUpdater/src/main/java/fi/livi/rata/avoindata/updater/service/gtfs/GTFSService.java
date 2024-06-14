@@ -62,6 +62,8 @@ public class GTFSService {
 
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
             } catch (final ExecutionException | InterruptedException | IOException e) {
+                log.error("Error generating gtfs", e);
+
                 throw new RuntimeException(e);
             }
         });
