@@ -9,6 +9,7 @@ import java.util.Map;
 import org.locationtech.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -35,9 +36,9 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
     public Station deserialize(final JsonParser jsonParser,
                                final DeserializationContext deserializationContext) throws IOException {
         // To break circular reference
-        var trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas(LocalDate.now().atStartOfDay(ZoneId.of("UTC")));
+        final var trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas(LocalDate.now().atStartOfDay(ZoneId.of("UTC")));
 
-        Station station = new Station();
+        final Station station = new Station();
 
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
@@ -58,7 +59,7 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
         return station;
     }
 
-    private ProjCoordinate getCoordinates(Map<String, Double[]> trakediaLiikennepaikkaMap, Station station, JsonNode node) {
+    private ProjCoordinate getCoordinates(final Map<String, Double[]> trakediaLiikennepaikkaMap, final Station station, final JsonNode node) {
         final Double[] koordinaatit = trakediaLiikennepaikkaMap.get(station.shortCode);
 
         final ProjCoordinate to;
@@ -66,7 +67,10 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
             to = wgs84ConversionService.liviToWgs84(koordinaatit[0], koordinaatit[1]);
         } else {
             to = wgs84ConversionService.liviToWgs84(node.get("iKoordinaatti").asDouble(), node.get("pKoordinaatti").asDouble());
-            log.info("Used Liike coordinates to change station {} coordinate from {}/{} to {}/{}",station.shortCode,node.get("iKoordinaatti").asDouble(),node.get("pKoordinaatti").asDouble(),to.x,to.y);
+
+            // Finnish stations should not use coordinates from Liike
+            log.atLevel(station.countryCode.equals("FI") ? Level.ERROR : Level.INFO)
+                    .log("Used Liike coordinates to change station {} coordinate from {}/{} to {}/{}",station.shortCode,node.get("iKoordinaatti").asDouble(),node.get("pKoordinaatti").asDouble(),to.x,to.y);
         }
         return to;
     }
