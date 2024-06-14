@@ -41,7 +41,7 @@ public class TrakediaLiikennepaikkaService {
 
             logger.info("Fetching Trakedia data from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).share().block();
+            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
