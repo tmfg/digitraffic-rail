@@ -22,31 +22,34 @@ public class GTFSRouteService {
     private GTFSTrainTypeService gtfsTrainTypeService;
 
     public List<Route> createRoutesFromTrips(final List<Trip> trips, final Map<String, Stop> stopMap) {
-        Map<String, Route> routeMap = new HashMap<>();
+        final Map<String, Route> routeMap = new HashMap<>();
 
         for (final Trip trip : trips) {
-            final Route route = new Route();
-            final Schedule schedule = trip.source;
-
-            final StopTime firstStop = trip.stopTimes.get(0);
-            final StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
-
             final String routeId = getRouteId(trip);
-            route.routeId = routeId;
-            route.agencyId = schedule.operator.operatorUICCode;
-            route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
 
-            if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
-                route.shortName = String.format("%s %s", schedule.trainType.name, schedule.trainNumber);
-            } else {
-                route.shortName = schedule.commuterLineId;
+            if(!routeMap.containsKey(routeId)) {
+                final Schedule schedule = trip.source;
+                final Route route = new Route();
+
+                final StopTime firstStop = trip.stopTimes.get(0);
+                final StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
+
+                route.routeId = routeId;
+                route.agencyId = schedule.operator.operatorUICCode;
+                route.longName = String.format("%s - %s", stopMap.get(firstStop.stopId).name, stopMap.get(lastStop.stopId).name);
+
+                if (Strings.isNullOrEmpty(schedule.commuterLineId)) {
+                    route.shortName = String.format("%s %s", schedule.trainType.name, schedule.trainNumber);
+                } else {
+                    route.shortName = schedule.commuterLineId;
+                }
+
+                route.type = gtfsTrainTypeService.getGtfsTrainType(schedule);
+
+                routeMap.put(route.routeId, route);
             }
 
-            route.type = gtfsTrainTypeService.getGtfsTrainType(schedule);
-
             trip.routeId = routeId;
-
-            routeMap.putIfAbsent(route.routeId, route);
         }
 
         return Lists.newArrayList(routeMap.values());
@@ -58,6 +61,6 @@ public class GTFSRouteService {
         final String trainNumberOrCommuterLineId = !Strings.isNullOrEmpty(trip.source.commuterLineId) ? trip.source.commuterLineId : trip.source.trainNumber.toString();
 
         return String.format("%s_%s_%s_%s_%s", firstStop.stopId, lastStop.stopId, trainNumberOrCommuterLineId,
-                    gtfsTrainTypeService.getGtfsTrainType(trip.source), trip.source.operator.operatorUICCode);
+                    trip.source.trainType.name, trip.source.operator.operatorUICCode);
     }
 }
