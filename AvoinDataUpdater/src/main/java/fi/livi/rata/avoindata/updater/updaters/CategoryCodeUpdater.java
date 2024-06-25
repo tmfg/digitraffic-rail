@@ -31,19 +31,21 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
     @Autowired
     private CategoryCodeService categoryCodeService;
 
-    @Value("${updater.reason.syykoodisto-api-path}")
-    private String syykoodiApiPath;
+    private final String syykoodiApiPath;
 
-    private WebClient webClient;
+    private final WebClient webClient;
 
-    public CategoryCodeUpdater(final WebClient ripaWebClient) {
+    public CategoryCodeUpdater(final WebClient ripaWebClient,
+                               final @Value("${updater.reason.syykoodisto-api-path}") String syykoodiApiPath) {
+        this.syykoodiApiPath = syykoodiApiPath;
         this.webClient = ripaWebClient.mutate().baseUrl(syykoodiApiPath).build();
     }
-        //Every midnight 1:11
+
+    //Every day 11:01
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
-        log.info("Updating CategoryCodes");
+        log.info("Updating CategoryCodes from " + syykoodiApiPath);
 
         if (Strings.isNullOrEmpty(syykoodiApiPath)) {
             return;
