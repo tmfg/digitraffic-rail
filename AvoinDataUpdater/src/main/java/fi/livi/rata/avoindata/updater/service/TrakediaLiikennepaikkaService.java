@@ -1,8 +1,5 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import java.net.URI;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +26,7 @@ public class TrakediaLiikennepaikkaService {
     private String baseUrl;
 
     @Cacheable("trakediaLiikennepaikka")
-    public Map<String, Double[]> getTrakediaLiikennepaikkas(final ZonedDateTime utcDate) {
+    public Map<String, Double[]> getTrakediaLiikennepaikkas() {
         final Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
 
         if (Strings.isNullOrEmpty(baseUrl)) {
@@ -55,7 +52,7 @@ public class TrakediaLiikennepaikkaService {
     }
 
     @Cacheable("trakediaLiikennepaikkaNodes")
-    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes(final ZonedDateTime utcDate) {
+    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes() {
         final Map<String, JsonNode> liikennepaikkaMap = new HashMap<>();
 
         if (Strings.isNullOrEmpty(baseUrl)) {
@@ -63,12 +60,9 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            final String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            final URI url = new URI(String.format(baseUrl, now, now));
+            logger.info("Fetching Trakedia data from {}", baseUrl);
 
-            logger.info("Fetching Trakedia data from {}", url);
-
-            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block();
+            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode lyhenne = node.get(0).get("lyhenne");

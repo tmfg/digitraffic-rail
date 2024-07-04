@@ -43,7 +43,7 @@ public class GTFSShapeService {
 
     public List<Shape> createShapesFromTrips(List<Trip> trips, Map<String, Stop> stopMap) {
         ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
-        Map<String, JsonNode> trakediaNodes = liikennepaikkaService.getTrakediaLiikennepaikkaNodes(startOfDay);
+        Map<String, JsonNode> trakediaNodes = liikennepaikkaService.getTrakediaLiikennepaikkaNodes();
 
         Map<Integer, List<Shape>> shapeCache = new HashMap<>();
         for (Trip trip : trips) {
