@@ -1,7 +1,11 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
+import java.net.URI;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +14,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.net.URI;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 
 @Component
 public class TrakediaLiikennepaikkaService {
@@ -36,12 +37,9 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            final String now = utcDate.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            final URI url = new URI(String.format(baseUrl, now, now));
+            logger.info("Fetching Trakedia data from {}", baseUrl);
 
-            logger.info("Fetching Trakedia data from {}", url);
-
-            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
+            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).share().block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
