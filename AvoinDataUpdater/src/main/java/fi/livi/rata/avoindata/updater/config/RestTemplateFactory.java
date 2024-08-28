@@ -1,13 +1,10 @@
 package fi.livi.rata.avoindata.updater.config;
 
-
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import javax.net.ssl.SSLContext;
 
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -15,10 +12,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.util.Timeout;
-import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,17 +45,9 @@ class RestTemplateFactory {
     }
 
     @Bean
-    public CloseableHttpClient httpClient(final RequestConfig requestConfig) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        log.info("Creating trustStore");
-
-        final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
-
-        final SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
-                .loadTrustMaterial(acceptingTrustStrategy)
-                .build();
-
-        final SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-        final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().setSSLSocketFactory(csf).build();
+    public CloseableHttpClient httpClient(final RequestConfig requestConfig)
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().build();
         return HttpClientBuilder
                 .create()
                 .setConnectionManager(hccm)
@@ -83,7 +69,7 @@ class RestTemplateFactory {
 
                     return execution.execute(request, body);
                 }));
-        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
+        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[] { messageConverter }));
 
         return restTemplate;
     }
