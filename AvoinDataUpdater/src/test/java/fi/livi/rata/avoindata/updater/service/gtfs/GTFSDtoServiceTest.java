@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -11,7 +12,6 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +20,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,15 +48,6 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Transactional
@@ -63,7 +57,6 @@ public class GTFSDtoServiceTest extends BaseTest {
     public static final String HELSINKI_UIC = "HKI";
     public static final String OULU_UIC = "OL";
     public static final String TAMPERE_UIC = "TPE";
-    public static final String YLIVIESKA_UIC = "YV";
     private static final String JOENSUU_UIC = "JNS";
 
     @Autowired
@@ -85,6 +78,9 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @MockBean
     private DateProvider dp;
+
+    @MockBean
+    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     @Value("classpath:gtfs/263.json")
     private Resource schedules_263;
@@ -133,7 +129,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
         given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
 
-        given(gtfsShapeService.createShapesFromTrips(any(), any())).willReturn(new ArrayList<>());
+        given(gtfsShapeService.createShapesFromTrips(any(), any())).willReturn(Collections.emptyList());
 
         given(platformDataService.getCurrentPlatformData()).willReturn(getMockPlatformData());
     }
@@ -144,7 +140,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 12, 11));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(),
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(),
                 schedules.stream().filter(s -> s.timetableType == Train.TimetableType.REGULAR).collect(Collectors.toList()));
 
         final List<Trip> trips = gtfsDto.trips.stream().filter(s -> s.tripId.startsWith("59_20210110_replacement")).collect(Collectors.toList());
@@ -156,13 +152,49 @@ public class GTFSDtoServiceTest extends BaseTest {
         assert(trips.get(0).bikesAllowed).equals(2);
     }
 
+    private JsonNode createLiikennepaikkaNode(final String nameEn, final String nameSe) throws JsonProcessingException {
+        final String json = String.format(
+"""
+[
+    {
+        "nimiEn": "%s",
+        "nimiSe": "%s"
+    }
+]
+""", nameEn, nameSe);
+        return new ObjectMapper().readTree(json);
+    }
+
+    private void assertTranslations(final GTFSDto gtfsDto, final int index,
+                                    final String expectedName, final String expectedLanguage, final String expectedTranslation) {
+        final Translation t = gtfsDto.translations.get(index);
+        assertEquals(expectedName, t.finnishName());
+        assertEquals(expectedLanguage, t.language());
+        assertEquals(expectedTranslation, t.translation());
+    }
+
+    @Test
+    @Transactional
+    public void gtfsTranslations() throws IOException {
+        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
+        given(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes()).willReturn(Map.of("TKU",
+                createLiikennepaikkaNode("Turku", "Åbo")));
+
+        final List<Schedule> schedules = testDataService.parseEntityList(schedules_910.getFile(), Schedule[].class);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
+
+        // assert translations for Turku
+        assertEquals(2, gtfsDto.translations.size());
+        assertTranslations(gtfsDto, 0, "Turku", "en", "Turku");
+        assertTranslations(gtfsDto, 1, "Turku", "sv", "Åbo");
+    }
     @Test
     @Transactional
     public void train910ShouldBeOkay() throws IOException {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_910.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         //Original schedule is completely cancelled, so there should be three trips
         assertTrips(gtfsDto.trips, 2);
@@ -174,7 +206,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 10, 13));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_781.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 3);
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
@@ -189,7 +221,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 18));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9924.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 1);
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
@@ -202,20 +234,20 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 1));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
         final Trip normalTrip = tripsByServiceId.get("66_20191214");
         final Trip KAJTrip = tripsByServiceId.get("66_20191201_replacement");
         final Trip KUOTrip = tripsByServiceId.get("66_20191202_replacement");
 
-        Assertions.assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
-        Assertions.assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
-        Assertions.assertEquals(KUOTrip.stopTimes.get(0).stopId, "KUO");
+        assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
+        assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
+        assertEquals(KUOTrip.stopTimes.get(0).stopId, "KUO");
 
-        Assertions.assertEquals(Iterables.getLast(normalTrip.stopTimes).stopId, "HKI");
-        Assertions.assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
-        Assertions.assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
+        assertEquals(Iterables.getLast(normalTrip.stopTimes).stopId, "HKI");
+        assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
+        assertEquals(Iterables.getLast(KUOTrip.stopTimes).stopId, "HKI");
 
     }
 
@@ -225,21 +257,21 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2023, 12, 14));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9705.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
-        Assertions.assertEquals(1, gtfsDto.trips.size());
+        assertEquals(1, gtfsDto.trips.size());
 
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
         final Trip normalTrip = tripsByServiceId.get("9705_20241214");
 
-        Assertions.assertEquals("HKI", normalTrip.stopTimes.get(0).stopId);
+        assertEquals("HKI", normalTrip.stopTimes.get(0).stopId);
 
-        Assertions.assertEquals(LocalDate.of(2023, 12, 10), normalTrip.calendar.startDate);
-        Assertions.assertEquals(LocalDate.of(2024, 12, 14), normalTrip.calendar.endDate);
+        assertEquals(LocalDate.of(2023, 12, 10), normalTrip.calendar.startDate);
+        assertEquals(LocalDate.of(2024, 12, 14), normalTrip.calendar.endDate);
 
-        Assertions.assertEquals(1, normalTrip.calendar.calendarDates.size());
-        Assertions.assertEquals(2, normalTrip.calendar.calendarDates.get(0).exceptionType);
-        Assertions.assertEquals(LocalDate.of(2023, 12, 14), normalTrip.calendar.calendarDates.get(0).date);
+        assertEquals(1, normalTrip.calendar.calendarDates.size());
+        assertEquals(2, normalTrip.calendar.calendarDates.get(0).exceptionType);
+        assertEquals(LocalDate.of(2023, 12, 14), normalTrip.calendar.calendarDates.get(0).date);
     }
 
     @Test
@@ -250,7 +282,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
 
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         final Map<Long, List<StopTime>> stopTimesByAttapId = gtfsDto.trips.stream()
                 .flatMap(trip -> trip.stopTimes.stream())
@@ -260,7 +292,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         timeTableRows.forEach(row -> {
             final List<StopTime> matchingStopTimes = stopTimesByAttapId.getOrDefault(row.getAttapId(), Collections.emptyList());
             matchingStopTimes.forEach(stopTime ->
-                    Assertions.assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
+                    assertEquals(row.stationShortCode + "_" + row.commercialTrack, stopTime.getStopCodeWithPlatform())
             );
         });
     }
@@ -272,7 +304,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final ZonedDateTime startDateTime = ZonedDateTime.of(2019, 1, 1, 8, 0, 0, 0, ZoneId.of("Europe/Helsinki"));
         given(dp.nowInHelsinki()).willReturn(startDateTime);
         final List<SimpleTimeTableRow> rows = timeTableRowService.getNextTenDays();
-        Assertions.assertEquals(4, rows.size());
+        assertEquals(4, rows.size());
         Assertions.assertTrue(rows.stream().map(row -> row.getAttapId()).collect(Collectors.toList()).containsAll(List.of(2L, 3L, 4L, 5L)));
     }
 
@@ -284,7 +316,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
 
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         final Set<String> tracksInStopTimes = gtfsDto.trips.stream()
                 .flatMap(trip -> trip.stopTimes.stream())
@@ -302,7 +334,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void stopTypesShouldBeCorrect() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_1.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 3);
 
@@ -383,18 +415,18 @@ public class GTFSDtoServiceTest extends BaseTest {
         stopTypes.put("HKI", 0);
 
         final List<StopTime> stopTimes = firstTrip.stopTimes;
-        Assertions.assertEquals(stopTypes.size(), stopTimes.size());
+        assertEquals(stopTypes.size(), stopTimes.size());
 
-        Assertions.assertEquals(1, stopTimes.get(0).dropoffType);
-        Assertions.assertEquals(0, stopTimes.get(0).pickupType);
+        assertEquals(1, stopTimes.get(0).dropoffType);
+        assertEquals(0, stopTimes.get(0).pickupType);
 
-        Assertions.assertEquals(0, Iterables.getLast(stopTimes).dropoffType);
-        Assertions.assertEquals(1, Iterables.getLast(stopTimes).pickupType);
+        assertEquals(0, Iterables.getLast(stopTimes).dropoffType);
+        assertEquals(1, Iterables.getLast(stopTimes).pickupType);
 
         for (int i = 1; i < stopTimes.size() - 1; i++) {
             final StopTime stopTime = stopTimes.get(i);
-            Assertions.assertEquals(stopTypes.get(stopTime.stopId).intValue(), stopTime.dropoffType, stopTime.stopId);
-            Assertions.assertEquals(stopTypes.get(stopTime.stopId).intValue(), stopTime.pickupType, stopTime.stopId);
+            assertEquals(stopTypes.get(stopTime.stopId).intValue(), stopTime.dropoffType, stopTime.stopId);
+            assertEquals(stopTypes.get(stopTime.stopId).intValue(), stopTime.pickupType, stopTime.stopId);
         }
 
     }
@@ -405,7 +437,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 9));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_141_151.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 3);
 
@@ -420,7 +452,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void differentRouteShouldBeOkay() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_1.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 3);
 
@@ -440,7 +472,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     public void train9ShouldBeOkay() throws IOException {
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
         gtfsWritingService.writeGTFSFiles(gtfsDto);
         assertTrips(gtfsDto.trips, 70);
 
@@ -477,7 +509,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void partialCancellationShouldBeOkay() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_27.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         for (final Stop stop : gtfsDto.stops) {
             stop.source = new Station();
@@ -497,7 +529,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void train20ShouldBeOkay() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_20.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 11);
 
@@ -538,7 +570,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void cancelledSchedulesShouldNotAffect() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_4110.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertTrips(gtfsDto.trips, 3);
     }
@@ -547,7 +579,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Transactional
     public void train263ShouldBeOkay() throws IOException {
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_263.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
 
         assertAgencies(gtfsDto.agencies, 10);
         assertRoutes(gtfsDto.routes, "PYO 263");
@@ -559,21 +591,21 @@ public class GTFSDtoServiceTest extends BaseTest {
         assertTrip(firstTrip, LocalDate.of(2017, 9, 2), LocalDate.of(2017, 12, 9), false, false, true, false, true, true,
                 false);
 
-        Assertions.assertEquals(1, firstTrip.calendar.calendarDates.size());
-        Assertions.assertEquals(2, firstTrip.calendar.calendarDates.iterator().next().exceptionType);
-        Assertions.assertEquals(LocalDate.of(2017, 10, 7), firstTrip.calendar.calendarDates.iterator().next().date);
+        assertEquals(1, firstTrip.calendar.calendarDates.size());
+        assertEquals(2, firstTrip.calendar.calendarDates.iterator().next().exceptionType);
+        assertEquals(LocalDate.of(2017, 10, 7), firstTrip.calendar.calendarDates.iterator().next().date);
 
         final Trip secondTrip = tripsByServiceId.get("263_20180420");
         assertTrip(secondTrip, LocalDate.of(2017, 12, 15), LocalDate.of(2018, 4, 20), true, false, true, false, true, false, false);
-        Assertions.assertEquals(35, secondTrip.calendar.calendarDates.size());
-        Assertions.assertEquals(1, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 1).size());
-        Assertions.assertEquals(34, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 2).size());
+        assertEquals(35, secondTrip.calendar.calendarDates.size());
+        assertEquals(1, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 1).size());
+        assertEquals(34, Collections2.filter(secondTrip.calendar.calendarDates, cd -> cd.exceptionType == 2).size());
 
         final Trip thirdTrip = tripsByServiceId.get("263_20181208");
         assertTrip(thirdTrip, LocalDate.of(2018, 06, 18), LocalDate.of(2018, 12, 8), true, false, false, false, true, true, false);
-        Assertions.assertEquals(0, thirdTrip.calendar.calendarDates.size());
+        assertEquals(0, thirdTrip.calendar.calendarDates.size());
 
-        Assertions.assertEquals(125 - 8, firstTrip.stopTimes.size());
+        assertEquals(125 - 8, firstTrip.stopTimes.size());
     }
 
     @Test
@@ -583,7 +615,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(timeTableRowService.getNextTenDays()).willReturn(timeTableRows);
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
-        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(new ArrayList<>(), schedules);
+        final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
         gtfsWritingService.writeGTFSFiles(gtfsDto);
 
         try (final InputStream stopsFile = new FileInputStream("stops.txt")) {
@@ -611,7 +643,7 @@ public class GTFSDtoServiceTest extends BaseTest {
                     Assertions.assertNull(parentStation);
 
                     Assertions.assertNull(platformCode);
-                    Assertions.assertEquals(false, stopId.contains("_"));
+                    assertEquals(false, stopId.contains("_"));
                 }
 
                 if (locationType.equals(String.valueOf(LOCATION_TYPE_STOP))) {
@@ -621,9 +653,9 @@ public class GTFSDtoServiceTest extends BaseTest {
                     // stop_id should be of form <parent_station>_<platform_code>
                     // if platform_code is null, stop_id should be <parent_station>_0
                     if (platformCode != null) {
-                        Assertions.assertEquals(parentStation + "_" + platformCode, stopId);
+                        assertEquals(parentStation + "_" + platformCode, stopId);
                     } else {
-                        Assertions.assertEquals(parentStation + "_0", stopId);
+                        assertEquals(parentStation + "_0", stopId);
                     }
                 }
 
@@ -639,29 +671,29 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void assertTripStops(final Trip trip, final String departureStopId, final String arrivalStopId) {
-        Assertions.assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
-        Assertions.assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
+        assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
+        assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
     }
 
     private void assertTrip(final Trip trip, final LocalDate startDate, final LocalDate endDate, final boolean monday,
                             final boolean tuesday, final boolean wednesday, final boolean thursday, final boolean friday, final boolean saturday,
                             final boolean sunday) {
-        Assertions.assertEquals(startDate, trip.calendar.startDate);
-        Assertions.assertEquals(endDate, trip.calendar.endDate);
-        Assertions.assertEquals(monday, trip.calendar.monday);
-        Assertions.assertEquals(tuesday, trip.calendar.tuesday);
-        Assertions.assertEquals(wednesday, trip.calendar.wednesday);
-        Assertions.assertEquals(thursday, trip.calendar.thursday);
-        Assertions.assertEquals(friday, trip.calendar.friday);
-        Assertions.assertEquals(saturday, trip.calendar.saturday);
-        Assertions.assertEquals(sunday, trip.calendar.sunday);
+        assertEquals(startDate, trip.calendar.startDate);
+        assertEquals(endDate, trip.calendar.endDate);
+        assertEquals(monday, trip.calendar.monday);
+        assertEquals(tuesday, trip.calendar.tuesday);
+        assertEquals(wednesday, trip.calendar.wednesday);
+        assertEquals(thursday, trip.calendar.thursday);
+        assertEquals(friday, trip.calendar.friday);
+        assertEquals(saturday, trip.calendar.saturday);
+        assertEquals(sunday, trip.calendar.sunday);
     }
 
     private void assertTrips(final List<Trip> trips, final int expectedTripCount) {
         printTrips(trips);
 
         final ImmutableMap<String, Trip> tripsAreUnique = Maps.uniqueIndex(trips, s -> s.tripId);
-        Assertions.assertEquals(expectedTripCount, trips.size());
+        assertEquals(expectedTripCount, trips.size());
     }
 
     private void printTrips(final List<Trip> trips) {
@@ -669,19 +701,19 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void assertRoutes(final List<Route> routes, final String shortName) {
-        Assertions.assertEquals(1, routes.size());
+        assertEquals(1, routes.size());
         final Route route = routes.iterator().next();
-        Assertions.assertEquals(10, route.agencyId);
-        Assertions.assertEquals(102, route.type);
-        Assertions.assertEquals(shortName, route.shortName);
+        assertEquals(10, route.agencyId);
+        assertEquals(102, route.type);
+        assertEquals(shortName, route.shortName);
     }
 
     private void assertAgencies(final List<Agency> agencies, final int agencyId) {
-        Assertions.assertEquals(1, agencies.size());
+        assertEquals(1, agencies.size());
         final Agency agency = agencies.iterator().next();
-        Assertions.assertEquals("VR", agency.name);
-        Assertions.assertEquals(agencyId, agency.id);
-        Assertions.assertEquals("Europe/Helsinki", agency.timezone);
+        assertEquals("VR", agency.name);
+        assertEquals(agencyId, agency.id);
+        assertEquals("Europe/Helsinki", agency.timezone);
     }
 
     private PlatformData getMockPlatformData() throws IOException {

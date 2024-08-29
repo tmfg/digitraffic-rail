@@ -1,11 +1,11 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Translation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +54,8 @@ public class GTFSEntityService {
     @Autowired
     private DateProvider dp;
 
+    @Autowired
+    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
@@ -68,8 +70,39 @@ public class GTFSEntityService {
         gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
         gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
+        gtfsDto.translations = createTranslations(gtfsDto.stops);
 
         return gtfsDto;
+    }
+
+    private List<Translation> createTranslations(final List<Stop> stops) {
+        final List<Translation> translations = new ArrayList<>();
+        final Map<String, JsonNode> nodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes();
+
+        for(final Stop stop : stops) {
+            // skip stops with track, they are not needed for translations
+            if(!stop.stopId.contains("_")) {
+                final JsonNode trakediaNode = nodes.get(stop.stopCode);
+
+                if (trakediaNode == null) {
+                    log.info("Could not find station {} from trakedia", stop.stopCode);
+                } else {
+                    final String translationEn = trakediaNode.get(0).get("nimiEn").asText();
+                    final String translationSe = trakediaNode.get(0).get("nimiSe").asText();
+
+                    if (translationEn != null) {
+                        translations.add(new Translation(stop.name, "en", translationEn));
+                    }
+
+                    if (translationSe != null) {
+                        // language code is sv, even though trakedia uses se!
+                        translations.add(new Translation(stop.name, "sv", translationSe));
+                    }
+                }
+            }
+        }
+
+        return translations;
     }
 
     private Map<Long, Map<List<LocalDate>, Schedule>> createScheduleIntervals(final List<Schedule> adhocSchedules,
@@ -100,18 +133,18 @@ public class GTFSEntityService {
         return scheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> createIntervalForATrain(LocalDate start, LocalDate end,
-                                                                   Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, Long trainNumber) {
-        Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
+    private Map<List<LocalDate>, Schedule> createIntervalForATrain(final LocalDate start, final LocalDate end,
+                                                                   final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, final Long trainNumber) {
+        final Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
 
         Schedule previousSchedule = null;
         LocalDate intervalStart = start;
         for (LocalDate date = start; date.isBefore(end) || date.isEqual(end); date = date.plusDays(1)) {
-            Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
+            final Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
 
             if (date.equals(end)) {
-                Schedule usedSchedule = schedule == null ? previousSchedule : schedule;
-                LocalDate intervalStartDate = usedSchedule.startDate.isAfter(intervalStart) ? usedSchedule.startDate : intervalStart;
+                final Schedule usedSchedule = schedule == null ? previousSchedule : schedule;
+                final LocalDate intervalStartDate = usedSchedule.startDate.isAfter(intervalStart) ? usedSchedule.startDate : intervalStart;
                 trainsScheduleIntervals.put(Arrays.asList(intervalStartDate, date), usedSchedule);
             } else if (schedule == null) {
                 continue;
@@ -125,13 +158,13 @@ public class GTFSEntityService {
         return trainsScheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> correctIntervalEnds(Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
-        Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
-        for (Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
-            List<LocalDate> oldKey = entry.getKey();
-            LocalDate scheduleEndDate = entry.getValue().endDate;
+    private Map<List<LocalDate>, Schedule> correctIntervalEnds(final Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
+        final Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (final Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            final List<LocalDate> oldKey = entry.getKey();
+            final LocalDate scheduleEndDate = entry.getValue().endDate;
             if (scheduleEndDate != null && oldKey.get(1).isAfter(scheduleEndDate)) {
-                List<LocalDate> newKey = Lists.newArrayList(oldKey.get(0), scheduleEndDate);
+                final List<LocalDate> newKey = Lists.newArrayList(oldKey.get(0), scheduleEndDate);
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());
@@ -140,13 +173,13 @@ public class GTFSEntityService {
         return correctedTrainsScheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> correctIntervalStarts(Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
-        Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
-        for (Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
-            List<LocalDate> oldKey = entry.getKey();
-            LocalDate scheduleStartDate = entry.getValue().startDate;
+    private Map<List<LocalDate>, Schedule> correctIntervalStarts(final Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
+        final Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (final Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            final List<LocalDate> oldKey = entry.getKey();
+            final LocalDate scheduleStartDate = entry.getValue().startDate;
             if (scheduleStartDate != null && oldKey.get(0).isBefore(scheduleStartDate)) {
-                List<LocalDate> newKey = Lists.newArrayList(scheduleStartDate, oldKey.get(1));
+                final List<LocalDate> newKey = Lists.newArrayList(scheduleStartDate, oldKey.get(1));
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());

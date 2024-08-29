@@ -9,4 +9,5 @@ public class GTFSDto {
     public List<Trip> trips = new ArrayList<>();
     public List<Stop> stops = new ArrayList<>();
     public List<Shape> shapes = new ArrayList<>();
+    public List<Translation> translations = new ArrayList<>();
 }

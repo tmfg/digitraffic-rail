@@ -104,22 +104,22 @@ public class GTFSWritingService {
         final List<File> files = new ArrayList<>();
 
         files.add(
-                write(getPath("agency.txt"), gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
+                write("agency.txt", gtfsDto.agencies, "agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang",
                         agency -> String.format("%s,%s,%s,%s,%s,fi", agency.id, agency.name, agency.url, agency.timezone, agency.phoneNumber)));
 
-        files.add(write(getPath("stops.txt"), gtfsDto.stops,
+        files.add(write("stops.txt", gtfsDto.stops,
                 "stop_id,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station,stop_code,platform_code", stop ->
                         String.format("%s,%s,%s,%s,%s,,%s,%s,,%s", stop.stopId, stop.name != null ? stop.name : stop.stopCode, stop.description != null ? stop.description : "",
                                 stop.latitude, stop.longitude, stop.locationType, stop.locationType == LOCATION_TYPE_STOP && stop.source != null ? stop.source.shortCode : "", stop instanceof Platform ? ((Platform) stop).track : "")
         ));
 
-        files.add(write(getPath("routes.txt"), gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
+        files.add(write("routes.txt", gtfsDto.routes, "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type",
                 route -> String.format("%s,%s,%s,%s,,%s", route.routeId, route.agencyId, route.shortName, route.longName, route.type)));
 
-        files.add(write(getPath("trips.txt"), gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name,shape_id,wheelchair_accessible,bikes_allowed",
+        files.add(write("trips.txt", gtfsDto.trips, "route_id,service_id,trip_id,trip_headsign,block_id,trip_short_name,shape_id,wheelchair_accessible,bikes_allowed",
                 trip -> String.format("%s,%s,%s,%s,,%s,%s,%s,%s", trip.routeId, trip.serviceId, trip.tripId, trip.headsign, trip.shortName, trip.shapeId, trip.wheelchair, trip.bikesAllowed != null ? trip.bikesAllowed : "")));
 
-        files.add(write(getPath("shapes.txt"), gtfsDto.shapes, "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence",
+        files.add(write("shapes.txt", gtfsDto.shapes, "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence",
                 shape -> String.format("%s,%s,%s,%s", shape.shapeId, shape.latitude, shape.longitude, shape.sequence)));
 
         final List<StopTime> stopTimes = new ArrayList<>();
@@ -131,26 +131,29 @@ public class GTFSWritingService {
             calendarDates.addAll(trip.calendar.calendarDates);
         }
 
-        files.add(write(getPath("stop_times.txt"), stopTimes,
+        files.add(write("translations.txt", gtfsDto.translations, "table_name,field_name,field_value,language,translation",
+                t -> String.format("stops,stop_name,%s,%s,%s", t.finnishName(), t.language(), t.translation())));
+
+        files.add(write("stop_times.txt", stopTimes,
                 "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type", st -> String
                         .format("%s,%s,%s,%s,%s,%s,%s", st.tripId, format(st.arrivalTime), format(st.departureTime), st.track != null ? st.stopId + "_" + st.track : st.stopId + "_0",
                                 st.stopSequence, st.pickupType, st.dropoffType)));
 
 
-        files.add(write(getPath("calendar.txt"), calendars,
+        files.add(write("calendar.txt", calendars,
                 "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date", c -> String
                         .format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", c.serviceId, formatBoolean(c.monday), formatBoolean(c.tuesday),
                                 formatBoolean(c.wednesday), formatBoolean(c.thursday), formatBoolean(c.friday), formatBoolean(c.saturday),
                                 formatBoolean(c.sunday), format(c.startDate), format(c.endDate))));
 
-        files.add(write(getPath("calendar_dates.txt"), new ArrayList<>(calendarDates), "service_id,date,exception_type",
+        files.add(write("calendar_dates.txt", new ArrayList<>(calendarDates), "service_id,date,exception_type",
                 cd -> String.format("%s,%s,%s", cd.serviceId, format(cd.date), cd.exceptionType)));
 
         final LocalDate minStartDate = gtfsDto.trips.stream().min(Comparator.comparing(left -> left.calendar.startDate))
                 .get().calendar.startDate;
         final LocalDate maxEndDate = gtfsDto.trips.stream().max(Comparator.comparing(left -> left.calendar.endDate)).get().calendar.endDate;
 
-        files.add(write(getPath("feed_info.txt"), Lists.newArrayList(1),
+        files.add(write("feed_info.txt", Lists.newArrayList(1),
                 "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
                         .format("%s,%s,%s,%s,%s,%s", "Fintraffic", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
                                 format(maxEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(
@@ -218,7 +221,7 @@ public class GTFSWritingService {
     }
 
     private <E> File write(final String filename, final List<E> entities, final String header, final Function<E, String> converter) {
-        final File file = new File(filename);
+        final File file = new File(getPath(filename));
 
         try (final OutputStreamWriter writer =
                      new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8)) {
