@@ -3,8 +3,11 @@ package fi.livi.rata.avoindata.updater.config;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.net.ssl.SSLContext;
 
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -12,7 +15,10 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.util.Timeout;
+import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +43,9 @@ class RestTemplateFactory {
     @Value("${updater.reason.api-key}")
     private String apiKey;
 
+    @Value("${updater.validate-ripa-cert:true}")
+    private boolean validateRipaCertificate;
+
     @Bean
     public RequestConfig requestConfig() {
         return RequestConfig.custom()
@@ -44,9 +53,27 @@ class RestTemplateFactory {
                 .build();
     }
 
-    @Bean
-    public CloseableHttpClient httpClient(final RequestConfig requestConfig)
+    public CloseableHttpClient createInsecureHttpClient(final RequestConfig requestConfig)
             throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        log.info("Creating insecure HTTP client");
+        final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+
+        final SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
+                .loadTrustMaterial(acceptingTrustStrategy)
+                .build();
+
+        final SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+        final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().setSSLSocketFactory(csf).build();
+        return HttpClientBuilder
+                .create()
+                .setConnectionManager(hccm)
+                .setConnectionReuseStrategy((httpRequest, httpResponse, httpContext) -> false)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+    }
+
+    public CloseableHttpClient createSecureHttpClient(final RequestConfig requestConfig) {
+        log.info("Creating secure HTTP client");
         final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().build();
         return HttpClientBuilder
                 .create()
@@ -54,6 +81,20 @@ class RestTemplateFactory {
                 .setConnectionReuseStrategy((httpRequest, httpResponse, httpContext) -> false)
                 .setDefaultRequestConfig(requestConfig)
                 .build();
+    }
+
+    @Bean
+    public CloseableHttpClient httpClient(final RequestConfig requestConfig)
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        /*
+           SSL certificate validation needs to be disabled locally for the application to be able
+           to access RIPA when connecting via SSM.
+        */
+        if (validateRipaCertificate) {
+            return createSecureHttpClient(requestConfig);
+        } else {
+            return createInsecureHttpClient(requestConfig);
+        }
     }
 
     @Bean(name = "normalRestTemplate")
