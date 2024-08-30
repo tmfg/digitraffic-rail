@@ -1,12 +1,12 @@
 package fi.livi.rata.avoindata.updater.config;
 
-
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+
 import javax.net.ssl.SSLContext;
 
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -37,23 +37,18 @@ class RestTemplateFactory {
     @Autowired
     private MappingJackson2HttpMessageConverter messageConverter;
 
-    @Value("${updater.http.connectionTimoutMillis:30000}")
-    private int CONNECTION_TIMEOUT;
-
-    @Value("${updater.reason.api-key}")
-    private String apiKey;
-
     @Bean
-    public RequestConfig requestConfig() {
+    public RequestConfig requestConfig(
+            @Value("${updater.http.connectionTimoutMillis:30000}")
+            final int CONNECTION_TIMEOUT) {
         return RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                 .build();
     }
 
-    @Bean
-    public CloseableHttpClient httpClient(final RequestConfig requestConfig) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        log.info("Creating trustStore");
-
+    public CloseableHttpClient createInsecureHttpClient(final RequestConfig requestConfig)
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        log.info("Creating insecure HTTP client");
         final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
 
         final SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
@@ -70,6 +65,33 @@ class RestTemplateFactory {
                 .build();
     }
 
+    public CloseableHttpClient createSecureHttpClient(final RequestConfig requestConfig) {
+        log.info("Creating secure HTTP client");
+        final HttpClientConnectionManager hccm = PoolingHttpClientConnectionManagerBuilder.create().build();
+        return HttpClientBuilder
+                .create()
+                .setConnectionManager(hccm)
+                .setConnectionReuseStrategy((httpRequest, httpResponse, httpContext) -> false)
+                .setDefaultRequestConfig(requestConfig)
+                .build();
+    }
+
+    @Bean
+    public CloseableHttpClient httpClient(final RequestConfig requestConfig,
+                                          @Value("${updater.validate-ripa-cert:true}")
+                                          final boolean validateRipaCertificate)
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        /*
+           SSL certificate validation needs to be disabled locally for the application to be able
+           to access RIPA when connecting via SSM.
+        */
+        if (validateRipaCertificate) {
+            return createSecureHttpClient(requestConfig);
+        } else {
+            return createInsecureHttpClient(requestConfig);
+        }
+    }
+
     @Bean(name = "normalRestTemplate")
     public RestTemplate restTemplate(final HttpClient httpClient) {
         final HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
@@ -83,15 +105,17 @@ class RestTemplateFactory {
 
                     return execution.execute(request, body);
                 }));
-        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[]{messageConverter}));
+        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[] { messageConverter }));
 
         return restTemplate;
     }
 
     @Bean(name = "ripaRestTemplate")
-    public RestTemplate ripaRestTemplate(final HttpClient httpClient) {
+    public RestTemplate ripaRestTemplate(final HttpClient httpClient,
+                                         @Value("${updater.reason.api-key}")
+                                         final String apiKey) {
         final RestTemplate template = this.restTemplate(httpClient);
-        template.getInterceptors().add(new ApiKeyReqInterceptor(this.apiKey));
+        template.getInterceptors().add(new ApiKeyReqInterceptor(apiKey));
 
         return template;
     }
