@@ -37,17 +37,10 @@ class RestTemplateFactory {
     @Autowired
     private MappingJackson2HttpMessageConverter messageConverter;
 
-    @Value("${updater.http.connectionTimoutMillis:30000}")
-    private int CONNECTION_TIMEOUT;
-
-    @Value("${updater.reason.api-key}")
-    private String apiKey;
-
-    @Value("${updater.validate-ripa-cert:true}")
-    private boolean validateRipaCertificate;
-
     @Bean
-    public RequestConfig requestConfig() {
+    public RequestConfig requestConfig(
+            @Value("${updater.http.connectionTimoutMillis:30000}")
+            final int CONNECTION_TIMEOUT) {
         return RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                 .build();
@@ -84,7 +77,9 @@ class RestTemplateFactory {
     }
 
     @Bean
-    public CloseableHttpClient httpClient(final RequestConfig requestConfig)
+    public CloseableHttpClient httpClient(final RequestConfig requestConfig,
+                                          @Value("${updater.validate-ripa-cert:true}")
+                                          final boolean validateRipaCertificate)
             throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         /*
            SSL certificate validation needs to be disabled locally for the application to be able
@@ -116,9 +111,11 @@ class RestTemplateFactory {
     }
 
     @Bean(name = "ripaRestTemplate")
-    public RestTemplate ripaRestTemplate(final HttpClient httpClient) {
+    public RestTemplate ripaRestTemplate(final HttpClient httpClient,
+                                         @Value("${updater.reason.api-key}")
+                                         final String apiKey) {
         final RestTemplate template = this.restTemplate(httpClient);
-        template.getInterceptors().add(new ApiKeyReqInterceptor(this.apiKey));
+        template.getInterceptors().add(new ApiKeyReqInterceptor(apiKey));
 
         return template;
     }

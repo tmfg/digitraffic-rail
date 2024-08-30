@@ -31,9 +31,6 @@ public class WebClientConfiguration {
 
     public static final Duration BLOCK_DURATION = Duration.ofSeconds(30);
 
-    @Value("${updater.validate-ripa-cert:true}")
-    private boolean validateRipaCertificate;
-
     public HttpClient createInsecureHttpClient(final long connectionTimeOutMs) throws SSLException {
         log.info("Creating insecure HTTP client");
         final SslContext sslContext = SslContextBuilder.forClient()
@@ -69,7 +66,9 @@ public class WebClientConfiguration {
     }
 
     @Bean
-    public HttpClient defaultHttpClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs) throws SSLException {
+    public HttpClient defaultHttpClient(final @Value("${updater.http.connectionTimoutMillis:30000}") long connectionTimeOutMs,
+                                        @Value("${updater.validate-ripa-cert:true}")
+                                        final boolean validateRipaCertificate) throws SSLException {
         /*
            SSL certificate validation needs to be disabled locally for the application to be able
            to access RIPA when connecting via SSM.
