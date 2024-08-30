@@ -87,16 +87,16 @@ public class GTFSEntityService {
                 if (trakediaNode == null) {
                     log.info("Could not find station {} from trakedia", stop.stopCode);
                 } else {
-                    final String translationEn = trakediaNode.get(0).get("nimiEn").asText();
-                    final String translationSe = trakediaNode.get(0).get("nimiSe").asText();
+                    final JsonNode translationEn = trakediaNode.get(0).get("nimiEn");
+                    final JsonNode translationSe = trakediaNode.get(0).get("nimiSe");
 
-                    if (translationEn != null) {
-                        translations.add(new Translation(stop.name, "en", translationEn));
+                    if (translationEn != null && !translationEn.isNull()) {
+                        translations.add(new Translation(stop.name, "en", translationEn.asText()));
                     }
 
-                    if (translationSe != null) {
+                    if (translationSe != null && !translationSe.isNull()) {
                         // language code is sv, even though trakedia uses se!
-                        translations.add(new Translation(stop.name, "sv", translationSe));
+                        translations.add(new Translation(stop.name, "sv", translationSe.asText()));
                     }
                 }
             }
