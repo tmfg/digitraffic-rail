@@ -34,7 +34,8 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
     public Station deserialize(final JsonParser jsonParser,
                                final DeserializationContext deserializationContext) throws IOException {
         // To break circular reference
-        final var trakediaLiikennepaikkaMap = applicationContext.getBean(TrakediaLiikennepaikkaService.class).getTrakediaLiikennepaikkas();
+        final var trakediaLiikennepaikkaService = applicationContext.getBean(TrakediaLiikennepaikkaService.class);
+        final var liikennepaikkaMap = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkas();
 
         final Station station = new Station();
 
@@ -49,7 +50,7 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
 
         station.type = getStationType(node);
 
-        final ProjCoordinate to = getCoordinates(trakediaLiikennepaikkaMap, station, node);
+        final ProjCoordinate to = getCoordinates(liikennepaikkaMap, station, node);
 
         station.latitude = new BigDecimal(to.y);
         station.longitude = new BigDecimal(to.x);

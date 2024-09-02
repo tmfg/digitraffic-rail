@@ -14,6 +14,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
+/**
+ * infra-api version 0.4 or newer is needed!
+ */
 @Component
 public class TrakediaLiikennepaikkaService {
 
@@ -22,21 +25,33 @@ public class TrakediaLiikennepaikkaService {
 
     private static Logger logger = LoggerFactory.getLogger(TrakediaLiikennepaikkaService.class);
 
-    @Value("${trakedia.url}")
-    private String baseUrl;
+    @Value("${updater.liikennepaikat.url}")
+    private String liikennepaikatUrl;
 
-    @Cacheable("trakediaLiikennepaikka")
+    @Value("${updater.liikennepaikanosat.url}")
+    private String liikennepaikanosatUrl;
+
+    @Cacheable("liikennepaikkaCache")
     public Map<String, Double[]> getTrakediaLiikennepaikkas() {
+        final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
+        final var liikenepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
+
+        liikennepaikkaMap.putAll(liikenepaikkaOsaMap);
+
+        return liikennepaikkaMap;
+    }
+
+    public Map<String, Double[]> fetchLiikennepaikkaMap(final String url) {
         final Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
 
-        if (Strings.isNullOrEmpty(baseUrl)) {
+        if (Strings.isNullOrEmpty(url)) {
             return liikennepaikkaMap;
         }
 
         try {
-            logger.info("Fetching Trakedia data from {}", baseUrl);
+            logger.info("Fetching Trakedia data from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).share().block();
+            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
@@ -53,16 +68,25 @@ public class TrakediaLiikennepaikkaService {
 
     @Cacheable("trakediaLiikennepaikkaNodes")
     public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes() {
+        final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
+        final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
+
+        liikennepaikkaMap.putAll(liikennepaikanOsaMap);
+
+        return liikennepaikkaMap;
+    }
+
+    public Map<String, JsonNode> fetchNodeMap(final String url) {
         final Map<String, JsonNode> liikennepaikkaMap = new HashMap<>();
 
-        if (Strings.isNullOrEmpty(baseUrl)) {
+        if (Strings.isNullOrEmpty(url)) {
             return liikennepaikkaMap;
         }
 
         try {
-            logger.info("Fetching Trakedia data from {}", baseUrl);
+            logger.info("Fetching Trakedia nodes from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block();
+            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block();
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode lyhenne = node.get(0).get("lyhenne");
