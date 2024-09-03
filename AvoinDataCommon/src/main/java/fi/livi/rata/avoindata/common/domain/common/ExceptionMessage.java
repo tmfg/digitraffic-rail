@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.common;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.Hidden;
 
@@ -39,6 +39,7 @@ public class ExceptionMessage implements Serializable {
         VERSION_TOO_OLD,
         UNKNOWN_PARAMETER,
         ILLEGAL_ARGUMENT_EXCEPTION,
+        RESOURCE_NOT_FOUND
     }
 
     @Override
