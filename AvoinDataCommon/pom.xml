@@ -42,7 +42,8 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.2.0</version>
+            <!--suppress UnresolvedMavenProperty -->
+            <version>${org.springdoc.version}</version>
         </dependency>
 
         <dependency>
@@ -59,7 +60,8 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
-            <version>6.1.7.Final</version>
+            <!--suppress UnresolvedMavenProperty -->
+            <version>${org.hibernate.orm.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>postgresql</artifactId>
@@ -70,6 +72,14 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -15,9 +15,13 @@
         <java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>3.0.13</spring.boot.version>
-        <com.google.guava.version>32.1.3-jre</com.google.guava.version>
+        <!-- hibernate.orm Version needs to follow hibernate.orm version of Spring Boot https://docs.spring.io/spring-boot/docs/3.0.13/reference/html/dependency-versions.html#appendix.dependency-versions -->
+        <org.hibernate.orm.version>6.1.7.Final</org.hibernate.orm.version>
+        <org.springdoc.version>2.6.0</org.springdoc.version>
+        <com.google.guava.version>33.3.0-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
-        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
+        <org.flywaydb.version>10.18.0</org.flywaydb.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
     </properties>
 
@@ -50,6 +54,7 @@
                         <artifactId>dependency-check-maven</artifactId>
                         <version>10.0.3</version>
                         <configuration>
+                            <!--suppress UnresolvedMavenProperty -->
                             <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
                             <failBuildOnCVSS>7</failBuildOnCVSS>
                             <suppressionFile>owasp-suppressions.xml</suppressionFile>
