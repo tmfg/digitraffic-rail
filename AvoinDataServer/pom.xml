@@ -104,8 +104,6 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
-            <!--suppress UnresolvedMavenProperty -->
-            <version>${org.hibernate.orm.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>postgresql</artifactId>

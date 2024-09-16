@@ -15,8 +15,6 @@
         <java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>3.3.3</spring.boot.version>
-        <!-- hibernate.orm Version needs to follow hibernate.orm version of Spring Boot https://docs.spring.io/spring-boot/docs/3.0.13/reference/html/dependency-versions.html#appendix.dependency-versions -->
-        <org.hibernate.orm.version>6.1.7.Final</org.hibernate.orm.version>
         <org.springdoc.version>2.6.0</org.springdoc.version>
         <com.google.guava.version>33.3.0-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
