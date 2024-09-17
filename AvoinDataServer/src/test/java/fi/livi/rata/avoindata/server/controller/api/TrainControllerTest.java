@@ -12,11 +12,17 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.factory.TimeTableRowFactory;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
+import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
 
 public class TrainControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainFactory trainFactory;
+    @Autowired
+    private TimeTableRowFactory timeTableRowFactory;
+    @Autowired
+    private TrainReadyFactory trainReadyFactory;
     @Autowired
     private DateProvider dateProvider;
     @Autowired
@@ -61,6 +67,18 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         getJson(String.format("/trains/%s?include_deleted=true", someDate)).andExpect(jsonPath("$.length()").value(3));
         getJson(String.format("/trains/%s?include_deleted=false", someDate)).andExpect(jsonPath("$.length()").value(2));
+
+        trainRepository.deleteAll();
+    }
+
+    @Test
+    public void shouldFindTrainByNumberWhenTrainReadyMessagesExist() throws Exception {
+        final Train train = trainFactory.createBaseTrainWithTrainReadyMessages();
+        trainRepository.save(train);
+
+        getJson(String.format("/trains/latest/%d", train.id.trainNumber))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].trainNumber").value(train.id.trainNumber));
 
         trainRepository.deleteAll();
     }
