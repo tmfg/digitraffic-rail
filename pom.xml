@@ -14,12 +14,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>3.3.3</spring.boot.version>
+        <spring.boot.version>3.0.13</spring.boot.version>
         <org.springdoc.version>2.6.0</org.springdoc.version>
         <com.google.guava.version>33.3.0-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
-        <org.flywaydb.version>10.18.0</org.flywaydb.version>
+        <org.flywaydb.version>9.22.3</org.flywaydb.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
     </properties>
 
@@ -132,7 +132,6 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <plugin>
