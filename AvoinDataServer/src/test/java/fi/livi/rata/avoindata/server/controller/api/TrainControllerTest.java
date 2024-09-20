@@ -12,17 +12,11 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.factory.TimeTableRowFactory;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
-import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
 
 public class TrainControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainFactory trainFactory;
-    @Autowired
-    private TimeTableRowFactory timeTableRowFactory;
-    @Autowired
-    private TrainReadyFactory trainReadyFactory;
     @Autowired
     private DateProvider dateProvider;
     @Autowired
