@@ -1,7 +1,10 @@
 package fi.livi.rata.avoindata.server.controller;
 
-import java.sql.SQLTimeoutException;
-
+import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
+import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,15 +20,11 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
-import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
-import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import fi.livi.rata.avoindata.server.controller.utils.HttpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.sql.SQLTimeoutException;
 
 @ControllerAdvice
 @ResponseBody
@@ -56,9 +55,9 @@ public class DefaultExceptionHandler {
                                                 final String message,
                                                 final ExceptionMessage.ErrorCodeEnum code) {
         setResponseTypeToJson(response);
-        final ExceptionMessage exceptionMessage = new ExceptionMessage(message, code, request.getRequestURL().toString(),
+        ExceptionMessage exceptionMessage = new ExceptionMessage(message, code, request.getRequestURL().toString(),
                 request.getQueryString());
-        log.debug("Debug exception {}", exceptionMessage);
+        log.debug("Debug exception {}",exceptionMessage);
         return exceptionMessage;
     }
 
@@ -69,19 +68,7 @@ public class DefaultExceptionHandler {
                                                            final HttpServletRequest request) {
         setResponseTypeToJson(response);
         log.info(String.format("Threw IllegalArgumentException from url %s?%s", request.getRequestURL().toString(), request.getQueryString()), e);
-        return new ExceptionMessage(e.getMessage(), ExceptionMessage.ErrorCodeEnum.ILLEGAL_ARGUMENT_EXCEPTION, request.getRequestURL().toString(),
-                request.getQueryString());
-    }
-
-    @ExceptionHandler(NoResourceFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ExceptionMessage handleNoResourceFoundException(final NoResourceFoundException e,
-                                                           final HttpServletResponse response,
-                                                           final HttpServletRequest request) {
-        setResponseTypeToJson(response);
-        log.info(String.format("Threw NoResourceFoundException from url %s?%s", request.getRequestURL().toString(), request.getQueryString()), e);
-        return new ExceptionMessage("Resource not found", ExceptionMessage.ErrorCodeEnum.RESOURCE_NOT_FOUND, request.getRequestURL().toString(),
-                request.getQueryString());
+        return new ExceptionMessage(e.getMessage(), ExceptionMessage.ErrorCodeEnum.ILLEGAL_ARGUMENT_EXCEPTION, request.getRequestURL().toString(), request.getQueryString());
     }
 
     @ExceptionHandler(AbstractException.class)
@@ -121,29 +108,30 @@ public class DefaultExceptionHandler {
         }
     }
 
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ExceptionMessage handleMissingServletRequestParameterException(
             final MissingServletRequestParameterException e,
             final HttpServletResponse response,
             final HttpServletRequest request) {
-        log.debug("Debug handleMissingServletRequestParameterException exception {}", e);
+        log.debug("Debug handleMissingServletRequestParameterException exception {}",e);
         return createAndLogReturn(request, response,
                 String.format("The request was missing mandatory parameter. Parameter name is '%s' and type '%s'. Url: %s",
                         e.getParameterName(), e.getParameterType(), HttpUtils.getFullURL(request)),
                 ExceptionMessage.ErrorCodeEnum.MISSING_MANDATORY_PARAMETER);
     }
 
-    @ExceptionHandler({ ClientAbortException.class })
+    @ExceptionHandler({ClientAbortException.class})
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ExceptionMessage handleClientAbortException(final ClientAbortException e,
                                                        final HttpServletResponse response,
                                                        final HttpServletRequest request) {
-        log.warn("HandleClientAbortException exception {}", e);
+        log.warn("HandleClientAbortException exception {}",e);
         return createAndLogReturn(request, response, "Client aborted connection error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
-    @ExceptionHandler({ Exception.class, RuntimeException.class })
+    @ExceptionHandler({Exception.class, RuntimeException.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @Order(Ordered.LOWEST_PRECEDENCE)
     public ExceptionMessage handleRuntimeException(final Exception e,
@@ -156,5 +144,6 @@ public class DefaultExceptionHandler {
     private static void setResponseTypeToJson(final HttpServletResponse response) {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     }
+
 
 }
