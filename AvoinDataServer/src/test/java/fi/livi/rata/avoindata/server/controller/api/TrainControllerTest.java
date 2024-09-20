@@ -64,4 +64,16 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         trainRepository.deleteAll();
     }
+
+    @Test
+    public void shouldFindTrainByNumberWhenTrainReadyMessagesExist() throws Exception {
+        final Train train = trainFactory.createBaseTrainWithTrainReadyMessages();
+        trainRepository.save(train);
+
+        getJson(String.format("/trains/latest/%d", train.id.trainNumber))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].trainNumber").value(train.id.trainNumber));
+
+        trainRepository.deleteAll();
+    }
 }
