@@ -5,19 +5,20 @@ import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.locationtech.jts.geom.Geometry;
+
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.OneToMany;
-
-import org.locationtech.jts.geom.Geometry;
-
-import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 
 @Entity
 public class TrafficRestrictionNotification {
@@ -25,10 +26,12 @@ public class TrafficRestrictionNotification {
     @EmbeddedId
     public TrafficRestrictionNotificationId id;
 
+    @Enumerated(EnumType.ORDINAL)
     public TrafficRestrictionNotificationState state;
     public String organization;
     public ZonedDateTime created;
     public ZonedDateTime modified;
+    @Enumerated(EnumType.ORDINAL)
     public TrafficRestrictionType limitation;
     public String twnId;
     public Double axleWeightMax;
@@ -80,10 +83,15 @@ public class TrafficRestrictionNotification {
         return id.version;
     }
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER,
+               cascade = CascadeType.ALL)
     @JoinColumns({
-            @JoinColumn(name = "trn_id", referencedColumnName = "id", nullable = false),
-            @JoinColumn(name = "trn_version", referencedColumnName = "version", nullable = false)
+            @JoinColumn(name = "trn_id",
+                        referencedColumnName = "id",
+                        nullable = false),
+            @JoinColumn(name = "trn_version",
+                        referencedColumnName = "version",
+                        nullable = false)
     })
     public Set<RumaLocation> locations = new HashSet<>();
 
