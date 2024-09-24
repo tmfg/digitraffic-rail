@@ -15,6 +15,7 @@ public class TrackWorkNotification {
     @EmbeddedId
     public TrackWorkNotificationId id;
 
+    @Enumerated(EnumType.ORDINAL)
     public TrackWorkNotificationState state;
     public String organization;
     public ZonedDateTime created;
