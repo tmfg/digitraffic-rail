@@ -245,10 +245,9 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     @Test
     public void trackWorkNotificationsWithRumaLocations() throws Exception {
         final TrackWorkNotification twn = factory.create(1).get(0);
-        final RumaLocation rumaLocation = factory.createRumaLocation();
-
+        final RumaLocation rl = factory.createRumaLocation();
         final TrackWorkPart twp = factory.createWorkPart();
-        twp.locations = Set.of(factory.createRumaLocation());
+        twp.locations = Set.of(rl);
         twp.trackWorkNotification = twn;
         twn.trackWorkParts = Set.of(twp);
 
@@ -257,7 +256,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         final ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s", twn.state));
         ra.andExpect(jsonPath("$[0].id").value(twn.id.id));
         ra.andExpect(jsonPath("$[0].workParts[0].locations", hasSize(1)));
-        ra.andExpect(jsonPath("$[0].workParts[0].locations[0].locationType").value(rumaLocation.locationType.name()));
+        ra.andExpect(jsonPath("$[0].workParts[0].locations[0].locationType").value(rl.locationType.name()));
     }
 
     @Transactional
