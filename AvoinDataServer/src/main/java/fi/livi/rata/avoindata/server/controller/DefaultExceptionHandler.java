@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
@@ -141,6 +142,16 @@ public class DefaultExceptionHandler {
                                                        final HttpServletRequest request) {
         log.warn("HandleClientAbortException exception {}", e);
         return createAndLogReturn(request, response, "Client aborted connection error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ExceptionMessage handleAsyncRequestNotUsableException(final AsyncRequestNotUsableException e, final HttpServletResponse response,
+                                                                 final HttpServletRequest request) {
+        if (e.getCause() instanceof ClientAbortException) {
+            return handleClientAbortException((ClientAbortException) e.getCause(), response, request);
+        }
+        return createAndLogReturn(request, response, e.getMessage(), ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
     @ExceptionHandler({ Exception.class, RuntimeException.class })
