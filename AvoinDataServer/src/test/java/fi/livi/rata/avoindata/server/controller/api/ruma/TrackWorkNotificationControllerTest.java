@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -20,8 +21,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
+import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
+import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrackWorkNotificationFactory;
 
@@ -62,7 +65,8 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         after.modified = ZonedDateTime.now().minusDays(5);
         repository.saveAll(Arrays.asList(before, after));
 
-        final ResultActions ra = getJson("/trackwork-notifications/status?start=" + ZonedDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE_TIME));
+        final ResultActions ra =
+                getJson("/trackwork-notifications/status?start=" + ZonedDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE_TIME));
         ra.andExpect(jsonPath("$", hasSize(1)));
         ra.andExpect(jsonPath("$[0].id").value(after.id.id));
     }
@@ -107,7 +111,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         final ResultActions ra = getJson(String.format("/trackwork-notifications/%s", twn.id.id));
 
         ra.andExpect(jsonPath("$.id").value(twn.id.id));
-        for (TrackWorkNotification v : twnVersions) {
+        for (final TrackWorkNotification v : twnVersions) {
             ra.andExpect(jsonPath(String.format("$.versions[%d].version", v.id.version - 1)).value(v.id.version));
         }
     }
@@ -238,6 +242,24 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         ra.andExpect(jsonPath("$.features", hasSize(1)));
     }
 
+    @Test
+    public void trackWorkNotificationsWithRumaLocations() throws Exception {
+        final TrackWorkNotification twn = factory.create(1).get(0);
+        final RumaLocation rumaLocation = factory.createRumaLocation();
+
+        final TrackWorkPart twp = factory.createWorkPart();
+        twp.locations = Set.of(factory.createRumaLocation());
+        twp.trackWorkNotification = twn;
+        twn.trackWorkParts = Set.of(twp);
+
+        repository.save(twn);
+
+        final ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s", twn.state));
+        ra.andExpect(jsonPath("$[0].id").value(twn.id.id));
+        ra.andExpect(jsonPath("$[0].workParts[0].locations", hasSize(1)));
+        ra.andExpect(jsonPath("$[0].workParts[0].locations[0].locationType").value(rumaLocation.locationType.name()));
+    }
+
     @Transactional
     void clearTwns() {
         repository.deleteAllInBatch();
@@ -248,4 +270,5 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
         Collections.shuffle(states);
         return states.get(0);
     }
+
 }
