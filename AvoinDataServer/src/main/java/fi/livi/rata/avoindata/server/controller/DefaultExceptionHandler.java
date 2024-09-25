@@ -145,12 +145,13 @@ public class DefaultExceptionHandler {
     }
 
     @ExceptionHandler(AsyncRequestNotUsableException.class)
-    @ResponseStatus(HttpStatus.BAD_GATEWAY)
-    public void handleAsyncRequestNotUsableException(final AsyncRequestNotUsableException e, final HttpServletResponse response,
-                                                     final HttpServletRequest request) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ExceptionMessage handleAsyncRequestNotUsableException(final AsyncRequestNotUsableException e, final HttpServletResponse response,
+                                                                 final HttpServletRequest request) {
         if (e.getCause() instanceof ClientAbortException) {
-            handleClientAbortException((ClientAbortException) e.getCause(), response, request);
+            return handleClientAbortException((ClientAbortException) e.getCause(), response, request);
         }
+        return createAndLogReturn(request, response, e.getMessage(), ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
     @ExceptionHandler({ Exception.class, RuntimeException.class })
