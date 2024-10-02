@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class RipaService {
 
     public <ENTITYTYPE> ENTITYTYPE postToRipa(final String path, final HashMap parts, final Class<ENTITYTYPE> clazz) {
         return ripaWebClient.post().uri(path)
-                .body(parts, HashMap.class)
+                .body(Mono.just(parts), HashMap.class)
                 .retrieve().bodyToMono(clazz).block();
 
     }
