@@ -97,7 +97,7 @@ public class ScheduleService {
      * Length of sleeping is dependant of the amount of trains extracted.
      */
     private void throttle(final int trainCount) throws InterruptedException {
-        if(trainCount > 0) {
+        if(trainCount > 10) {
             Thread.sleep(trainCount > 400 ? 30000 : 10000);
         }
     }
