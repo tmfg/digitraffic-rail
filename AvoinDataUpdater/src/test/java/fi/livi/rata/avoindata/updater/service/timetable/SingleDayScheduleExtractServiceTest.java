@@ -8,11 +8,15 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
@@ -36,6 +40,9 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     @Autowired
     private SingleDayScheduleExtractService singleDayScheduleExtractService;
 
+    @Autowired
+    private HttpInputObjectMapper httpInputObjectMapper;
+
     final LocalDate extractDate = LocalDate.of(2017, 1, 1);
 
     @Test
@@ -50,7 +57,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.id = 3L;
         schedule2.changeType = "P";
 
-        final List<Train> trains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2),
+        final List<Train> trains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2),
                 LocalDate.of(2017, 12, 26), true);
         Assertions.assertEquals(1, trains.size());
         Assertions.assertEquals(false, trains.get(0).cancelled);
@@ -68,7 +75,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.id = 2L;
         schedule2.changeType = "P";
 
-        final List<Train> trains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2),
+        final List<Train> trains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2),
                 LocalDate.of(2017, 12, 26), true);
         Assertions.assertEquals(1, trains.size());
         Assertions.assertEquals(false, trains.get(0).cancelled);
@@ -94,7 +101,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleExceptions.add(scheduleException);
 
         Assertions.assertEquals(1,
-                singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), LocalDate.of(2017, 12, 26), true).size());
+                singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), LocalDate.of(2017, 12, 26), true).size());
 
         final ScheduleException scheduleException2 = new ScheduleException();
         scheduleException2.isRun = false;
@@ -104,11 +111,12 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleExceptions.add(scheduleException2);
 
         Assertions.assertEquals(0,
-                singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), LocalDate.of(2017, 12, 25), true).size());
+                singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), LocalDate.of(2017, 12, 25), true).size());
     }
 
     @Test
     @Transactional
+    @Rollback
     public void timesShouldBeOkayDuringSpring() {
         final Schedule schedule = scheduleFactory.create();
 
@@ -122,7 +130,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleRows.get(4).arrival.timestamp = Duration.ofMinutes(30 * 8);
 
         final LocalDate train1DepartureDate = LocalDate.of(2018, 3, 24);
-        final Train train1 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
+        final Train train1 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
         assertTimes(train1.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train1DepartureDate, 0, 30, 2),//
                 createTimeWithOffset(train1DepartureDate, 1, 0, 2),//
@@ -135,7 +143,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train2DepartureDate = LocalDate.of(2018, 3, 25);
-        final Train train2 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
+        final Train train2 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
         assertTimes(train2.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train2DepartureDate, 0, 30, 2),//
                 createTimeWithOffset(train2DepartureDate, 1, 0, 2),//
@@ -149,7 +157,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
 
 
         final LocalDate train3DepartureDate = LocalDate.of(2018, 3, 26);
-        final Train train3 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
+        final Train train3 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
         assertTimes(train3.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train3DepartureDate, 0, 30, 3),//
                 createTimeWithOffset(train3DepartureDate, 1, 0, 3),//
@@ -177,7 +185,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleRows.get(4).arrival.timestamp = Duration.ofMinutes(480 + 30 * 8);
 
         final LocalDate train1DepartureDate = LocalDate.of(2018, 3, 24);
-        final Train train1 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
+        final Train train1 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
         assertTimes(train1.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train1DepartureDate, 8 + 0, 30, 2),//
                 createTimeWithOffset(train1DepartureDate, 8 + 1, 0, 2),//
@@ -190,7 +198,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train2DepartureDate = LocalDate.of(2018, 3, 25);
-        final Train train2 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
+        final Train train2 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
         assertTimes(train2.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train2DepartureDate, 8 + 0, 30, 3),//
                 createTimeWithOffset(train2DepartureDate, 8 + 1, 0, 3),//
@@ -203,7 +211,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train3DepartureDate = LocalDate.of(2018, 3, 26);
-        final Train train3 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
+        final Train train3 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
         assertTimes(train3.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train3DepartureDate, 8 + 0, 30, 3),//
                 createTimeWithOffset(train3DepartureDate, 8 + 1, 0, 3),//
@@ -231,7 +239,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleRows.get(4).arrival.timestamp = Duration.ofMinutes(30 * 8);
 
         final LocalDate train1DepartureDate = LocalDate.of(2017, 10, 28);
-        final Train train1 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
+        final Train train1 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
         assertTimes(train1.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train1DepartureDate, 0, 30, 3),//
                 createTimeWithOffset(train1DepartureDate, 1, 0, 3),//
@@ -244,7 +252,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train2DepartureDate = LocalDate.of(2017, 10, 29);
-        final Train train2 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
+        final Train train2 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
         assertTimes(train2.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train2DepartureDate, 0, 30, 3),//
                 createTimeWithOffset(train2DepartureDate, 1, 0, 3),//
@@ -258,7 +266,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
 
 
         final LocalDate train3DepartureDate = LocalDate.of(2017, 10, 30);
-        final Train train3 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
+        final Train train3 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
         assertTimes(train3.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train3DepartureDate, 0, 30, 2),//
                 createTimeWithOffset(train3DepartureDate, 1, 0, 2),//
@@ -286,7 +294,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule.scheduleRows.get(4).arrival.timestamp = Duration.ofMinutes(480 + 30 * 8);
 
         final LocalDate train1DepartureDate = LocalDate.of(2017, 10, 28);
-        final Train train1 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
+        final Train train1 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train1DepartureDate, true).get(0);
         assertTimes(train1.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train1DepartureDate, 8 + 0, 30, 3),//
                 createTimeWithOffset(train1DepartureDate, 8 + 1, 0, 3),//
@@ -299,7 +307,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train2DepartureDate = LocalDate.of(2017, 10, 29);
-        final Train train2 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
+        final Train train2 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train2DepartureDate, true).get(0);
         assertTimes(train2.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train2DepartureDate, 8 + 0, 30, 2),//
                 createTimeWithOffset(train2DepartureDate, 8 + 1, 0, 2),//
@@ -312,7 +320,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         });
 
         final LocalDate train3DepartureDate = LocalDate.of(2017, 10, 30);
-        final Train train3 = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
+        final Train train3 = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), train3DepartureDate, true).get(0);
         assertTimes(train3.timeTableRows, new ZonedDateTime[]{//
                 createTimeWithOffset(train3DepartureDate, 8 + 0, 30, 2),//
                 createTimeWithOffset(train3DepartureDate, 8 + 1, 0, 2),//
@@ -335,8 +343,8 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     public void alreadyExtractedShouldNotBeReExtracted() {
         final Schedule schedule = scheduleFactory.create();
 
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).size());
-        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).size());
+        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).size());
     }
 
     @Test
@@ -352,8 +360,8 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.version = 2L;
         schedule2.capacityId = "TEST2";
 
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).size());
-        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).size());
+        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate, true).size());
     }
 
     @Test
@@ -373,8 +381,8 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.version = 2L;
         schedule2.scheduleRows.get(0).departure.timestamp = schedule2.scheduleRows.get(0).departure.timestamp.minusMinutes(1);
 
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).size());
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate, true).size());
     }
 
     @Test
@@ -397,8 +405,8 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         scheduleCancellation.cancelledRows.add(schedule2.scheduleRows.get(1).arrival);
         schedule2.scheduleCancellations.add(scheduleCancellation);
 
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).size());
-        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).size());
+        Assertions.assertEquals(1, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate, true).size());
     }
 
     @Test
@@ -421,16 +429,16 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule3.version = 3L;
         schedule3.id = 3L;
 
-        final Train firstTrain = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true).get(0);
+        final Train firstTrain = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true).get(0);
         Assertions.assertEquals(false, firstTrain.cancelled);
         Assertions.assertEquals(null, firstTrain.deleted);
 
-        final Train secondTrain = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate, true).get(
+        final Train secondTrain = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate, true).get(
                 0);
         Assertions.assertEquals(true, secondTrain.cancelled);
         Assertions.assertEquals(true, secondTrain.deleted);
 
-        final Train thirdTrain = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2, schedule3), extractDate,
+        final Train thirdTrain = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2, schedule3), extractDate,
                 true).get(0);
         Assertions.assertEquals(false, thirdTrain.cancelled);
         Assertions.assertEquals(null, thirdTrain.deleted);
@@ -446,13 +454,13 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         final Schedule cancalledSchedule = scheduleFactory.create();
         cancalledSchedule.scheduleCancellations.add(scheduleCancellation);
 
-        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Lists.newArrayList(cancalledSchedule), extractDate, true).size());
+        Assertions.assertEquals(0, singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(cancalledSchedule), extractDate, true).size());
 
         final Schedule normalSchedule = scheduleFactory.create();
         normalSchedule.version = 2L;
         normalSchedule.id = 2L;
 
-        final Train firstTrain = singleDayScheduleExtractService.extract(Lists.newArrayList(cancalledSchedule, normalSchedule), extractDate,
+        final Train firstTrain = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(cancalledSchedule, normalSchedule), extractDate,
                 true).get(0);
         Assertions.assertEquals(false, firstTrain.cancelled);
     }
@@ -472,15 +480,15 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule3.version = 3L;
         schedule3.scheduleRows.get(0).station.stationShortCode = "DEF";
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
         Assertions.assertEquals("ABC", changedTrainsAfter.get(0).timeTableRows.get(0).station.stationShortCode);
 
-        final List<Train> changedTrainsLastTime = singleDayScheduleExtractService.extract(
+        final List<Train> changedTrainsLastTime = singleDayScheduleExtractService.extract(Collections.emptyList(), 
                 Lists.newArrayList(schedule, schedule2, schedule3), extractDate, true);
         Assertions.assertEquals(1, changedTrainsLastTime.size());
         Assertions.assertEquals("DEF", changedTrainsLastTime.get(0).timeTableRows.get(0).station.stationShortCode);
@@ -497,10 +505,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.scheduleRows.get(1).arrival.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
         schedule2.scheduleRows.get(1).departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -516,10 +524,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.scheduleRows.get(1).arrival.stopType = ScheduleRow.ScheduleRowStopType.PASS;
         schedule2.scheduleRows.get(1).departure.stopType = ScheduleRow.ScheduleRowStopType.PASS;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -536,10 +544,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.operator.operatorShortCode = "TEST_OP_2";
         schedule2.operator.operatorUICCode = 1234;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -557,10 +565,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.trainCategory.name = "ABCDE";
         schedule2.trainCategory.id = 1234L;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -578,10 +586,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.trainType.name = "ABCDE";
         schedule2.trainType.id = 1234L;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -597,10 +605,10 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.version = 2L;
         schedule2.commuterLineId = "ABCDE";
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
 
-        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule, schedule2), extractDate,
+        final List<Train> changedTrainsAfter = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrainsAfter.size());
     }
@@ -610,7 +618,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     public void simpleExtractShouldBeOkay() {
         final Schedule schedule = scheduleFactory.create();
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(1, changedTrains.size());
     }
 
@@ -628,7 +636,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         schedule2.id = 2L;
         schedule2.version = 2L;
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule1, schedule2), extractDate,
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule1, schedule2), extractDate,
                 true);
         Assertions.assertEquals(1, changedTrains.size());
         Assertions.assertEquals("ABC", changedTrains.get(0).timeTableRows.get(0).station.stationShortCode);
@@ -650,13 +658,13 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         smallSchedule.version = 2L;
 
         final List<Schedule> scheduleListAfter = Lists.newArrayList(bigSchedule, smallSchedule);
-        List<Train> changedTrains = new ArrayList<>();
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 5, 31), true));
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 6, 1), true));
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 6, 2), true));
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 6, 3), true));
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 6, 4), true));
-        changedTrains.addAll(singleDayScheduleExtractService.extract(scheduleListAfter, LocalDate.of(2017, 6, 5), true));
+        final List<Train> changedTrains = new ArrayList<>();
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 5, 31), true));
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 6, 1), true));
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 6, 2), true));
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 6, 3), true));
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 6, 4), true));
+        changedTrains.addAll(singleDayScheduleExtractService.extract(Collections.emptyList(), scheduleListAfter, LocalDate.of(2017, 6, 5), true));
 
         Assertions.assertEquals(4, changedTrains.size());
         for (final Train changedTrain : changedTrains) {
@@ -681,13 +689,15 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         secondSchedule.version = 2L;
         secondSchedule.changeType = "P";
 
-        final List<Train> schedules = singleDayScheduleExtractService.extract(Lists.newArrayList(firstSchedule, secondSchedule),
+        // first one in effect
+        final List<Train> schedules = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(firstSchedule, secondSchedule),
                 LocalDate.of(2017, 4, 25), true);
         final List<Train> trains = schedules;
         Assertions.assertEquals(1, trains.size());
 
-        final List<Train> noTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(firstSchedule, secondSchedule),
-                LocalDate.of(2017, 6, 25), true);
+        // P in effect, not trains
+        final List<Train> noTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(firstSchedule, secondSchedule),
+                LocalDate.of(2017, 7, 25), true);
         Assertions.assertEquals(0, noTrains.size());
 
     }
@@ -702,7 +712,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         final Schedule schedule = scheduleFactory.create();
         schedule.scheduleCancellations.add(scheduleCancellation);
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(0, changedTrains.size());
     }
 
@@ -715,8 +725,20 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
         final Schedule schedule = scheduleFactory.create();
         schedule.scheduleExceptions.add(scheduleException);
 
-        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Lists.newArrayList(schedule), extractDate, true);
+        final List<Train> changedTrains = singleDayScheduleExtractService.extract(Collections.emptyList(), Lists.newArrayList(schedule), extractDate, true);
         Assertions.assertEquals(0, changedTrains.size());
+    }
+
+    @Test
+    @Transactional
+    public void multipleSchedulesWithSameKapasiteettiId() throws Exception {
+        final Schedule[] schedules = httpInputObjectMapper.readValue(new ClassPathResource("schedules-kapasiteetti-id.json").getFile(), Schedule[].class);
+
+        final List<Train> trains = singleDayScheduleExtractService.extract(Collections.emptyList(), List.of(schedules),
+                LocalDate.of(2024, 12, 20), true);
+
+        Assertions.assertEquals(1, trains.size());
+        Assertions.assertEquals(265L, trains.get(0).id.trainNumber);
     }
 
     private void assertTimes(final List<TimeTableRow> timeTableRows, final ZonedDateTime[] times) {

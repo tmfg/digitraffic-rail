@@ -22,5 +22,4 @@ public class TrakediaLiikennepaikkaServiceTest extends BaseTest {
 
         Assertions.assertTrue(liikennepaikkaMap.size() > 100);
     }
-
 }

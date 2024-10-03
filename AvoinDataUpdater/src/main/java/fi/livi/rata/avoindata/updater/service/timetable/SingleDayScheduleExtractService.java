@@ -54,22 +54,9 @@ public class SingleDayScheduleExtractService {
     private EntityManager entityManager;
 
     @Transactional
-    public List<Train> extract(final List<Schedule> allSchedules, final LocalDate date, boolean shouldFakeVersions) {
-        List<Schedule> adhocSchedules = new ArrayList<>();
-        List<Schedule> regularSchedules = new ArrayList<>();
-
-        for (final Schedule schedule : allSchedules) {
-            if (schedule.timetableType == Train.TimetableType.REGULAR) {
-                regularSchedules.add(schedule);
-            } else if (schedule.timetableType == Train.TimetableType.ADHOC) {
-                adhocSchedules.add(schedule);
-            } else {
-                throw new IllegalArgumentException("Unknown timetableType" + schedule.timetableType);
-            }
-        }
-
+    public List<Train> extract(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules, final LocalDate date, final boolean shouldFakeVersions) {
         log.info("Parsing todays schedules for {}", date);
-        List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules, regularSchedules);
+        final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules, regularSchedules);
 
         log.info("Extrating all possible schedules for {}", date);
         final Function<Train, TrainId> idFunc = s -> s.id;
@@ -79,9 +66,9 @@ public class SingleDayScheduleExtractService {
         log.info("Fetching existing trains for {}", date);
         final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc);
 
-        List<Train> toBeAdded = new ArrayList<>();
-        List<Train> toBeUpdated = new ArrayList<>();
-        List<Train> toBeCancelled = new ArrayList<>();
+        final List<Train> toBeAdded = new ArrayList<>();
+        final List<Train> toBeUpdated = new ArrayList<>();
+        final List<Train> toBeCancelled = new ArrayList<>();
 
         log.info("Grouping into lists for {}", date);
         groupIntoLists(newTrainMap, oldTrainMap, toBeAdded, toBeUpdated, toBeCancelled);
@@ -91,10 +78,10 @@ public class SingleDayScheduleExtractService {
         log.info("Persisting trains for {}", date);
         persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);
 
-        log.info("Extracted trains for {}. Total: {}, Todays Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
-                allSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
+        log.info("Extracted trains for {}. Total: {}, Today's Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
+                regularSchedules.size() + adhocSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
 
-        List<Train> allTrains = new ArrayList<>();
+        final List<Train> allTrains = new ArrayList<>();
         allTrains.addAll(toBeAdded);
         allTrains.addAll(toBeUpdated);
 
@@ -107,7 +94,7 @@ public class SingleDayScheduleExtractService {
     }
 
     private void createExtractedSchedules(final LocalDate date, final Map<Train, Schedule> newTrains, final List<Train> allTrains) {
-        List<ExtractedSchedule> extractedSchedules = new ArrayList<>();
+        final List<ExtractedSchedule> extractedSchedules = new ArrayList<>();
         for (final Train train : allTrains) {
             extractedSchedules.add(createExtractedSchedule(date, newTrains.get(train)));
         }
@@ -165,8 +152,8 @@ public class SingleDayScheduleExtractService {
             return false;
         }
 
-        List<TimeTableRow> sortedLeftTimeTableRows = sortTimeTableRows(left.timeTableRows);
-        List<TimeTableRow> sortedRightTimeTableRows = sortTimeTableRows(right.timeTableRows);
+        final List<TimeTableRow> sortedLeftTimeTableRows = sortTimeTableRows(left.timeTableRows);
+        final List<TimeTableRow> sortedRightTimeTableRows = sortTimeTableRows(right.timeTableRows);
 
 
         for (int i = 0; i < left.timeTableRows.size(); i++) {
@@ -220,7 +207,7 @@ public class SingleDayScheduleExtractService {
 
     private List<Train> persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
                                       final List<Train> toBeCancelled, final boolean shouldFakeVersions) {
-        List<Train> changedtrains = new ArrayList<>();
+        final List<Train> changedtrains = new ArrayList<>();
 
         final long fakeVersion = trainPersistService.getMaxVersion() + 1;
         log.info("Using fakeVersion {}", fakeVersion);
@@ -248,7 +235,7 @@ public class SingleDayScheduleExtractService {
         }
 
         if (!toBeCancelled.isEmpty()) {
-            List<Train> trainsCancelled = new ArrayList<>();
+            final List<Train> trainsCancelled = new ArrayList<>();
             for (final Train trainToBeCancelled : toBeCancelled) {
                 trainToBeCancelled.deleted = true;
                 trainToBeCancelled.cancelled = true;
@@ -306,7 +293,7 @@ public class SingleDayScheduleExtractService {
     }
 
     private ExtractedSchedule createExtractedSchedule(final LocalDate date, final Schedule schedule) {
-        ExtractedSchedule extractedSchedule = new ExtractedSchedule();
+        final ExtractedSchedule extractedSchedule = new ExtractedSchedule();
         extractedSchedule.scheduleId = schedule.id;
         extractedSchedule.capacityId = schedule.capacityId;
         extractedSchedule.trainId = new TrainId(schedule.trainNumber, date);

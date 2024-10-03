@@ -17,32 +17,32 @@ public class TodaysScheduleService {
 
     public List<Schedule> getDaysSchedules(final LocalDate date, final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules) {
-        List<Schedule> allSchedules = new ArrayList<>();
+        final List<Schedule> allSchedules = new ArrayList<>();
 
         allSchedules.addAll(getMostRecentRegularSchedules(date, regularSchedules));
         allSchedules.addAll(getMostRecentAdhocSchedules(date, adhocSchedules));
 
         final List<Schedule> todaysSchedules = Lists.newArrayList(Iterables.filter(allSchedules, s -> s.isAllowedByDates(date)));
 
-        List<Schedule> output = new ArrayList<>();
+        final List<Schedule> output = new ArrayList<>();
         final ImmutableListMultimap<Long, Schedule> trainNumberMap = Multimaps.index(todaysSchedules, s -> s.trainNumber);
         for (final Long trainNumber : trainNumberMap.keySet()) {
             final ImmutableList<Schedule> trainsSchedules = trainNumberMap.get(trainNumber);
 
-            output.add(getMostRecentSchedule(trainsSchedules));
+            output.add(getAdhocScheduleInEffect(trainsSchedules));
         }
 
         return output;
     }
 
     private List<Schedule> getMostRecentRegularSchedules(final LocalDate date, final List<Schedule> regularSchedules) {
-        List<Schedule> output = new ArrayList<>();
+        final List<Schedule> output = new ArrayList<>();
         final Multimap<String, Schedule> capacityIdMap = Multimaps.index(regularSchedules, s -> s.capacityId);
         for (final String capacityId : capacityIdMap.keySet()) {
             final Collection<Schedule> schedulesByCapacityId = capacityIdMap.get(capacityId);
-            final Schedule bestRegularSchedule = getBestRegularSchedule(date, schedulesByCapacityId);
-            if (bestRegularSchedule != null) {
-                output.add(bestRegularSchedule);
+            final Schedule regularScheduleInEffect = getRegularScheduleInEffect(date, schedulesByCapacityId);
+            if (regularScheduleInEffect != null) {
+                output.add(regularScheduleInEffect);
             } else {
                 log.trace("Cant decide best schedule. CapacityId: {} Schedules: {}", capacityId, schedulesByCapacityId);
             }
@@ -51,8 +51,8 @@ public class TodaysScheduleService {
         return output;
     }
 
-    private List<Schedule> getMostRecentAdhocSchedules(LocalDate date, final List<Schedule> adhocSchedules) {
-        List<Schedule> output = new ArrayList<>();
+    private List<Schedule> getMostRecentAdhocSchedules(final LocalDate date, final List<Schedule> adhocSchedules) {
+        final List<Schedule> output = new ArrayList<>();
 
         final Iterable<Schedule> todaysAdhocSchedules = Iterables.filter(adhocSchedules, s -> s.isAllowedByDates(date));
 
@@ -60,23 +60,37 @@ public class TodaysScheduleService {
                 s -> new TrainId(s.trainNumber, s.startDate));
         for (final TrainId trainId : trainIdMap.keySet()) {
             final ImmutableList<Schedule> schedulesForDay = trainIdMap.get(trainId);
-            output.add(getMostRecentSchedule(schedulesForDay));
+            output.add(getAdhocScheduleInEffect(schedulesForDay));
         }
 
         return output;
     }
 
-    private Schedule getMostRecentSchedule(final Collection<Schedule> schedulesByCapacityId) {
+    private Schedule getAdhocScheduleInEffect(final Collection<Schedule> schedulesByCapacityId) {
         return Collections.max(schedulesByCapacityId, ADHOC_COMPARATOR);
     }
 
-    private Schedule getBestRegularSchedule(final LocalDate date, final Collection<Schedule> schedulesByCapacityId) {
+    /// if returns true, should select the second schedule
+    private boolean compareSchedules(final Schedule s1, final Schedule s2) {
+        final int cmp = s1.effectiveFrom.compareTo(s2.effectiveFrom);
+
+        // same effective date, compare ids
+        if(cmp == 0) {
+            return s1.id < s2.id;
+        }
+
+        // otherwise return date comparison
+        return cmp < 0;
+    }
+
+    private Schedule getRegularScheduleInEffect(final LocalDate date, final Collection<Schedule> schedulesByCapacityId) {
         Schedule chosenSchedule = null;
         for (final Schedule schedule : schedulesByCapacityId) {
-            final boolean isIdNewer = chosenSchedule == null || chosenSchedule.id < schedule.id;
-            final boolean isEffectiveDateBeforeDate = schedule.effectiveFrom.isBefore(date) || schedule.effectiveFrom.isEqual(date);
-            if (isIdNewer && isEffectiveDateBeforeDate) {
-                chosenSchedule = schedule;
+            // schedule must not be effective after given date
+            if(!schedule.effectiveFrom.isAfter(date)) {
+                if(chosenSchedule == null || compareSchedules(chosenSchedule, schedule)) {
+                    chosenSchedule = schedule;
+                }
             }
         }
 

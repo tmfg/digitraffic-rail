@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,7 @@ public class ScheduleService {
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public synchronized void extractSchedules() {
+        final StopWatch stopWatch = StopWatch.createStarted();
         final ZonedDateTime startDate = dp.nowInHelsinki();
         log.info("Starting extract");
 
@@ -64,7 +67,7 @@ public class ScheduleService {
                 final ZonedDateTime nowInHelsinki = dp.nowInHelsinki();
                 log.info("Extracting for date {}", date);
 
-                if (startDate.isAfter(nowInHelsinki.minusHours(3))) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
+                if (stopWatch.getTime(TimeUnit.HOURS) < 3) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
                     extractForDate(adhocSchedules, regularSchedules, date);
                 } else {
                     log.error("Stopping schedule extraction due to taking too long. Start: {}, Now: {}", startDate, nowInHelsinki);
@@ -76,22 +79,26 @@ public class ScheduleService {
         } catch (final Exception e) {
             log.error("Error extracting schedules", e);
         } finally {
-            log.info("Ending extract");
+            log.info("Ending extract, tookMs={}", stopWatch.getTime());
         }
     }
 
     private void extractForDate(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
                                 final LocalDate date) throws InterruptedException {
-        final List<Schedule> allSchedules = new ArrayList<Schedule>(adhocSchedules);
-        allSchedules.addAll(regularSchedules);
 
-        final LocalDate finalDate = date;
         final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
-                () -> singleDayScheduleExtractService.extract(allSchedules, finalDate, true));
+                () -> singleDayScheduleExtractService.extract(adhocSchedules, regularSchedules, date, true));
 
-        if (!extractedTrains.isEmpty()) {
-            //Sleep for a while so clients do not choke on new json
-            Thread.sleep(60000 * 1);
+        throttle(extractedTrains.size());
+    }
+
+    /**
+     * Sleep for a while so clients do not choke on new json.
+     * Length of sleeping is dependant of the amount of trains extracted.
+     */
+    private void throttle(final int trainCount) throws InterruptedException {
+        if(trainCount > 0) {
+            Thread.sleep(trainCount > 400 ? 30000 : 10000);
         }
     }
 }
