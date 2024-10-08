@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -40,7 +41,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 
-@Tag(name = "live-trains", description = "Returns trains that have been recently active")
+@Tag(name = "live-trains",
+     description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 public class LiveTrainController extends ADataController {
@@ -63,11 +65,16 @@ public class LiveTrainController extends ADataController {
     private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @Operation(summary = "Returns active trains that are newer than {version}", ignoreJsonView = true)
+    @Operation(summary = "Returns active trains that are newer than {version}",
+               ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
     @RequestMapping(method = RequestMethod.GET)
-    public List<Train> getLiveTrainsByVersion(@Parameter(description = "version") @RequestParam(defaultValue = "0", name = "version") final Long version,
-                                              final HttpServletResponse response) {
+    public List<Train> getLiveTrainsByVersion(
+            @Parameter(description = "version")
+            @RequestParam(defaultValue = "0",
+                          name = "version")
+            final Long version,
+            final HttpServletResponse response) {
         final List<Object[]> liveTrains = trainRepository.findLiveTrains(version, 60 * 4);
         final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
@@ -81,23 +88,56 @@ public class LiveTrainController extends ADataController {
     @JsonView(TrainJsonView.LiveTrains.class)
     @Operation(summary = "Returns trains that travel trough {station}",
                ignoreJsonView = true,
-               responses = { @ApiResponse(responseCode = "200", content = @Content(
-                       mediaType = "application/json",
-                       array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
-    @RequestMapping(path = "/station/{station}", method = RequestMethod.GET)
-    public List<Train> getStationsTrains(@Parameter(description = "station") @PathVariable final String station,
-                                         @Parameter(description = "version") @RequestParam(required = false, defaultValue = "0") final long version,
-                                         @Parameter(description = "arrived_trains") @RequestParam(required = false, defaultValue = "5") final Integer arrived_trains,
-                                         @Parameter(description = "arriving_trains") @RequestParam(required = false, defaultValue = "5") final Integer arriving_trains,
-                                         @Parameter(description = "departed_trains") @RequestParam(required = false, defaultValue = "5") final Integer departed_trains,
-                                         @Parameter(description = "departing_trains") @RequestParam(required = false, defaultValue = "5") final Integer departing_trains,
-                                         @Parameter(description = "minutes_before_departure") @RequestParam(required = false) final Integer minutes_before_departure,
-                                         @Parameter(description = "minutes_after_departure") @RequestParam(required = false) final Integer minutes_after_departure,
-                                         @Parameter(description = "minutes_before_arrival") @RequestParam(required = false) final Integer minutes_before_arrival,
-                                         @Parameter(description = "minutes_after_arrival") @RequestParam(required = false) final Integer minutes_after_arrival,
-                                         @Parameter(description = "include_nonstopping") @RequestParam(required = false, defaultValue = "false") final Boolean include_nonstopping,
-                                         @Parameter(description = "train_categories") @RequestParam(required = false) final List<String> train_categories,
-                                         HttpServletResponse response) {
+               responses = { @ApiResponse(responseCode = "200",
+                                          content = @Content(
+                                                  mediaType = "application/json",
+                                                  array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
+    @RequestMapping(path = "/station/{station}",
+                    method = RequestMethod.GET)
+    public List<Train> getStationsTrains(
+            @Parameter(description = "station")
+            @PathVariable
+            final String station,
+            @Parameter(description = "version")
+            @RequestParam(required = false,
+                          defaultValue = "0")
+            final long version,
+            @Parameter(description = "arrived_trains")
+            @RequestParam(required = false,
+                          defaultValue = "5")
+            final Integer arrived_trains,
+            @Parameter(description = "arriving_trains")
+            @RequestParam(required = false,
+                          defaultValue = "5")
+            final Integer arriving_trains,
+            @Parameter(description = "departed_trains")
+            @RequestParam(required = false,
+                          defaultValue = "5")
+            final Integer departed_trains,
+            @Parameter(description = "departing_trains")
+            @RequestParam(required = false,
+                          defaultValue = "5")
+            final Integer departing_trains,
+            @Parameter(description = "Minutes before departure - all time limit parameters must be set for filtering to work")
+            @RequestParam(required = false)
+            final Integer minutes_before_departure,
+            @Parameter(description = "Minutes after departure - all time limit parameters must be set for filtering to work")
+            @RequestParam(required = false)
+            final Integer minutes_after_departure,
+            @Parameter(description = "Minutes before arrival - all time limit parameters must be set for filtering to work")
+            @RequestParam(required = false)
+            final Integer minutes_before_arrival,
+            @Parameter(description = "Minutes after arrival - all time limit parameters must be set for filtering to work")
+            @RequestParam(required = false)
+            final Integer minutes_after_arrival,
+            @Parameter(description = "include_nonstopping")
+            @RequestParam(required = false,
+                          defaultValue = "false")
+            final Boolean include_nonstopping,
+            @Parameter(description = "train_categories")
+            @RequestParam(required = false)
+            final List<String> train_categories,
+            final HttpServletResponse response) {
 
         final List<Long> trainCategoryIds = getTrainCategories(train_categories);
 
@@ -111,7 +151,9 @@ public class LiveTrainController extends ADataController {
         }
     }
 
-    private List<Long> getTrainCategories(@RequestParam(required = false) final List<String> trainCategories) {
+    private List<Long> getTrainCategories(
+            @RequestParam(required = false)
+            final List<String> trainCategories) {
         final List<Long> trainCategoryIds;
         if (trainCategories == null || trainCategories.isEmpty()) {
             trainCategoryIds = Lists.transform(trainCategoryRepository.findAllCached(), s -> s.id);
@@ -124,7 +166,8 @@ public class LiveTrainController extends ADataController {
         return trainCategoryIds;
     }
 
-    public List<Train> getLiveTrainsUsingQuantityFiltering(final String station, final long version, int arrivedTrains, final int arrivingTrains,
+    public List<Train> getLiveTrainsUsingQuantityFiltering(final String station, final long version, final int arrivedTrains,
+                                                           final int arrivingTrains,
                                                            final int departedTrains, final int departingTrains,
                                                            final Boolean includeNonstopping, final List<Long> trainCategoryIds,
                                                            final HttpServletResponse response) {
@@ -143,7 +186,6 @@ public class LiveTrainController extends ADataController {
             return Lists.newArrayList();
         }
     }
-
 
     public List<Train> getLiveTrainsUsingTimeFiltering(final String station, final long version, final Integer minutesBeforeDeparture,
                                                        final Integer minutesAfterDeparture, final Integer minutesBeforeArrival,
@@ -170,7 +212,7 @@ public class LiveTrainController extends ADataController {
         }
     }
 
-    private void assertParameters(final int arrived_trains, final int arriving_trains, final int departed_trains, int departing_trains) {
+    private void assertParameters(final int arrived_trains, final int arriving_trains, final int departed_trains, final int departing_trains) {
         final int sumOfLimits = arrived_trains + arriving_trains + departed_trains + departing_trains;
         if (sumOfLimits > maxTrainRetrieveRequest) {
             throw new TrainMaximumLimitException(maxTrainRetrieveRequest);
