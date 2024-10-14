@@ -10,7 +10,7 @@ services:
       - "3306:3306"
 
   db-init:
-    image: flyway/flyway:10.15-alpine
+    image: flyway/flyway:10.19-alpine
     volumes:
       - "../AvoinDataUpdater/src/main/resources/db/migration/:/flyway/sql"
       - "~/.m2:/root/.m2"
