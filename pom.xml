@@ -18,7 +18,6 @@
         <org.springdoc.version>2.6.0</org.springdoc.version>
         <com.google.guava.version>33.3.0-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
-        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <org.flywaydb.version>10.18.0</org.flywaydb.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
     </properties>

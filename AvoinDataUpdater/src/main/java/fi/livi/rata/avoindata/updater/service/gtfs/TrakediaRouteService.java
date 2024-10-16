@@ -42,8 +42,6 @@ public class TrakediaRouteService {
 
     @Cacheable("trakediaRoute")
     public List<Coordinate> createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
-//        log.info("Creating route from {} -> {}", startStop.stopCode, endStop.stopCode);
-
         final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
 

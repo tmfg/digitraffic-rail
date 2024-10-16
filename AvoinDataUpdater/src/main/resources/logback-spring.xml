@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="app" source="app.type" defaultValue="-"/>
+    <springProperty scope="context" name="activeProfiles" source="spring.profiles.active" defaultValue="-"/>
+
+    <!-- JSON logger for Cloudwatch -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"rail-${app}"}</customFields>
+            <provider class="fi.livi.digitraffic.common.logging.LoggerMessageKeyValuePairJsonProvider"/>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- Log message format -->
+        <encoder>
+            <!-- If needed to exclude stacktrace put %xEx{0} at the end of the pattern -->
+            <pattern>%d{ISO8601} %p&#9;[%t] - %c: %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- JSON logger for AWS -->
+    <springProfile name="aws">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON" />
+        </root>
+    </springProfile>
+
+    <!-- Standard log for others -->
+    <springProfile name="!aws">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+</configuration>

@@ -336,17 +336,17 @@ public class FeedMessageService {
     }
 
     public GtfsRealtime.FeedMessage createTripUpdateFeedMessage(final List<GTFSTrain> trains) {
-        log.info("creating TripUpdateFeedMessages for {} trains", trains.size());
+        log.info("creating TripUpdateFeedMessages trainCount={}", trains.size());
 
         final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
 
-        log.info("creating TripUpdateFeedMessages for {} train numbers", tripFinder.tripMap.entrySet().size());
+        log.info("creating TripUpdateFeedMessages trainNumberCount={}", tripFinder.tripMap.entrySet().size());
 
         final GtfsRealtime.FeedMessage message = createBuilderWithHeader()
                 .addAllEntity(createTUEntities(tripFinder, trains))
                 .build();
 
-        log.info("created TripUpdateFeedMessages for {} entities", message.getEntityCount());
+        log.info("created TripUpdateFeedMessages entityCount={}", message.getEntityCount());
 
         return message;
     }
