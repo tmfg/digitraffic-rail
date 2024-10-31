@@ -1,13 +1,7 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.tuple.Pair;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -16,12 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import fi.livi.digitraffic.common.cache.ExpiringCache;
 
 /**
  * infra-api version 0.4 or newer is needed!
@@ -45,16 +43,39 @@ public class TrakediaLiikennepaikkaService {
     @Value("${updater.raideosuudet.url}")
     private String raideosuudetUrl;
 
-    @Cacheable("liikennepaikkaCache")
+    private final ExpiringCache<Map<String, Double[]>> lpCache = new ExpiringCache<>(Duration.ofHours(12));
+    private final ExpiringCache<Map<String, JsonNode>> lpNodeCache = new ExpiringCache<>(Duration.ofHours(12));
+
     public Map<String, Double[]> getTrakediaLiikennepaikkas() {
-        final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
-        final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
-        final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
+        return lpCache.get(() -> {
+            final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
+            final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
+            final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
 
-        liikennepaikkaMap.putAll(liikennepaikkaOsaMap);
-        liikennepaikkaMap.putAll(raideosuusMap);
+            liikennepaikkaMap.putAll(liikennepaikkaOsaMap);
+            liikennepaikkaMap.putAll(raideosuusMap);
 
-        return liikennepaikkaMap;
+            // only populate cache if all maps have data
+            final var cacheable = !liikennepaikkaMap.isEmpty() && !liikennepaikkaOsaMap.isEmpty() && !raideosuusMap.isEmpty();
+
+            return new ExpiringCache.CacheResult<>(cacheable, liikennepaikkaMap);
+        });
+    }
+
+    private Double[] calculateCenterPoint(final JsonNode geometria) {
+        final List<Coordinate> coordinates = new ArrayList<>();
+
+        for(final JsonNode node : geometria.get(0)) {
+            coordinates.add(new Coordinate(node.get(0).asDouble(), node.get(1).asDouble()));
+        }
+
+        final LineString lineString = geometryFactory.createLineString(coordinates.toArray(new Coordinate[]{}));
+        final Point centroid = lineString.getCentroid();
+
+        // too much precision, remove decimals
+        final long x = (long)centroid.getX();
+        final long y = (long)centroid.getY();
+        return new Double[]{(double)x, (double)y};
     }
 
     private Map<String, Double[]> fetchRaideosuusMap(final String url) {
@@ -82,22 +103,6 @@ public class TrakediaLiikennepaikkaService {
         return raideosuusMap;
     }
 
-    private Double[] calculateCenterPoint(final JsonNode geometria) {
-        final List<Coordinate> coordinates = new ArrayList<>();
-
-        for(final JsonNode node : geometria.get(0)) {
-            coordinates.add(new Coordinate(node.get(0).asDouble(), node.get(1).asDouble()));
-        }
-
-        final LineString lineString = geometryFactory.createLineString(coordinates.toArray(new Coordinate[]{}));
-        final Point centroid = lineString.getCentroid();
-
-        // too much precision, remove decimals
-        final long x = (long)centroid.getX();
-        final long y = (long)centroid.getY();
-        return new Double[]{(double)x, (double)y};
-    }
-
     public Map<String, Double[]> fetchLiikennepaikkaMap(final String url) {
         final Map<String, Double[]> liikennepaikkaMap = new HashMap<>();
 
@@ -123,14 +128,17 @@ public class TrakediaLiikennepaikkaService {
         return liikennepaikkaMap;
     }
 
-    @Cacheable("trakediaLiikennepaikkaNodes")
     public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes() {
-        final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
-        final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
+        return lpNodeCache.get(() -> {
+            final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
+            final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
 
-        liikennepaikkaMap.putAll(liikennepaikanOsaMap);
+            liikennepaikkaMap.putAll(liikennepaikanOsaMap);
 
-        return liikennepaikkaMap;
+            // only populate cache if all maps have data
+            final var cacheable = !liikennepaikkaMap.isEmpty() && !liikennepaikanOsaMap.isEmpty();
+            return new ExpiringCache.CacheResult<>(cacheable, liikennepaikkaMap);
+        });
     }
 
     public Map<String, JsonNode> fetchNodeMap(final String url) {
