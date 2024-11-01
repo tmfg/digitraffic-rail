@@ -2,8 +2,6 @@ package fi.livi.rata.avoindata.updater.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.HttpHeaders;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import io.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
 import java.util.HashMap;
 
@@ -27,13 +24,11 @@ public class RipaService {
 
     private final String liikeInterfaceUrl;
 
-    private final ObjectMapper objectMapper;
     public RipaService(final WebClient ripaWebClient, final RestTemplate ripaRestTemplate,
-                        final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl, final ObjectMapper objectMapper) {
+                        final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl) {
         this.ripaWebClient = ripaWebClient;
         this.ripaRestTemplate = ripaRestTemplate;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
-        this.objectMapper = objectMapper;
     }
 
     public <ENTITYTYPE> ENTITYTYPE getFromRipa(final String path, final Class<ENTITYTYPE> clazz) {

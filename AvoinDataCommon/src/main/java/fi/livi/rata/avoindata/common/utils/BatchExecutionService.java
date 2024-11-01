@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.common.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -43,19 +42,19 @@ public class BatchExecutionService {
         for (final Future<List<ENTITY_TYPE>> streamFuture : streamFutures) {
             try {
                 entities.addAll(streamFuture.get());
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Error fetching entities", e);
             }
         }
 
         if (order != null) {
-            Collections.sort(entities, order);
+            entities.sort(order);
         }
 
         return entities;
     }
 
-    public <I> void consume(List<I> originalCollection, Consumer<List<I>> batchFunction) {
+    public <I> void consume(final List<I> originalCollection, final Consumer<List<I>> batchFunction) {
 
         final List<List<I>> partitions = Lists.partition(originalCollection, 1000);
         for (final List<I> partition : partitions) {

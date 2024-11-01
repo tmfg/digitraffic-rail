@@ -12,10 +12,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "SpatialTrafficRestrictionNotification", title = "SpatialTrafficRestrictionNotification", description = "Describes a restriction affecting the use of a railway infrastructure part")
 public class SpatialTrafficRestrictionNotificationDto extends TrafficRestrictionNotificationDto {
 
-    @Schema(description = "Approximate location", required = true)
+    @Schema(description = "Approximate location", requiredMode = Schema.RequiredMode.REQUIRED)
     public final GeometryDto<?> location;
 
-    @Schema(description = "Locations", required = true)
+    @Schema(description = "Locations", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Set<SpatialRumaLocationDto> locations;
 
     public SpatialTrafficRestrictionNotificationDto(

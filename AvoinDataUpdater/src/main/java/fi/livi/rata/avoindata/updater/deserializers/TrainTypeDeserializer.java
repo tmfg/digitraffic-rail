@@ -13,10 +13,10 @@ import java.io.IOException;
 public class TrainTypeDeserializer extends AEntityDeserializer<TrainType> {
     @Override
     public TrainType deserialize(final JsonParser jp,
-            final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
+            final DeserializationContext ctxt) throws IOException {
         final JsonNode node = jp.getCodec().readTree(jp);
 
-        TrainType trainType = new TrainType();
+        final TrainType trainType = new TrainType();
         trainType.name = node.get("nimi").textValue();
         trainType.id = node.get("id").asLong();
 

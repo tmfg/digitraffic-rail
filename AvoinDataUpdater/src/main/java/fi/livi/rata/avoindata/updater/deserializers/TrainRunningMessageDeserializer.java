@@ -17,17 +17,17 @@ import java.time.LocalDate;
 public class TrainRunningMessageDeserializer extends AEntityDeserializer<TrainRunningMessage> {
     @Override
     public TrainRunningMessage deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        TrainRunningMessage trainRunningMessage = new TrainRunningMessage();
+        final TrainRunningMessage trainRunningMessage = new TrainRunningMessage();
         trainRunningMessage.timestamp = getNodeAsDateTime(node.get("tapahtumaPvm"));
 
         final JsonNode id = node.get("id");
         trainRunningMessage.id = id.asLong();
 
         final LocalDate departureDate = getDepartureDate(node);
-        JsonNode junanumero = node.get("junanumero");
+        final JsonNode junanumero = node.get("junanumero");
         final String trainNumber = junanumero.textValue();
         trainRunningMessage.trainId = new StringTrainId(trainNumber, departureDate);
 
@@ -47,7 +47,7 @@ public class TrainRunningMessageDeserializer extends AEntityDeserializer<TrainRu
     }
 
     private String getStationString(final JsonNode node, final String fieldName) {
-        String liikennepaikka = getNullableString(node, fieldName);
+        final String liikennepaikka = getNullableString(node, fieldName);
 
         if (liikennepaikka == null) {
             return null;
@@ -59,7 +59,7 @@ public class TrainRunningMessageDeserializer extends AEntityDeserializer<TrainRu
     }
 
     private void setType(final JsonNode node, final TrainRunningMessage trainRunningMessage) {
-        String raideosuudenVarautuminen = node.get("raideosuudenVarautuminen").asText();
+        final String raideosuudenVarautuminen = node.get("raideosuudenVarautuminen").asText();
         if (raideosuudenVarautuminen.equals("O")) {
             trainRunningMessage.type = TrainRunningMessageTypeEnum.OCCUPY;
         } else if (raideosuudenVarautuminen.equals("R")) {
@@ -70,7 +70,7 @@ public class TrainRunningMessageDeserializer extends AEntityDeserializer<TrainRu
     }
 
     private LocalDate getDepartureDate(final JsonNode node) {
-        JsonNode lahtopvm = node.get("lahtopvm");
+        final JsonNode lahtopvm = node.get("lahtopvm");
         if (lahtopvm != null && !Strings.isNullOrEmpty(lahtopvm.textValue())) {
             final LocalDate departureDate = getNodeAsLocalDate(lahtopvm);
             return departureDate;

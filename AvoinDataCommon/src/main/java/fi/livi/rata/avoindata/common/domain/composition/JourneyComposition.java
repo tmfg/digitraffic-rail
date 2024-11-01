@@ -3,8 +3,6 @@ package fi.livi.rata.avoindata.common.domain.composition;
 import java.time.LocalDate;
 import java.util.Collection;
 
-import org.hibernate.annotations.Type;
-
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 
 /**
@@ -34,10 +32,10 @@ public class JourneyComposition {
 
     public JourneyComposition(final Operator operator, final Long trainNumber, final LocalDate departureDate,
                               final long trainCategoryId, final long trainTypeId, final int totalLength, final int maximumSpeed, final long version,
-                              final Collection<Wagon> wagons, final Collection<Locomotive> locomotives, JourneyCompositionRow startStation,
-                              JourneyCompositionRow endStation, long id,
-                              Long attapId,
-                              Long saapAttapId
+                              final Collection<Wagon> wagons, final Collection<Locomotive> locomotives, final JourneyCompositionRow startStation,
+                              final JourneyCompositionRow endStation, final long id,
+                              final Long attapId,
+                              final Long saapAttapId
 
     ) {
         this.operator = operator;

@@ -13,10 +13,10 @@ import java.io.IOException;
 public class OperatorTrainNumberDeserializer extends AEntityDeserializer<OperatorTrainNumber> {
     @Override
     public OperatorTrainNumber deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        OperatorTrainNumber operatorTrainNumber = new OperatorTrainNumber();
+        final OperatorTrainNumber operatorTrainNumber = new OperatorTrainNumber();
 
         operatorTrainNumber.id = node.get("id").asLong();
         operatorTrainNumber.bottomLimit = node.get("alaraja").asInt();

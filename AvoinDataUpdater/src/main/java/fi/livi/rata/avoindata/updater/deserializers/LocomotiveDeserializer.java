@@ -17,10 +17,10 @@ public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
     private Set<String> typesForWhichVehicleNumberPublishingIsAllowed;
 
     @Override
-    public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
+    public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException {
         final JsonNode node = jp.getCodec().readTree(jp);
 
-        Locomotive locomotive = new Locomotive();
+        final Locomotive locomotive = new Locomotive();
         locomotive.location = node.get("sijainti").asInt();
         locomotive.powerTypeAbbreviation = node.get("vetovoimalajilyhenne").asText();
         locomotive.locomotiveType = node.get("tyyppi").asText();

@@ -21,8 +21,7 @@ import java.util.stream.Collectors;
 public class ParameterValidationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
-        if (handler instanceof HandlerMethod) {
-            final HandlerMethod handlerMethod = (HandlerMethod) handler;
+        if (handler instanceof final HandlerMethod handlerMethod) {
             final MethodParameter[] methodParameters = handlerMethod.getMethodParameters();
             final Set<String> methodParameterNames = Arrays.stream(methodParameters).map(MethodParameter::getParameterName).collect(
                     Collectors.toSet());

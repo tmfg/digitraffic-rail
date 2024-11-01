@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "IdentifierRange", title = "IdentifierRange", description = "Place of work: between two track elements or a single track element")
 public class IdentifierRangeDto {
 
-    @Schema(description = "Notification identifier", required = true)
+    @Schema(description = "Notification identifier", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public final String notificationId;
 

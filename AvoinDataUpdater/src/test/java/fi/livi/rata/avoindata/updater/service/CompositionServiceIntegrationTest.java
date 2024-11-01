@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +57,7 @@ public class CompositionServiceIntegrationTest extends BaseTest {
 
         final List<JourneySection> journeySections = new ArrayList<>(composition.journeySections);
 
-        Collections.sort(journeySections, Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime));
+        journeySections.sort(Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime));
 
         assertThat("Journey sections should be ordered according to scheduled time",
                 composition.journeySections, contains(journeySections.toArray()));

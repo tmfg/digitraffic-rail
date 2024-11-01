@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import javax.annotation.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
@@ -162,7 +162,7 @@ public class TimeTableRow {
     public TimeTableRow(final String stationShortCode, final int stationcUICCode, final String countryCode, final TimeTableRowType type,
                         final String commercialTrack, final boolean cancelled, final ZonedDateTime scheduledTime, final ZonedDateTime liveEstimateTime,
                         final ZonedDateTime actualTime, final Long differenceInMinutes, final long attapId, final long trainNumber,
-                        final LocalDate departureDate, final Boolean commercialStop, final long version, Set<TrainReady> trainReadies, EstimateSourceEnum estimateSource, ZonedDateTime commercialTrackChanged) {
+                        final LocalDate departureDate, final Boolean commercialStop, final long version, final Set<TrainReady> trainReadies, final EstimateSourceEnum estimateSource, final ZonedDateTime commercialTrackChanged) {
         id = new TimeTableRowId(attapId, departureDate, trainNumber);
         this.station = new StationEmbeddable(stationShortCode, stationcUICCode, countryCode);
         this.type = type;
@@ -184,9 +184,9 @@ public class TimeTableRow {
         return String.format("%s: %s (%s)", scheduledTime, station.stationShortCode, type);
     }
 
-    public static TimeTableRowId getIdDirect(TimeTableRow timeTableRow) {
+    public static TimeTableRowId getIdDirect(final TimeTableRow timeTableRow) {
         if (timeTableRow instanceof HibernateProxy) {
-            LazyInitializer lazyInitializer = ((HibernateProxy) timeTableRow).getHibernateLazyInitializer();
+            final LazyInitializer lazyInitializer = ((HibernateProxy) timeTableRow).getHibernateLazyInitializer();
             if (lazyInitializer.isUninitialized()) {
                 return (TimeTableRowId) lazyInitializer.getIdentifier();
             }
@@ -200,7 +200,7 @@ public class TimeTableRow {
     }
 
 
-    public void setCommercialTrackChanged(ZonedDateTime value) {
+    public void setCommercialTrackChanged(final ZonedDateTime value) {
         commercialTrackChanged = value;
     }
 }

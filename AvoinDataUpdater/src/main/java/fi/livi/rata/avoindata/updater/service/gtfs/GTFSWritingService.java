@@ -15,7 +15,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +45,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 
 @Service
 public class GTFSWritingService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Value("${gtfs.dir:}")
     private String gtfsDir;
@@ -68,7 +67,7 @@ public class GTFSWritingService {
         gtfs.created = dateProvider.nowInHelsinki();
         gtfs.fileName = fileName;
 
-        gtfsRepository.persist(Arrays.asList(gtfs));
+        gtfsRepository.persist(List.of(gtfs));
     }
 
     @Transactional
@@ -230,8 +229,6 @@ public class GTFSWritingService {
             for (final E entity : entities) {
                 writer.write(converter.apply(entity) + "\n");
             }
-        } catch (final FileNotFoundException e1) {
-            log.error("Error writing GTFS file", e1);
         } catch (final IOException e1) {
             log.error("Error writing GTFS file", e1);
         }

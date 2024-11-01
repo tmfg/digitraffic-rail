@@ -56,7 +56,7 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
                     Assertions.assertEquals(delay, stu.getDeparture().getDelay(), String.format("Row %d(%s) departure", tuIndex, stu.getStopId()));
                 }
 
-                if(arrival == false) {
+                if(!arrival) {
                     tuIndex++;
                 }
 

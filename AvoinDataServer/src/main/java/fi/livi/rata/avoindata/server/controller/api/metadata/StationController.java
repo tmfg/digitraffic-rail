@@ -24,11 +24,11 @@ public class StationController extends AMetadataController {
     @Autowired
     private GeoJsonFormatter geoJsonFormatter;
 
-    private Function<Station, Double[]> converter = s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()};
+    private static final Function<Station, Double[]> converter = s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()};
 
     @Operation(summary = "Returns list of stations")
     @RequestMapping(value = "stations", method = RequestMethod.GET)
-    public List<Station> getStations(HttpServletResponse response) {
+    public List<Station> getStations(final HttpServletResponse response) {
         final List<Station> list = stationRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
         setCache(response, list);
         return list;
@@ -36,7 +36,7 @@ public class StationController extends AMetadataController {
 
     @Operation(summary = "Returns list of stations in geojson format")
     @RequestMapping(value = "stations.geojson", method = RequestMethod.GET, produces = "application/vnd.geo+json")
-    public FeatureCollection getStationsAsGeoJson(HttpServletResponse response) {
+    public FeatureCollection getStationsAsGeoJson(final HttpServletResponse response) {
         return geoJsonFormatter.wrapAsGeoJson(this.getStations(response), converter);
     }
 }

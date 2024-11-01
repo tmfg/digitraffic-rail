@@ -20,10 +20,10 @@ public class ScheduleRowDeserializer extends AEntityDeserializer<ScheduleRow> {
 
     @Override
     public ScheduleRow deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        ScheduleRow scheduleRow = new ScheduleRow();
+        final ScheduleRow scheduleRow = new ScheduleRow();
 
         scheduleRow.id = node.get("id").asLong();
         final StationEmbeddable stationEmbeddable = new StationEmbeddable();

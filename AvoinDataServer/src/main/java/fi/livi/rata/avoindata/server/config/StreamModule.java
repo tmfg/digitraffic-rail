@@ -41,17 +41,17 @@ public class StreamModule extends SimpleModule {
 
 
          @Override
-         public JavaType modifyType(JavaType type, Type jdkType, TypeBindings context, TypeFactory typeFactory) {
+         public JavaType modifyType(final JavaType type, final Type jdkType, final TypeBindings context, final TypeFactory typeFactory) {
 
          if (type.isReferenceType() || type.isContainerType()) {
          return type;
          }
 
-         Class<?> raw = type.getRawClass();
+         final Class<?> raw = type.getRawClass();
 
          if (Stream.class.isAssignableFrom(raw)) {
 
-         JavaType[] params = typeFactory.findTypeParameters(type, Stream.class);
+         final JavaType[] params = typeFactory.findTypeParameters(type, Stream.class);
 
          if (params == null || params.length == 0) {
 
@@ -102,7 +102,7 @@ public class StreamModule extends SimpleModule {
          * @param typeSer the type ser
          * @return true, if successful
          */
-        private static final boolean usesStaticTyping(final SerializationConfig config, final BeanDescription beanDesc,
+        private static boolean usesStaticTyping(final SerializationConfig config, final BeanDescription beanDesc,
                 final TypeSerializer typeSer) {
             /*
              * 16-Aug-2010, tatu: If there is a (value) type serializer, we can not force
@@ -178,7 +178,7 @@ public class StreamModule extends SimpleModule {
                                              final SerializerProvider provider) throws IOException {
 
                 // Stream needs to be closed to prevent resource leaks.
-                try (Stream<?> stream = value) {
+                try (final Stream<?> stream = value) {
                     provider.findValueSerializer(Iterator.class, null)
                             .serialize(value.iterator(), gen, provider);
                 }

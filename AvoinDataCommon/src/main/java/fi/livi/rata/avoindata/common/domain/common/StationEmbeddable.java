@@ -5,7 +5,7 @@ import jakarta.persistence.Embeddable;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(required = true)
+@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 @Embeddable
 public class StationEmbeddable {
     @Column
@@ -32,11 +32,9 @@ public class StationEmbeddable {
 
     @SuppressWarnings("ControlFlowStatementWithoutBraces")
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof StationEmbeddable)) return false;
-
-        StationEmbeddable station = (StationEmbeddable) o;
+        if (!(o instanceof final StationEmbeddable station)) return false;
 
         if (stationUICCode != station.stationUICCode) return false;
         if (!countryCode.equals(station.countryCode)) return false;

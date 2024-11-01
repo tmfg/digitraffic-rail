@@ -96,7 +96,7 @@ public class TrakediaRouteService {
         final Coordinate startStopPoint = new Coordinate(startProjCoordinate.x, startProjCoordinate.y);
         final Coordinate endStopPoint = new Coordinate(endProjCoordinate.x, endProjCoordinate.y);
 
-        final List<Coordinate> coordinates = lines.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
+        final List<Coordinate> coordinates = lines.stream().flatMap(Collection::stream).collect(Collectors.toList());
 
         final List<Coordinate> startPoints = this.nearestPointsService.kClosest(coordinates, startStopPoint, 20);
         final List<Coordinate> endPoints = this.nearestPointsService.kClosest(coordinates, endStopPoint, 20);

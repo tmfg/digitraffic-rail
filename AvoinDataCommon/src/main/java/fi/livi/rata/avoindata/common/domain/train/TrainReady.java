@@ -58,8 +58,4 @@ public class TrainReady {
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @Schema(description = "When was the permission given")
     public ZonedDateTime timestamp;
-
-    //    @OneToOne(mappedBy = "trainReady")
-    //    @JsonIgnore
-    //    public TimeTableRow timeTableRow;
 }

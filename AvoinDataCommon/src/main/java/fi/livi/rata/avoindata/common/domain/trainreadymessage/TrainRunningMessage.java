@@ -16,9 +16,10 @@ import org.hibernate.annotations.TimeZoneStorageType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import javax.annotation.Nonnull;
 
 @Entity
 @Table(indexes = {@Index(name = "tr20_departureDate_trainNumber", columnList = "departureDate,trainNumber"), @Index(name = "tr20_version", columnList = "version")})
@@ -33,7 +34,7 @@ public class TrainRunningMessage {
     public StringTrainId trainId;
 
     @Column(insertable = false,updatable = false)
-    @NonNull
+    @Nonnull
     @JsonIgnore
     public LocalDate virtualDepartureDate;
 

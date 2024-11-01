@@ -4,38 +4,34 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import jakarta.persistence.Column;
 
-import org.hibernate.annotations.Type;
-
-import edu.umd.cs.findbugs.annotations.NonNull;
+import javax.annotation.Nonnull;
 
 public class TimeTableRowId implements Serializable {
 
-    @NonNull
+    @Nonnull
     @Column
     public Long attapId;
 
-    @NonNull
+    @Nonnull
     @Column
     public Long trainNumber;
-    @NonNull
+    @Nonnull
     @Column
     public LocalDate departureDate;
 
     protected TimeTableRowId() {
     }
 
-    public TimeTableRowId(long attapId, LocalDate departureDate, long trainNumber) {
+    public TimeTableRowId(final long attapId, final LocalDate departureDate, final long trainNumber) {
         this.trainNumber = trainNumber;
         this.departureDate = departureDate;
         this.attapId = attapId;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof TimeTableRowId)) return false;
-
-        TimeTableRowId that = (TimeTableRowId) o;
+        if (!(o instanceof final TimeTableRowId that)) return false;
 
         if (!attapId.equals(that.attapId)) return false;
         if (!departureDate.equals(that.departureDate)) return false;

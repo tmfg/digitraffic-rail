@@ -14,7 +14,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Transient;
 
-import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,16 +30,16 @@ public class CategoryCode extends ACauseCode {
     public String oid;
 
     @JsonView({CategoryCodeJsonView.OnlyCauseCategoryCodes.class, CategoryCodeJsonView.All.class})
-    @Schema(description = "Official code",example = "E",required = true)
+    @Schema(description = "Official code",example = "E", requiredMode = Schema.RequiredMode.REQUIRED)
     public String categoryCode;
 
     @JsonView(CategoryCodeJsonView.All.class)
-    @Schema(description = "Official name",example = "Etuajassakulku",required = true)
+    @Schema(description = "Official name",example = "Etuajassakulku",requiredMode = Schema.RequiredMode.REQUIRED)
     public String categoryName;
 
     @Column
     @JsonView(CategoryCodeJsonView.All.class)
-    @Schema(description = "Start date when this code is used",required = true)
+    @Schema(description = "Start date when this code is used", requiredMode = Schema.RequiredMode.REQUIRED)
     public LocalDate validFrom;
 
     @Column

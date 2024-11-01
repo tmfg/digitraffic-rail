@@ -39,10 +39,10 @@ public class Composition  {
     public Operator operator;
 
     @Transient
-    @Schema(example = "Long-distance", required = true)
+    @Schema(example = "Long-distance", requiredMode = Schema.RequiredMode.REQUIRED)
     public String trainCategory;
     @Transient
-    @Schema(example = "IC", required = true)
+    @Schema(example = "IC", requiredMode = Schema.RequiredMode.REQUIRED)
     public String trainType;
     @Column
     @JsonIgnore
@@ -72,11 +72,9 @@ public class Composition  {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof Composition)) return false;
-
-        Composition that = (Composition) o;
+        if (!(o instanceof final Composition that)) return false;
 
         if (!id.equals(that.id)) return false;
 

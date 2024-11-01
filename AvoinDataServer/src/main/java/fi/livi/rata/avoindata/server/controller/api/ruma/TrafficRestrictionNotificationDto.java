@@ -12,19 +12,19 @@ public class TrafficRestrictionNotificationDto {
 
     public final TrafficRestrictionNotification.TrafficRestrictionNotificationId id;
 
-    @Schema(description = "State", required = true)
+    @Schema(description = "State", requiredMode = Schema.RequiredMode.REQUIRED)
     public final TrafficRestrictionNotificationState state;
 
-    @Schema(description = "Which organization created this notification", required = true)
+    @Schema(description = "Which organization created this notification", requiredMode = Schema.RequiredMode.REQUIRED)
     public final String organization;
 
-    @Schema(description = "When this notification was created", required = true)
+    @Schema(description = "When this notification was created", requiredMode = Schema.RequiredMode.REQUIRED)
     public final ZonedDateTime created;
 
     @Schema(description = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @Schema(description = "Limitation type", required = true)
+    @Schema(description = "Limitation type", requiredMode = Schema.RequiredMode.REQUIRED)
     public final TrafficRestrictionType limitation;
 
     @Schema(description = "Track work notification identifier")
@@ -33,7 +33,7 @@ public class TrafficRestrictionNotificationDto {
     @Schema(description = "Max axle weight, required if limitation type is max axle weight")
     public final Double axleWeightMax;
 
-    @Schema(description = "Start datetime", required = true)
+    @Schema(description = "Start datetime", requiredMode = Schema.RequiredMode.REQUIRED)
     public final ZonedDateTime startDate;
 
     @Schema(description = "End datetime")
@@ -68,12 +68,12 @@ public class TrafficRestrictionNotificationDto {
         this.finished = finished;
     }
 
-    @Schema(description = "Id", required = true)
+    @Schema(description = "Id", requiredMode = Schema.RequiredMode.REQUIRED)
     public String getId() {
         return id.id;
     }
 
-    @Schema(description = "Version", required = true)
+    @Schema(description = "Version", requiredMode = Schema.RequiredMode.REQUIRED)
     public Long getVersion() {
         return id.version;
     }

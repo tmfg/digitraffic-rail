@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class HealthcheckController {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/healthcheck")
     @ResponseBody
     public boolean healthcheck() {
-        logger.debug("Healthcheck");
+        log.debug("Healthcheck");
         return true;
     }
 }

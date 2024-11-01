@@ -16,7 +16,7 @@ public class TimeTablePeriodFactory {
     private TimeTablePeriodRepository timeTablePeriodRepository;
 
     public TimeTablePeriod create() {
-        TimeTablePeriod timeTablePeriod = new TimeTablePeriod();
+        final TimeTablePeriod timeTablePeriod = new TimeTablePeriod();
 
         timeTablePeriod.capacityAllocationConfirmDate = LocalDate.of(2018, 1, 1);
         timeTablePeriod.capacityRequestSubmissionDeadline = LocalDate.of(2018, 2, 2);
@@ -37,11 +37,11 @@ public class TimeTablePeriodFactory {
         return timeTablePeriod;
     }
 
-    private TimeTablePeriodChangeDate createTimeTablePeriodChangeDate(int month, TimeTablePeriod timeTablePeriod) {
-        TimeTablePeriodChangeDate timeTablePeriodChangeDate = new TimeTablePeriodChangeDate();
+    private TimeTablePeriodChangeDate createTimeTablePeriodChangeDate(final int month, final TimeTablePeriod timeTablePeriod) {
+        final TimeTablePeriodChangeDate timeTablePeriodChangeDate = new TimeTablePeriodChangeDate();
         timeTablePeriodChangeDate.capacityRequestSubmissionDeadline = LocalDate.of(2018, month, 6);
         timeTablePeriodChangeDate.effectiveFrom = LocalDate.of(2018, month, 7);
-        timeTablePeriodChangeDate.id = Long.valueOf(month);
+        timeTablePeriodChangeDate.id = (long) month;
 
         timeTablePeriodChangeDate.timeTablePeriod = timeTablePeriod;
 

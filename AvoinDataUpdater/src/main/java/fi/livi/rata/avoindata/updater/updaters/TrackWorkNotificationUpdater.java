@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
@@ -61,15 +61,15 @@ public class TrackWorkNotificationUpdater {
 
     @Scheduled(fixedDelay = 300000) // every 5 minutes
     protected void update() {
-        if (StringUtils.isEmpty(liikeInterfaceUrl)) {
+        if (ObjectUtils.isEmpty(liikeInterfaceUrl)) {
             return;
         }
 
-        RemoteRumaNotificationStatus[] statusesResp =
+        final RemoteRumaNotificationStatus[] statusesResp =
                 remoteTrackWorkNotificationService.getStatuses();
 
         if (statusesResp != null && statusesResp.length > 0) {
-            Map<String, Long> statuses = Arrays.stream(statusesResp)
+            final Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .filter(twn -> !ignoredTwns.contains(twn.id))
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             if (statuses.size() == 0) {
@@ -77,7 +77,7 @@ public class TrackWorkNotificationUpdater {
                 return;
             }
             log.info("Received {} track work notification statuses", statuses.size());
-            List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
+            final List<LocalRumaNotificationStatus> localTrackWorkNotifications = localTrackWorkNotificationService.getLocalTrackWorkNotifications(statuses.keySet());
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
@@ -86,10 +86,10 @@ public class TrackWorkNotificationUpdater {
         }
     }
 
-    private void addNewTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
-        Collection<String> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
+    private void addNewTrackWorkNotifications(final Map<String, Long> statuses, final List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
+        final Collection<String> newTrackWorkNotifications = CollectionUtils.disjunction(localTrackWorkNotifications.stream().map(LocalRumaNotificationStatus::getId).collect(Collectors.toSet()), statuses.keySet());
 
-        for (Map.Entry<String, Long> e : statuses.entrySet()) {
+        for (final Map.Entry<String, Long> e : statuses.entrySet()) {
             if (newTrackWorkNotifications.contains(e.getKey())) {
                 updateTrackWorkNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
@@ -97,8 +97,8 @@ public class TrackWorkNotificationUpdater {
         log.info("Added {} new track work notifications", newTrackWorkNotifications.size());
     }
 
-    private void updateTrackWorkNotifications(Map<String, Long> statuses, List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
-        int updatedCount = localTrackWorkNotifications.stream()
+    private void updateTrackWorkNotifications(final Map<String, Long> statuses, final List<LocalRumaNotificationStatus> localTrackWorkNotifications) {
+        final int updatedCount = localTrackWorkNotifications.stream()
                 .map(localTrackWorkNotification -> updateNotificationVersions(localTrackWorkNotification, statuses))
                 .filter(Boolean::booleanValue)
                 .mapToInt(x -> 1)
@@ -106,12 +106,12 @@ public class TrackWorkNotificationUpdater {
         log.info("Updated {} track work notifications", updatedCount);
     }
 
-    private boolean updateNotificationVersions(LocalRumaNotificationStatus localTrackWorkNotification, Map<String, Long> statuses) {
+    private boolean updateNotificationVersions(final LocalRumaNotificationStatus localTrackWorkNotification, final Map<String, Long> statuses) {
         if (!statuses.containsKey(localTrackWorkNotification.id)) {
             return false;
         }
-        long remoteVersion = statuses.get(localTrackWorkNotification.id);
-        SortedSet<Long> versions = new TreeSet<>();
+        final long remoteVersion = statuses.get(localTrackWorkNotification.id);
+        final SortedSet<Long> versions = new TreeSet<>();
         if (remoteVersion > localTrackWorkNotification.maxVersion) {
             LongStream.rangeClosed(localTrackWorkNotification.maxVersion + 1, remoteVersion).forEach(versions::add);
         }
@@ -121,22 +121,22 @@ public class TrackWorkNotificationUpdater {
         return false;
     }
 
-    private boolean updateTrackWorkNotification(String id, SortedSet<Long> versions) {
+    private boolean updateTrackWorkNotification(final String id, final SortedSet<Long> versions) {
         try {
             log.debug("Updating TrackWorkNotification {}, required versions {}", id, versions);
-            List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
+            final List<TrackWorkNotification> trackWorkNotificationVersions = remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(id, versions.stream().mapToLong(Long::longValue));
             log.debug("Got {} versions for TrackWorkNotification {}", trackWorkNotificationVersions.size(), id);
 
-            List<TrackWorkNotification> versionsToBeSaved = new ArrayList<>();
+            final List<TrackWorkNotification> versionsToBeSaved = new ArrayList<>();
 
-            for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+            for (final TrackWorkNotification twn : trackWorkNotificationVersions) {
 
                 if (twn.state == TrackWorkNotificationState.DRAFT) {
                     continue;
                 }
 
                 if (twn.state == TrackWorkNotificationState.FINISHED) {
-                    boolean previousVersionIsDraft = previousVersionIsDraft(twn.id, trackWorkNotificationVersions);
+                    final boolean previousVersionIsDraft = previousVersionIsDraft(twn.id, trackWorkNotificationVersions);
                     if (previousVersionIsDraft) {
                         continue;
                     }
@@ -145,9 +145,9 @@ public class TrackWorkNotificationUpdater {
                 twn.locationMap = wgs84ConversionService.liviToWgs84Jts(twn.locationMap);
                 twn.locationSchema = wgs84ConversionService.liviToWgs84Jts(twn.locationSchema);
 
-                for (TrackWorkPart twp : twn.trackWorkParts) {
+                for (final TrackWorkPart twp : twn.trackWorkParts) {
 
-                    for (RumaLocation rl : twp.locations) {
+                    for (final RumaLocation rl : twp.locations) {
                         try {
                             if (rl.locationMap != null) {
                                 rl.locationMap = wgs84ConversionService.liviToWgs84Jts(rl.locationMap);
@@ -155,12 +155,12 @@ public class TrackWorkNotificationUpdater {
                             if (rl.locationSchema != null) {
                                 rl.locationSchema = wgs84ConversionService.liviToWgs84Jts(rl.locationSchema);
                             }
-                        } catch (Exception e) {
-                            String operatingpointOrSectionId = rl.operatingPointId != null ? rl.operatingPointId : rl.sectionBetweenOperatingPointsId;
+                        } catch (final Exception e) {
+                            final String operatingpointOrSectionId = rl.operatingPointId != null ? rl.operatingPointId : rl.sectionBetweenOperatingPointsId;
                             log.error("Error while converting coordinates for operating point or section " + operatingpointOrSectionId, e);
                             throw e;
                         }
-                        for (IdentifierRange ir : rl.identifierRanges) {
+                        for (final IdentifierRange ir : rl.identifierRanges) {
                             try {
                                 if (ir.elementId != null && RumaUpdaterUtil.elementIsVaihde(ir.elementId)) {
                                     ir.locationMap = wgs84ConversionService.liviToWgs84Jts(RumaUpdaterUtil.getPointFromGeometryCollection((GeometryCollection) ir.locationMap, twn.id.id));
@@ -168,7 +168,7 @@ public class TrackWorkNotificationUpdater {
                                     ir.locationMap = wgs84ConversionService.liviToWgs84Jts(ir.locationMap);
                                 }
                                 ir.locationSchema = wgs84ConversionService.liviToWgs84Jts(ir.locationSchema);
-                            } catch (Exception e) {
+                            } catch (final Exception e) {
                                 log.error("Error while converting coordinates for identifier range: " + ir.toString(), e);
                                 throw e;
                             }
@@ -185,16 +185,16 @@ public class TrackWorkNotificationUpdater {
                 localTrackWorkNotificationService.saveAll(versionsToBeSaved);
                 return true;
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Could not update track work notification " + id, e);
         }
         return false;
     }
 
-    private boolean previousVersionIsDraft(TrackWorkNotification.TrackWorkNotificationId id, List<TrackWorkNotification> trackWorkNotificationVersions) {
-        long previousVersion = id.version - 1;
+    private boolean previousVersionIsDraft(final TrackWorkNotification.TrackWorkNotificationId id, final List<TrackWorkNotification> trackWorkNotificationVersions) {
+        final long previousVersion = id.version - 1;
 
-        for (TrackWorkNotification twn : trackWorkNotificationVersions) {
+        for (final TrackWorkNotification twn : trackWorkNotificationVersions) {
             if (twn.id.id.equals(id.id) && twn.id.version.equals(previousVersion) && twn.state == TrackWorkNotificationState.DRAFT) {
                 return true;
             }

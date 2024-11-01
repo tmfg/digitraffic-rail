@@ -6,26 +6,27 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Comparator;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 
-@Schema(required = true)
+import javax.annotation.Nonnull;
+
+@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 public class TrainId implements Serializable, Comparable {
-    @NonNull
+    @Nonnull
     @Column
-    @Schema(description = "Identifies the train inside a single departure date", example = "1", required = true)
+    @Schema(description = "Identifies the train inside a single departure date", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     public Long trainNumber;
-    @NonNull
+    @Nonnull
     @Column
-    @Schema(description = "Date of the train's first departure", required = true, example = "2017-12-01")
+    @Schema(description = "Date of the train's first departure", requiredMode = Schema.RequiredMode.REQUIRED, example = "2017-12-01")
     public LocalDate departureDate;
 
     protected TrainId() {
     }
 
-    public TrainId(@NonNull long trainNumber, @NonNull LocalDate departureDate) {
+    public TrainId(@Nonnull final long trainNumber, @Nonnull final LocalDate departureDate) {
         this.trainNumber = trainNumber;
         this.departureDate = departureDate;
     }
@@ -41,11 +42,9 @@ public class TrainId implements Serializable, Comparable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof TrainId)) return false;
-
-        TrainId trainId = (TrainId) o;
+        if (!(o instanceof final TrainId trainId)) return false;
 
         if (!departureDate.equals(trainId.departureDate)) return false;
         if (!trainNumber.equals(trainId.trainNumber)) return false;

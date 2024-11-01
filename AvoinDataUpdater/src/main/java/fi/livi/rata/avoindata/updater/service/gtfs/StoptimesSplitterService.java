@@ -24,7 +24,7 @@ public class StoptimesSplitterService {
         public String stationToSplit;
         public List<String> stationsThatMustBePresent;
 
-        public SplittingLogic(String stationToSplit, List<String> stationsThatMustBePresent) {
+        public SplittingLogic(final String stationToSplit, final List<String> stationsThatMustBePresent) {
             this.stationToSplit = stationToSplit;
             this.stationsThatMustBePresent = stationsThatMustBePresent;
         }
@@ -89,17 +89,17 @@ public class StoptimesSplitterService {
         this.createSplittingLogic(List.of("VNAR", "VNA", "VNAT"));  // Russia                               Correct route
     }
 
-    public List<StopTime> splitStoptimes(Trip trip) {
-        List<StopTime> actualStops = new ArrayList<>();
-        StopTime firstStop = trip.stopTimes.get(0);
-        StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
+    public List<StopTime> splitStoptimes(final Trip trip) {
+        final List<StopTime> actualStops = new ArrayList<>();
+        final StopTime firstStop = trip.stopTimes.get(0);
+        final StopTime lastStop = trip.stopTimes.get(trip.stopTimes.size() - 1);
 
         if (!this.shouldSplit(trip, firstStop)) {
             actualStops.add(firstStop);
         }
 
         for (int i = 0; i < trip.stopTimes.size(); i++) {
-            StopTime current = trip.stopTimes.get(i);
+            final StopTime current = trip.stopTimes.get(i);
 
             if (this.shouldSplit(trip, current)) {
                 actualStops.add(current);
@@ -113,12 +113,12 @@ public class StoptimesSplitterService {
         return actualStops;
     }
 
-    private boolean shouldSplit(Trip trip, StopTime stopTime) {
-        List<SplittingLogic> splittingLogic = this.splittingLogics.get(stopTime.stopId);
+    private boolean shouldSplit(final Trip trip, final StopTime stopTime) {
+        final List<SplittingLogic> splittingLogic = this.splittingLogics.get(stopTime.stopId);
         if (splittingLogic != null) {
-            List<Integer> indexes = new ArrayList<>();
+            final List<Integer> indexes = new ArrayList<>();
 
-            SplittingLogic matchingLogic = getMatchingSplittingLogic(trip, splittingLogic, indexes);
+            final SplittingLogic matchingLogic = getMatchingSplittingLogic(trip, splittingLogic, indexes);
 
             if (matchingLogic == null) {
                 return false;
@@ -134,13 +134,13 @@ public class StoptimesSplitterService {
         }
     }
 
-    private SplittingLogic getMatchingSplittingLogic(Trip trip, List<SplittingLogic> candidates, List<Integer> indexes) {
+    private SplittingLogic getMatchingSplittingLogic(final Trip trip, final List<SplittingLogic> candidates, final List<Integer> indexes) {
         SplittingLogic matchingLogic = null;
 
-        for (SplittingLogic logic : candidates) {
+        for (final SplittingLogic logic : candidates) {
             indexes.clear();
-            for (String stationThatMustBePresent : logic.stationsThatMustBePresent) {
-                Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent, indexes);
+            for (final String stationThatMustBePresent : logic.stationsThatMustBePresent) {
+                final Optional<Integer> indexOfStop = this.getIndexOfStop(trip.stopTimes, stationThatMustBePresent, indexes);
                 if (indexOfStop.isPresent() && indexes.stream().filter(s -> s == indexOfStop.get()).findFirst().isEmpty()) {
                     indexes.add(indexOfStop.get());
                     matchingLogic = logic;
@@ -157,10 +157,10 @@ public class StoptimesSplitterService {
         return matchingLogic;
     }
 
-    private boolean areIndexesInOrder(List<Integer> indexes, boolean ascending) {
+    private boolean areIndexesInOrder(final List<Integer> indexes, final boolean ascending) {
         for (int i = 0; i < indexes.size() - 1; i++) {
-            int current = indexes.get(i);
-            int next = indexes.get(i + 1);
+            final int current = indexes.get(i);
+            final int next = indexes.get(i + 1);
 
             if (ascending) {
                 if (current > next) {
@@ -176,10 +176,10 @@ public class StoptimesSplitterService {
         return true;
     }
 
-    private Optional<Integer> getIndexOfStop(List<StopTime> stopTimes, String stopId, List<Integer> indexes) {
+    private Optional<Integer> getIndexOfStop(final List<StopTime> stopTimes, final String stopId, final List<Integer> indexes) {
         for (int i = 0; i < stopTimes.size(); i++) {
-            if (!indexes.contains(Integer.valueOf(i))) {
-                StopTime stopTime = stopTimes.get(i);
+            if (!indexes.contains(i)) {
+                final StopTime stopTime = stopTimes.get(i);
                 if (stopTime.stopId.equals(stopId)) {
                     return Optional.of(i);
                 }
@@ -189,9 +189,9 @@ public class StoptimesSplitterService {
         return Optional.empty();
     }
 
-    private void createSplittingLogic(List<String> stationsThatMustBePresent) {
-        String stationToSplitBy = stationsThatMustBePresent.get(1);
-        List<SplittingLogic> splittingLogics = this.splittingLogics.get(stationToSplitBy);
+    private void createSplittingLogic(final List<String> stationsThatMustBePresent) {
+        final String stationToSplitBy = stationsThatMustBePresent.get(1);
+        final List<SplittingLogic> splittingLogics = this.splittingLogics.get(stationToSplitBy);
         if (splittingLogics == null) {
             this.splittingLogics.put(stationToSplitBy, Lists.newArrayList(new SplittingLogic(stationToSplitBy, stationsThatMustBePresent)));
         } else {

@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -27,7 +26,7 @@ import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 public class MQTTPublishService {
     private static final int QUEUE_SIZE = 50000;
     public static final int NUMBER_OF_THREADS = 1;
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(MQTTPublishService.class);
 
     @Autowired
     private MQTTConfig.MQTTGateway MQTTGateway;

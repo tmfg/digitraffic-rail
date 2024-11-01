@@ -47,7 +47,7 @@ private static final String URL_FILE_PATH = "C:\\Users\\jaakkopa\\Documents\\url
         configBuilder.setCompressionEnforced(true);
         asyncHttpClient = new AsyncHttpClient(configBuilder.build());
 
-        Path path = Paths.get(URL_FILE_PATH);
+        final Path path = Paths.get(URL_FILE_PATH);
         final List<String> urls = Lists.newArrayList(Iterables.filter(Files.readAllLines(path), s -> !Strings.isNullOrEmpty(s)));
 
         asyncFetchUrls(urls);
@@ -55,7 +55,7 @@ private static final String URL_FILE_PATH = "C:\\Users\\jaakkopa\\Documents\\url
 
     @Test
     public void schedulesShouldBeLimited() throws ExecutionException, InterruptedException {
-        List<String> urls = new ArrayList<>();
+        final List<String> urls = new ArrayList<>();
         final LocalDate startDate = LocalDate.of(2016, 6, 1);
         final LocalDate endDate = LocalDate.of(2016, 7, 1);
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
@@ -66,18 +66,16 @@ private static final String URL_FILE_PATH = "C:\\Users\\jaakkopa\\Documents\\url
     }
 
     private void asyncFetchUrls(final List<String> urls) throws InterruptedException, ExecutionException {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_THREADS);
-        List<Future<Integer>> resultList = new ArrayList<>();
+        final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+        final List<Future<Integer>> resultList = new ArrayList<>();
 
-        ZonedDateTime start = ZonedDateTime.now();
+        final ZonedDateTime start = ZonedDateTime.now();
 
         for (final String url : urls) {
             final Future<Integer> result = executor.submit(() -> {
                 try {
                     return assertUrl(getUrl(url));
-                } catch (InterruptedException e) {
-                    logger.error("error", e);
-                } catch (ExecutionException e) {
+                } catch (final InterruptedException | ExecutionException e) {
                     logger.error("error", e);
                 }
                 return 0;
@@ -97,17 +95,17 @@ private static final String URL_FILE_PATH = "C:\\Users\\jaakkopa\\Documents\\url
             }
         }
 
-        ZonedDateTime end = ZonedDateTime.now();
+        final ZonedDateTime end = ZonedDateTime.now();
 
         logger.info("Start: {}, End {}, Duration: {}, Urls: {}", start, end, Duration.between(start, end), urls.size());
     }
 
-    private String getUrl(String path) {
+    private String getUrl(final String path) {
         return BASE_URL + path;
     }
 
     private int assertUrl(final String url) throws InterruptedException, ExecutionException {
-        Future<Response> f = asyncHttpClient.prepareGet(url).execute();
+        final Future<Response> f = asyncHttpClient.prepareGet(url).execute();
         final Response response = f.get();
         final int statusCode = response.getStatusCode();
 

@@ -18,10 +18,10 @@ public class ScheduleRowPartDeserializer extends AEntityDeserializer<ScheduleRow
 
     @Override
     public ScheduleRowPart deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        ScheduleRowPart scheduleRowPart = new ScheduleRowPart();
+        final ScheduleRowPart scheduleRowPart = new ScheduleRowPart();
 
         scheduleRowPart.id = node.get("id").asLong();
         final JsonNode pysahdystyyppiNode = node.get("pysahdystyyppi");

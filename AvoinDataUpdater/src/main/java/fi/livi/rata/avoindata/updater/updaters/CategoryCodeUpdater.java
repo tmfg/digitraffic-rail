@@ -1,16 +1,13 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -73,7 +70,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         }
 
         for (final JsonNode childElement : reasonCodeResult) {
-            if (childElement.get("visibilityRestricted").asBoolean() == false) {
+            if (!childElement.get("visibilityRestricted").asBoolean()) {
                 final DetailedCategoryCode detailedCategoryCode = parseDetailedCategoryCode(childElement);
                 final CategoryCode categoryCode = categoryCodes.get(childElement.get("reasonCategoryOid").asText());
 
@@ -81,7 +78,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
                 categoryCode.detailedCategoryCodes.add(detailedCategoryCode);
 
                 for (final JsonNode detailedReasonCodeElement : childElement.get("detailedReasonCodes")) {
-                    if (detailedReasonCodeElement.get("visibilityRestricted").asBoolean() == false) {
+                    if (!detailedReasonCodeElement.get("visibilityRestricted").asBoolean()) {
                         final ThirdCategoryCode thirdCategoryCode = parseThirdCategoryCode(detailedReasonCodeElement);
 
                         thirdCategoryCode.detailedCategoryCode = detailedCategoryCode;

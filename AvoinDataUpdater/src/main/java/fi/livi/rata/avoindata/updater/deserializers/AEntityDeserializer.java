@@ -12,7 +12,6 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
 
@@ -30,7 +29,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return jp.getCodec().readValue(node.get(nodeName).traverse(jp.getCodec()), objectClass);
     }
 
-    protected Boolean nullIfFalse(JsonNode value) {
+    protected Boolean nullIfFalse(final JsonNode value) {
         if (!value.asBoolean()) {
             return null;
         }
@@ -38,7 +37,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return Boolean.TRUE;
     }
 
-    protected Boolean isNodeNull(JsonNode value) {
+    protected Boolean isNodeNull(final JsonNode value) {
         return value == null || value.isNull();
     }
 
@@ -137,7 +136,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return ratakmvaliToString(ratanumero, alkuRatakm, alkuEtaisyys, loppuRatakm, loppuEtaisyys);
     }
 
-    protected String getStringFromNode(JsonNode node, String nodeName) {
+    protected String getStringFromNode(final JsonNode node, final String nodeName) {
         return node.get(nodeName).asText();
     }
 
@@ -154,7 +153,7 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return LocalTime.parse(stringNode.asText());
     }
 
-    protected Geometry deserializeGeometry(JsonNode node, JsonParser jsonParser) throws IOException {
+    protected Geometry deserializeGeometry(final JsonNode node, final JsonParser jsonParser) throws IOException {
         return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
     }
 

@@ -13,8 +13,8 @@ import java.io.IOException;
 public class RoutesectionDeserializer extends AEntityDeserializer<Routesection> {
     @Override
     public Routesection deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-        Routesection routesection = new Routesection();
+            final DeserializationContext deserializationContext) throws IOException {
+        final Routesection routesection = new Routesection();
 
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

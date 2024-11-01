@@ -18,10 +18,10 @@ public class OperatorDeserializer extends AEntityDeserializer<Operator> {
 
     @Override
     public Operator deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        Operator operator = new Operator();
+        final Operator operator = new Operator();
 
         operator.id = node.get("id").asLong();
         operator.operatorName = node.get("nimi").asText();

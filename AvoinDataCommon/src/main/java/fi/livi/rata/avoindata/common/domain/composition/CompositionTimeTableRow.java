@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
-import org.hibernate.annotations.Type;
 
 import jakarta.persistence.*;
 import java.time.*;
@@ -35,7 +34,7 @@ public class CompositionTimeTableRow {
     protected CompositionTimeTableRow() {
     }
 
-    public CompositionTimeTableRow(JourneyCompositionRow journeyCompositionRow, Composition composition) {
+    public CompositionTimeTableRow(final JourneyCompositionRow journeyCompositionRow, final Composition composition) {
         this.station = new StationEmbeddable(journeyCompositionRow.stationShortCode, journeyCompositionRow.stationUICCode,
                 journeyCompositionRow.countryCode);
 
@@ -44,11 +43,11 @@ public class CompositionTimeTableRow {
         final LocalDate departureDate = composition.id.departureDate;
         final LocalDateTime scheduledTime = journeyCompositionRow.scheduledTime;
 
-        LocalDateTime epoch = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-        Duration epochDuration = Duration.between(epoch, scheduledTime);
+        final LocalDateTime epoch = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+        final Duration epochDuration = Duration.between(epoch, scheduledTime);
 
-        LocalDateTime scheduledLocalDateTime = departureDate.atTime(0,0,0).plusNanos(epochDuration.toNanos());
-        ZonedDateTime helsinkiScheduledDatetime = scheduledLocalDateTime.atZone(ZoneId.of("Europe/Helsinki"));
+        final LocalDateTime scheduledLocalDateTime = departureDate.atTime(0,0,0).plusNanos(epochDuration.toNanos());
+        final ZonedDateTime helsinkiScheduledDatetime = scheduledLocalDateTime.atZone(ZoneId.of("Europe/Helsinki"));
         this.scheduledTime = helsinkiScheduledDatetime.withZoneSameInstant(ZoneId.of("UTC"));
     }
 }

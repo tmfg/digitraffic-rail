@@ -5,11 +5,17 @@ public enum LocationType {
     FIREWORK,
     SPEED_LIMIT;
 
-    public static LocationType fromKohdeType(String kohdeType) {
+    public static LocationType fromKohdeType(final String kohdeType) {
         switch (kohdeType) {
-            case "TYONKOHDE": return WORK;
-            case "TULITYO": return FIREWORK;
-            case "NOPEUSRAJOITUS": return SPEED_LIMIT;
+            case "TYONKOHDE" -> {
+                return WORK;
+            }
+            case "TULITYO" -> {
+                return FIREWORK;
+            }
+            case "NOPEUSRAJOITUS" -> {
+                return SPEED_LIMIT;
+            }
         }
         throw new IllegalArgumentException("Unknown KohdeType: " + kohdeType);
     }

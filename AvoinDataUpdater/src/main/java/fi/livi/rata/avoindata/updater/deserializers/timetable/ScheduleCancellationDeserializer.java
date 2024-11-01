@@ -19,10 +19,10 @@ public class ScheduleCancellationDeserializer extends AEntityDeserializer<Schedu
 
     @Override
     public ScheduleCancellation deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        ScheduleCancellation scheduleCancellation = new ScheduleCancellation();
+        final ScheduleCancellation scheduleCancellation = new ScheduleCancellation();
 
         scheduleCancellation.id = node.get("id").asLong();
         scheduleCancellation.startDate = getNodeAsLocalDate(node.get("alkuPvm"));

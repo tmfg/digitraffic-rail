@@ -305,7 +305,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         given(dp.nowInHelsinki()).willReturn(startDateTime);
         final List<SimpleTimeTableRow> rows = timeTableRowService.getNextTenDays();
         assertEquals(4, rows.size());
-        Assertions.assertTrue(rows.stream().map(row -> row.getAttapId()).collect(Collectors.toList()).containsAll(List.of(2L, 3L, 4L, 5L)));
+        Assertions.assertTrue(rows.stream().map(SimpleTimeTableRow::getAttapId).collect(Collectors.toList()).containsAll(List.of(2L, 3L, 4L, 5L)));
     }
 
     @Test

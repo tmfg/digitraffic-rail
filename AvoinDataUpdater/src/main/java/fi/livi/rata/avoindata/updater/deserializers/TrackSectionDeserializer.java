@@ -15,8 +15,8 @@ import java.util.List;
 @Component
 public class TrackSectionDeserializer extends AEntityDeserializer<TrackSection> {
     @Override
-    public TrackSection deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-        TrackSection trackSection = new TrackSection();
+    public TrackSection deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
+        final TrackSection trackSection = new TrackSection();
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
         trackSection.id = node.get("id").asLong();

@@ -38,7 +38,7 @@ import jakarta.annotation.PostConstruct;
 public class GTFSStopsService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private Map<String, double[]> customCoordinates = new HashMap<>();
+    private final Map<String, double[]> customCoordinates = new HashMap<>();
 
     @PostConstruct
     private void setup() {
@@ -143,8 +143,8 @@ public class GTFSStopsService {
 
         final Optional<Point> centroid = infraApiPlatform.map(platform -> platform.geometry.getCentroid());
 
-        final double latitude = centroid.map(location -> location.getY()).orElseGet(() -> station.latitude.doubleValue());
-        final double longitude = centroid.map(location -> location.getX()).orElseGet(() -> station.longitude.doubleValue());
+        final double latitude = centroid.map(Point::getY).orElseGet(() -> station.latitude.doubleValue());
+        final double longitude = centroid.map(Point::getX).orElseGet(() -> station.longitude.doubleValue());
 
         return new Platform(station, stopId, stopCode, name, latitude, longitude, track);
     }

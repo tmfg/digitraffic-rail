@@ -15,10 +15,10 @@ public class ScheduleExceptionDeserializer extends AEntityDeserializer<ScheduleE
 
     @Override
     public ScheduleException deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        ScheduleException scheduleException = new ScheduleException();
+        final ScheduleException scheduleException = new ScheduleException();
         scheduleException.id = node.get("id").asLong();
         scheduleException.isRun = node.get("ajetaan").asBoolean();
         scheduleException.date = getNodeAsLocalDate(node.get("pvm"));

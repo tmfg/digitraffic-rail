@@ -13,10 +13,10 @@ import java.io.IOException;
 @Component
 public class TimeTablePeriodChangeDateDeserializer extends AEntityDeserializer<TimeTablePeriodChangeDate> {
     @Override
-    public TimeTablePeriodChangeDate deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+    public TimeTablePeriodChangeDate deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        TimeTablePeriodChangeDate timeTablePeriodChangeDate = new TimeTablePeriodChangeDate();
+        final TimeTablePeriodChangeDate timeTablePeriodChangeDate = new TimeTablePeriodChangeDate();
 
         timeTablePeriodChangeDate.id = node.get("id").asLong();
         timeTablePeriodChangeDate.capacityRequestSubmissionDeadline = getNodeAsLocalDate(node.get("hakuLoppupvm"));

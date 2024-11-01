@@ -14,11 +14,9 @@ public class AddableParametersFilter implements Filter {
 
     }
 
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-            FilterChain filterChain) throws IOException, ServletException {
-        if (servletRequest instanceof HttpServletRequest) {
-            HttpServletRequest request = (HttpServletRequest) servletRequest;
-
+    public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse,
+                         final FilterChain filterChain) throws IOException, ServletException {
+        if (servletRequest instanceof final HttpServletRequest request) {
             final HashMap<String, String[]> extraParams = new HashMap<>();
 
             final String date = request.getParameter("date");

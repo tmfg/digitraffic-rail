@@ -37,7 +37,7 @@ public class Wgs84ConversionService {
 
     @PostConstruct
     private void setup() {
-        CRSFactory crsFactory = new CRSFactory();
+        final CRSFactory crsFactory = new CRSFactory();
         coordinateTransformFrom = crsFactory.createFromParameters("EPSG:3067",
                 "+proj=utm +zone=35 ellps=GRS80 +units=m +no_defs");
         coordinateTransformTo = crsFactory.createFromParameters("EPSG:4326",
@@ -46,9 +46,9 @@ public class Wgs84ConversionService {
         geometryFactory = new GeometryFactory();
     }
 
-    public ProjCoordinate liviToWgs84(double iKoordinaatti, double pKoordinaatti) {
-        ProjCoordinate from = new ProjCoordinate();
-        ProjCoordinate to = new ProjCoordinate();
+    public ProjCoordinate liviToWgs84(final double iKoordinaatti, final double pKoordinaatti) {
+        final ProjCoordinate from = new ProjCoordinate();
+        final ProjCoordinate to = new ProjCoordinate();
         from.x = iKoordinaatti;
         from.y = pKoordinaatti;
 
@@ -58,25 +58,15 @@ public class Wgs84ConversionService {
         return to;
     }
 
-    public Geometry liviToWgs84Jts(Geometry tm35FinGeometry) {
-        Geometry reprojectedGeometry = null;
-        switch (tm35FinGeometry.getGeometryType()) {
-            case "Point":
-                reprojectedGeometry = transformJtsPoint((Point) tm35FinGeometry);
-                break;
-            case "LineString":
-                reprojectedGeometry = transformJtsLineString((LineString) tm35FinGeometry);
-                break;
-            case "MultiLineString":
-                reprojectedGeometry = transformJtsMultiLineString((MultiLineString) tm35FinGeometry);
-                break;
-            case "Polygon":
-                reprojectedGeometry = transformJtsPolygon((Polygon) tm35FinGeometry);
-                break;
-            case "GeometryCollection":
-                reprojectedGeometry = transformJtsGeometryCollection((GeometryCollection) tm35FinGeometry);
-                break;
-        }
+    public Geometry liviToWgs84Jts(final Geometry tm35FinGeometry) {
+        final Geometry reprojectedGeometry = switch (tm35FinGeometry.getGeometryType()) {
+            case "Point" -> transformJtsPoint((Point) tm35FinGeometry);
+            case "LineString" -> transformJtsLineString((LineString) tm35FinGeometry);
+            case "MultiLineString" -> transformJtsMultiLineString((MultiLineString) tm35FinGeometry);
+            case "Polygon" -> transformJtsPolygon((Polygon) tm35FinGeometry);
+            case "GeometryCollection" -> transformJtsGeometryCollection((GeometryCollection) tm35FinGeometry);
+            default -> null;
+        };
         if (reprojectedGeometry == null) {
             throw new IllegalArgumentException("Unknown geometry type: " + tm35FinGeometry.getGeometryType());
         }
@@ -84,8 +74,8 @@ public class Wgs84ConversionService {
         return reprojectedGeometry;
     }
 
-    private Geometry transformJtsGeometryCollection(GeometryCollection tm35FinGeometry) {
-        List<Geometry> geoms = new ArrayList<>();
+    private Geometry transformJtsGeometryCollection(final GeometryCollection tm35FinGeometry) {
+        final List<Geometry> geoms = new ArrayList<>();
         for (int i = 0; i < tm35FinGeometry.getNumGeometries(); i++) {
             geoms.add(liviToWgs84Jts(tm35FinGeometry.getGeometryN(i)));
         }
@@ -93,16 +83,16 @@ public class Wgs84ConversionService {
     }
 
     // only exterior ring supported, no holes
-    private Geometry transformJtsPolygon(Polygon tm35FinGeometry) {
+    private Geometry transformJtsPolygon(final Polygon tm35FinGeometry) {
         try {
             return geometryFactory.createPolygon(geometryFactory.createLinearRing(Arrays.stream(tm35FinGeometry.getExteriorRing().getCoordinates()).map(this::transformJtsCoordinate).toArray(Coordinate[]::new)));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Failed trying to create polygon from " + tm35FinGeometry);
             throw e;
         }
     }
 
-    private Geometry transformJtsMultiLineString(MultiLineString tm35FinGeometry) {
+    private Geometry transformJtsMultiLineString(final MultiLineString tm35FinGeometry) {
         final List<LineString> lines = new ArrayList<>();
         for (int i = 0; i != tm35FinGeometry.getNumGeometries(); ++i) {
             lines.add((LineString) tm35FinGeometry.getGeometryN(i));
@@ -110,22 +100,22 @@ public class Wgs84ConversionService {
         return geometryFactory.createMultiLineString(lines.stream().map(this::transformJtsLineString).toArray(LineString[]::new));
     }
 
-    private Point transformJtsPoint(Point tm35FinGeometry) {
+    private Point transformJtsPoint(final Point tm35FinGeometry) {
         return geometryFactory.createPoint(transformJtsCoordinate(tm35FinGeometry.getCoordinate()));
     }
 
-    private LineString transformJtsLineString(LineString tm35FinGeometry) {
+    private LineString transformJtsLineString(final LineString tm35FinGeometry) {
         return geometryFactory.createLineString(Arrays.stream(tm35FinGeometry.getCoordinates()).map(this::transformJtsCoordinate).toArray(Coordinate[]::new));
     }
 
-    private Coordinate transformJtsCoordinate(Coordinate liviCoordinate) {
-        ProjCoordinate reprojected = liviToWgs84(liviCoordinate.x, liviCoordinate.y);
+    private Coordinate transformJtsCoordinate(final Coordinate liviCoordinate) {
+        final ProjCoordinate reprojected = liviToWgs84(liviCoordinate.x, liviCoordinate.y);
         return new Coordinate(reprojected.x, reprojected.y);
     }
 
-    public ProjCoordinate wgs84Tolivi(double x, double y) {
-        ProjCoordinate from = new ProjCoordinate();
-        ProjCoordinate to = new ProjCoordinate();
+    public ProjCoordinate wgs84Tolivi(final double x, final double y) {
+        final ProjCoordinate from = new ProjCoordinate();
+        final ProjCoordinate to = new ProjCoordinate();
         from.x = x;
         from.y = y;
 
@@ -133,7 +123,7 @@ public class Wgs84ConversionService {
         return to;
     }
 
-    public static double round(double value, int places) {
+    public static double round(final double value, final int places) {
         if (places < 0) throw new IllegalArgumentException();
 
         BigDecimal bd = new BigDecimal(value);

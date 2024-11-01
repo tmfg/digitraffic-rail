@@ -3,7 +3,6 @@ package fi.livi.rata.avoindata.updater.deserializers.timetable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import org.junit.jupiter.api.Assertions;
@@ -29,12 +28,12 @@ public class ScheduleDeserializerTest extends BaseTest {
         assertSchedule(schedule);
 
         final ArrayList<ScheduleRow> scheduleRows = new ArrayList<>(schedule.scheduleRows);
-        Collections.sort(scheduleRows, Comparator.comparingLong(o2 -> o2.id));
+        scheduleRows.sort(Comparator.comparingLong(o2 -> o2.id));
 
         assertScheduleRows(scheduleRows);
 
         final ArrayList<ScheduleCancellation> scheduleCancellations = new ArrayList<>(schedule.scheduleCancellations);
-        Collections.sort(scheduleCancellations, Comparator.comparingLong(o -> o.id));
+        scheduleCancellations.sort(Comparator.comparingLong(o -> o.id));
 
         assertWholeDayCancellation(scheduleCancellations.get(0));
         assertPartialCancellation(scheduleCancellations.get(2));
@@ -105,7 +104,7 @@ public class ScheduleDeserializerTest extends BaseTest {
 
     private void assertPartialCancellation(final ScheduleCancellation partialDayCancellation) {
         final ArrayList<ScheduleRowPart> scheduleRowParts = new ArrayList<>(partialDayCancellation.cancelledRows);
-        Collections.sort(scheduleRowParts, Comparator.comparingLong(o -> o.id));
+        scheduleRowParts.sort(Comparator.comparingLong(o -> o.id));
 
         Assertions.assertEquals("SUL", scheduleRowParts.get(0).scheduleRow.station.stationShortCode);
         Assertions.assertEquals("PLT", scheduleRowParts.get(1).scheduleRow.station.stationShortCode);

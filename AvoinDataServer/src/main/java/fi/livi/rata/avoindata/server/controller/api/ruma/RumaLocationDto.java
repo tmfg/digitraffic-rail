@@ -8,14 +8,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name ="RumaLocation", title = "RumaLocation", description = "Location of work, either an operating point or a section between operating points")
 public class RumaLocationDto {
 
-    @Schema(description = "Notification identifier", required = true)
+    @Schema(description = "Notification identifier", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonView(RumaJsonViews.GeoJsonView.class)
     public final String notificationId;
 
-    @Schema(description = "Track work part index", required = true)
+    @Schema(description = "Track work part index", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Long workPartIndex;
 
-    @Schema(description = "Type", required = true)
+    @Schema(description = "Type", requiredMode = Schema.RequiredMode.REQUIRED)
     public final LocationType locationType;
 
     @Schema(description = "Identifier of operating point, required if section is not present")

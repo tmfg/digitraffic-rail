@@ -3,15 +3,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -62,7 +54,7 @@ public class GTFSTripService {
     @Autowired
     private DateProvider dateProvider;
 
-    private Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
+    private final Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
     public List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
                                   final Map<String, Stop> stopMap, final List<SimpleTimeTableRow> timeTableRows,
@@ -160,7 +152,7 @@ public class GTFSTripService {
             partialCancellationTrip.calendar.calendarDates.clear();
 
             final Map<Long, ScheduleRowPart> cancelledScheduleRowsMap = Maps.uniqueIndex(
-                    Collections2.filter(scheduleCancellation.cancelledRows, s -> s != null), s -> s.id);
+                    Collections2.filter(scheduleCancellation.cancelledRows, Objects::nonNull), s -> s.id);
 
             final List<StopTime> removedStopTimes = new ArrayList<>();
             for (final StopTime stopTime : partialCancellationTrip.stopTimes) {
@@ -289,29 +281,17 @@ public class GTFSTripService {
         // 0 or empty - No bike information for the trip.
         // 1 - Vehicle being used on this particular trip can accommodate at least one bicycle.
         // 2 - No bicycles are allowed on this trip.
-        switch(s.trainType.name) {
-            case "PVS":
-            case "PVV":
-            case "MUS":
-                return 0;
-            case "HL":
-            case "H":
-            case "P":
-            case "HDM":
-            case "IC2":
-            case "IC":
-            case "HSM":
-            case "PYO":
-            case "HLV":
-                return 1;
-            case "S":
-            case "AE":
-                return 2;
-        }
+        return switch (s.trainType.name) {
+            case "PVS", "PVV", "MUS" -> 0;
+            case "HL", "H", "P", "HDM", "IC2", "IC", "HSM", "PYO", "HLV" -> 1;
+            case "S", "AE" -> 2;
+            default ->
 
-        // for all other types we leave it empty
+                // for all other types we leave it empty
 
-        return null;
+                    null;
+        };
+
     }
 
     private Calendar createCalendar(final Schedule schedule, final String serviceId, final LocalDate startDate, final LocalDate endDate) {

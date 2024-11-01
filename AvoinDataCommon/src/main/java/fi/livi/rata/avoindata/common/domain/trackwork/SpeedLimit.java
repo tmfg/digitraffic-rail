@@ -8,16 +8,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "SpeedLimit", title = "SpeedLimit", description = "Speed limit set for a part of a track")
 public class SpeedLimit {
 
-    @Schema(description = "Speed limit value", required = true)
+    @Schema(description = "Speed limit value", requiredMode = Schema.RequiredMode.REQUIRED)
     public Integer speed;
 
-    @Schema(description = "Speed limit signs used?", required = true)
+    @Schema(description = "Speed limit signs used?", requiredMode = Schema.RequiredMode.REQUIRED)
     public boolean signs;
 
-    @Schema(description = "Balises used?", required = true)
+    @Schema(description = "Balises used?", requiredMode = Schema.RequiredMode.REQUIRED)
     public boolean balises;
 
-    public SpeedLimit(Integer speed, boolean signs, boolean balises) {
+    public SpeedLimit(final Integer speed, final boolean signs, final boolean balises) {
         this.speed = speed;
         this.signs = signs;
         this.balises = balises;

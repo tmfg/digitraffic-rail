@@ -16,10 +16,10 @@ import fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer;
 @Component
 public class TimeTablePeriodDeserializer extends AEntityDeserializer<TimeTablePeriod> {
     @Override
-    public TimeTablePeriod deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+    public TimeTablePeriod deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        TimeTablePeriod timeTablePeriod = new TimeTablePeriod();
+        final TimeTablePeriod timeTablePeriod = new TimeTablePeriod();
 
         timeTablePeriod.id = node.get("id").asLong();
         timeTablePeriod.name = node.get("nimi").textValue();
@@ -31,7 +31,7 @@ public class TimeTablePeriodDeserializer extends AEntityDeserializer<TimeTablePe
 
         timeTablePeriod.changeDates = Lists.newArrayList(jsonParser.getCodec().readValue(node.get("muutosajankohdat").traverse(jsonParser.getCodec()), TimeTablePeriodChangeDate[].class));
 
-        for (TimeTablePeriodChangeDate changeDate : timeTablePeriod.changeDates) {
+        for (final TimeTablePeriodChangeDate changeDate : timeTablePeriod.changeDates) {
             changeDate.timeTablePeriod = timeTablePeriod;
         }
 

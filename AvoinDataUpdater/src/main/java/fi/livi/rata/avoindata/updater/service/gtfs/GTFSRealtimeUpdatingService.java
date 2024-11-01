@@ -11,7 +11,7 @@ public class GTFSRealtimeUpdatingService {
     private final GTFSRealtimeService gtfsRealtimeService;
     private final GTFSWritingService gtfsWritingService;
 
-    private static Logger log = LoggerFactory.getLogger(GTFSRealtimeUpdatingService.class);
+    private static final Logger log = LoggerFactory.getLogger(GTFSRealtimeUpdatingService.class);
 
     public GTFSRealtimeUpdatingService(final GTFSRealtimeService gtfsRealtimeService,
                                        final GTFSWritingService gtfsWritingService) {

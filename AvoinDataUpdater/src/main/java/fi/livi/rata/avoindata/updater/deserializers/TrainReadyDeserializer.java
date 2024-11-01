@@ -11,14 +11,14 @@ import java.time.ZonedDateTime;
 
 @Component
 public class TrainReadyDeserializer {
-    private Logger logger = LoggerFactory.getLogger(TrainReadyDeserializer.class);
+    private final Logger log = LoggerFactory.getLogger(TrainReadyDeserializer.class);
 
-    public TrainReady deserialize(JsonNode node) throws IOException {
+    public TrainReady deserialize(final JsonNode node) throws IOException {
         if (node.get("lviTila") == null || node.get("lviLahde") == null) {
             return null;
         }
 
-        TrainReady trainReady = new TrainReady();
+        final TrainReady trainReady = new TrainReady();
         trainReady.source = parseTrainReadyStateEnum(node.get("lviLahde"));
         trainReady.accepted = node.get("lviTila").asText().equals("LUPA_ANNETTU");
         trainReady.timestamp = getNodeAsDateTime(node.get("lviTilanMuokkausaika"));
@@ -36,7 +36,7 @@ public class TrainReadyDeserializer {
         } else if (trainReadySource.equals("KUPLA")) {
             return TrainReady.TrainReadySource.KUPLA;
         } else {
-            logger.error("Unknown TrainReadyState {}", source);
+            log.error("Unknown TrainReadyState {}", source);
             return TrainReady.TrainReadySource.UNKNOWN;
         }
     }

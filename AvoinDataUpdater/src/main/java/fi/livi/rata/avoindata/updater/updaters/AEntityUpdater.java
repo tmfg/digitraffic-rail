@@ -4,12 +4,12 @@ import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import jakarta.annotation.PostConstruct;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.util.StringUtils;
 
 import java.util.function.Consumer;
 
@@ -45,7 +45,7 @@ public abstract class AEntityUpdater<T> {
     protected abstract void update();
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
-        if (StringUtils.isEmpty(liikeInterfaceUrl)) {
+        if (ObjectUtils.isEmpty(liikeInterfaceUrl)) {
             return;
         }
 

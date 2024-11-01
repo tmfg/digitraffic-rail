@@ -3,10 +3,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -27,7 +24,7 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 
 @Service
 public class GTFSShapeService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private TrakediaRouteService trakediaRouteService;
@@ -41,36 +38,36 @@ public class GTFSShapeService {
     @Autowired
     private StoptimesSplitterService stoptimesSplitterService;
 
-    public List<Shape> createShapesFromTrips(List<Trip> trips, Map<String, Stop> stopMap) {
-        ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
-        Map<String, JsonNode> trakediaNodes = liikennepaikkaService.getTrakediaLiikennepaikkaNodes();
+    public List<Shape> createShapesFromTrips(final List<Trip> trips, final Map<String, Stop> stopMap) {
+        final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
+        final Map<String, JsonNode> trakediaNodes = liikennepaikkaService.getTrakediaLiikennepaikkaNodes();
 
-        Map<Integer, List<Shape>> shapeCache = new HashMap<>();
-        for (Trip trip : trips) {
-            Integer stops = trip.stopTimes.stream().map(s -> s.stopId).collect(Collectors.joining(">")).hashCode();
+        final Map<Integer, List<Shape>> shapeCache = new HashMap<>();
+        for (final Trip trip : trips) {
+            final Integer stops = trip.stopTimes.stream().map(s -> s.stopId).collect(Collectors.joining(">")).hashCode();
 
-            List<Shape> shapes = shapeCache.get(stops);
+            final List<Shape> shapes = shapeCache.get(stops);
             if (shapes == null) {
                 shapeCache.put(stops, createShapes(stopMap, trakediaNodes, trip, stops));
             }
 
             trip.shapeId = stops;
         }
-        return shapeCache.values().stream().flatMap(s -> s.stream()).collect(Collectors.toList());
+        return shapeCache.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
-    private List<Shape> createShapes(Map<String, Stop> stopMap, Map<String, JsonNode> trakediaNodes, Trip trip, int stops) {
-        List<StopTime> actualStops = this.stoptimesSplitterService.splitStoptimes(trip);
+    private List<Shape> createShapes(final Map<String, Stop> stopMap, final Map<String, JsonNode> trakediaNodes, final Trip trip, final int stops) {
+        final List<StopTime> actualStops = this.stoptimesSplitterService.splitStoptimes(trip);
 
-        List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops, trip);
+        final List<Coordinate> coordinates = getCoordinates(stopMap, trakediaNodes, actualStops, trip);
 
-        List<Shape> tripsShapes = new ArrayList<>();
+        final List<Shape> tripsShapes = new ArrayList<>();
         for (int i1 = 0; i1 < coordinates.size(); i1++) {
-            Coordinate point = coordinates.get(i1);
+            final Coordinate point = coordinates.get(i1);
 
-            ProjCoordinate projCoordinate = wgs84ConversionService.liviToWgs84(point.x, point.y);
+            final ProjCoordinate projCoordinate = wgs84ConversionService.liviToWgs84(point.x, point.y);
 
-            Shape shape = new Shape();
+            final Shape shape = new Shape();
             shape.shapeId = stops;
             shape.longitude = projCoordinate.x;
             shape.latitude = projCoordinate.y;
@@ -98,9 +95,9 @@ public class GTFSShapeService {
                 final JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
 
                 if (startTrakediaNode == null || startTrakediaNode.size() == 0) {
-                    log.warn("No nodes found for %s", startStop.stopId);
+                    log.warn("No nodes found for {}", startStop.stopId);
                 } else if (endTrakediaNode == null || endTrakediaNode.size() == 0) {
-                    log.warn("No nodes found for %s", endStop.stopId);
+                    log.warn("No nodes found for {}", endStop.stopId);
                 } else {
                     final String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
                     final String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
@@ -108,7 +105,7 @@ public class GTFSShapeService {
                     route = this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste);
                 }
             } catch (final HttpStatusCodeException e) {
-                if (e.getRawStatusCode() == 400 || e.getRawStatusCode() == 503 || e.getRawStatusCode() == 504) {
+                if (e.getStatusCode().value() == 400 || e.getStatusCode().value() == 503 || e.getStatusCode().value() == 504) {
                     log.warn(String.format("Creating route failed for %s %s -> %s: %s", trip.tripId, startStop.stopCode, endStop.stopCode, stopTimes), e);
                 } else {
                     log.error(String.format("Creating route failed for %s %s -> %s: %s %s ", trip.tripId, startStop.stopCode, endStop.stopCode, trip.stopTimes, trip.source.scheduleRows), e);
@@ -127,10 +124,10 @@ public class GTFSShapeService {
         return tripPoints;
     }
 
-    private List<Coordinate> createDummyRoute(Stop startStop, Stop endStop) {
-        ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
-        ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
-        List<Coordinate> dummyRoute = List.of(new Coordinate(start.x, start.y), new Coordinate(end.x, end.y));
+    private List<Coordinate> createDummyRoute(final Stop startStop, final Stop endStop) {
+        final ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
+        final ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
+        final List<Coordinate> dummyRoute = List.of(new Coordinate(start.x, start.y), new Coordinate(end.x, end.y));
         return dummyRoute;
     }
 

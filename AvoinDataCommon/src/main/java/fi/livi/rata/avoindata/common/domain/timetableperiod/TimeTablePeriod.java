@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.timetableperiod;
 
-import org.hibernate.annotations.Type;
-
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;

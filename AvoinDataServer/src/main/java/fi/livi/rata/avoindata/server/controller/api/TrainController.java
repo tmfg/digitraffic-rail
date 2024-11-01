@@ -73,7 +73,7 @@ public class TrainController extends ADataController {
         final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
         final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
 
-        List<Train> trains = trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
+        final List<Train> trains = trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
@@ -82,7 +82,7 @@ public class TrainController extends ADataController {
 
     private List<TrainId> createTrainIdsFromRawIds(final List<Object[]> rawIds) {
         return rawIds.stream().map(s -> {
-            final long trainNumber = ((Long) s[0]).longValue();
+            final long trainNumber = (Long) s[0];
             final LocalDate departureDate = ((Date) s[1]).toLocalDate();
 
             return new TrainId(trainNumber, departureDate);

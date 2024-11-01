@@ -5,39 +5,38 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 
-import org.hibernate.annotations.Type;
-
-import edu.umd.cs.findbugs.annotations.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(required = true)
+import javax.annotation.Nonnull;
+
+@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 public class StringTrainId implements Serializable {
-    @NonNull
+    @Nonnull
     @Column
-    @Schema(description = "Identifies the train inside a single departure date", example = "1", required = true)
+    @Schema(description = "Identifies the train inside a single departure date", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     public String trainNumber;
 
     @Column
-    @Schema(description = "Date of the train's first departure", required = true, example = "2017-12-01")
+    @Schema(description = "Date of the train's first departure", requiredMode = Schema.RequiredMode.REQUIRED, example = "2017-12-01")
     public LocalDate departureDate;
 
     protected StringTrainId() {
     }
 
-    public StringTrainId(@NonNull String trainNumber, LocalDate departureDate) {
+    public StringTrainId(@Nonnull final String trainNumber, final LocalDate departureDate) {
         this.trainNumber = trainNumber;
         this.departureDate = departureDate;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         } else if (!(o instanceof StringTrainId)) {
             return false;
         }
 
-        StringTrainId trainId = (StringTrainId) o;
+        final StringTrainId trainId = (StringTrainId) o;
 
         if (!trainNumber.equals(trainId.trainNumber)) {
             return false;

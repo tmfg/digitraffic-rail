@@ -25,7 +25,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
 public class GTFSEntityService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private GTFSStopsService gtfsStopsService;

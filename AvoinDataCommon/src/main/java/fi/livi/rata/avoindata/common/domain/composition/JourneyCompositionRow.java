@@ -3,8 +3,6 @@ package fi.livi.rata.avoindata.common.domain.composition;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.Type;
-
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 public class JourneyCompositionRow {

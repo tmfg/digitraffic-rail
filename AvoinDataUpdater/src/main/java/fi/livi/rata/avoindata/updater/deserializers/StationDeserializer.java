@@ -22,7 +22,7 @@ import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 
 @Component
 public class StationDeserializer extends AEntityDeserializer<Station> {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;

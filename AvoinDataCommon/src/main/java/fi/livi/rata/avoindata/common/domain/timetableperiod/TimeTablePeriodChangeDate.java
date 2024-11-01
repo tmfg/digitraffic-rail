@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.timetableperiod;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.hibernate.annotations.Type;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

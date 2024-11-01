@@ -1,29 +1,10 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
-
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.ScheduleTrains;
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.server.config.CacheConfig;
@@ -35,6 +16,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.function.Predicate;
 
 // Tag has same name with a tag in LiveTrainController.
 // Don't add a description to this one or the tag will appear twice in OpenAPI definitions.
@@ -130,10 +122,10 @@ public class ScheduleController extends ADataController {
     }
 
     private void sortByDepartureStationScheduledTime(final String departure_station, final List<Train> trains) {
-        Collections.sort(trains, (firstTrain, secondTrain) -> {
+        trains.sort((firstTrain, secondTrain) -> {
             final Predicate<TimeTableRow> stationShortCodePredicate = s -> s.station.stationShortCode.equals(departure_station);
-            final TimeTableRow departureTimeTableRowFirst = Iterables.find(firstTrain.timeTableRows, stationShortCodePredicate);
-            final TimeTableRow departureTimeTableRowSecond = Iterables.find(secondTrain.timeTableRows, stationShortCodePredicate);
+            final TimeTableRow departureTimeTableRowFirst = Iterables.find(firstTrain.timeTableRows, stationShortCodePredicate::test);
+            final TimeTableRow departureTimeTableRowSecond = Iterables.find(secondTrain.timeTableRows, stationShortCodePredicate::test);
 
             return departureTimeTableRowFirst.scheduledTime.compareTo(departureTimeTableRowSecond.scheduledTime);
         });

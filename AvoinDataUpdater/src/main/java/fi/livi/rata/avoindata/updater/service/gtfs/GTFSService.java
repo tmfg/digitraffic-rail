@@ -31,7 +31,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 @Service
 public class GTFSService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     public static int FIRST_STOP_SEQUENCE = 1;
 
@@ -103,9 +103,9 @@ public class GTFSService {
         final GTFSDto gtfs = this.createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip", false);
 
         final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
-                Collections2.filter(adhocSchedules, s -> isPassengerTrain(s)));
+                Collections2.filter(adhocSchedules, this::isPassengerTrain));
         final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
-                Collections2.filter(regularSchedules, s -> isPassengerTrain(s)));
+                Collections2.filter(regularSchedules, this::isPassengerTrain));
 
         this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip", false);
         this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger-stops.zip", true);
@@ -169,6 +169,6 @@ public class GTFSService {
     }
 
     private boolean isPassengerTrain(final Schedule s) {
-        return (s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial == true)) && Sets.newHashSet("V", "HV", "MV").contains(s.trainType.name) == false;
+        return (s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial)) && !Sets.newHashSet("V", "HV", "MV").contains(s.trainType.name);
     }
 }

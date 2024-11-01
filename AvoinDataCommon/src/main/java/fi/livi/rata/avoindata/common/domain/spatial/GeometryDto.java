@@ -7,9 +7,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Returns properties: \n" +
-        "\"type\": corresponds with GeoJSON geometry types\n" +
-        "\"coordinates\": (nested) list(s) of floating point numbers ")
+@Schema(description = """
+        Returns properties:\s
+        "type": corresponds with GeoJSON geometry types
+        "coordinates": (nested) list(s) of floating point numbers\s""")
 public interface GeometryDto<T extends List<?>> {
 
     @JsonValue

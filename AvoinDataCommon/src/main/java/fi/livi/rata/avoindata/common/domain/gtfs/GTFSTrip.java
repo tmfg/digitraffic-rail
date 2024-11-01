@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 
 import jakarta.persistence.EmbeddedId;
@@ -13,10 +13,10 @@ public class GTFSTrip {
     @EmbeddedId
     public GTFSTripId id;
 
-    @NonNull
+    @Nonnull
     public String tripId;
 
-    @NonNull
+    @Nonnull
     public String routeId;
 
     public long version;
@@ -24,11 +24,11 @@ public class GTFSTrip {
     public GTFSTrip() {
     }
 
-    public GTFSTrip(final @NonNull Long trainNumber,
-                    final @NonNull LocalDate startDate,
-                    final @NonNull LocalDate endDate,
-                    final @NonNull String tripId,
-                    final @NonNull String routeId,
+    public GTFSTrip(final @Nonnull Long trainNumber,
+                    final @Nonnull LocalDate startDate,
+                    final @Nonnull LocalDate endDate,
+                    final @Nonnull String tripId,
+                    final @Nonnull String routeId,
                     final long version) {
         this.id = new GTFSTripId(trainNumber, startDate, endDate);
         this.tripId = tripId;

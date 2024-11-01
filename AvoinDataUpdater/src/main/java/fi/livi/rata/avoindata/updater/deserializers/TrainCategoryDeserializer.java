@@ -13,10 +13,10 @@ import java.io.IOException;
 public class TrainCategoryDeserializer extends JsonDeserializer<TrainCategory> {
     @Override
     public TrainCategory deserialize(final JsonParser jp,
-            final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
+            final DeserializationContext ctxt) throws IOException {
         final JsonNode node = jp.getCodec().readTree(jp);
 
-        TrainCategory trainCategory = new TrainCategory();
+        final TrainCategory trainCategory = new TrainCategory();
         trainCategory.name = node.get("nimi").textValue();
         trainCategory.id = node.get("id").asLong();
 

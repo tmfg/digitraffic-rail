@@ -66,9 +66,9 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
         final Long maxVersion = getMaxVersion(sortedTimeTableRows);
 
-        Train.TimetableType timetableType = timetable.get(
+        final Train.TimetableType timetableType = timetable.get(
                 "kiireellinenHakemus") != null ? Train.TimetableType.ADHOC : Train.TimetableType.REGULAR;
-        ZonedDateTime timetableAcceptanceDate = getNodeAsDateTime(timetable.get("hyvaksymisaika"));
+        final ZonedDateTime timetableAcceptanceDate = getNodeAsDateTime(timetable.get("hyvaksymisaika"));
 
         final boolean runningCurrently = !cancelled && isRunningCurrently(sortedTimeTableRows);
         final Train train = new Train(trainNumber, departureDate, operatorUICCode, operatorShortCode, trainCategoryId, trainTypeId,
@@ -84,8 +84,8 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
         train.timeTableRows = sortedTimeTableRows;
 
-        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(trainCategoryId);
-        Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(trainTypeId);
+        final Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(trainCategoryId);
+        final Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(trainTypeId);
         train.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "Unknown";
         train.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "Unknown";
 
@@ -116,18 +116,18 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
         Optional<TimeTableRow> firstTravelledRow = Optional.empty();
         Optional<TimeTableRow> lastNonCancelledRow = Optional.empty();
         for (final TimeTableRow sortedTimeTableRow : sortedTimeTableRows) {
-            if (!firstTravelledRow.isPresent() && sortedTimeTableRow.actualTime != null && sortedTimeTableRow.cancelled == false) {
+            if (!firstTravelledRow.isPresent() && sortedTimeTableRow.actualTime != null && !sortedTimeTableRow.cancelled) {
                 firstTravelledRow = Optional.of(sortedTimeTableRow);
             }
 
-            if (sortedTimeTableRow.cancelled == false) {
+            if (!sortedTimeTableRow.cancelled) {
                 lastNonCancelledRow = Optional.of(sortedTimeTableRow);
             }
         }
 
-        boolean isRunningCurrently = firstTravelledRow.isPresent() && lastNonCancelledRow.isPresent() && lastNonCancelledRow.get().actualTime == null;
+        final boolean isRunningCurrently = firstTravelledRow.isPresent() && lastNonCancelledRow.isPresent() && lastNonCancelledRow.get().actualTime == null;
         if (isRunningCurrently) {
-            boolean isOldTrain = dp.nowInHelsinki().minusDays(2).isAfter(lastNonCancelledRow.get().scheduledTime);
+            final boolean isOldTrain = dp.nowInHelsinki().minusDays(2).isAfter(lastNonCancelledRow.get().scheduledTime);
             if (isOldTrain) {
                 logger.info("Returning isRunningCurrently = false for row {} ({})", lastNonCancelledRow.get().id,lastNonCancelledRow.get());
                 return false;

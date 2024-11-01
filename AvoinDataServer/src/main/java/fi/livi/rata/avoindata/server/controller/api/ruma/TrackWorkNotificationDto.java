@@ -11,31 +11,31 @@ public class TrackWorkNotificationDto {
 
     public TrackWorkNotification.TrackWorkNotificationId id;
 
-    @Schema(description = "State", required = true)
+    @Schema(description = "State", requiredMode = Schema.RequiredMode.REQUIRED)
     public final TrackWorkNotificationState state;
 
-    @Schema(description = "Which organization created this notification", required = true)
+    @Schema(description = "Which organization created this notification", requiredMode = Schema.RequiredMode.REQUIRED)
     public final String organization;
 
-    @Schema(description = "When this notification was created", required = true)
+    @Schema(description = "When this notification was created", requiredMode = Schema.RequiredMode.REQUIRED)
     public final ZonedDateTime created;
 
     @Schema(description = "When this notification last modified")
     public final ZonedDateTime modified;
 
-    @Schema(description = "Does the notification contain a traffic safety plan", required = true)
+    @Schema(description = "Does the notification contain a traffic safety plan", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Boolean trafficSafetyPlan;
 
-    @Schema(description = "Does the notification contain a speed limit removal plan", required = true)
+    @Schema(description = "Does the notification contain a speed limit removal plan", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Boolean speedLimitRemovalPlan;
 
-    @Schema(description = "Does the notification contain a electricity safety plan", required = true)
+    @Schema(description = "Does the notification contain a electricity safety plan", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Boolean electricitySafetyPlan;
 
-    @Schema(description = "Does the notification contain a speed limit plan", required = true)
+    @Schema(description = "Does the notification contain a speed limit plan", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Boolean speedLimitPlan;
 
-    @Schema(description = "Does the notification contain a plan for persons in charge", required = true)
+    @Schema(description = "Does the notification contain a plan for persons in charge", requiredMode = Schema.RequiredMode.REQUIRED)
     public final Boolean personInChargePlan;
 
     public TrackWorkNotificationDto(
@@ -62,12 +62,12 @@ public class TrackWorkNotificationDto {
         this.personInChargePlan = personInChargePlan;
     }
 
-    @Schema(description = "Id", required = true)
+    @Schema(description = "Id", requiredMode = Schema.RequiredMode.REQUIRED)
     public String getId() {
         return id.id;
     }
 
-    @Schema(description = "Version", required = true)
+    @Schema(description = "Version", requiredMode = Schema.RequiredMode.REQUIRED)
     public Long getVersion() {
         return id.version;
     }

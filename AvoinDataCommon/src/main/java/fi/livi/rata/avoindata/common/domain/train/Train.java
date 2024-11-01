@@ -18,7 +18,6 @@ import jakarta.persistence.Transient;
 
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
-import org.hibernate.annotations.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -132,20 +131,18 @@ public class Train implements Comparable<Train> {
     };
 
     @Override
-    public int compareTo(Train o) {
+    public int compareTo(final Train o) {
         return COMPARATOR.compare(this, o);
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Train)) {
+        if (!(o instanceof final Train train)) {
             return false;
         }
-
-        Train train = (Train) o;
 
         if (!id.equals(train.id)) {
             return false;

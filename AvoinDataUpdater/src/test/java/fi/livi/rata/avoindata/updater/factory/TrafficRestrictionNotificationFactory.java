@@ -17,7 +17,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType.FIREWORK_DANGER_ZONE;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN;
 import static fi.livi.rata.avoindata.updater.CoordinateTestData.TAMPERE_COORDINATE_TM35FIN_DEVIATED;
 
@@ -30,13 +29,13 @@ public class TrafficRestrictionNotificationFactory extends RumaNotificationFacto
     private TrafficRestrictionNotificationRepository repository;
 
     @Transactional
-    public List<TrafficRestrictionNotification> createPersist(int versions) {
+    public List<TrafficRestrictionNotification> createPersist(final int versions) {
         final List<TrafficRestrictionNotification> twns = create(versions);
         repository.saveAll(twns);
         return twns;
     }
 
-    public List<TrafficRestrictionNotification> create(int versions) {
+    public List<TrafficRestrictionNotification> create(final int versions) {
         final Point geometryMap = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN);
         final Point geometrySchema = geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN_DEVIATED);
         geometryMap.setSRID(SpatialConstants.WGS84_SRID);

@@ -16,10 +16,10 @@ public class TrainRunningMessageRuleDeserializer extends AEntityDeserializer<Tra
 
     @Override
     public TrainRunningMessageRule deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        TrainRunningMessageRule entity = new TrainRunningMessageRule();
+        final TrainRunningMessageRule entity = new TrainRunningMessageRule();
 
         entity.id = node.get("id").asLong();
         entity.timeTableRowStationShortCode = node.get("liikennepaikka").asText();

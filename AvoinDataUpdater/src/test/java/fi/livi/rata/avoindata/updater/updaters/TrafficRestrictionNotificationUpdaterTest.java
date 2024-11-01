@@ -68,27 +68,27 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void addNew() {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
+        final TrafficRestrictionNotification trn = factory.create(1).get(0);
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
 
         updater.update();
 
-        assertEquals(trn.id, repository.getOne(trn.id).id);
+        assertEquals(trn.id, repository.getReferenceById(trn.id).id);
     }
 
     @Test
     @Transactional
     public void addNewMultipleVersions() {
         final List<TrafficRestrictionNotification> trns = factory.create(2);
-        TrafficRestrictionNotification trn = trns.get(0);
-        TrafficRestrictionNotification trn2 = trns.get(1);
+        final TrafficRestrictionNotification trn = trns.get(0);
+        final TrafficRestrictionNotification trn2 = trns.get(1);
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn2.id.id, trn2.id.version),});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(List.of(trn, trn2));
 
         updater.update();
 
-        List<TrafficRestrictionNotification> savedTrns = repository.findAll();
+        final List<TrafficRestrictionNotification> savedTrns = repository.findAll();
         assertEquals(2, savedTrns.size());
         assertEquals(trn.id, savedTrns.get(0).id);
         assertEquals(trn2.id, savedTrns.get(1).id);
@@ -98,9 +98,9 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Transactional
     public void updateExistingForwards() {
         // only persist version 1
-        List<TrafficRestrictionNotification> trnVersions = factory.create(2);
-        TrafficRestrictionNotification trn = trnVersions.get(0);
-        TrafficRestrictionNotification trnV2 = trnVersions.get(1);
+        final List<TrafficRestrictionNotification> trnVersions = factory.create(2);
+        final TrafficRestrictionNotification trn = trnVersions.get(0);
+        final TrafficRestrictionNotification trnV2 = trnVersions.get(1);
         repository.save(trn);
 
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trnV2.getVersion())});
@@ -108,7 +108,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
         updater.update();
 
-        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(trn.id.id));
+        final List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(trn.id.id));
         assertEquals(2, idsAndVersions.size());
         assertEquals( trn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
         assertEquals( trnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
@@ -117,7 +117,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void draftsAreNotPersisted() {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
+        final TrafficRestrictionNotification trn = factory.create(1).get(0);
         trn.state = TrafficRestrictionNotificationState.DRAFT;
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(trn.id.id, trn.id.version)});
         when(remoteTrafficRestrictionNotificationService.getTrafficRestrictionNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(trn));
@@ -130,9 +130,9 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void finishedWithPreviousDraftIsNotPersisted() {
-        List<TrafficRestrictionNotification> trns = factory.create(2);
-        TrafficRestrictionNotification draft = trns.get(0);
-        TrafficRestrictionNotification finished = trns.get(1);
+        final List<TrafficRestrictionNotification> trns = factory.create(2);
+        final TrafficRestrictionNotification draft = trns.get(0);
+        final TrafficRestrictionNotification finished = trns.get(1);
         draft.state = TrafficRestrictionNotificationState.DRAFT;
         finished.state = TrafficRestrictionNotificationState.FINISHED;
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
@@ -146,9 +146,9 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void finishedWithPreviousSentIsPersisted() {
-        List<TrafficRestrictionNotification> trns = factory.create(2);
-        TrafficRestrictionNotification sent = trns.get(0);
-        TrafficRestrictionNotification finished = trns.get(1);
+        final List<TrafficRestrictionNotification> trns = factory.create(2);
+        final TrafficRestrictionNotification sent = trns.get(0);
+        final TrafficRestrictionNotification finished = trns.get(1);
         sent.state = TrafficRestrictionNotificationState.SENT;
         finished.state = TrafficRestrictionNotificationState.FINISHED;
         when(remoteTrafficRestrictionNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
@@ -162,9 +162,9 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void onlyPointIsPersistedForVaihdeMapGeometry() {
-        TrafficRestrictionNotification trn = factory.create(1).get(0);
-        RumaLocation loc = factory.createRumaLocation();
-        IdentifierRange ir = factory.createIdentifierRange();
+        final TrafficRestrictionNotification trn = factory.create(1).get(0);
+        final RumaLocation loc = factory.createRumaLocation();
+        final IdentifierRange ir = factory.createIdentifierRange();
         ir.locationMap = geometryFactory.createGeometryCollection(new Geometry[]{
                 geometryFactory.createLineString(new Coordinate[]{ TAMPERE_COORDINATE_TM35FIN, TAMPERE_COORDINATE_TM35FIN}),
                 geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN)
@@ -178,7 +178,7 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
 
         updater.update();
 
-        final TrafficRestrictionNotification savedTrn = repository.getOne(trn.id);
+        final TrafficRestrictionNotification savedTrn = repository.getReferenceById(trn.id);
         final RumaLocation savedLoc = savedTrn.locations.iterator().next();
         final IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
         assertEquals(Point.class, savedIr.locationMap.getClass());

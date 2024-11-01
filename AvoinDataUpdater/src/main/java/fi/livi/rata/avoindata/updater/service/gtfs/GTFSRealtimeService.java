@@ -24,7 +24,7 @@ public class GTFSRealtimeService {
     private final GTFSTripRepository gtfsTripRepository;
     private final FeedMessageService feedMessageService;
 
-    private static Logger log = LoggerFactory.getLogger(GTFSRealtimeService.class);
+    private static final Logger log = LoggerFactory.getLogger(GTFSRealtimeService.class);
 
     public GTFSRealtimeService(final TrainLocationRepository trainLocationRepository,
                                final GTFSTripRepository gtfsTripRepository,

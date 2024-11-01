@@ -57,7 +57,7 @@ public class Schedule {
 
     private boolean isLimitedByExceptions(final LocalDate extractedDate) {
         for (final ScheduleException scheduleException : scheduleExceptions) {
-            final boolean isCancelledOnExtractedDate = extractedDate.equals(scheduleException.date) && scheduleException.isRun == false;
+            final boolean isCancelledOnExtractedDate = extractedDate.equals(scheduleException.date) && !scheduleException.isRun;
             if (isCancelledOnExtractedDate) {
                 return true;
             }

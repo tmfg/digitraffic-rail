@@ -13,8 +13,8 @@ import java.io.IOException;
 @Component
 public class TrackRangeDeserializer extends AEntityDeserializer<TrackRange> {
     @Override
-    public TrackRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-        TrackRange trackRange = new TrackRange();
+    public TrackRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
+        final TrackRange trackRange = new TrackRange();
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
         trackRange.id = node.get("id").asLong();
@@ -24,8 +24,8 @@ public class TrackRangeDeserializer extends AEntityDeserializer<TrackRange> {
         return trackRange;
     }
 
-    private TrackLocation createTracklocation(final JsonNode node, String prefix) {
-        TrackLocation trackLocation = new TrackLocation();
+    private TrackLocation createTracklocation(final JsonNode node, final String prefix) {
+        final TrackLocation trackLocation = new TrackLocation();
 
         trackLocation.track = node.get(prefix + "Ratanumero").asText();
         final String[] trackLocationStrings = node.get(prefix + "KM").asText().split("\\+");

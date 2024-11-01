@@ -69,13 +69,13 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void addNew() {
-        TrackWorkNotification twn = factory.create(1).get(0);
+        final TrackWorkNotification twn = factory.create(1).get(0);
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
 
-        assertEquals(twn.id, repository.getOne(twn.id).id);
+        assertEquals(twn.id, repository.getReferenceById(twn.id).id);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
         updater.update();
 
-        List<TrackWorkNotification> savedTwns = repository.findAll();
+        final List<TrackWorkNotification> savedTwns = repository.findAll();
         assertEquals(2, savedTwns.size());
         assertEquals(twn.id, savedTwns.get(0).id);
         assertEquals(twn2.id, savedTwns.get(1).id);
@@ -99,9 +99,9 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Transactional
     public void updateExistingForwards() {
         // only persist version 1
-        List<TrackWorkNotification> twnVersions = factory.create(2);
-        TrackWorkNotification twn = twnVersions.get(0);
-        TrackWorkNotification twnV2 = twnVersions.get(1);
+        final List<TrackWorkNotification> twnVersions = factory.create(2);
+        final TrackWorkNotification twn = twnVersions.get(0);
+        final TrackWorkNotification twnV2 = twnVersions.get(1);
         repository.save(twn);
 
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twnV2.getVersion())});
@@ -109,7 +109,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
         updater.update();
 
-        List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
+        final List<RumaNotificationIdAndVersion> idsAndVersions = repository.findIdsAndVersions(Collections.singleton(twn.id.id));
         assertEquals(2, idsAndVersions.size());
         assertEquals( twn.id.version.longValue(), idsAndVersions.get(0).getVersion().longValue());
         assertEquals( twnV2.id.version.longValue(), idsAndVersions.get(1).getVersion().longValue());
@@ -118,10 +118,10 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void coordinateReprojection() {
-        TrackWorkNotification twn = factory.create(1).get(0);
-        TrackWorkPart twp = factory.createTrackWorkPart();
-        RumaLocation loc = factory.createRumaLocation();
-        IdentifierRange ir = factory.createIdentifierRange();
+        final TrackWorkNotification twn = factory.create(1).get(0);
+        final TrackWorkPart twp = factory.createTrackWorkPart();
+        final RumaLocation loc = factory.createRumaLocation();
+        final IdentifierRange ir = factory.createIdentifierRange();
         twn.trackWorkParts = Set.of(twp);
         twp.locations = Set.of(loc);
         twp.trackWorkNotification = twn;
@@ -131,9 +131,9 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twn));
 
         updater.update();
-        TrackWorkNotification savedTwn = repository.getOne(twn.id);
-        RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
-        IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
+        final TrackWorkNotification savedTwn = repository.getReferenceById(twn.id);
+        final RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
+        final IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
 
         assertEquals(twn.locationMap, savedTwn.locationMap);
         assertEquals(twn.locationSchema, savedTwn.locationSchema);
@@ -146,7 +146,7 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void draftsAreNotPersisted() {
-        TrackWorkNotification twn = factory.create(1).get(0);
+        final TrackWorkNotification twn = factory.create(1).get(0);
         twn.state = TrackWorkNotificationState.DRAFT;
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(twn.id.id, twn.id.version)});
         when(remoteTrackWorkNotificationService.getTrackWorkNotificationVersions(anyString(), any())).thenReturn(Collections.singletonList(twn));
@@ -159,9 +159,9 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void finishedWithPreviousDraftIsNotPersisted() {
-        List<TrackWorkNotification> twns = factory.create(2);
-        TrackWorkNotification draft = twns.get(0);
-        TrackWorkNotification finished = twns.get(1);
+        final List<TrackWorkNotification> twns = factory.create(2);
+        final TrackWorkNotification draft = twns.get(0);
+        final TrackWorkNotification finished = twns.get(1);
         draft.state = TrackWorkNotificationState.DRAFT;
         finished.state = TrackWorkNotificationState.FINISHED;
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
@@ -175,9 +175,9 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void finishedWithPreviousSentIsPersisted() {
-        List<TrackWorkNotification> twns = factory.create(2);
-        TrackWorkNotification sent = twns.get(0);
-        TrackWorkNotification finished = twns.get(1);
+        final List<TrackWorkNotification> twns = factory.create(2);
+        final TrackWorkNotification sent = twns.get(0);
+        final TrackWorkNotification finished = twns.get(1);
         sent.state = TrackWorkNotificationState.SENT;
         finished.state = TrackWorkNotificationState.FINISHED;
         when(remoteTrackWorkNotificationService.getStatuses()).thenReturn(new RemoteRumaNotificationStatus[]{new RemoteRumaNotificationStatus(finished.id.id, finished.id.version)});
@@ -191,10 +191,10 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
     @Test
     @Transactional
     public void onlyPointIsPersistedForVaihdeMapGeometry() {
-        TrackWorkNotification twn = factory.create(1).get(0);
-        TrackWorkPart twp = factory.createTrackWorkPart();
-        RumaLocation loc = factory.createRumaLocation();
-        IdentifierRange ir = factory.createIdentifierRange();
+        final TrackWorkNotification twn = factory.create(1).get(0);
+        final TrackWorkPart twp = factory.createTrackWorkPart();
+        final RumaLocation loc = factory.createRumaLocation();
+        final IdentifierRange ir = factory.createIdentifierRange();
         ir.locationMap = geometryFactory.createGeometryCollection(new Geometry[]{
             geometryFactory.createLineString(new Coordinate[]{ TAMPERE_COORDINATE_TM35FIN, TAMPERE_COORDINATE_TM35FIN}),
             geometryFactory.createPoint(TAMPERE_COORDINATE_TM35FIN)
@@ -210,17 +210,17 @@ public class TrackWorkNotificationUpdaterTest extends BaseTest {
 
         updater.update();
 
-        TrackWorkNotification savedTwn = repository.getOne(twn.id);
-        RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
-        IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
+        final TrackWorkNotification savedTwn = repository.getReferenceById(twn.id);
+        final RumaLocation savedLoc = savedTwn.trackWorkParts.iterator().next().locations.iterator().next();
+        final IdentifierRange savedIr = savedLoc.identifierRanges.iterator().next();
         assertEquals(Point.class, savedIr.locationMap.getClass());
     }
 
     @Test
     @Transactional
     public void ignore() {
-        TrackWorkNotification twn1 = factory.create(1).get(0);
-        TrackWorkNotification twn2 = factory.create(1).get(0);
+        final TrackWorkNotification twn1 = factory.create(1).get(0);
+        final TrackWorkNotification twn2 = factory.create(1).get(0);
 
         // set ignore manually
         updater = new TrackWorkNotificationUpdater(remoteTrackWorkNotificationService,

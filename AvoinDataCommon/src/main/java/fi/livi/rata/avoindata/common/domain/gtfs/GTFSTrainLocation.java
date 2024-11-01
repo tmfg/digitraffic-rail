@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
-import org.locationtech.jts.geom.Point;
-
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 

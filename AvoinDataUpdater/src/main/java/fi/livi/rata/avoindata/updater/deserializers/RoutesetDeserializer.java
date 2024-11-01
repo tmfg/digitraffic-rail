@@ -27,8 +27,8 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
 
     @Override
     public Routeset deserialize(final JsonParser jsonParser,
-                                final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
-        Routeset routeset = new Routeset();
+                                final DeserializationContext deserializationContext) throws IOException {
+        final Routeset routeset = new Routeset();
 
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
@@ -36,7 +36,7 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
         final String trainNumber = getNullableString(node, "trainNumber");
         final LocalDate departureDate = this.getNodeAsLocalDate(node.get("departureDate"));
         routeset.trainId = new StringTrainId(trainNumber, departureDate);
-        JsonNode versionNode = node.get("version");
+        final JsonNode versionNode = node.get("version");
         if (versionNode != null) {
             routeset.version = versionNode.asLong();
         } else {

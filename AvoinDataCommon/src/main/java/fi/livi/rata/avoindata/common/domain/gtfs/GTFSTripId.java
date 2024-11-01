@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
@@ -8,15 +8,15 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class GTFSTripId implements Serializable {
-    @NonNull
+    @Nonnull
     @Column
     public Long trainNumber;
 
-    @NonNull
+    @Nonnull
     @Column
     public LocalDate startDate;
 
-    @NonNull
+    @Nonnull
     @Column
     public LocalDate endDate;
 
@@ -24,17 +24,17 @@ public class GTFSTripId implements Serializable {
         // DEFAULT
     }
 
-    public GTFSTripId(final @NonNull Long trainNumber, final @NonNull LocalDate startDate, final @NonNull LocalDate endDate) {
+    public GTFSTripId(final @Nonnull Long trainNumber, final @Nonnull LocalDate startDate, final @Nonnull LocalDate endDate) {
         this.trainNumber = trainNumber;
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GTFSTripId that = (GTFSTripId) o;
+        final GTFSTripId that = (GTFSTripId) o;
         return trainNumber.equals(that.trainNumber) && startDate.equals(that.startDate) && endDate.equals(that.endDate);
     }
 

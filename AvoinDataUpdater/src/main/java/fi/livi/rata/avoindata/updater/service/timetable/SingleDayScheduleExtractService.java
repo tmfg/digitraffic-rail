@@ -1,23 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import fi.livi.rata.avoindata.common.dao.train.ExtractedScheduleRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -28,6 +10,22 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class SingleDayScheduleExtractService {
@@ -61,10 +59,10 @@ public class SingleDayScheduleExtractService {
         log.info("Extrating all possible schedules for {}", date);
         final Function<Train, TrainId> idFunc = s -> s.id;
         final Map<Train, Schedule> newTrains = scheduleToTrainConverter.extractSchedules(todaysSchedules, date);
-        final Map<TrainId, Train> newTrainMap = Maps.uniqueIndex(newTrains.keySet(), idFunc);
+        final Map<TrainId, Train> newTrainMap = Maps.uniqueIndex(newTrains.keySet(), idFunc::apply);
 
         log.info("Fetching existing trains for {}", date);
-        final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc);
+        final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc::apply);
 
         final List<Train> toBeAdded = new ArrayList<>();
         final List<Train> toBeUpdated = new ArrayList<>();
@@ -266,7 +264,7 @@ public class SingleDayScheduleExtractService {
             final Train oldTrain = oldTrainMap.get(newTrainId);
 
             if (oldTrain == null) {
-                if (newTrain.cancelled == false) {
+                if (!newTrain.cancelled) {
                     toBeAdded.add(newTrain);
                 }
             } else {
@@ -286,7 +284,7 @@ public class SingleDayScheduleExtractService {
             final Train newTrain = newTrainMap.get(oldTrainId);
             final Train oldTrain = oldTrainMap.get(oldTrainId);
 
-            if (newTrain == null && oldTrain.cancelled == false) {
+            if (newTrain == null && !oldTrain.cancelled) {
                 toBeCancelled.add(oldTrain);
             }
         }

@@ -16,7 +16,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Set;
 
 @Component
@@ -24,10 +23,10 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
 
     @Override
     public Schedule deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            final DeserializationContext deserializationContext) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        Schedule schedule = new Schedule();
+        final Schedule schedule = new Schedule();
 
         schedule.id = node.get("id").asLong();
         schedule.startDate = getNodeAsLocalDate(node.get("alkupvm"));
@@ -49,13 +48,13 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         operator.operatorShortCode = node.get("operaattori").get("lyhenne").asText();
         schedule.operator = operator;
 
-        TrainType trainType = new TrainType();
+        final TrainType trainType = new TrainType();
         trainType.name = node.get("junatyyppi").get("nimi").asText();
         trainType.id = node.get("junatyyppi").get("id").asLong();
         trainType.commercial = node.get("junatyyppi").get("kaupallinenJunatyyppi").asBoolean();
         schedule.trainType = trainType;
 
-        TrainCategory trainCategory = new TrainCategory();
+        final TrainCategory trainCategory = new TrainCategory();
         trainCategory.name = node.get("junatyyppi").get("junalaji").get("nimi").asText();
         trainCategory.id = node.get("junatyyppi").get("junalaji").get("id").asLong();
         schedule.trainCategory = trainCategory;
@@ -72,7 +71,7 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         schedule.scheduleRows = Lists.newArrayList(
                 jsonParser.getCodec().readValue(node.get("aikataulurivis").traverse(jsonParser.getCodec()), ScheduleRow[].class));
 
-        Collections.sort(schedule.scheduleRows, (o1, o2) -> Long.compare(o1.id, o2.id));
+        schedule.scheduleRows.sort((o1, o2) -> Long.compare(o1.id, o2.id));
 
         for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
             scheduleRow.schedule = schedule;

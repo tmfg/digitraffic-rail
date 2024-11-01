@@ -14,10 +14,10 @@ import java.io.IOException;
 public class LocalizationsDeserializer extends AEntityDeserializer<Localizations> {
     @Override
     public Localizations deserialize(final JsonParser jsonParser,
-            final DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
+            final DeserializationContext ctxt) throws IOException {
         final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-        Localizations localizations = new Localizations();
+        final Localizations localizations = new Localizations();
         localizations.powerTypes = getObjectsFromNode(jsonParser, node, PowerType[].class, "vetovoimalajis");
         localizations.trainTypes = getObjectsFromNode(jsonParser, node, TrainType[].class, "junatyyppis");
 

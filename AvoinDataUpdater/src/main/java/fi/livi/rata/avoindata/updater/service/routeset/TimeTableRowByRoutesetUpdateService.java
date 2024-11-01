@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.service.routeset;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -145,7 +144,7 @@ public class TimeTableRowByRoutesetUpdateService {
     }
 
     private void updateMultistopTimeTableRow(final Routeset routeset, final Train train, final Long maxVersion, final Routesection routesection, final List<TimeTableRowAndItsIndex> timeTableRowAndItsIndexList) {
-        Collections.sort(timeTableRowAndItsIndexList, (left, right) -> {
+        timeTableRowAndItsIndexList.sort((left, right) -> {
             final Long leftDiff = getDifference(routeset, left.timeTableRow);
             final Long rightDiff = getDifference(routeset, right.timeTableRow);
 

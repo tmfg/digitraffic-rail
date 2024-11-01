@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.config;
 
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;

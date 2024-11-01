@@ -37,7 +37,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
     public void simpleTrainShouldBeExracted() {
         final Schedule schedule = scheduleFactory.create();
 
-        final Train train = scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).keySet().iterator().next();
+        final Train train = scheduleToTrainConverter.extractSchedules(Collections.singletonList(schedule), extractionDate).keySet().iterator().next();
 
         assertTrain(train);
 
@@ -62,7 +62,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         final Set<Train> trains = scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule1, schedule2), extractionDate).keySet();
 
         final List<Train> orderedTrains = Lists.newArrayList(trains);
-        Collections.sort(orderedTrains, (o1, o2) -> o1.id.trainNumber.compareTo(o2.id.trainNumber));
+        orderedTrains.sort((o1, o2) -> o1.id.trainNumber.compareTo(o2.id.trainNumber));
 
 
         Assertions.assertEquals(2, orderedTrains.size());
@@ -78,7 +78,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         schedule.startDate = extractionDate;
         schedule.endDate = null;
 
-        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(List.of(schedule), extractionDate).size());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         schedule.endDate = null;
         schedule.typeCode = "Y";
 
-        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(schedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(List.of(schedule), extractionDate).size());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.endDate = extractionDate;
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).size());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         scheduleException.isRun = false;
         cancelledSchedule.scheduleExceptions.add(scheduleException);
 
-        final Set<Train> trains = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet();
+        final Set<Train> trains = scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).keySet();
         Assertions.assertEquals(0, trains.size());
     }
 
@@ -124,7 +124,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.endDate = extractionDate.plusDays(2);
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).size());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.cancelledRows.add(cancelledSchedule.scheduleRows.get(1).arrival);
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        final Train train = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet().iterator()
+        final Train train = scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).keySet().iterator()
                 .next();
 
         assertTrain(train);
@@ -175,7 +175,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.cancelledRows.add(cancelledSchedule.scheduleRows.get(1).arrival);
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        final Train train = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet().iterator()
+        final Train train = scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).keySet().iterator()
                 .next();
 
         assertTrain(train);
@@ -213,7 +213,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         cancellation.cancelledRows.add(cancelledSchedule.scheduleRows.get(4).arrival);
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        final Train train = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet().iterator()
+        final Train train = scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).keySet().iterator()
                 .next();
 
         assertTrain(train);
@@ -250,7 +250,7 @@ public class ScheduleToTrainConverterTest extends BaseTest {
 
         cancelledSchedule.scheduleCancellations.add(cancellation);
 
-        final Train train = scheduleToTrainConverter.extractSchedules(Arrays.asList(cancelledSchedule), extractionDate).keySet().iterator()
+        final Train train = scheduleToTrainConverter.extractSchedules(List.of(cancelledSchedule), extractionDate).keySet().iterator()
                 .next();
 
         assertTrain(train);
@@ -275,21 +275,21 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         final Schedule okayschedule = scheduleFactory.create();
         okayschedule.startDate = extractionDate;
 
-        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayschedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(List.of(okayschedule), extractionDate).size());
 
         final Schedule futureSchedule = scheduleFactory.create();
         futureSchedule.startDate = extractionDate.plusDays(1);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(futureSchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(futureSchedule), extractionDate).size());
 
         final Schedule historySchedule = scheduleFactory.create();
         historySchedule.startDate = extractionDate.minusDays(8);
         historySchedule.endDate = extractionDate.minusDays(1);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(historySchedule), extractionDate).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(historySchedule), extractionDate).size());
 
         final Schedule okayHistorySchedule = scheduleFactory.create();
         okayHistorySchedule.startDate = extractionDate.minusDays(8);
         okayHistorySchedule.endDate = extractionDate;
-        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(Arrays.asList(okayHistorySchedule), extractionDate).size());
+        Assertions.assertEquals(1, scheduleToTrainConverter.extractSchedules(List.of(okayHistorySchedule), extractionDate).size());
     }
 
     @Test
@@ -297,37 +297,37 @@ public class ScheduleToTrainConverterTest extends BaseTest {
         final Schedule mondaySchedule = scheduleFactory.create();
         mondaySchedule.runOnMonday = false;
         final LocalDate monday = extractionDate.minusDays(6);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(mondaySchedule), monday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(mondaySchedule), monday).size());
 
         final Schedule tuesdaySchedule = scheduleFactory.create();
         tuesdaySchedule.runOnTuesday = false;
         final LocalDate tuesday = extractionDate.minusDays(5);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(tuesdaySchedule), tuesday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(tuesdaySchedule), tuesday).size());
 
         final Schedule wednesdaySchedule = scheduleFactory.create();
         wednesdaySchedule.runOnWednesday = false;
         final LocalDate wednesday = extractionDate.minusDays(4);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(wednesdaySchedule), wednesday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(wednesdaySchedule), wednesday).size());
 
         final Schedule thursdaySchedule = scheduleFactory.create();
         thursdaySchedule.runOnThursday = false;
         final LocalDate thursday = extractionDate.minusDays(3);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(thursdaySchedule), thursday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(thursdaySchedule), thursday).size());
 
         final Schedule fridaySchedule = scheduleFactory.create();
         fridaySchedule.runOnFriday = false;
         final LocalDate friday = extractionDate.minusDays(2);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(fridaySchedule), friday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(fridaySchedule), friday).size());
 
         final Schedule saturdaySchedule = scheduleFactory.create();
         saturdaySchedule.runOnSaturday = false;
         final LocalDate saturday = extractionDate.minusDays(1);
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(saturdaySchedule), saturday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(saturdaySchedule), saturday).size());
 
         final Schedule sundaySchedule = scheduleFactory.create();
         sundaySchedule.runOnSunday = false;
         final LocalDate sunday = ScheduleToTrainConverterTest.extractionDate;
-        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(Arrays.asList(sundaySchedule), sunday).size());
+        Assertions.assertEquals(0, scheduleToTrainConverter.extractSchedules(List.of(sundaySchedule), sunday).size());
     }
 
     private void assertTimeTableRow(final TimeTableRow timeTableRow, final String stationShortCode, final int minutes,

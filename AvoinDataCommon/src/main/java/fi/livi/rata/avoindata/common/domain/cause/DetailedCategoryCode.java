@@ -17,7 +17,6 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Transient;
 
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Type;
 import org.ietf.jgss.GSSException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,7 +43,7 @@ public class DetailedCategoryCode extends ACauseCode {
 
     @Column
     @JsonView(CategoryCodeJsonView.All.class)
-    @Schema(description = "Start date when this category code is used", required = true)
+    @Schema(description = "Start date when this category code is used", requiredMode = Schema.RequiredMode.REQUIRED)
     public LocalDate validFrom;
 
     @Column

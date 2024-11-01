@@ -11,10 +11,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "SpatialTrackWorkNotification", title = "SpatialTrackWorkNotification", description = "Describes planned, in-progress or finished track work")
 public class SpatialTrackWorkNotificationDto extends TrackWorkNotificationDto {
 
-    @Schema(description = "Approximate location", required = true)
+    @Schema(description = "Approximate location", requiredMode = Schema.RequiredMode.REQUIRED)
     public final GeometryDto<?> location;
 
-    @Schema(description = "Work parts", required = true)
+    @Schema(description = "Work parts", requiredMode = Schema.RequiredMode.REQUIRED)
     public final List<TrackWorkPartDto> workParts;
 
     public SpatialTrackWorkNotificationDto(

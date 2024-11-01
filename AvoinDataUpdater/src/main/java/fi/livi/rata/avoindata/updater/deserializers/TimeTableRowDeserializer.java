@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TrainReady;
@@ -50,8 +50,8 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
         final ZonedDateTime scheduledTime = getNodeAsDateTime(node.get("suunniteltuAika"));
 
         final Object[] estimateAndSource = parseEstimateTime(node);
-        ZonedDateTime estimate = (ZonedDateTime) estimateAndSource[0];
-        TimeTableRow.EstimateSourceEnum estimateSource = (TimeTableRow.EstimateSourceEnum) estimateAndSource[1];
+        final ZonedDateTime estimate = (ZonedDateTime) estimateAndSource[0];
+        final TimeTableRow.EstimateSourceEnum estimateSource = (TimeTableRow.EstimateSourceEnum) estimateAndSource[1];
 
         final JsonNode toteutunutAika = node.get("toteutunutAika");
         final ZonedDateTime actualTime = getNodeAsDateTime(toteutunutAika);
@@ -60,7 +60,7 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
         final Boolean commercialStop = kaupallinen != null ? kaupallinen.booleanValue() : null;
 
         final Long differenceInMinutes = calculateScheduledDifference(scheduledTime,
-                actualTime != null ? actualTime : (estimate != null ? estimate : null));
+                actualTime != null ? actualTime : (estimate));
 
         final Set<TrainReady> trainReadies = new HashSet<>();
         final TrainReady trainReady = trainReadyDeserializer.deserialize(node);
@@ -68,10 +68,10 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
             trainReadies.add(trainReady);
         }
 
-        JsonNode aikatauluriviNode = node.get("aikataulutapahtuma").get("aikataulurivi");
+        final JsonNode aikatauluriviNode = node.get("aikataulutapahtuma").get("aikataulurivi");
         ZonedDateTime commercialTrackChanged = null;
-        for (JsonNode raidemuutos : aikatauluriviNode.get("raidemuutos")) {
-            ZonedDateTime luontiPvm = getNodeAsDateTime(raidemuutos.get("luontiPvm"));
+        for (final JsonNode raidemuutos : aikatauluriviNode.get("raidemuutos")) {
+            final ZonedDateTime luontiPvm = getNodeAsDateTime(raidemuutos.get("luontiPvm"));
             if (commercialTrackChanged == null || luontiPvm.isAfter(commercialTrackChanged)) {
                 commercialTrackChanged = luontiPvm;
             }
@@ -103,11 +103,10 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
 
     @Nullable
     public static Long calculateScheduledDifference(final ZonedDateTime scheduledTime, final ZonedDateTime currentLiveTime) {
-        //noinspection ReturnOfNull
         return (currentLiveTime == null) ? null : calculateDifference(currentLiveTime, scheduledTime);
     }
 
-    public static long calculateDifference(@NonNull final ZonedDateTime currentLiveTime, @NonNull final ZonedDateTime scheduledTime) {
+    public static long calculateDifference(@Nonnull final ZonedDateTime currentLiveTime, @Nonnull final ZonedDateTime scheduledTime) {
         final long millis = currentLiveTime.toInstant().toEpochMilli() - scheduledTime.toInstant().toEpochMilli();
 
         if (millis < 0) {

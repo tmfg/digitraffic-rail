@@ -2,15 +2,15 @@ package fi.livi.rata.avoindata.common.domain.routeset;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
-import org.hibernate.annotations.Type;
 
 import jakarta.persistence.*;
+
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class Routeset {
     public StringTrainId trainId;
 
     @Column(insertable = false,updatable = false)
-    @NonNull
+    @Nonnull
     @JsonIgnore
     public LocalDate virtualDepartureDate;
 

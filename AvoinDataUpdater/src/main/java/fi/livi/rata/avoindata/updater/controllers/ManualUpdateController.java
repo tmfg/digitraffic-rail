@@ -20,7 +20,6 @@ import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import fi.livi.rata.avoindata.updater.service.gtfs.GTFSRealtimeService;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
