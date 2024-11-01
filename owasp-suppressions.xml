@@ -4,8 +4,8 @@
     <!--
         Temporary suppressions, check and update these periodically
     -->
-
-    <suppress until="2024-11-01">
+    <!-- From spring-cloud-starter-aws-secrets-manager-config-->
+    <suppress until="2024-12-01">
         <notes><![CDATA[file name: ion-java-1.0.2.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
         <!-- waiting for update -->
@@ -13,60 +13,22 @@
         <cve>CVE-2024-21634</cve>
     </suppress>
 
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: spring-webflux-6.1.12.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webflux@.*$</packageUrl>
-        <!-- we are not using webflux -->
-        <cve>CVE-2024-38816</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: plexus-cipher-2.0.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-cipher@.*$</packageUrl>
-        <!-- we're not using plexus -->
-        <cve>CVE-2022-4244</cve>
-        <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: plexus-classworlds-2.7.0.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-classworlds@.*$</packageUrl>
-        <!-- we're not using plexus -->
-        <cve>CVE-2022-4244</cve>
-        <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: plexus-component-annotations-2.1.0.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-component-annotations@.*$</packageUrl>
-        <!-- we're not using plexus -->
-        <cve>CVE-2022-4244</cve>
-        <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: plexus-interpolation-1.26.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-interpolation@.*$</packageUrl>
-        <!-- we're not using plexus -->
-        <cve>CVE-2022-4244</cve>
-        <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
-        <notes><![CDATA[file name: plexus-sec-dispatcher-2.0.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-sec-dispatcher@.*$</packageUrl>
-        <!-- we're not using plexus -->
-        <cve>CVE-2022-4244</cve>
-        <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <suppress until="2024-11-01">
+    <!-- From swagger-codegen-maven-plugin -->
+    <!-- We use this just for code generation -->
+    <suppress until="2024-12-01">
         <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: gradle-wrapper.jar]]></notes>
         <sha1>0f6f1fa2b59ae770ca14f975726bed8d6620ed9b</sha1>
-        <!-- we are not using gradle -->
         <cve>CVE-2016-6199</cve>
         <cve>CVE-2019-15052</cve>
         <cve>CVE-2023-35947</cve>
+        <cve>CVE-2021-29428</cve>
+        <cve>CVE-2020-11979</cve>
+        <cve>CVE-2021-32751</cve>
+        <cve>CVE-2019-11065</cve>
+        <cve>CVE-2019-16370</cve>
+        <cve>CVE-2021-29429</cve>
+        <cve>CVE-2023-35946</cve>
+        <cve>CVE-2023-42445</cve>
         <cve>CVE-2021-29428</cve>
         <cve>CVE-2020-11979</cve>
         <cve>CVE-2021-32751</cve>
@@ -78,10 +40,11 @@
         <cve>CVE-2023-42445</cve>
     </suppress>
 
-    <suppress until="2024-11-10">
+    <!-- From swagger-codegen-maven-plugin -->
+    <!-- We are not using jquery, this is just for code generation-->
+    <suppress until="2024-12-01">
         <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: jquery-1.8.3.min.js]]></notes>
         <packageUrl regex="true">^pkg:javascript/jquery@.*$</packageUrl>
-        <!-- we are not using the ui, so jquery is not used -->
         <cve>CVE-2012-6708</cve>
         <cve>CVE-2015-9251</cve>
         <cve>CVE-2019-11358</cve>
@@ -90,12 +53,6 @@
         <cve>CVE-2020-7656</cve>
     </suppress>
 
-    <suppress until="2024-11-10">
-        <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: jquery-1.8.3.min.js]]></notes>
-        <packageUrl regex="true">^pkg:javascript/jquery@.*$</packageUrl>
-        <!-- we are not using swagger-ui -->
-        <vulnerabilityName>jquery issue: 162</vulnerabilityName>
-    </suppress>
     <!--
         Permanent suppressions
     -->
