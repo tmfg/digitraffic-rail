@@ -35,7 +35,7 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
 
     @Query(value = "SELECT t.id, MAX(t.version) " +
             "FROM track_work_notification t " +
-            "WHERE t.modified BETWEEN :start AND :end GROUP BY t.id", nativeQuery = true)
+            "WHERE t.modified >= :start AND t.modified < :end GROUP BY t.id", nativeQuery = true)
     List<Object[]> findLatestBetween(
             @Param("start") final ZonedDateTime start,
             @Param("end") final ZonedDateTime end);
@@ -45,7 +45,7 @@ public interface TrackWorkNotificationRepository extends CustomGeneralRepository
             "LEFT JOIN FETCH twp.locations rl " +
             "LEFT JOIN FETCH rl.identifierRanges ir " +
             "LEFT JOIN FETCH ir.elementRanges " +
-            "WHERE t.state IN (:states) AND (t.modified BETWEEN :start and :end) " +
+            "WHERE t.state IN (:states) AND (t.modified >= :start and t.modified < :end) " +
             "AND t.id IN (:ids) " +
             "ORDER BY t.modified ASC, t.id.id ASC")
     List<TrackWorkNotification> findByStateAndId(
