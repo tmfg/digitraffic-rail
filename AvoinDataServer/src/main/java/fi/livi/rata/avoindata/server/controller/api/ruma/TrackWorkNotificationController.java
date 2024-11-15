@@ -194,8 +194,11 @@ public class TrackWorkNotificationController extends ADataController {
                 trackWorkNotificationRepository.findLatestBetween(startTime, endTime).stream()
                         .map(o -> new TrackWorkNotification.TrackWorkNotificationId((String)o[0], (Long)o[1]))
                         .toList();
-
-        return trackWorkNotificationRepository.findByStateAndId(states, startTime, endTime, ids);
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return trackWorkNotificationRepository.findByStateAndId(states, startTime, endTime, ids);
+        }
     }
 
     private ZonedDateTime getStartTime(final ZonedDateTime start) {

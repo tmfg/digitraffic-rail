@@ -233,6 +233,18 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    public void byStateBetweenSameTime() throws Exception {
+        final ZonedDateTime start = ZonedDateTime.now().minusHours(32);
+        final ZonedDateTime end = start;
+
+        final ResultActions ra = getJson(String.format("/trackwork-notifications.json?state=%s&start=%s&end=%s",
+                TrackWorkNotificationState.DRAFT,
+                start.format(DateTimeFormatter.ISO_DATE_TIME),
+                end.format(DateTimeFormatter.ISO_DATE_TIME)));
+        ra.andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     public void geoJson() throws Exception {
         final TrackWorkNotification twn = factory.create(1).get(0);
         repository.save(twn);
