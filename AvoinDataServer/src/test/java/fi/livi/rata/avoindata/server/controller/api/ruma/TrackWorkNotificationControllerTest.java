@@ -233,7 +233,7 @@ public class TrackWorkNotificationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
-    public void byState_between_same_time() throws Exception {
+    public void byStateBetweenSameTime() throws Exception {
         final ZonedDateTime start = ZonedDateTime.now().minusHours(32);
         final ZonedDateTime end = start;
 
