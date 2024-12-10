@@ -56,24 +56,21 @@ public class ManualUpdateController {
     @Autowired
     private ScheduleProviderService scheduleProviderService;
 
-    @Autowired
-    private DateProvider dp;
-
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/reinitialize")
     @ResponseBody
     public boolean reinitializeTrainsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
         trainLockExecutor.executeInLock("manualReinitialize", () -> {
-            logger.info("Starting manual train update for day {}", date);
+            logger.info("method=reinitializeTrainsOnADate Starting manual train update for day {}", date);
 
             trainRepository.removeByDepartureDate(date);
             trainRepository.flush();
-            logger.info("Removed existing trains");
+            logger.info("method=reinitializeTrainsOnADate Removed existing trains");
 
             trainInitializerService.getAndSaveForADate(date);
 
-            logger.info("Finished manual train update for day {}", date);
+            logger.info("method=reinitializeTrainsOnADate Finished manual train update for day {}", date);
 
             return date;
         });
@@ -83,15 +80,15 @@ public class ManualUpdateController {
     @RequestMapping("/reinitialize-compositions")
     @ResponseBody
     public boolean reinitializeCompositionsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
-        logger.info("Starting manual composition update for day {}", date);
+        logger.info("method=reinitializeCompositionsOnADate Starting manual composition update for day {}", date);
 
         compositionRepository.removeByDepartureDate(date);
         compositionRepository.flush();
-        logger.info("Removed existing compositions");
+        logger.info("method=reinitializeCompositionsOnADate Removed existing compositions for day {}", date);
 
         compositionInitializerService.getAndSaveForADate(date);
 
-        logger.info("Finished manual composition update for day {}", date);
+        logger.info("method=reinitializeCompositionsOnADate Finished manual composition update for day {}", date);
 
         return true;
     }
@@ -99,29 +96,31 @@ public class ManualUpdateController {
     @RequestMapping("/extract")
     @ResponseBody
     public boolean extractSchedules() {
-        logger.info("Starting manual extract");
+        logger.info("method=extractSchedules Starting manual extract");
         scheduleService.extractSchedules();
-
+        logger.info("method=extractSchedules End manual extract");
         return true;
     }
 
     @RequestMapping("/gtfs")
     @ResponseBody
     public boolean generateGTFS() {
-        logger.info("Starting manual gtfs");
+        logger.info("method=generateGTFS Starting manual gtfs");
         gtfsService.generateGTFS();
+        logger.info("method=generateGTFS End manual gtfs");
         return true;
     }
 
     @RequestMapping("/gtfs-dev")
     @ResponseBody
     public boolean generateDevGTFS() throws ExecutionException, InterruptedException, IOException {
-        logger.info("Starting manual gtfs");
-        final LocalDate start = dp.dateInHelsinki().minusDays(7);
+        logger.info("method=generateDevGTFS Starting manual gtfs");
+        final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
 
         final Predicate<Schedule> lambda = s -> true;
 
         gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
+        logger.info("method=generateDevGTFS End manual gtfs");
         return true;
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
+
 import fi.livi.rata.avoindata.common.dao.cause.CategoryCodeRepository;
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
 import fi.livi.rata.avoindata.common.dao.cause.DetailedCategoryCodeRepository;
@@ -59,9 +60,6 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     private ThirdCategoryCodeRepository thirdCategoryCodeRepository;
 
     @Autowired
-    private DateProvider dp;
-
-    @Autowired
     private BatchExecutionService bes;
 
     @Autowired
@@ -77,7 +75,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         getJson("/live-trains/51")
             .andExpect(jsonPath("$[0].trainNumber").value("51"))
-            .andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().toString()))
             .andExpect(jsonPath("$[0].operatorUICCode").value("1"))
             .andExpect(jsonPath("$[0].operatorShortCode").value("test"))
             .andExpect(jsonPath("$[0].commuterLineID").value("Z"))
@@ -112,7 +110,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void trainReadyShouldBePresent() throws Exception {
         final Train train = trainFactory.createBaseTrain();
 
-        final TimeTableRow timeTableRow = train.timeTableRows.get(0);
+        final TimeTableRow timeTableRow = train.timeTableRows.getFirst();
         trainReadyFactory.create(timeTableRow);
 
         final ResultActions r1 = getJson("/live-trains/51");
@@ -129,30 +127,30 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void correctDepartureDateShouldBeSelected() throws Exception {
-        trainFactory.createBaseTrain(new TrainId(51L, LocalDate.now().minusDays(1)));
-        trainFactory.createBaseTrain(new TrainId(51L, LocalDate.now()));
-        trainFactory.createBaseTrain(new TrainId(51L, LocalDate.now().plusDays(1)));
+        trainFactory.createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki().minusDays(1)));
+        trainFactory.createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki()));
+        trainFactory.createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki().plusDays(1)));
 
-        final ResultActions r1 = getJson("/live-trains/51?departure_date=" + LocalDate.now().minusDays(1));
-        r1.andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().minusDays(1).toString()));
+        final ResultActions r1 = getJson("/live-trains/51?departure_date=" + DateProvider.dateInHelsinki().minusDays(1));
+        r1.andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().minusDays(1).toString()));
 
-        final ResultActions r2 = getJson("/live-trains/51?departure_date=" + LocalDate.now());
-        r2.andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()));
+        final ResultActions r2 = getJson("/live-trains/51?departure_date=" + DateProvider.dateInHelsinki());
+        r2.andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().toString()));
 
-        final ResultActions r3 = getJson("/live-trains/51?departure_date=" + LocalDate.now().plusDays(1));
-        r3.andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().plusDays(1).toString()));
+        final ResultActions r3 = getJson("/live-trains/51?departure_date=" + DateProvider.dateInHelsinki().plusDays(1));
+        r3.andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().plusDays(1).toString()));
 
         final ResultActions r4 = getJson("/live-trains/51");
-        r4.andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()));
+        r4.andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().toString()));
 
     }
 
     @Test
     @Transactional
     public void timetableTypeShouldWork() throws Exception {
-        trainFactory.createBaseTrain(new TrainId(51L, LocalDate.now()));
+        trainFactory.createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki()));
 
-        final Train train2 = trainFactory.createBaseTrain(new TrainId(52L, LocalDate.now()));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(52L, DateProvider.dateInHelsinki()));
         train2.timetableType = Train.TimetableType.ADHOC;
         trainRepository.save(train2);
 
@@ -169,7 +167,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         final Train train = trainFactory.createBaseTrain();
 
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
-            timeTableRow.scheduledTime = dp.nowInHelsinki();
+            timeTableRow.scheduledTime = DateProvider.nowInHelsinki();
         }
 
         final ResultActions r1 = getJson("/live-trains?version=0");
@@ -195,7 +193,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     @Transactional
     public void causeShouldShow() throws Exception {
         final Train train = trainFactory.createBaseTrain();
-        final TimeTableRow timeTableRow = train.timeTableRows.get(0);
+        final TimeTableRow timeTableRow = train.timeTableRows.getFirst();
 
         ThirdCategoryCode thirdCategoryCode = new ThirdCategoryCode();
         thirdCategoryCode.thirdCategoryCode = "3 koodi";
@@ -250,8 +248,8 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
-        trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
-        trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
+        trainFactory.createBaseTrain(new TrainId(1L, DateProvider.dateInHelsinki()));
+        trainFactory.createBaseTrain(new TrainId(2L, DateProvider.dateInHelsinki()));
 
         final ResultActions r1 = getJson("/live-trains?station=PSL");
         r1.andExpect(jsonPath("$.length()").value(2));
@@ -291,8 +289,8 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
-        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, LocalDate.now()));
-        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, LocalDate.now()));
+        final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, DateProvider.dateInHelsinki()));
+        final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, DateProvider.dateInHelsinki()));
 
         clearActualTimes(train1, train2);
 
@@ -326,7 +324,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
 
         final Train train = trainFactory.createBaseTrain();
         for (final TimeTableRow timeTableRow : train.timeTableRows) {
-            timeTableRow.scheduledTime = dp.nowInHelsinki();
+            timeTableRow.scheduledTime = DateProvider.nowInHelsinki();
         }
 
         getJson("/live-trains/51").andExpect(jsonPath("$.length()").value(1));
@@ -335,7 +333,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 "&minutes_after_arrival=1500")
                 .andExpect(jsonPath("$.length()").value(1));
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(1));
-        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(1));
+        getJson("/live-trains/51?departure_date=" + DateProvider.dateInHelsinki()).andExpect(jsonPath("$.length()").value(1));
 
         train.deleted = true;
 
@@ -345,7 +343,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
                 "&minutes_after_arrival=1500")
                 .andExpect(jsonPath("$.length()").value(0));
         getJson("/live-trains?version=0").andExpect(jsonPath("$.length()").value(0));
-        getJson("/live-trains/51?departure_date=" + LocalDate.now()).andExpect(jsonPath("$.length()").value(0));
+        getJson("/live-trains/51?departure_date=" + DateProvider.dateInHelsinki()).andExpect(jsonPath("$.length()").value(0));
 
         ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
     }
@@ -355,7 +353,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     public void deletedTrainShouldNotBeReturnedTroughLiveTrain2() throws Exception {
         ReflectionTestUtils.setField(bes, "executor", MoreExecutors.newDirectExecutorService());
 
-        final LocalDate dateNow = LocalDate.now();
+        final LocalDate dateNow = DateProvider.dateInHelsinki();
         final Train train1 = trainFactory.createBaseTrain(new TrainId(1L, dateNow));
         final Train train2 = trainFactory.createBaseTrain(new TrainId(2L, dateNow));
         final Train train3 = trainFactory.createBaseTrain(new TrainId(3L, dateNow));
@@ -365,11 +363,11 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         clearActualTimes(train1, train2, train3, train4, train5);
 
         final ZonedDateTime zonedDateTimeNow = ZonedDateTime.now();
-        train1.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(1);
-        train2.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(2);
-        train3.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(3);
-        train4.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(4);
-        train5.timeTableRows.get(0).scheduledTime = zonedDateTimeNow.plusMinutes(5);
+        train1.timeTableRows.getFirst().scheduledTime = zonedDateTimeNow.plusMinutes(1);
+        train2.timeTableRows.getFirst().scheduledTime = zonedDateTimeNow.plusMinutes(2);
+        train3.timeTableRows.getFirst().scheduledTime = zonedDateTimeNow.plusMinutes(3);
+        train4.timeTableRows.getFirst().scheduledTime = zonedDateTimeNow.plusMinutes(4);
+        train5.timeTableRows.getFirst().scheduledTime = zonedDateTimeNow.plusMinutes(5);
 
         train1.deleted = true;
         train2.deleted = true;

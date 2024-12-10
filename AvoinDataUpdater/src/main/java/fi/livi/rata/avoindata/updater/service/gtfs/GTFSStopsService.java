@@ -87,7 +87,7 @@ public class GTFSStopsService {
 
         for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
             final String stationShortCode = stationEmbeddable.stationShortCode;
-            final Station station = stationRepository.findByShortCode(stationShortCode);
+            final Station station = stationRepository.findByShortCodeIgnoreCase(stationShortCode);
 
             final Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
             final Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);

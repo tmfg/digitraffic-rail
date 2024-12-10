@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
@@ -27,9 +29,10 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
+import jakarta.persistence.EntityManager;
 
+@Transactional
 public class CompositionServiceIntegrationTest extends BaseTest {
-    public static final long TEST_TRAIN_NUMBER = 263;
 
     @Autowired
     private CompositionService compositionService;
@@ -49,40 +52,47 @@ public class CompositionServiceIntegrationTest extends BaseTest {
     @Autowired
     private WagonRepository wagonRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @MockBean
+    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
+
+    @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--9715.sql" })
     @Test
-    @Transactional
     public void journeySectionsShouldBeOrderedByScheduleTest() throws Exception {
+        testDataService.mockGetTrakediaLiikennepaikkaNodes(trakediaLiikennepaikkaService);
         testDataService.createSingleTrainComposition();
-        final Composition composition = compositionRepository.findAll().get(0);
+        final Composition composition = compositionRepository.findAll().getFirst();
 
         final List<JourneySection> journeySections = new ArrayList<>(composition.journeySections);
 
         journeySections.sort(Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime));
 
         assertThat("Journey sections should be ordered according to scheduled time",
-                composition.journeySections, contains(journeySections.toArray()));
+                   composition.journeySections, contains(journeySections.toArray()));
     }
 
+    @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--265-overnight.sql" })
     @Test
-    @Transactional
     public void overnightJourneySectionsShouldBeCorrectlyOrdered() throws Exception {
         testDataService.createOvernightComposition();
-        final Composition composition = compositionRepository.findAll().iterator().next();
+        final Composition composition = compositionRepository.findAll().getFirst();
 
         final List<JourneySection> journeySections = new ArrayList<>(composition.journeySections);
         assertThat("Journey sections should be ordered according to scheduled time",
                 journeySections.stream().map(x -> x.beginTimeTableRow.station.stationShortCode).collect(Collectors.toList()),
-                contains("ROI", "OL", "TPE", "PSLT"));
-        assertEquals(journeySections.get(journeySections.size() - 1).beginTimeTableRow.scheduledTime.toLocalDate(),
+                contains("HKI", "PSLT", "TPE", "ROI"));
+        assertEquals(journeySections.getLast().beginTimeTableRow.scheduledTime.toLocalDate(),
                 composition.id.departureDate.plusDays(1),
                 "Date of last section should be next day from departure");
     }
 
+    @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--265-overnight.sql" })
     @Test
-    @Transactional
     public void compositionJourneySectionsShouldHaveValidLastTimeTableRows() throws Exception {
         testDataService.createOvernightComposition();
-        final Composition composition = compositionRepository.findAll().iterator().next();
+        final Composition composition = compositionRepository.findAll().getFirst();
 
         final List<JourneySection> journeySections = new ArrayList<>(composition.journeySections);
         journeySections.forEach(x -> assertNotNull(x.endTimeTableRow, "endTimeTableRow must not be null"));
@@ -101,8 +111,8 @@ public class CompositionServiceIntegrationTest extends BaseTest {
         }
     }
 
+    @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--265-overnight.sql" })
     @Test
-    @Transactional
     public void testRemoveCompositionsCascadesToChildren() throws Exception {
         testDataService.createOvernightComposition();
 
@@ -120,30 +130,33 @@ public class CompositionServiceIntegrationTest extends BaseTest {
         assertEquals(0, wagonRepository.count(), "Database should contain no wagons");
     }
 
+    @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--265-overnight.sql" })
     @Test
     public void testUpdateCompositions() throws Exception {
-        final List<JourneyComposition> journeyCompositionsFirstTwo = testDataService.getSingleTrainJourneyCompositions().subList(0, 2);
+        final List<JourneyComposition> journeyCompositionsFirstTwo = testDataService.deserializeOvernightJourneyCompositions().subList(0, 2);
 
         compositionService.addCompositions(journeyCompositionsFirstTwo); // Add first two journey sections
         assertEquals(1, compositionRepository.count(), "Journey compositions for a single train should create one composition");
-        assertEquals(2, compositionRepository.findAll().get(0).journeySections.size(), "Composition should have first two journey sections");
+        assertEquals(2, compositionRepository.findAll().getFirst().journeySections.size(), "Composition should have first two journey sections");
 
-        final List<JourneyComposition> journeyCompositionsAll = testDataService.getSingleTrainJourneyCompositions();
+        final List<JourneyComposition> journeyCompositionsAll = testDataService.deserializeOvernightJourneyCompositions();
 
+        entityManager.flush();
+        entityManager.clear();
         compositionService.updateCompositions(journeyCompositionsAll); // Add the rest
         assertEquals(1, compositionRepository.count(), "Journey compositions for a single train should create one composition");
-        assertEquals(4, compositionRepository.findAll().get(0).journeySections.size(), "Composition should have all four journey sections");
+        assertEquals(4, compositionRepository.findAll().getFirst().journeySections.size(), "Composition should have all four journey sections");
 
-        final LocalDate departureDate = journeyCompositionsAll.get(0).departureDate;
-        final Composition composition = compositionRepository.findById(new TrainId(TEST_TRAIN_NUMBER, departureDate)).orElse(null);
+        final LocalDate departureDate = journeyCompositionsAll.getFirst().departureDate;
+        final Composition composition = compositionRepository.findById(new TrainId(265, departureDate)).orElse(null);
+        assertNotNull(composition);
         assertEquals(4, composition.journeySections.size());
 
         compositionRepository.deleteAllInBatch();
     }
 
     @Test
-    @Transactional
-    public void testUpdateNoUpdates() throws Exception {
+    public void testUpdateNoUpdates() {
         compositionService.addCompositions(new ArrayList<>());
     }
 }

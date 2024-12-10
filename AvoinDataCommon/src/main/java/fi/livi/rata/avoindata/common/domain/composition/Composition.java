@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -52,8 +53,15 @@ public class Composition  {
     public long trainTypeId;
 
     @Column
-    @Schema(description = "When was this data last modified", example = "253328854733")
+    @Schema(description = "When was this data last modified", example = "1728555686000")
     public Long version;
+
+    /**
+     * messageDateTime of julkisetkokoonpanot
+     */
+    @JsonIgnore
+    @Column
+    public Instant messageDateTime;
 
     @OneToMany(mappedBy = "composition", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @OrderBy
@@ -63,12 +71,13 @@ public class Composition  {
     }
 
     public Composition(final Operator operator, final Long trainNumber, final LocalDate departureDate, final long trainCategoryId,
-            final long trainTypeId, final long version) {
-        this.id=new TrainId(trainNumber, departureDate);
+                       final long trainTypeId, final long version, final Instant messageDateTime) {
+        this.id = new TrainId(trainNumber, departureDate);
         this.operator = operator;
         this.trainCategoryId = trainCategoryId;
         this.trainTypeId = trainTypeId;
         this.version = version;
+        this.messageDateTime = messageDateTime;
     }
 
     @Override
@@ -76,9 +85,7 @@ public class Composition  {
         if (this == o) return true;
         if (!(o instanceof final Composition that)) return false;
 
-        if (!id.equals(that.id)) return false;
-
-        return true;
+        return id.equals(that.id);
     }
 
     @Override

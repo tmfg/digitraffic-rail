@@ -19,8 +19,6 @@ import fi.livi.rata.avoindata.server.factory.TrainLocationFactory;
 public class TrainLocationControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainLocationFactory trainLocationFactory;
-    @Autowired
-    private DateProvider dp;
 
     @Test
     public void baseAttributesShouldBeCorrect() throws Exception {
@@ -54,7 +52,7 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
                 .andExpect(jsonPath("$.features.length()").value(1))
                 .andExpect(jsonPath("$.features[0].properties.length()").value(4))
                 .andExpect(jsonPath("$.features[0].properties['trainNumber']").value(1))
-                .andExpect(jsonPath("$.features[0].properties['departureDate']").value(dp.dateInHelsinki().toString()))
+                .andExpect(jsonPath("$.features[0].properties['departureDate']").value(DateProvider.dateInHelsinki().toString()))
                 .andExpect(jsonPath("$.features[0].properties['speed']").value(100))
                 .andExpect(jsonPath("$.features[0].properties['timestamp']").exists());
         getGeoJson("/train-locations.geojson/latest/1").andExpect(jsonPath("$.features.length()").value(1));
@@ -63,8 +61,8 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
 
     @Test
     public void trainIdFilteringShouldWork() throws Exception {
-        LocalDate dateInHelsinki = dp.dateInHelsinki();
-        trainLocationFactory.createTrainLocation(new TrainLocationId(1L, dateInHelsinki, dp.nowInHelsinki()));
+        final LocalDate dateInHelsinki = DateProvider.dateInHelsinki();
+        trainLocationFactory.createTrainLocation(new TrainLocationId(1L, dateInHelsinki, DateProvider.nowInHelsinki()));
 
         getJson(String.format("/train-locations/%s/1", dateInHelsinki)).andExpect(jsonPath("$.length()").value(1));
         getJson(String.format("/train-locations/%s/2", dateInHelsinki)).andExpect(jsonPath("$.length()").value(0));

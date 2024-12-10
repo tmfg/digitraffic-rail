@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -39,7 +40,7 @@ public class WebClientConfiguration {
 
         // do not reuse connections with NewConnectionProvider
         return HttpClient.create(ConnectionProvider.newConnection())
-                .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectionTimeOutMs)
                 .secure(sslSpec -> sslSpec.sslContext(sslContext))
                 // add connection close
                 .headers(headers -> headers.add(HttpHeaders.CONNECTION, "close"))
@@ -54,7 +55,7 @@ public class WebClientConfiguration {
         log.info("Creating secure HTTP client");
         // do not reuse connections with NewConnectionProvider
         return HttpClient.create(ConnectionProvider.newConnection())
-                .responseTimeout(Duration.ofMillis(connectionTimeOutMs))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectionTimeOutMs)
                 .secure()
                 // add connection close
                 .headers(headers -> headers.add(HttpHeaders.CONNECTION, "close"))
@@ -89,7 +90,7 @@ public class WebClientConfiguration {
                 .clientConnector(new ReactorClientHttpConnector(defaultHttpClient))
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(codecs -> codecs
-                                .defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
+                                .defaultCodecs().maxInMemorySize(200 * 1024 * 1024))
                         .codecs(codecs -> codecs
                                 .defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper)))
                         .build())

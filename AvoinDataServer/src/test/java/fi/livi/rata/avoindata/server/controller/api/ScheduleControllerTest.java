@@ -1,27 +1,24 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.server.MockMvcBaseTest;
-import fi.livi.rata.avoindata.server.factory.TrainFactory;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.factory.TrainFactory;
 
 public class ScheduleControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainFactory trainFactory;
-    @Autowired
-    private DateProvider dateProvider;
 
     @Test
     @Transactional
     public void routeSearchShouldWork() throws Exception {
-        trainFactory.createBaseTrain(new TrainId(1L, dateProvider.dateInHelsinki()));
+        trainFactory.createBaseTrain(new TrainId(1L, DateProvider.dateInHelsinki()));
 
         //Whole trip
         assertLength("/live-trains/station/HKI/OL",1);
@@ -50,9 +47,11 @@ public class ScheduleControllerTest extends MockMvcBaseTest {
     public void attributesPresent() throws Exception {
         trainFactory.createBaseTrain();
 
+
+
         getJson("/live-trains/station/HKI/OL")
                 .andExpect(jsonPath("$[0].trainNumber").value("51"))
-                .andExpect(jsonPath("$[0].departureDate").value(LocalDate.now().toString()))
+                .andExpect(jsonPath("$[0].departureDate").value(DateProvider.dateInHelsinki().toString()))
                 .andExpect(jsonPath("$[0].operatorUICCode").value("1"))
                 .andExpect(jsonPath("$[0].operatorShortCode").value("test"))
                 .andExpect(jsonPath("$[0].commuterLineID").value("Z"))

@@ -17,4 +17,21 @@ public class Operator {
     @Column
     @Schema(description = "Short code of the operator", example = "vr")
     public String operatorShortCode;
+
+    public Operator() {
+        // For hibernate
+    }
+
+    public Operator(final int operatorUICCode, final String operatorShortCode) {
+        this.operatorUICCode = operatorUICCode;
+        this.operatorShortCode = operatorShortCode;
+    }
+
+    @Override
+    public String toString() {
+        return "Operator{" +
+                "operatorUICCode=" + operatorUICCode +
+                ", operatorShortCode='" + operatorShortCode + '\'' +
+                '}';
+    }
 }

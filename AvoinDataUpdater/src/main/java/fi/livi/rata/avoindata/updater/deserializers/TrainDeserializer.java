@@ -27,10 +27,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 @Component
 public class TrainDeserializer extends AEntityDeserializer<Train> {
-    private Logger logger = LoggerFactory.getLogger(TrainDeserializer.class);
-
-    @Autowired
-    private DateProvider dp;
+    private final Logger logger = LoggerFactory.getLogger(TrainDeserializer.class);
 
     @Autowired
     private TrainCategoryRepository trainCategoryRepository;
@@ -127,7 +124,7 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
         final boolean isRunningCurrently = firstTravelledRow.isPresent() && lastNonCancelledRow.isPresent() && lastNonCancelledRow.get().actualTime == null;
         if (isRunningCurrently) {
-            final boolean isOldTrain = dp.nowInHelsinki().minusDays(2).isAfter(lastNonCancelledRow.get().scheduledTime);
+            final boolean isOldTrain = DateProvider.nowInHelsinki().minusDays(2).isAfter(lastNonCancelledRow.get().scheduledTime);
             if (isOldTrain) {
                 logger.info("Returning isRunningCurrently = false for row {} ({})", lastNonCancelledRow.get().id,lastNonCancelledRow.get());
                 return false;

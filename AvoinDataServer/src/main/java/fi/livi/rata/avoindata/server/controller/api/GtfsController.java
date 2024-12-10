@@ -21,8 +21,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
-    @Autowired
-    private DateProvider dp;
 
     @Autowired
     private GTFSRepository gtfsRepository;
@@ -81,7 +79,7 @@ public class GtfsController {
     private byte[] getData(final HttpServletResponse response, final String fileName) {
         final GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
 
-        response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(dp.nowInHelsinki().minusHours(25))));
+        response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
 
         return gtfs.data;

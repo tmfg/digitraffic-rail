@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import fi.livi.digitraffic.common.util.StringUtil;
+
 /**
  * Scheduler nielee kaikki poikkeukset. Jopa OutOfMemoryError jää schedulerin uhriksi joten tämä luokka ottaa kaikki virheet kiinni ja
  * kirjoittaa ne lokiin. RuntimeException tasoiset ainoastaan lokitetaan, mutta muiden tapauksessa lokirivin lisäksi heitetään myös
@@ -16,9 +18,11 @@ public class ExceptionLoggingRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(ExceptionLoggingRunnable.class);
 
     private final Runnable runnable;
+    private final String prefix;
 
-    public ExceptionLoggingRunnable(final Runnable runnable) {
+    public ExceptionLoggingRunnable(final Runnable runnable, final String prefix) {
         this.runnable = runnable;
+        this.prefix = prefix;
     }
 
     @Override
@@ -26,15 +30,13 @@ public class ExceptionLoggingRunnable implements Runnable {
         try {
             runnable.run();
         } catch (final RuntimeException e) {
-            log.error("Runnablen suorituksessa tapahtui poikkeus.", e);
+            log.error("method=run Runnablen prefix={} suorituksessa tapahtui poikkeus.", prefix, e);
         } catch (final Throwable t) { // scheduler nielee jopa nämä
-            log.error(
-                    "Runnablen suorituksessa tapahtui virhe. Jos runnable oli schedulerilla ajossa niin se on poistettu jonosta pysyvästi.",
-                    t);
+            log.error("method=run Runnablen prefix={} suorituksessa tapahtui virhe. Jos runnable oli schedulerilla ajossa niin se on poistettu jonosta pysyvästi.", prefix, t);
             // Poistetaan jobi schedulerin jonosta. Ei ole enään järkeä yrittää jos tulee OOM tms. virhe.
             // Vähäpätöisemmät virheet jää jo RuntimeException haaraan.
             //noinspection ProhibitedExceptionThrown
-            throw new RuntimeException("Tämä poikkeus poistaa jobi schedulerin jonosta", t);
+            throw new RuntimeException(StringUtil.format("Tämä poikkeus poistaa jobin prefix={} schedulerin jonosta", prefix), t);
         }
     }
 }

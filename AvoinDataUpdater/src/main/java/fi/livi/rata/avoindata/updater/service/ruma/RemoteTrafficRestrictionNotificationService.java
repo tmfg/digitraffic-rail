@@ -1,8 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.ruma;
 
-import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import jakarta.annotation.PostConstruct;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +12,13 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
 
 @Service
 public class RemoteTrafficRestrictionNotificationService {
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     protected InitializerRetryTemplate retryTemplate;
@@ -27,11 +27,6 @@ public class RemoteTrafficRestrictionNotificationService {
     protected WebClient ripaWebClient;
 
     private static final String rumaUrlFragment = "ruma/lri";
-
-    @PostConstruct
-    private void init() {
-        retryTemplate.setLogger(log);
-    }
 
     public RemoteRumaNotificationStatus[] getStatuses() {
         return retryTemplate.execute(context -> {

@@ -16,11 +16,8 @@ public class TimeTableRowService {
     @Autowired
     private TimeTableRowRepository timeTableRowRepository;
 
-    @Autowired
-    private DateProvider dp;
-
     public List<SimpleTimeTableRow> getNextTenDays() {
-        final ZonedDateTime currentDateTime = dp.nowInHelsinki();
+        final ZonedDateTime currentDateTime = DateProvider.nowInHelsinki();
         return timeTableRowRepository.
                 findSimpleByScheduledTimeBetween(
                         currentDateTime.minusDays(1).toLocalDate(),

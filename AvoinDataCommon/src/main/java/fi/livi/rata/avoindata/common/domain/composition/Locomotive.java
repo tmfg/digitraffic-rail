@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "Locomotive", title = "Locomotive")
 public class Locomotive {
 
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
     public Long id;
 
@@ -57,5 +57,28 @@ public class Locomotive {
         powerTypeAbbreviation = locomotive.powerTypeAbbreviation;
         vehicleNumber = locomotive.vehicleNumber;
         this.journeysection = journeysection;
+    }
+
+    public Locomotive(final int location,
+                      final String locomotiveType,
+                      final String powerTypeAbbreviation,
+                      final String vehicleNumber) {
+        this.location = location;
+        this.locomotiveType = locomotiveType;
+        this.powerTypeAbbreviation = powerTypeAbbreviation;
+        this.vehicleNumber = vehicleNumber;
+    }
+
+    @Override
+    public String toString() {
+        return "Locomotive{" +
+                "id=" + id +
+                ", location=" + location +
+                ", locomotiveType='" + locomotiveType + '\'' +
+                ", powerTypeAbbreviation='" + powerTypeAbbreviation + '\'' +
+                ", powerType='" + powerType + '\'' +
+                ", vehicleNumber='" + vehicleNumber + '\'' +
+                ", journeysection=" + journeysection +
+                '}';
     }
 }

@@ -18,13 +18,11 @@ public class TrainControllerTest extends MockMvcBaseTest {
     @Autowired
     private TrainFactory trainFactory;
     @Autowired
-    private DateProvider dateProvider;
-    @Autowired
     private TrainRepository trainRepository;
 
     @Test
     public void deletedShouldBeFilteredByDefault() throws Exception {
-        final LocalDate someDate = dateProvider.dateInHelsinki();
+        final LocalDate someDate = DateProvider.dateInHelsinki();
 
         trainFactory.createBaseTrain(new TrainId(1L, someDate));
 
@@ -43,7 +41,7 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
     @Test
     public void deletedParameterShouldBeHonored() throws Exception {
-        final LocalDate someDate = dateProvider.dateInHelsinki();
+        final LocalDate someDate = DateProvider.dateInHelsinki();
 
         trainFactory.createBaseTrain(new TrainId(1L, someDate));
 

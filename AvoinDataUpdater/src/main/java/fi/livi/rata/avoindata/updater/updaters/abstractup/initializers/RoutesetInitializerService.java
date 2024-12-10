@@ -15,7 +15,7 @@ import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.RoutesetPersis
 
 @Service
 public class RoutesetInitializerService extends AbstractDatabaseInitializer<Routeset> {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private RoutesetPersistService routesetPersistService;
@@ -43,7 +43,7 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
     @Override
     protected List<Routeset> doUpdate() {
-        List<Routeset> updatedEntities = super.doUpdate();
+        final List<Routeset> updatedEntities = super.doUpdate();
 
         sendEntitiesToMqtt(updatedEntities);
 
@@ -54,12 +54,12 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
 
     private void sendEntitiesToMqtt(final List<Routeset> updatedEntities) {
         try {
-            for (Routeset entity : updatedEntities) {
+            for (final Routeset entity : updatedEntities) {
 
                 mqttPublishService.publishEntity(
                         String.format("routesets/%s/%s", entity.trainId.departureDate, entity.trainId.trainNumber), entity, null);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error publishing routesets to MQTT", e);
         }
     }

@@ -21,7 +21,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Service
 public class ScheduleService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private SingleDayScheduleExtractService singleDayScheduleExtractService;
@@ -39,9 +39,6 @@ public class ScheduleService {
     private TrainLockExecutor trainLockExecutor;
 
     @Autowired
-    private DateProvider dp;
-
-    @Autowired
     private ScheduleProviderService scheduleProviderService;
 
     @Autowired
@@ -50,11 +47,11 @@ public class ScheduleService {
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public synchronized void extractSchedules() {
         final StopWatch stopWatch = StopWatch.createStarted();
-        final ZonedDateTime startDate = dp.nowInHelsinki();
+        final ZonedDateTime startDate = DateProvider.nowInHelsinki();
         log.info("Starting extract");
 
         try {
-            final LocalDate start = dp.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
+            final LocalDate start = DateProvider.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
             final LocalDate end = start.plusDays(numberOfDaysToExtract);
 
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
@@ -63,7 +60,7 @@ public class ScheduleService {
             log.info("Schedules fetched adHoc {} regular {}", adhocSchedules.size(), regularSchedules.size());
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                final ZonedDateTime nowInHelsinki = dp.nowInHelsinki();
+                final ZonedDateTime nowInHelsinki = DateProvider.nowInHelsinki();
                 log.info("Extracting for date {}", date);
 
                 if (stopWatch.getTime(TimeUnit.HOURS) < 3) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849

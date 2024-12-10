@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.common.dao.train;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,9 +17,10 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 @Repository
 public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTableRow, TimeTableRowId> {
 
-    @Query("SELECT sttr FROM SimpleTimeTableRow sttr " +
-            "WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND " +
-            "sttr.scheduledTime > :scheduledTimeStart AND sttr.scheduledTime < :scheduledTimeEnd")
+    @Query("""
+            SELECT sttr FROM SimpleTimeTableRow sttr \
+            WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
+            sttr.scheduledTime > :scheduledTimeStart AND sttr.scheduledTime < :scheduledTimeEnd""")
     List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(
             @Param("departureDateStart")
             LocalDate departureDateStart,
@@ -28,4 +30,24 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
             ZonedDateTime scheduledTimeStart,
             @Param("scheduledTimeEnd")
             ZonedDateTime scheduledTimeEnd);
+
+    @Query("""
+            SELECT sttr \
+            FROM SimpleTimeTableRow sttr \
+            WHERE sttr.id.trainNumber = :trainNumber AND \
+            sttr.departureDate = :departureDate AND \
+            sttr.scheduledTime = :scheduledTime AND \
+            sttr.stationShortCode = UPPER(:stationShortCode) AND \
+            sttr.type = :type""")
+    Optional<SimpleTimeTableRow> findSimpleBy(
+            @Param("trainNumber")
+            final long trainNumber,
+            @Param("departureDate")
+            final LocalDate departureDate,
+            @Param("scheduledTime")
+            final ZonedDateTime scheduledTime,
+            @Param("stationShortCode")
+            final String stationShortCode,
+            @Param("type")
+            final TimeTableRow.TimeTableRowType type);
 }

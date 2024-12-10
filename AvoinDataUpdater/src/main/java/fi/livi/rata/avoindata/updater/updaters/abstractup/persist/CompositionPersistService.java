@@ -1,16 +1,18 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.composition.CompositionTimeTableRowRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.updater.service.CompositionService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional
@@ -44,16 +46,14 @@ public class CompositionPersistService extends AbstractPersistService<JourneyCom
     }
 
     public Long getMaxVersion() {
+        return compositionService.getMaxVersion();
+    }
 
-        if (maxVersion != null) {
-            long l = maxVersion.get();
-
-            if (l > 0) {
-                return l;
-            }
-        }
-
-        return compositionRepository.getMaxVersion();
+    /**
+     * @return messageDateTime of julkisetkokoonpanot message in EpochMilli
+     */
+    public Instant getMaxMessageDateTime() {
+        return compositionService.getMaxMessageDateTime();
     }
 
     private void removeOldCompositions(final List<JourneyComposition> journeyCompositions) {

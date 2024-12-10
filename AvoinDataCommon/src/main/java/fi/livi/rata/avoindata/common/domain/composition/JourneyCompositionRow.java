@@ -1,13 +1,12 @@
 package fi.livi.rata.avoindata.common.domain.composition;
 
-
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 public class JourneyCompositionRow {
-    public JourneyCompositionRow(final LocalDateTime scheduledTime, final String stationShortCode, final int stationUICCode,
-            final String countryCode, final TimeTableRow.TimeTableRowType type) {
+    public JourneyCompositionRow(final ZonedDateTime scheduledTime, final String stationShortCode, final int stationUICCode,
+                                 final String countryCode, final TimeTableRow.TimeTableRowType type) {
         this.scheduledTime = scheduledTime;
         this.stationShortCode = stationShortCode;
         this.stationUICCode = stationUICCode;
@@ -15,9 +14,20 @@ public class JourneyCompositionRow {
         this.type = type;
     }
 
-    public LocalDateTime scheduledTime;
+    public ZonedDateTime scheduledTime;
     public String stationShortCode;
     public int stationUICCode;
     public String countryCode;
     public TimeTableRow.TimeTableRowType type; // Departure/arrival
+
+    @Override
+    public String toString() {
+        return "JourneyCompositionRow{" +
+                "scheduledTime=" + scheduledTime +
+                ", stationShortCode='" + stationShortCode + '\'' +
+                ", stationUICCode=" + stationUICCode +
+                ", countryCode='" + countryCode + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }

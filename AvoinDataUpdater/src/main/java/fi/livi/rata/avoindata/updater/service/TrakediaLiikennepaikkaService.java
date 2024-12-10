@@ -1,7 +1,11 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -13,11 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
 
@@ -30,7 +31,7 @@ public class TrakediaLiikennepaikkaService {
     @Autowired
     private WebClient webClient;
 
-    private static Logger logger = LoggerFactory.getLogger(TrakediaLiikennepaikkaService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TrakediaLiikennepaikkaService.class);
 
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -86,9 +87,14 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            logger.info("Fetching Trakedia data from {}", url);
+            logger.info("method=fetchRaideosuusMap Fetching Trakedia data from {}", url);
 
             final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
+
+            if (jsonNode == null) {
+                logger.error("method=fetchRaideosuusMap from {} returned null", url);
+                return raideosuusMap;
+            }
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode geometria = node.get(0).get("geometria");
@@ -97,7 +103,7 @@ public class TrakediaLiikennepaikkaService {
             }
 
         } catch(final Exception e) {
-            logger.error("could not fetch Trakedia data", e);
+            logger.error("method=fetchRaideosuusMap could not fetch Trakedia data", e);
         }
 
         return raideosuusMap;
@@ -111,9 +117,14 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            logger.info("Fetching Trakedia data from {}", url);
+            logger.info("method=fetchLiikennepaikkaMap Fetching Trakedia data from {}", url);
 
             final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
+
+            if (jsonNode == null) {
+                logger.error("method=fetchLiikennepaikkaMap from {} returned null", url);
+                return liikennepaikkaMap;
+            }
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
@@ -122,12 +133,14 @@ public class TrakediaLiikennepaikkaService {
                         .get(1).asDouble()});
             }
         } catch (final Exception e) {
-            logger.error("could not fetch Trakedia data", e);
+            logger.error("method=fetchLiikennepaikkaMap could not fetch Trakedia data", e);
         }
 
         return liikennepaikkaMap;
     }
 
+    // Data format:
+    // JRI -> {ArrayNode} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
     public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes() {
         return lpNodeCache.get(() -> {
             final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
@@ -149,16 +162,21 @@ public class TrakediaLiikennepaikkaService {
         }
 
         try {
-            logger.info("Fetching Trakedia nodes from {}", url);
+            logger.info("method=fetchNodeMap Fetching Trakedia nodes from {}", url);
 
             final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block();
+
+            if (jsonNode == null) {
+                logger.error("method=fetchNodeMap from {} returned null", url);
+                return liikennepaikkaMap;
+            }
 
             for (final JsonNode node : jsonNode) {
                 final JsonNode lyhenne = node.get(0).get("lyhenne");
                 liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
             }
         } catch (final Exception e) {
-            logger.error("could not fetch Trakedia data", e);
+            logger.error("method=fetchNodeMap could not fetch Trakedia data", e);
         }
 
         return liikennepaikkaMap;

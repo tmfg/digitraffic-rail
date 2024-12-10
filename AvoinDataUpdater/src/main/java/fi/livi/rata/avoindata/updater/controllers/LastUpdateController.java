@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.updater.controllers;
 
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.isuptodate.IsUpToDateService;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
@@ -12,11 +14,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Map;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.IsUpToDateService;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 public class LastUpdateController {
@@ -26,8 +27,6 @@ public class LastUpdateController {
     @Autowired
     private WebClient webClient;
 
-    @Autowired
-    private DateProvider dateProvider;
 
     @RequestMapping("/last-updated")
     @ResponseBody
@@ -36,7 +35,7 @@ public class LastUpdateController {
 
         final Map<LastUpdateService.LastUpdatedType, IsUpToDateService.IsToUpToDateDto> isUpToDates = isUpToDateService.getIsUpToDates();
 
-        isUpToDates.put(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP, createIsUpToDateForUrl(String.format("https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip", this.dateProvider.dateInHelsinki().minusDays(3)), Duration.ofHours(24 * 2)));
+        isUpToDates.put(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP, createIsUpToDateForUrl(String.format("https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip", DateProvider.dateInHelsinki().minusDays(3)), Duration.ofHours(24 * 2)));
 
         return isUpToDates;
     }

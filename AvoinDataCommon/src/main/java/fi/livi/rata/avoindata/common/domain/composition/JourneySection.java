@@ -52,7 +52,10 @@ public class JourneySection {
     @JsonIgnore
     public Composition composition;
 
+    @Schema(description = "Total length of the train with an accuracy of 1 m")
     public int totalLength;
+
+    @Schema(description = "Maximum with an accuracy of 1 km/h")
     public int maximumSpeed;
 
     public Long attapId;

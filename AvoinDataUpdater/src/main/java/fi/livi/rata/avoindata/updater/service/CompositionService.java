@@ -1,14 +1,21 @@
 package fi.livi.rata.avoindata.updater.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +41,10 @@ import fi.livi.rata.avoindata.common.utils.OptionalUtil;
 @Service
 @Transactional
 public class CompositionService extends VersionedService<JourneyComposition> {
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    protected AtomicReference<Instant> maxMessageDateTime = new AtomicReference<>(Instant.MIN);
 
     @Autowired
     private CompositionRepository compositionRepository;
@@ -86,11 +97,9 @@ public class CompositionService extends VersionedService<JourneyComposition> {
 
         saveCompositions(compositions);
 
-        for (final Composition entity : compositions) {
-            if (entity.version > maxVersion.get()) {
-                maxVersion.set(entity.version);
-            }
-        }
+        maxVersion.set(compositions.stream().map(e -> e.version).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(maxVersion.get()));
+        maxMessageDateTime.set(compositions.stream().map(e -> e.messageDateTime).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(
+                maxMessageDateTime.get()));
     }
 
     private void saveCompositions(final List<Composition> compositions) {
@@ -114,21 +123,16 @@ public class CompositionService extends VersionedService<JourneyComposition> {
 
 
     private Composition createCompositionFromJourneyCompositions(final List<JourneyComposition> journeyCompositions) {
-        final JourneyComposition journeyComposition = journeyCompositions.get(0);
+        final JourneyComposition journeyComposition = journeyCompositions.getFirst();
 
-        Long maxVersion = Long.MIN_VALUE;
-        for (final JourneyComposition composition : journeyCompositions) {
-            if (composition.version > maxVersion) {
-                maxVersion = composition.version;
-            }
-        }
+        final long maxVersion = journeyCompositions.stream().map(c -> c.version).max(Comparator.naturalOrder()).orElse(Long.MIN_VALUE);
+        final Instant maxMessageReference = journeyCompositions.stream().map(c -> c.messageDateTime).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);
 
+        final Composition composition = new Composition(journeyComposition.operator, journeyComposition.trainNumber,
+                journeyComposition.departureDate, journeyComposition.trainCategoryId, journeyComposition.trainTypeId, maxVersion, maxMessageReference);
 
-        Composition composition = new Composition(journeyComposition.operator, journeyComposition.trainNumber,
-                journeyComposition.departureDate, journeyComposition.trainCategoryId, journeyComposition.trainTypeId, maxVersion);
-
-        Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(journeyComposition.trainCategoryId);
-        Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(journeyComposition.trainTypeId);
+        final Optional<TrainCategory> trainCategoryOptional = trainCategoryRepository.findByIdCached(journeyComposition.trainCategoryId);
+        final Optional<TrainType> trainTypeOptional = trainTypeRepository.findByIdCached(journeyComposition.trainTypeId);
         composition.trainCategory = trainCategoryOptional.isPresent() ? trainCategoryOptional.get().name : "";
         composition.trainType = trainTypeOptional.isPresent() ? trainTypeOptional.get().name : "";
 
@@ -137,30 +141,30 @@ public class CompositionService extends VersionedService<JourneyComposition> {
 
     private LinkedHashSet<JourneySection> createSortedJourneySectionsFromJourneyCompositions(
             final List<JourneyComposition> journeyCompositions, final Composition composition) {
-        return new LinkedHashSet<>(journeyCompositions.stream().map(x -> createJourneySection(x, composition))
-                .sorted(Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime)).collect(Collectors.toList()));
+        return journeyCompositions.stream().map(x -> createJourneySection(x, composition))
+                .sorted(Comparator.comparing(o -> o.beginTimeTableRow.scheduledTime)).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private JourneySection createJourneySection(final JourneyComposition journeyComposition, final Composition composition) {
-        final CompositionTimeTableRow beginTimeTableRow = new CompositionTimeTableRow(journeyComposition.startStation, composition);
+        final CompositionTimeTableRow beginTimeTableRow = new CompositionTimeTableRow(journeyComposition.startStation);
 
-        //TODO 9.3.2015 jesseko After endTimeTableRows are populated for all compositions, this null check should log failures and maybe
-        //launch a smoke detector
-        CompositionTimeTableRow endTimeTableRow = null;
-        if (journeyComposition.endStation != null) {
-            endTimeTableRow = new CompositionTimeTableRow(journeyComposition.endStation, composition);
+        final CompositionTimeTableRow endTimeTableRow =
+            journeyComposition.endStation != null ?
+                new CompositionTimeTableRow(journeyComposition.endStation) : null;
+        if ( endTimeTableRow == null) {
+            log.error("method=createJourneySection JourneyComposition for train {} on {} had empty endStation", journeyComposition.trainNumber, journeyComposition.departureDate);
         }
 
         final JourneySection journeySection = new JourneySection(beginTimeTableRow, endTimeTableRow, composition,
                 journeyComposition.maximumSpeed, journeyComposition.totalLength, journeyComposition.attapId, journeyComposition.saapAttapId);
-        journeySection.locomotives = new LinkedHashSet<>(
-                journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection)).collect(Collectors.toList()));
+        journeySection.locomotives = journeyComposition.locomotives.stream().map(x -> new Locomotive(x, journeySection))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         journeyComposition.journeySection = journeySection;
         journeyComposition.wagons.forEach(x -> x.journeysection = journeySection);
         journeySection.wagons = new LinkedHashSet<>(journeyComposition.wagons);
 
-        for (Locomotive locomotive : journeySection.locomotives) {
+        for (final Locomotive locomotive : journeySection.locomotives) {
             locomotive.powerType = OptionalUtil.getName(powerTypeRepository.findByAbbreviationCached(locomotive.powerTypeAbbreviation));
         }
 
@@ -173,15 +177,27 @@ public class CompositionService extends VersionedService<JourneyComposition> {
     }
 
     public Long getMaxVersion() {
+        if (maxVersion.get() <= 0) {
+            maxVersion.set(compositionRepository.getMaxVersion());
+        }
+        return maxVersion.get();
+    }
 
-        if (maxVersion != null) {
-            long l = maxVersion.get();
+    /**
+     * @return messageDateTime of julkisetkokoonpanot message in EpochMilli
+     */
+    public Instant getMaxMessageDateTime() {
+        if (!maxMessageDateTime.get().isAfter(Instant.MIN)) {
+            maxMessageDateTime.set(ObjectUtils.firstNonNull(compositionRepository.getMaxMessageDateTime(), Instant.MIN));
 
-            if (l > 0) {
-                return l;
+            final Instant weekInPast = Instant.now().minus(7, ChronoUnit.DAYS);
+            if (maxMessageDateTime.get().isBefore(weekInPast)) { // Initially get max last 7 days
+                maxMessageDateTime.set(weekInPast);
+                log.info("method=getMaxMessageDateTime initial value now-7d: {}", maxMessageDateTime.get());
+            } else {
+                log.info("method=getMaxMessageDateTime initial value from db {}", maxMessageDateTime.get());
             }
         }
-
-        return compositionRepository.getMaxVersion();
+        return maxMessageDateTime.get();
     }
 }

@@ -1,17 +1,19 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
-import fi.livi.rata.avoindata.updater.service.RipaService;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import jakarta.annotation.PostConstruct;
-import org.apache.commons.lang3.ObjectUtils;
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.util.StringUtils;
 
-import java.util.function.Consumer;
+import fi.livi.rata.avoindata.updater.config.InitializerRetryTemplate;
+import fi.livi.rata.avoindata.updater.config.SchedulingConfig;
+import fi.livi.rata.avoindata.updater.service.RipaService;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import jakarta.annotation.PostConstruct;
 
 public abstract class AEntityUpdater<T> {
     protected static final Logger log = LoggerFactory.getLogger(AEntityUpdater.class);
@@ -30,11 +32,19 @@ public abstract class AEntityUpdater<T> {
 
     @PostConstruct
     private void init() {
-        retryTemplate.setLogger(log);
-        new SimpleAsyncTaskExecutor().execute(this::wrapUpdate);
+        if (!SchedulingConfig.isSchedulingEnabled()) {
+            return;
+        }
+
+        try (final SimpleAsyncTaskExecutor e = new SimpleAsyncTaskExecutor()) {
+            e.execute(this::wrapUpdate);
+        } catch (final Exception e) {
+            log.error("method=init failed to run async task wrapUpdate with error {}", e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
-    protected <T> T getForObjectWithRetry(final String path, final Class<T> responseType) {
+    protected T getForObjectWithRetry(final String path, final Class<T> responseType) {
         return retryTemplate.execute(context -> ripaService.getFromRipaRestTemplate(path, responseType));
     }
 
@@ -45,7 +55,7 @@ public abstract class AEntityUpdater<T> {
     protected abstract void update();
 
     protected final void doUpdate(final String path, final Consumer<T> updater, final Class<T> responseType) {
-        if (ObjectUtils.isEmpty(liikeInterfaceUrl)) {
+        if (!StringUtils.hasText(liikeInterfaceUrl)) {
             return;
         }
 

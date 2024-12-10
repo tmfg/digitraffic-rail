@@ -1,11 +1,13 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import com.google.transit.realtime.GtfsRealtime;
+
+import fi.livi.rata.avoindata.common.utils.TimingUtil;
 @Service
 public class GTFSRealtimeUpdatingService {
     private final GTFSRealtimeService gtfsRealtimeService;
@@ -37,7 +39,7 @@ public class GTFSRealtimeUpdatingService {
                 gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-updates");
             });
         } catch(final Exception e) {
-            log.error("got exception", e);
+            log.error("method=updateTripUpdates got exception", e);
         }
     }
 

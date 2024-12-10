@@ -42,9 +42,6 @@ public class GTFSService {
     private GTFSWritingService gtfsWritingService;
 
     @Autowired
-    private DateProvider dp;
-
-    @Autowired
     private ScheduleProviderService scheduleProviderService;
 
     @Autowired
@@ -57,12 +54,12 @@ public class GTFSService {
     public void generateGTFS() {
         TimingUtil.log(log, "generateGTFS", () -> {
             try {
-                final LocalDate start = dp.dateInHelsinki().minusDays(7);
+                final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
                 this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
 
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
             } catch (final ExecutionException | InterruptedException | IOException e) {
-                log.error("Error generating gtfs", e);
+                log.error("method=generateGTFS Error generating gtfs", e);
 
                 throw new RuntimeException(e);
             }

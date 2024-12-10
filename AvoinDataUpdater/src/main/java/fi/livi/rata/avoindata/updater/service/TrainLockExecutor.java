@@ -19,7 +19,7 @@ public class TrainLockExecutor {
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
     @Autowired
     private SimpleTransactionManager simpleTransactionManager;
-    private Logger log = LoggerFactory.getLogger(TrainLockExecutor.class);
+    private final Logger log = LoggerFactory.getLogger(TrainLockExecutor.class);
 
     public <T> T executeInTransactionLock(final String context, final Callable<T> callable) {
         return execute(context, true, callable);
@@ -33,7 +33,7 @@ public class TrainLockExecutor {
         final ZonedDateTime submittedAt = ZonedDateTime.now();
 
         final Callable<T> wrappedCallable = () -> {
-            log.debug("Executing callable for " + context);
+            log.debug("method=execute Executing callable for " + context);
 
             final ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
@@ -45,7 +45,7 @@ public class TrainLockExecutor {
             }
 
             if (shouldLog(submittedAt, executionStartedAt)) {
-                log.info("Waited: {}, Executed: {}, Context: {}",
+                log.info("method=execute Waited: {}, Executed: {}, Context: {}",
                     Duration.between(submittedAt, executionStartedAt),
                     Duration.between(executionStartedAt, ZonedDateTime.now()),
                     context);
@@ -58,7 +58,7 @@ public class TrainLockExecutor {
         try {
             return future.get();
         } catch (final Exception e) {
-            log.error("Error executing callable in TrainLockExecutor, context: " + context, e);
+            log.error("method=execute Error executing callable in TrainLockExecutor, context: " + context, e);
             return null;
         }
     }
@@ -69,7 +69,7 @@ public class TrainLockExecutor {
     }
 
     private <T> Future<T> submitCallable(final String context, final Callable<T> callable) {
-        log.debug("Submitting callable for " + context);
+        log.debug("method=submitCallable Submitting callable for " + context);
 
         return executorService.submit(callable);
     }

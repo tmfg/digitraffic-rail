@@ -17,8 +17,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
-import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
@@ -48,7 +48,6 @@ import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessag
 import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.ElementRangeDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.IdentifierRangeDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.LocalizationsDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.LocomotiveDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.OperatorDeserializer;
@@ -125,9 +124,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
     @Autowired
     private CauseDeserializer causeDeserializer;
-
-    @Autowired
-    private JourneyCompositionDeserializer journeyCompositionDeserializer;
 
     @Autowired
     private WagonDeserializer wagonDeserializer;
@@ -260,7 +256,6 @@ public class HttpInputObjectMapper extends ObjectMapper {
     }
 
     private void addCompositionDeserializers(final SimpleModule module) {
-        module.addDeserializer(JourneyComposition.class, journeyCompositionDeserializer);
         module.addDeserializer(Wagon.class, wagonDeserializer);
         module.addDeserializer(Locomotive.class, locomotiveDeserializer);
     }

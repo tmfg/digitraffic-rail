@@ -20,15 +20,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
 import org.locationtech.jts.geom.MultiLineString;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,17 +37,30 @@ import org.springframework.core.io.Resource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Translation;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 @Transactional
@@ -75,9 +88,6 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @MockBean
     private PlatformDataService platformDataService;
-
-    @MockBean
-    private DateProvider dp;
 
     @MockBean
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
@@ -124,20 +134,28 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Value("classpath:gtfs/9705.json")
     private Resource schedules_9705;
 
+    MockedStatic<DateProvider> mockedDP;
+
     @BeforeEach
     public void setup() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2017, 9, 9));
-        given(dp.nowInHelsinki()).willReturn(ZonedDateTime.now());
+        mockedDP = Mockito.mockStatic(DateProvider.class);
+        mockDPDateInHelsinki(LocalDate.of(2017, 9, 9));
+        mockDPNowInHelsinki(ZonedDateTime.now());
 
         given(gtfsShapeService.createShapesFromTrips(any(), any())).willReturn(Collections.emptyList());
 
         given(platformDataService.getCurrentPlatformData()).willReturn(getMockPlatformData());
     }
 
+    @AfterEach
+    public void teardown() {
+        mockedDP.close();
+    }
+
     @Test
     @Transactional
     public void train59ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 12, 11));
+        mockDPDateInHelsinki(LocalDate.of(2020, 12, 11));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_59.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(),
@@ -176,7 +194,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void gtfsTranslations() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
+        mockDPDateInHelsinki(LocalDate.of(2019, 11, 27));
         given(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes()).willReturn(Map.of("TKU",
                 createLiikennepaikkaNode("Turku", "Åbo")));
 
@@ -191,7 +209,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train910ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 11, 27));
+        mockDPDateInHelsinki(LocalDate.of(2019, 11, 27));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_910.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -203,7 +221,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train781ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2020, 10, 13));
+        mockDPDateInHelsinki(LocalDate.of(2020, 10, 13));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_781.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -218,7 +236,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train9924ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 18));
+        mockDPDateInHelsinki(LocalDate.of(2019, 12, 18));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9924.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -231,7 +249,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train66ShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 1));
+        mockDPDateInHelsinki(LocalDate.of(2019, 12, 1));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_66.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -254,7 +272,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void train9705ShouldBeOkayWithTwoOverlappingCancels() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2023, 12, 14));
+        mockDPDateInHelsinki(LocalDate.of(2023, 12, 14));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_9705.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -302,7 +320,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Sql({ "/gtfs/import_test_time_table_rows.sql" })
     public void timeTableRowServiceTimeIntervalsAreCorrect() throws IOException {
         final ZonedDateTime startDateTime = ZonedDateTime.of(2019, 1, 1, 8, 0, 0, 0, ZoneId.of("Europe/Helsinki"));
-        given(dp.nowInHelsinki()).willReturn(startDateTime);
+        mockDPNowInHelsinki(startDateTime);
         final List<SimpleTimeTableRow> rows = timeTableRowService.getNextTenDays();
         assertEquals(4, rows.size());
         Assertions.assertTrue(rows.stream().map(SimpleTimeTableRow::getAttapId).collect(Collectors.toList()).containsAll(List.of(2L, 3L, 4L, 5L)));
@@ -434,7 +452,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @Test
     @Transactional
     public void schedulePeriodChangeShouldBeOkay() throws IOException {
-        given(dp.dateInHelsinki()).willReturn(LocalDate.of(2019, 12, 9));
+        mockDPDateInHelsinki(LocalDate.of(2019, 12, 9));
 
         final List<Schedule> schedules = testDataService.parseEntityList(schedules_141_151.getFile(), Schedule[].class);
         final GTFSDto gtfsDto = gtfsService.createGTFSEntity(Collections.emptyList(), schedules);
@@ -742,5 +760,13 @@ public class GTFSDtoServiceTest extends BaseTest {
         );
 
         return new PlatformData(platformsByStation);
+    }
+
+    private void mockDPDateInHelsinki(final LocalDate dateInHelsinki) {
+        mockedDP.when(DateProvider::dateInHelsinki).thenReturn(dateInHelsinki);
+    }
+
+    private void mockDPNowInHelsinki(final ZonedDateTime nowInHelsinki) {
+        mockedDP.when(DateProvider::nowInHelsinki).thenReturn(nowInHelsinki);
     }
 }

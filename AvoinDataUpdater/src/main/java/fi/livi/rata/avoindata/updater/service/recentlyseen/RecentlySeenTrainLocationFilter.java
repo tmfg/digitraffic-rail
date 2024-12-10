@@ -1,19 +1,17 @@
 package fi.livi.rata.avoindata.updater.service.recentlyseen;
 
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
+import java.time.ZonedDateTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
+import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 @Component
 public class RecentlySeenTrainLocationFilter extends AbstractRecentlySeenEntityFilter<TrainLocation, String> {
     public static final int TIMESTAMP_RECENT_TRESHOLD_MINUTES = 25;
-    @Autowired
-    private DateProvider dp;
 
     @Override
     public ZonedDateTime getTimestamp(final TrainLocation entity) {
@@ -28,7 +26,7 @@ public class RecentlySeenTrainLocationFilter extends AbstractRecentlySeenEntityF
 
     @Override
     public boolean isTooOld(final ZonedDateTime timestamp) {
-        return timestamp.isBefore(dp.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_TRESHOLD_MINUTES));
+        return timestamp.isBefore(DateProvider.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_TRESHOLD_MINUTES));
     }
 
 

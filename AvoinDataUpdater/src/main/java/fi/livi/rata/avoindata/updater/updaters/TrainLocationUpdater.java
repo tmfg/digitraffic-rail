@@ -1,16 +1,11 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
-import fi.livi.rata.avoindata.updater.service.RipaService;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
-import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
+import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,24 +14,28 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.DecimalFormat;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
+import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
+import fi.livi.rata.avoindata.updater.service.RipaService;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
+import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
 
 @Service
 public class TrainLocationUpdater {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private TrainLocationRepository trainLocationRepository;
 
     @Autowired
     private RecentlySeenTrainLocationFilter recentlySeenTrainLocationFilter;
-
-    @Autowired
-    private DateProvider dateProvider;
 
     @Autowired
     private TrainLocationNearTrackFilterService trainLocationNearTrackFilterService;
@@ -63,7 +62,7 @@ public class TrainLocationUpdater {
     public synchronized void trainLocation() {
         try {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
-                final ZonedDateTime start = dateProvider.nowInHelsinki();
+                final ZonedDateTime start = DateProvider.nowInHelsinki();
                 final List<TrainLocation> trainLocations = Arrays.asList(ripaService.getFromRipa("kuplas", TrainLocation[].class));
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
@@ -77,7 +76,7 @@ public class TrainLocationUpdater {
 
                 trainLocationRepository.persist(filteredTrainLocations);
 
-                final ZonedDateTime end = dateProvider.nowInHelsinki();
+                final ZonedDateTime end = DateProvider.nowInHelsinki();
 
                 log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
                         trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());

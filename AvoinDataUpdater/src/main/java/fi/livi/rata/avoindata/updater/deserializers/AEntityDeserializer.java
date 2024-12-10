@@ -1,9 +1,6 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -13,19 +10,21 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
-
 import org.locationtech.jts.geom.Geometry;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
 
-    protected <T> List<T> getObjectsFromNode(final JsonParser jsonParser, final JsonNode node, final Class<T[]> objectClass,
-            final String nodeName) throws IOException {
+    protected <Type> List<Type> getObjectsFromNode(final JsonParser jsonParser, final JsonNode node, final Class<Type[]> objectClass,
+                                                   final String nodeName) throws IOException {
         return Arrays.asList(jsonParser.getCodec().readValue(node.get(nodeName).traverse(jsonParser.getCodec()), objectClass));
     }
 
-    protected <T> T getObjectFromNode(final JsonParser jp, final JsonNode node, final String nodeName,
-            final Class<? extends T> objectClass) throws IOException {
+    protected <Type> Type getObjectFromNode(final JsonParser jp, final JsonNode node, final String nodeName,
+                                            final Class<? extends Type> objectClass) throws IOException {
         return jp.getCodec().readValue(node.get(nodeName).traverse(jp.getCodec()), objectClass);
     }
 
@@ -34,6 +33,13 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
             return null;
         }
 
+        return Boolean.TRUE;
+    }
+
+    protected Boolean nullIfFalse(final Boolean value) {
+        if (value == null || !value) {
+            return null;
+        }
         return Boolean.TRUE;
     }
 

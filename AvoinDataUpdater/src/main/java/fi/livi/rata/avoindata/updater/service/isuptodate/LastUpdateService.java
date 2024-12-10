@@ -39,14 +39,15 @@ public class LastUpdateService {
         TRAIN_LOCATIONS_DUMP
     }
 
-    private Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();
-    private Map<LastUpdatedType, ZonedDateTime> lastUpdateTimes = new HashMap<>();
+    private final Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();
+    private final Map<LastUpdatedType, ZonedDateTime> lastUpdateTimes = new HashMap<>();
 
     @PostConstruct
     public void setup() {
         prefixToEnumMap.put("trains", LastUpdatedType.TRAINS);
         prefixToEnumMap.put("routesets", LastUpdatedType.ROUTESETS);
-        prefixToEnumMap.put("compositions", LastUpdatedType.COMPOSITIONS);
+        prefixToEnumMap.put("compositions", LastUpdatedType.COMPOSITIONS); // old compositions
+        prefixToEnumMap.put("julkisetkokoonpanot", LastUpdatedType.COMPOSITIONS); // new compositions
         prefixToEnumMap.put("trainrunningmessages", LastUpdatedType.TRAIN_RUNNING_MESSAGES);
         prefixToEnumMap.put("trainLocations", LastUpdatedType.TRAIN_LOCATIONS);
         prefixToEnumMap.put("forecasts", LastUpdatedType.FORECASTS);
@@ -60,8 +61,8 @@ public class LastUpdateService {
         prefixToEnumMap.put("/v1/reason-categories/latest/v1/reason-codes/latest", LastUpdatedType.CATEGORY_CODES);
     }
 
-    public void update(String lastUpdatedType) {
-        LastUpdatedType lastUpdateTypeAsEnum = prefixToEnumMap.get(lastUpdatedType);
+    public void update(final String lastUpdatedType) {
+        final LastUpdatedType lastUpdateTypeAsEnum = prefixToEnumMap.get(lastUpdatedType);
         if (lastUpdateTypeAsEnum != null) {
             update(lastUpdateTypeAsEnum);
         } else {
@@ -69,7 +70,7 @@ public class LastUpdateService {
         }
     }
 
-    public void update(LastUpdatedType lastUpdatedType) {
+    public void update(final LastUpdatedType lastUpdatedType) {
         lastUpdateTimes.put(lastUpdatedType, ZonedDateTime.now(ZoneId.of("UTC")));
     }
 

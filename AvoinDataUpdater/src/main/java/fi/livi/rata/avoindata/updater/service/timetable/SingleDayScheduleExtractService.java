@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Service
 public class SingleDayScheduleExtractService {
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private ScheduleToTrainConverter scheduleToTrainConverter;
@@ -46,8 +46,7 @@ public class SingleDayScheduleExtractService {
 
     @Autowired
     private TodaysScheduleService todaysScheduleService;
-    @Autowired
-    private DateProvider dp;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -295,7 +294,7 @@ public class SingleDayScheduleExtractService {
         extractedSchedule.scheduleId = schedule.id;
         extractedSchedule.capacityId = schedule.capacityId;
         extractedSchedule.trainId = new TrainId(schedule.trainNumber, date);
-        extractedSchedule.timestamp = dp.nowInHelsinki();
+        extractedSchedule.timestamp = DateProvider.nowInHelsinki();
         extractedSchedule.version = schedule.version;
 
         return extractedSchedule;

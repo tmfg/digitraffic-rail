@@ -19,6 +19,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Table;
+
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
@@ -51,9 +52,6 @@ public class GTFSTripService {
     @Autowired
     private GTFSTripRepository gtfsTripRepository;
 
-    @Autowired
-    private DateProvider dateProvider;
-
     private final Map<String, CalendarDate> encounteredCalendarDates = new HashMap<>();
 
     public List<Trip> createTrips(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
@@ -85,7 +83,7 @@ public class GTFSTripService {
             }
         }
 
-        final LocalDate now = dateProvider.dateInHelsinki();
+        final LocalDate now = DateProvider.dateInHelsinki();
         final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
             if (trip.stopTimes.isEmpty() || trip.calendar.endDate.isBefore(now)) {

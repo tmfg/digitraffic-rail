@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Lists;
 import com.google.transit.realtime.GtfsRealtime;
+
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -53,9 +54,6 @@ public class GTFSWritingService {
     @Autowired
     private GTFSRepository gtfsRepository;
 
-    @Autowired
-    private DateProvider dateProvider;
-
     @Transactional
     public List<File> writeGTFSFiles(final GTFSDto gtfsDto) throws IOException {
         return writeGTFSFiles(gtfsDto, "gtfs.zip");
@@ -64,7 +62,7 @@ public class GTFSWritingService {
     private void persist(final byte[] data, final String fileName) {
         final GTFS gtfs = new GTFS();
         gtfs.data = data;
-        gtfs.created = dateProvider.nowInHelsinki();
+        gtfs.created = DateProvider.nowInHelsinki();
         gtfs.fileName = fileName;
 
         gtfsRepository.persist(List.of(gtfs));
@@ -156,7 +154,7 @@ public class GTFSWritingService {
                 "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version", cd -> String
                         .format("%s,%s,%s,%s,%s,%s", "Fintraffic", "https://www.digitraffic.fi/rautatieliikenne/", "fi", format(minStartDate),
                                 format(maxEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(
-                                        ZoneId.of("Z")).format(dateProvider.nowInHelsinki()))));
+                                        ZoneId.of("Z")).format(DateProvider.nowInHelsinki()))));
 
 
         return files;

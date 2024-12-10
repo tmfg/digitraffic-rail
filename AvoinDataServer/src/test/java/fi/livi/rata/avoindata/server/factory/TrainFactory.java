@@ -16,6 +16,7 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 @Component
 public class TrainFactory {
@@ -36,12 +37,12 @@ public class TrainFactory {
 
     @Transactional
     public Train createBaseTrain() {
-        return createBaseTrain(new TrainId(51L, LocalDate.now()));
+        return createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki()));
     }
 
     @Transactional
     public Train createBaseTrainWithTrainReadyMessages() {
-        final Train train = createBaseTrain(new TrainId(51L, LocalDate.now()));
+        final Train train = createBaseTrain(new TrainId(51L, DateProvider.dateInHelsinki()));
         train.timeTableRows.forEach(ttr -> trainReadyRepository.save(trainReadyFactory.create(ttr)));
         return train;
     }
@@ -64,7 +65,8 @@ public class TrainFactory {
 
         train = trainRepository.save(train);
 
-        final ZonedDateTime now = ZonedDateTime.now().withYear(departureDate.getYear()).withMonth(departureDate.getMonthValue())
+
+        final ZonedDateTime now = DateProvider.nowInHelsinki().withYear(departureDate.getYear()).withMonth(departureDate.getMonthValue())
                 .withDayOfMonth(departureDate.getDayOfMonth());
         final List<TimeTableRow> timeTableRowList = new ArrayList<>();
         timeTableRowList.add(ttrf.create(train, now.plusHours(1), now.plusHours(1).plusMinutes(1), new StationEmbeddable("HKI", 1, "FI"),

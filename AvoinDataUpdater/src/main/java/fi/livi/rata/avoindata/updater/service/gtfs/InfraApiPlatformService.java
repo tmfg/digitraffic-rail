@@ -1,9 +1,18 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
-import org.locationtech.jts.geom.*;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.MultiLineString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +21,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 
 @Component
 public class InfraApiPlatformService {
@@ -29,7 +35,7 @@ public class InfraApiPlatformService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
-    private static Logger logger = LoggerFactory.getLogger(InfraApiPlatformService.class);
+    private static final Logger logger = LoggerFactory.getLogger(InfraApiPlatformService.class);
 
     @Value("${infra-api.laiturit.url}")
     private String baseUrl;

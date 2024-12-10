@@ -26,11 +26,8 @@ public class PlatformDataService {
     @Autowired
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
-    @Autowired
-    private DateProvider dp;
-
     public PlatformData getCurrentPlatformData() {
-        final ZonedDateTime currentDate = dp.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
+        final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
         final Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes();
 
@@ -42,8 +39,8 @@ public class PlatformDataService {
                 .collect(Collectors.toMap(
                         stationShortCode -> stationShortCode,
                         stationShortCode -> {
-                            String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
-                            String stationLiikennepaikkaIdPart = infraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
+                            final String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
+                            final String stationLiikennepaikkaIdPart = InfraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
                             return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList())
                                     .stream()
                                     .collect(Collectors.toList());

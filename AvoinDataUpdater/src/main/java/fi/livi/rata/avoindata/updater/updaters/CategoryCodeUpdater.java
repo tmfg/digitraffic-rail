@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
+
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,16 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+
 import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
 
 @Service
 public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {

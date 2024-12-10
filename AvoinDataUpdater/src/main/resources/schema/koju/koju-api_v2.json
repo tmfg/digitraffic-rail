@@ -1,0 +1,2300 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "### Junien kokoonpanotiedot\n\nRajapinnan palauttama data ei välttämättä tarkalleen vastaa muualla julkaistua vastaavaa dataa.",
+    "version": "0.2",
+    "title": "Koju-API",
+    "contact": {
+      "name": "Fintraffic"
+    },
+    "license": {
+      "name": "Digitraffic is an open data service. All content from the service and the service documentation is licenced under the Creative Commons 4.0 BY license.",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "host": "localhost",
+  "basePath": "/railway/koju-api",
+  "tags": [
+    {
+      "name": "Julkiset kokoonpanot - Public compositions",
+      "description": " "
+    },
+    {
+      "name": "Kalusto - Units",
+      "description": " "
+    },
+    {
+      "name": "Kokoonpanot - Compositions",
+      "description": " "
+    },
+    {
+      "name": "Referenssidata - Reference data",
+      "description": " "
+    },
+    {
+      "name": "Yleiset - General",
+      "description": " "
+    }
+  ],
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "paths": {
+    "/0.2/julkinenkokoonpano/{messageReference}.{format}": {
+      "get": {
+        "tags": [
+          "Julkiset kokoonpanot - Public compositions"
+        ],
+        "summary": "Julkinen kokoonpano - Public composition",
+        "operationId": "julkinenKokoonpanoUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "messageReference",
+            "in": "path",
+            "description": "messageReference",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "originalRef": "KokoonpanoDto",
+              "$ref": "#/definitions/KokoonpanoDto"
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/julkisetkokoonpanot.{format}": {
+      "get": {
+        "tags": [
+          "Julkiset kokoonpanot - Public compositions"
+        ],
+        "summary": "Julkiset kokoonpanot - Public compositions",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "julkisetKokoonpanotUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Aikaväli ilmaistuna joko kahdella UTC-ajanhetkellä tai UTC-ajanhetkellä ja ISO8601-periodilla. / Interval expressed either with two UTC instants or a UTC-instant and a ISO8601 period. yyyy-MM-dd'T'HH:mm:ss'Z'/yyyy-MM-dd'T'HH:mm:ss'Z' or yyyy-MM-dd'T'HH:mm:ss'Z'/PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/julkisetkokoonpanot/{junanumero}.{format}": {
+      "get": {
+        "tags": [
+          "Julkiset kokoonpanot - Public compositions"
+        ],
+        "summary": "Julkiset kokoonpanot junanumerolle - Public compositions for a train number",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "julkisetKokoonpanotJunalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "junanumero",
+            "in": "path",
+            "description": "junanumero",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Aikaväli ilmaistuna joko kahdella UTC-ajanhetkellä tai UTC-ajanhetkellä ja ISO8601-periodilla. / Interval expressed either with two UTC instants or a UTC-instant and a ISO8601 period. yyyy-MM-dd'T'HH:mm:ss'Z'/yyyy-MM-dd'T'HH:mm:ss'Z' or yyyy-MM-dd'T'HH:mm:ss'Z'/PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/julkisetkokoonpanot/{junanumero}/{lahtopaiva}.{format}": {
+      "get": {
+        "tags": [
+          "Julkiset kokoonpanot - Public compositions"
+        ],
+        "summary": "Julkiset kokoonpanot junapäivälle - Public compositions for a train",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "julkisetKokoonpanotJunapaivalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "junanumero",
+            "in": "path",
+            "description": "junanumero",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "lahtopaiva",
+            "in": "path",
+            "description": "Päivämäärä / Date. yyyy-MM-dd",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/julkisetkokoonpanot/{lahtopaiva}.{format}": {
+      "get": {
+        "tags": [
+          "Julkiset kokoonpanot - Public compositions"
+        ],
+        "summary": "Julkiset kokoonpanot lähtöpäivälle - Public compositions for a departure date",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "julkisetKokoonpanotLahtopaivalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "lahtopaiva",
+            "in": "path",
+            "description": "Päivämäärä / Date. yyyy-MM-dd",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kalusto.{format}": {
+      "get": {
+        "tags": [
+          "Kalusto - Units"
+        ],
+        "summary": "Kalusto - Units",
+        "operationId": "kalustoUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "VaunuDto",
+                "$ref": "#/definitions/VaunuDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kalusto/vaunut.{format}": {
+      "get": {
+        "tags": [
+          "Kalusto - Units"
+        ],
+        "summary": "Vaunut - Wagons",
+        "operationId": "vaunutUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "VaunuDto",
+                "$ref": "#/definitions/VaunuDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kalusto/veturit.{format}": {
+      "get": {
+        "tags": [
+          "Kalusto - Units"
+        ],
+        "summary": "Veturit - Locomotives",
+        "operationId": "veturitUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "VaunuDto",
+                "$ref": "#/definitions/VaunuDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kokoonpano/{messageReference}.{format}": {
+      "get": {
+        "tags": [
+          "Kokoonpanot - Compositions"
+        ],
+        "summary": "Kokoonpano - Composition",
+        "operationId": "kokoonpanoUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "messageReference",
+            "in": "path",
+            "description": "messageReference",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "originalRef": "KokoonpanoDto",
+              "$ref": "#/definitions/KokoonpanoDto"
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kokoonpanot.{format}": {
+      "get": {
+        "tags": [
+          "Kokoonpanot - Compositions"
+        ],
+        "summary": "Kokoonpanot annetulla aikavälillä - Compositions within given time interval",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "kokoonpanotUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Aikaväli ilmaistuna joko kahdella UTC-ajanhetkellä tai UTC-ajanhetkellä ja ISO8601-periodilla. / Interval expressed either with two UTC instants or a UTC-instant and a ISO8601 period. yyyy-MM-dd'T'HH:mm:ss'Z'/yyyy-MM-dd'T'HH:mm:ss'Z' or yyyy-MM-dd'T'HH:mm:ss'Z'/PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kokoonpanot/{junanumero}.{format}": {
+      "get": {
+        "tags": [
+          "Kokoonpanot - Compositions"
+        ],
+        "summary": "Kokoonpanot junanumerolle - Compositions for a train number",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "kokoonpanotJunalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "junanumero",
+            "in": "path",
+            "description": "junanumero",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Aikaväli ilmaistuna joko kahdella UTC-ajanhetkellä tai UTC-ajanhetkellä ja ISO8601-periodilla. / Interval expressed either with two UTC instants or a UTC-instant and a ISO8601 period. yyyy-MM-dd'T'HH:mm:ss'Z'/yyyy-MM-dd'T'HH:mm:ss'Z' or yyyy-MM-dd'T'HH:mm:ss'Z'/PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kokoonpanot/{junanumero}/{lahtopaiva}.{format}": {
+      "get": {
+        "tags": [
+          "Kokoonpanot - Compositions"
+        ],
+        "summary": "Kokoonpanot junapäivälle - Compositions for a train",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "kokoonpanotJunapaivalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "junanumero",
+            "in": "path",
+            "description": "junanumero",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "lahtopaiva",
+            "in": "path",
+            "description": "Päivämäärä / Date. yyyy-MM-dd",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/kokoonpanot/{lahtopaiva}.{format}": {
+      "get": {
+        "tags": [
+          "Kokoonpanot - Compositions"
+        ],
+        "summary": "Kokoonpanot lähtöpäivälle - Compositions for a departure date",
+        "description": "Järjestetty tuoreimmasta vanhimpaan - Sorted from the most recent to the oldest",
+        "operationId": "kokoonpanotLahtopaivalleUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "lahtopaiva",
+            "in": "path",
+            "description": "Päivämäärä / Date. yyyy-MM-dd",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "KokoonpanoDto",
+                "$ref": "#/definitions/KokoonpanoDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/revisions.{format}": {
+      "get": {
+        "tags": [
+          "Yleiset - General"
+        ],
+        "summary": "Datan revisiot - Data revisions",
+        "operationId": "revisionsUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "RevisioJaMuokkausaika",
+                "$ref": "#/definitions/RevisioJaMuokkausaika"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/sijainnit.{format}": {
+      "get": {
+        "tags": [
+          "Referenssidata - Reference data"
+        ],
+        "summary": "Sijainnit - Locations",
+        "operationId": "sijainnitUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "SijaintiDto",
+                "$ref": "#/definitions/SijaintiDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/0.2/yritykset.{format}": {
+      "get": {
+        "tags": [
+          "Referenssidata - Reference data"
+        ],
+        "summary": "Yritykset - Companies",
+        "operationId": "yrityksetUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "description": "Count: Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "xlsx",
+              "png",
+              "count",
+              "mvt",
+              "chart"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": "PropertyName: Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": "StartIndex: Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "originalRef": "YritysDto",
+                "$ref": "#/definitions/YritysDto"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Api-Key": []
+          }
+        ],
+        "deprecated": false
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Api-Key": {
+      "type": "apiKey",
+      "name": "Api-Key",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "Chronology": {
+      "type": "object",
+      "required": [
+        "zone"
+      ],
+      "properties": {
+        "zone": {
+          "type": "string",
+          "format": "timezone"
+        }
+      },
+      "title": "Chronology"
+    },
+    "DateTimeZone": {
+      "type": "object",
+      "required": [
+        "fixed",
+        "id"
+      ],
+      "properties": {
+        "fixed": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "title": "DateTimeZone"
+    },
+    "Interval": {
+      "type": "object",
+      "required": [
+        "afterNow",
+        "beforeNow",
+        "chronology",
+        "end",
+        "endMillis",
+        "start",
+        "startMillis"
+      ],
+      "properties": {
+        "afterNow": {
+          "type": "boolean"
+        },
+        "beforeNow": {
+          "type": "boolean"
+        },
+        "chronology": {
+          "originalRef": "Chronology",
+          "$ref": "#/definitions/Chronology"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endMillis": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "startMillis": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "title": "Interval"
+    },
+    "JulkinenTunniste": {
+      "type": "object",
+      "required": [
+        "finnishOID",
+        "fintrafficOID",
+        "internal",
+        "systemId",
+        "vaylaOID"
+      ],
+      "properties": {
+        "finnishOID": {
+          "type": "boolean"
+        },
+        "fintrafficOID": {
+          "type": "boolean"
+        },
+        "internal": {
+          "type": "string"
+        },
+        "systemId": {
+          "type": "string"
+        },
+        "vaylaOID": {
+          "type": "boolean"
+        }
+      },
+      "title": "JulkinenTunniste"
+    },
+    "KokoonpanoDto": {
+      "type": "object",
+      "required": [
+        "junanumero",
+        "lahtopaiva",
+        "messageDateTime",
+        "messageReference",
+        "osavalit",
+        "vastaanotettu"
+      ],
+      "properties": {
+        "jarrupainoprosentti": {
+          "type": "string"
+        },
+        "junanumero": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Train number: Junan numero yksilöi junan yhdessä lähtöpäivän kanssa / Train number identifies a train together with departure date"
+        },
+        "lahdejarjestelma": {
+          "type": "string"
+        },
+        "lahtopaiva": {
+          "type": "string",
+          "format": "date",
+          "example": "1982-01-22",
+          "description": "departure date: Junan lähtöpäivä / Train departure date"
+        },
+        "linjatunnus": {
+          "type": "string",
+          "example": "c",
+          "description": "character"
+        },
+        "messageDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-12-07T13:09:05Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "messageReference": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "osavalit": {
+          "type": "array",
+          "items": {
+            "originalRef": "OsavaliDto",
+            "$ref": "#/definitions/OsavaliDto"
+          }
+        },
+        "paikallisjunatyyppi": {
+          "type": "string"
+        },
+        "recipient": {
+          "type": "integer",
+          "format": "int32",
+          "example": 3109
+        },
+        "sender": {
+          "type": "integer",
+          "format": "int32",
+          "example": 3109
+        },
+        "sensitive": {
+          "type": "boolean"
+        },
+        "vastaanotettu": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-12-07T13:09:05Z",
+          "description": "vastaanotettu: received: Milloin kokoonpanotieto on vastaanotettu järjestelmään / When the composition information is received to the system"
+        }
+      },
+      "title": "KokoonpanoDto",
+      "xml": {
+        "name": "KokoonpanoDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "OsavaliDto": {
+      "type": "object",
+      "required": [
+        "aktiviteetti",
+        "alkuUICKoodi",
+        "loppuUICKoodi",
+        "vaunut",
+        "vetureita",
+        "veturit"
+      ],
+      "properties": {
+        "aktiviteetti": {
+          "type": "string",
+          "example": "A",
+          "description": "Activity: Kokoonpanon tila / Composition state",
+          "enum": [
+            "A",
+            "E",
+            "P",
+            "S",
+            "V"
+          ]
+        },
+        "alkuAikataulupaikka": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID: Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "alkuUICKoodi": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "alkuaika": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-12-07T13:09:05Z",
+          "description": "start time: Kokoonpanon alkuaika / Composition start time"
+        },
+        "category": {
+          "type": "string"
+        },
+        "jarrutyyppi": {
+          "type": "string",
+          "example": "c",
+          "description": "character"
+        },
+        "jkv": {
+          "type": "boolean",
+          "description": "ATC: Onko junalla käytössä JKV tällä osavälillä / Does train have ATC on this journey section"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "kokonaispaino": {
+          "type": "integer",
+          "format": "int64",
+          "example": 42,
+          "description": "total weight: Junan kokonaispaino gramman tarkkuudella / Total weight of the train with an accuracy of 1 gram"
+        },
+        "kokonaispituus": {
+          "type": "integer",
+          "format": "int64",
+          "example": 6092,
+          "description": "total length: Junan kokonaispituus millimetrin tarkkuudella / Total length of the train with an accuracy of 1 millimeter"
+        },
+        "loppuAikataulupaikka": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID: Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "loppuUICKoodi": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "loppuaika": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-12-07T13:09:05Z",
+          "description": "end time: Kokoonpanon loppuaika / Composition end time"
+        },
+        "maxNopeus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Speed: Nopeus 1 km/h tarkkuudella / Speed with an accuracy of 1 km/h"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "vaunut": {
+          "type": "array",
+          "description": "Journey section wagon: Junan vaunu osavälillä / Wagon on a journey section",
+          "items": {
+            "originalRef": "OsavalinVaunuDto",
+            "$ref": "#/definitions/OsavalinVaunuDto"
+          }
+        },
+        "vetureita": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "veturit": {
+          "type": "array",
+          "description": "Journey section locomotive: Junan veturi osavälillä / Locomotive on a journey section",
+          "items": {
+            "originalRef": "OsavalinVeturiDto",
+            "$ref": "#/definitions/OsavalinVeturiDto"
+          }
+        }
+      },
+      "title": "OsavaliDto"
+    },
+    "OsavalinVaunuDto": {
+      "type": "object",
+      "required": [
+        "jarjestysnumero",
+        "paino",
+        "tunniste",
+        "vak"
+      ],
+      "properties": {
+        "akseleita": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "catering": {
+          "type": "boolean"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "eurooppatunnus": {
+          "type": "string"
+        },
+        "jarjestysnumero": {
+          "type": "integer",
+          "format": "int32",
+          "example": 4,
+          "description": "Position: Vaunun järjestysnumero osavälin kokoonpanossa / Wagon position in the composition of a journey section",
+          "minimum": 1
+        },
+        "kaupallinenNumero": {
+          "type": "string"
+        },
+        "luggage": {
+          "type": "boolean"
+        },
+        "paino": {
+          "type": "integer",
+          "format": "int64",
+          "example": 42,
+          "description": "Weight: Paino gramman tarkkuudella / Weight with an accuracy of 1 gram"
+        },
+        "pet": {
+          "type": "boolean"
+        },
+        "pituus": {
+          "type": "integer",
+          "format": "int64",
+          "example": 6092,
+          "description": "Length: Pituus millimetrin tarkkuudella / Length with an accuracy of 1 millimeter"
+        },
+        "playground": {
+          "type": "boolean"
+        },
+        "sarjatunnus": {
+          "type": "string"
+        },
+        "smoking": {
+          "type": "boolean"
+        },
+        "tunniste": {
+          "type": "string"
+        },
+        "tyhjapaino": {
+          "type": "integer",
+          "format": "int64",
+          "example": 42,
+          "description": "empty weight: Paino tyhjänä / Weight when empty"
+        },
+        "tyyppi": {
+          "type": "string",
+          "example": "c",
+          "description": "character"
+        },
+        "vak": {
+          "type": "array",
+          "description": "Dangerous goods: Vaarallisten aineiden kuljetus / Dangerous goods",
+          "items": {
+            "originalRef": "VakDto",
+            "$ref": "#/definitions/VakDto"
+          }
+        },
+        "video": {
+          "type": "boolean"
+        }
+      },
+      "title": "OsavalinVaunuDto",
+      "xml": {
+        "name": "OsavalinVaunuDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "OsavalinVeturiDto": {
+      "type": "object",
+      "required": [
+        "jarjestysnumero",
+        "tunniste",
+        "vak",
+        "veturityyppi"
+      ],
+      "properties": {
+        "akseleita": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "eurooppatunnus": {
+          "type": "string"
+        },
+        "jarjestysnumero": {
+          "type": "integer",
+          "format": "int32",
+          "example": 4,
+          "description": "Position: Veturin järjestysnumero osavälin kokoonpanossa / Locomotive position in the composition of a journey section",
+          "minimum": 1
+        },
+        "pituus": {
+          "type": "integer",
+          "format": "int64",
+          "example": 6092,
+          "description": "Length: Pituus millimetrin tarkkuudella / Length with an accuracy of 1 millimeter"
+        },
+        "sarjatunnus": {
+          "type": "string"
+        },
+        "tractionMode": {
+          "type": "string",
+          "example": 1,
+          "description": "Traction mode",
+          "enum": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        "tractionType": {
+          "description": "Traction type",
+          "originalRef": "TractionType",
+          "$ref": "#/definitions/TractionType"
+        },
+        "tunniste": {
+          "type": "string"
+        },
+        "tyhjapaino": {
+          "type": "integer",
+          "format": "int64",
+          "example": 42,
+          "description": "empty weight: Paino tyhjänä / Weight when empty"
+        },
+        "vak": {
+          "type": "array",
+          "description": "Dangerous goods: Vaarallisten aineiden kuljetus / Dangerous goods",
+          "items": {
+            "originalRef": "VakDto",
+            "$ref": "#/definitions/VakDto"
+          }
+        },
+        "veturitunniste": {
+          "type": "string"
+        },
+        "veturityyppi": {
+          "type": "string",
+          "description": "Veturin tyyppi / Type of the locomotive"
+        }
+      },
+      "title": "OsavalinVeturiDto",
+      "xml": {
+        "name": "OsavalinVeturiDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "RevisioJaMuokkausaika": {
+      "type": "object",
+      "required": [
+        "muokkausaika",
+        "revisio"
+      ],
+      "properties": {
+        "muokkausaika": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-12-07T13:09:06Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "revisio": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "title": "RevisioJaMuokkausaika"
+    },
+    "SijaintiDto": {
+      "type": "object",
+      "required": [
+        "uickoodi",
+        "voimassa"
+      ],
+      "properties": {
+        "aikataulupaikka": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID: Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "uickoodi": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "voimassa": {
+          "type": "string",
+          "format": "interval",
+          "example": "2024-12-07T13:09:06Z/2024-12-07T14:09:06Z",
+          "description": "validity: Voimassaoloaika / Period of validity"
+        }
+      },
+      "title": "SijaintiDto"
+    },
+    "TractionType": {
+      "type": "object",
+      "required": [
+        "voimanlahde",
+        "yhdistelma"
+      ],
+      "properties": {
+        "voimanlahde": {
+          "type": "string"
+        },
+        "yhdistelma": {
+          "type": "string"
+        }
+      },
+      "title": "TractionType"
+    },
+    "VakDto": {
+      "type": "object",
+      "required": [
+        "hazardNumber",
+        "un_materialNumber"
+      ],
+      "properties": {
+        "hazardNumber": {
+          "type": "string"
+        },
+        "rid_classification": {
+          "type": "string"
+        },
+        "un_materialName": {
+          "type": "string"
+        },
+        "un_materialNumber": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "VakDto",
+      "xml": {
+        "name": "VakDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "VaunuDto": {
+      "type": "object",
+      "required": [
+        "tunniste",
+        "vak"
+      ],
+      "properties": {
+        "akseleita": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "eurooppatunnus": {
+          "type": "string"
+        },
+        "pituus": {
+          "type": "integer",
+          "format": "int64",
+          "example": 6092,
+          "description": "Length: Pituus millimetrin tarkkuudella / Length with an accuracy of 1 millimeter"
+        },
+        "sarjatunnus": {
+          "type": "string"
+        },
+        "tunniste": {
+          "type": "string"
+        },
+        "tyhjapaino": {
+          "type": "integer",
+          "format": "int64",
+          "example": 42,
+          "description": "empty weight: Paino tyhjänä / Weight when empty"
+        },
+        "vak": {
+          "type": "array",
+          "description": "Dangerous goods: Vaarallisten aineiden kuljetus / Dangerous goods",
+          "items": {
+            "originalRef": "VakDto",
+            "$ref": "#/definitions/VakDto"
+          }
+        }
+      },
+      "title": "VaunuDto",
+      "xml": {
+        "name": "VaunuDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "YritysDto": {
+      "type": "object",
+      "required": [
+        "koodi"
+      ],
+      "properties": {
+        "koodi": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "nimi": {
+          "type": "string"
+        }
+      },
+      "title": "YritysDto"
+    }
+  }
+}

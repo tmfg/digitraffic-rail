@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.common.dao.composition;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -54,4 +55,10 @@ public interface CompositionRepository extends CustomGeneralRepository<Compositi
     @Modifying
     @Query("DELETE FROM Composition comp WHERE comp.id.departureDate = ?1")
     void removeByDepartureDate(LocalDate departureDate);
+
+    /**
+     * @return max messageDateTime of julkisetkokoonpanot message
+     */
+    @Query("select max(composition.messageDateTime) from Composition composition")
+    Instant getMaxMessageDateTime();
 }

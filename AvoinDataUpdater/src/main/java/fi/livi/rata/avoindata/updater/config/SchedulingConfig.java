@@ -22,6 +22,16 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 @EnableScheduling
 public class SchedulingConfig implements SchedulingConfigurer {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static boolean enabled = false;
+
+    public static boolean isSchedulingEnabled() {
+        return enabled;
+    }
+
+    public SchedulingConfig() {
+        enabled = true;
+        log.info("Scheduling enabled");
+    }
 
     @Override
     public void configureTasks(final ScheduledTaskRegistrar taskRegistrar) {
@@ -31,10 +41,20 @@ public class SchedulingConfig implements SchedulingConfigurer {
     @Bean(destroyMethod = "shutdown")
     public ScheduledExecutorService taskExecutor() {
         final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setUncaughtExceptionHandler((t, e) -> log.error(t.getName() + ": Unhandled exception", e))
+                .setUncaughtExceptionHandler((t, e) -> log.error("scheduledExecutorService=taskExecutor {}: Unhandled exception", t.getName(), e))
                 .setNameFormat("scheduled-%d")
                 .build();
 
         return Executors.newScheduledThreadPool(15, namedThreadFactory);
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    public ScheduledExecutorService databaseInitializerTaskExecutor() {
+        final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setUncaughtExceptionHandler((t, e) -> log.error("scheduledExecutorService=databaseInitializerTaskExecutor {}: Unhandled exception", t.getName(), e))
+                .setNameFormat("scheduled-%d")
+                .build();
+
+        return Executors.newScheduledThreadPool(4, namedThreadFactory);
     }
 }

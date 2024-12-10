@@ -57,19 +57,56 @@ public class Wagon {
     public JourneySection journeysection;
 
     public Wagon(final Wagon wagon, final JourneySection journeysection) {
-        location = wagon.location;
-        salesNumber = wagon.salesNumber;
-        length = wagon.length;
-        playground = wagon.playground;
-        pet = wagon.pet;
-        catering = wagon.catering;
-        video = wagon.video;
-        luggage = wagon.luggage;
-        smoking = wagon.smoking;
-        disabled = wagon.disabled;
+        this.location = wagon.location;
+        this.salesNumber = wagon.salesNumber;
+        this.length = wagon.length;
+        this.playground = wagon.playground;
+        this.pet = wagon.pet;
+        this.catering = wagon.catering;
+        this.video = wagon.video;
+        this.luggage = wagon.luggage;
+        this.smoking = wagon.smoking;
+        this.disabled = wagon.disabled;
         this.journeysection = journeysection;
     }
 
     public Wagon() {
+    }
+
+    public Wagon(final String wagonType, final int location, final int salesNumber, final int length, final Boolean playground,
+                 final Boolean pet, final Boolean catering, final Boolean video,
+                 final Boolean luggage, final Boolean smoking, final Boolean disabled, final String vehicleNumber) {
+        this.wagonType = wagonType;
+        this.location = location;
+        this.salesNumber = salesNumber;
+        this.length = length;
+        this.playground = playground;
+        this.pet = pet;
+        this.catering = catering;
+        this.video = video;
+        this.luggage = luggage;
+        this.smoking = smoking;
+        this.disabled = disabled;
+        this.vehicleNumber = vehicleNumber;
+    }
+
+    @Override
+    public String toString() {
+        return "Wagon{" +
+                "id=" + id +
+                ", wagonType='" + wagonType + '\'' +
+                ", location=" + location +
+                ", salesNumber=" + salesNumber +
+                ", length=" + length +
+                ", playground=" + playground +
+                ", pet=" + pet +
+                ", catering=" + catering +
+                ", video=" + video +
+                ", luggage=" + luggage +
+                ", smoking=" + smoking +
+                ", disabled=" + disabled +
+                ", vehicleNumber='" + vehicleNumber + '\'' +
+                ", journeysection=" + journeysection +
+                '}';
     }
 }

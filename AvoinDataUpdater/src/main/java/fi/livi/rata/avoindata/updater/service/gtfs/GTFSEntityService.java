@@ -52,9 +52,6 @@ public class GTFSEntityService {
     private PlatformDataService platformDataService;
 
     @Autowired
-    private DateProvider dp;
-
-    @Autowired
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
@@ -107,7 +104,7 @@ public class GTFSEntityService {
 
     private Map<Long, Map<List<LocalDate>, Schedule>> createScheduleIntervals(final List<Schedule> adhocSchedules,
                                                                               final List<Schedule> regularSchedules) {
-        final LocalDate start = dp.dateInHelsinki().minusDays(7);
+        final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
         final LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
 
         final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber = HashBasedTable.create();

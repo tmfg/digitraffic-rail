@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.config;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
@@ -13,27 +14,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class InitializerRetryTemplate extends RetryTemplate {
 
-    public static final int RETRY_PERIOD = 10000;
-    public static final int DEFAULT_MAX_ATTEMPTS = 1;
-    private Logger initializerLogger;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    public static final int RETRY_PERIOD_MS = 10000;
+    public static final int DEFAULT_MAX_ATTEMPTS = 2;
+    private final int maxAttempts;
 
     public InitializerRetryTemplate() {
         this(DEFAULT_MAX_ATTEMPTS);
     }
 
     public InitializerRetryTemplate(final int maxAttempts) {
-        // Retry once with a fixed period
+        // Retry maxAttempts times with a fixed period
         final RetryPolicy retryPolicy = new MaxAttemptsRetryPolicy(maxAttempts);
         setRetryPolicy(retryPolicy);
         final FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(RETRY_PERIOD);
+        backOffPolicy.setBackOffPeriod(RETRY_PERIOD_MS);
         setBackOffPolicy(backOffPolicy);
 
         registerListener(new LoggingRetryListener());
-    }
-
-    public void setLogger(final Logger logger) {
-        this.initializerLogger = logger;
+        this.maxAttempts = maxAttempts;
     }
 
     private class LoggingRetryListener implements RetryListener {
@@ -41,11 +41,10 @@ public class InitializerRetryTemplate extends RetryTemplate {
         @Override
         public <T, E extends Throwable> void onError(final RetryContext context, final RetryCallback<T, E> callback,
                 final Throwable throwable) {
-            if (initializerLogger != null) {
-                initializerLogger.error(
-                        "Error during initialization retryCount={} errorMessage: {}. Retrying in {} ms",
-                        context.getRetryCount(), throwable.getMessage(), RETRY_PERIOD , throwable);
-            }
+
+            log.error(
+                    "Error during initialization retryCount={} of {} errorMessage: {}. Retrying in {} ms",
+                    context.getRetryCount(), maxAttempts, throwable.getMessage(), RETRY_PERIOD_MS, throwable);
         }
     }
 }
