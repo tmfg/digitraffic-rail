@@ -7,6 +7,8 @@
 **/profiles/dev/*
 .gitmodules
 
+AvoinDataUpdater/src/main/resources/application-localhost.properties
+
 # Test generated files
 /AvoinDataUpdater/agency.txt
 /AvoinDataUpdater/calendar.txt
