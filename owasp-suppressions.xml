@@ -5,7 +5,7 @@
         Temporary suppressions, check and update these periodically
     -->
     <!-- From spring-cloud-starter-aws-secrets-manager-config-->
-    <suppress until="2024-12-01">
+    <suppress until="2025-06-01">
         <notes><![CDATA[file name: ion-java-1.0.2.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
         <!-- waiting for update -->
@@ -13,9 +13,28 @@
         <cve>CVE-2024-21634</cve>
     </suppress>
 
+    <!-- Waiting for Spring to be updated -->
+    <suppress until="2025-06-01">>
+        <notes><![CDATA[
+   file name: netty-common-4.1.114.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty-common@.*$</packageUrl>
+        <!-- We don't have Windows applications -->
+        <vulnerabilityName>CVE-2024-47535</vulnerabilityName>
+    </suppress>
+
+    <!-- Waiting for update to Spring Boot -->
+    <suppress until="2025-02-01">
+        <notes><![CDATA[
+   file name: logback-core-1.5.11.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-12798</vulnerabilityName>
+    </suppress>
+
     <!-- From swagger-codegen-maven-plugin -->
     <!-- We use this just for code generation -->
-    <suppress until="2024-12-01">
+    <suppress until="2025-06-01">
         <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: gradle-wrapper.jar]]></notes>
         <sha1>0f6f1fa2b59ae770ca14f975726bed8d6620ed9b</sha1>
         <cve>CVE-2016-6199</cve>
@@ -42,7 +61,7 @@
 
     <!-- From swagger-codegen-maven-plugin -->
     <!-- We are not using jquery, this is just for code generation-->
-    <suppress until="2024-12-01">
+    <suppress until="2025-06-01">
         <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: jquery-1.8.3.min.js]]></notes>
         <packageUrl regex="true">^pkg:javascript/jquery@.*$</packageUrl>
         <cve>CVE-2012-6708</cve>
