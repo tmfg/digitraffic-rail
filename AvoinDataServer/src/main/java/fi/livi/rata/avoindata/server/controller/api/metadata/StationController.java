@@ -17,6 +17,8 @@ import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
 import fi.livi.rata.avoindata.server.services.GeoJsonFormatter;
 import io.swagger.v3.oas.annotations.Operation;
 
+import static fi.livi.rata.avoindata.common.serializer.BigDecimalSerializer.scale;
+
 @RestController
 public class StationController extends AMetadataController {
     @Autowired
@@ -24,7 +26,9 @@ public class StationController extends AMetadataController {
     @Autowired
     private GeoJsonFormatter geoJsonFormatter;
 
-    private static final Function<Station, Double[]> converter = s -> new Double[]{s.longitude.doubleValue(), s.latitude.doubleValue()};
+    private static final Function<Station, Double[]> converter = s -> new Double[]{
+            scale(s.longitude).doubleValue(),
+            scale(s.latitude).doubleValue()};
 
     @Operation(summary = "Returns list of stations")
     @RequestMapping(value = "stations", method = RequestMethod.GET)

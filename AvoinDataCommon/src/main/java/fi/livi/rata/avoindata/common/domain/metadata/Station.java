@@ -2,6 +2,10 @@ package fi.livi.rata.avoindata.common.domain.metadata;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.SerializableSerializer;
+import fi.livi.rata.avoindata.common.serializer.BigDecimalSerializer;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
@@ -16,20 +20,27 @@ public class Station {
     @JsonProperty("stationName")
     @Schema(example = "Helsinki asema")
     public String name;
+
     @JsonProperty("stationShortCode")
     @Schema(example = "HKI")
     public String shortCode;
+
     @JsonProperty("stationUICCode")
     @Schema(example = "1")
     public int uicCode;
+
     @JsonProperty(value = "countryCode", required = false)
     @Schema(example = "FI")
     public String countryCode;
+
     @JsonProperty("longitude")
-    @Schema(example = "24.94166179681815")
+    @JsonSerialize(using = BigDecimalSerializer.class)
+    @Schema(example = "24.941662")
     public BigDecimal longitude;
+
     @JsonProperty("latitude")
-    @Schema(example = "60.17212991202909")
+    @JsonSerialize(using = BigDecimalSerializer.class)
+    @Schema(example = "60.172133")
     public BigDecimal latitude;
 
     @Id
