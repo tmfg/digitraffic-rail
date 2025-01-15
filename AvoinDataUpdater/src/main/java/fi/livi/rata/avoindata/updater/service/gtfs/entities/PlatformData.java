@@ -32,6 +32,8 @@ public class PlatformData {
     }
 
     public boolean isValidTrack(final String stationShortCode, final String track) {
-        return validTracksByStation.getOrDefault(stationShortCode, Collections.emptySet()).contains(track);
+        final var stationTracks = validTracksByStation.get(stationShortCode);
+
+        return stationTracks != null && stationTracks.contains(track);
     }
 }

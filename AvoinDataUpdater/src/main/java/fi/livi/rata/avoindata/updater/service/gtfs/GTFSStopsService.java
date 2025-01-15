@@ -75,8 +75,7 @@ public class GTFSStopsService {
         });
 
         final Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
-        for (final Long trainNumber : scheduleIntervalsByTrain.keySet()) {
-            final Map<List<LocalDate>, Schedule> trainsSchedules = scheduleIntervalsByTrain.get(trainNumber);
+        for (final Map<List<LocalDate>, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
             for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
                 final Schedule schedule = trainsSchedules.get(localDates);
                 for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
