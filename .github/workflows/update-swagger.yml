@@ -29,10 +29,14 @@ jobs:
           echo "SWAGGER_ENV_NAME=$SWAGGER_ENV_NAME" >> $GITHUB_ENV
       - name: Update API Gateway documentation
         run: |
-          aws lambda invoke --region ${{ secrets.AWS_REGION }} --function-name SwaggerJoinerRail${{ env.SWAGGER_ENV_NAME }}-UpdateApiDocumentation  update-api-docs-result.json
+          cdm_result=$(aws lambda invoke --region ${{ secrets.AWS_REGION }} --function-name SwaggerJoinerRail${{ env.SWAGGER_ENV_NAME }}-UpdateApiDocumentation  update-api-docs-result.json)
+                    echo ${cdm_result}
+                    if grep -q "Error" <<< ${cdm_result}; then echo "There was error executing lambda"; exit 1; fi
       - name: Update Swagger documentation
         run: |
-          aws lambda invoke --region ${{ secrets.AWS_REGION }} --function-name SwaggerJoinerRail${{ env.SWAGGER_ENV_NAME }}-UpdateSwaggerDescriptions  update-swagger-docs-result.json
+          cdm_result=$(aws lambda invoke --region ${{ secrets.AWS_REGION }} --function-name SwaggerJoinerRail${{ env.SWAGGER_ENV_NAME }}-UpdateSwaggerDescriptions  update-swagger-docs-result.json)
+          echo ${cdm_result}
+          if grep -q "Error" <<< ${cdm_result}; then echo "There was erron executing lambda"; exit 1; fi
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
