@@ -14,7 +14,7 @@
     </suppress>
 
     <!-- Waiting for Spring to be updated -->
-    <suppress until="2025-06-01">>
+    <suppress until="2025-06-01">
         <notes><![CDATA[
    file name: netty-common-4.1.114.Final.jar
    ]]></notes>
