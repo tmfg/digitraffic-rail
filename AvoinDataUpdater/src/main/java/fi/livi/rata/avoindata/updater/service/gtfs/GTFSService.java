@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,17 +84,19 @@ public class GTFSService {
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
                               final boolean filterOutNonStops) throws IOException {
-        final GTFSDto gfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+        final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
 
         if (filterOutNonStops) {
-            for (final Trip trip : gfsDto.trips) {
+            for (final Trip trip : gtfsDto.trips) {
                 trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
             }
+
+            gtfsDto.stops = gtfsDto.stops.stream().filter(s -> BooleanUtils.isTrue(s.source.passengerTraffic)).toList();
         }
 
-        gtfsWritingService.writeGTFSFiles(gfsDto, zipFileName);
+        gtfsWritingService.writeGTFSFiles(gtfsDto, zipFileName);
 
-        return gfsDto;
+        return gtfsDto;
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
@@ -117,22 +120,30 @@ public class GTFSService {
         final List<StopTime> filteredStopTimes = new ArrayList<>();
 
         int stopSequence = FIRST_STOP_SEQUENCE;
-        for (int i = 0; i < stopTimes.size(); i++) {
-            final StopTime stopTime = stopTimes.get(i);
-
-            final ScheduleRow scheduleRow = stopTime.source;
-
-            final boolean isLongStop =
-                    scheduleRow.departure == null || scheduleRow.arrival == null ||
-                            (!stopTime.departureTime.equals(stopTime.arrivalTime) && (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
-
-            if (isLongStop) {
+        for (final StopTime stopTime : stopTimes) {
+            if (isLongStop(stopTime)) {
                 filteredStopTimes.add(stopTime);
                 stopTime.stopSequence = stopSequence++;
             }
         }
 
         return filteredStopTimes;
+    }
+
+    /**
+     * Stop is a long stop, when
+     * 1) it has no arrival or no departure
+     * 2) arrival time differs from departure time and either on is commercial
+     */
+    private boolean isLongStop(final StopTime stopTime) {
+        final ScheduleRow scheduleRow = stopTime.source;
+
+        if(scheduleRow.departure == null || scheduleRow.arrival == null) {
+            return true;
+        }
+
+        return (!stopTime.departureTime.equals(stopTime.arrivalTime) &&
+                (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
     }
 
     private void createVrGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules) throws IOException {
