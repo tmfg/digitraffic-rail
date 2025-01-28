@@ -88,12 +88,12 @@ public class MQTTPublishService {
                     publishMessage(message);
 
                     if (Duration.between(submittedAt, executionStartedAt).toMillis() > 10000) {
-                        log.info("Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
+                        log.info("method=publishString Waited: {}, Executed: {}", Duration.between(submittedAt, executionStartedAt),
                                 Duration.between(executionStartedAt, ZonedDateTime.now()));
                     }
                     return message;
                 } catch (final Exception e) {
-                    log.error("Error sending data to MQTT. Topic: {}", topic, e);
+                    log.error("method=publishString Error sending data to MQTT. Topic: {}", topic, e);
                     return null;
                 }
             });

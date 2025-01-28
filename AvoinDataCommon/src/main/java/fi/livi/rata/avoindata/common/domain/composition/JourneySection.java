@@ -58,7 +58,9 @@ public class JourneySection {
     @Schema(description = "Maximum with an accuracy of 1 km/h")
     public int maximumSpeed;
 
+    @JsonIgnore // DPO-2830 not usable field for external users
     public Long attapId;
+    @JsonIgnore // DPO-2830 not usable field for external users
     public Long saapAttapId;
 
     protected JourneySection() {
