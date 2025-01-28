@@ -14,11 +14,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>3.3.5</spring.boot.version>
-        <org.springdoc.version>2.6.0</org.springdoc.version>
-        <com.google.guava.version>33.3.0-jre</com.google.guava.version>
+        <spring.boot.version>3.4.1</spring.boot.version>
+        <com.google.guava.version>33.4.0-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
         <org.flywaydb.version>11.1.1</org.flywaydb.version>
+        <org.springdoc.version>2.7.0</org.springdoc.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
     </properties>
 

@@ -133,8 +133,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <!-- 5.3.1 fails tests due to missing dependencies -->
-            <version>5.2.1</version>
+            <version>5.4.1</version>
         </dependency>
 
         <dependency>
@@ -173,19 +172,18 @@
             <version>4.4.16</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.swagger.codegen.v3</groupId>
-            <artifactId>swagger-codegen-maven-plugin</artifactId>
-            <version>3.0.66</version>
-            <scope>compile</scope>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api
              Needeed for  swagger-codegen-maven-plugin generated glasses annotations -->
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
             <version>1.3.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.6.15</version>
         </dependency>
 
         <dependency>
@@ -315,9 +313,9 @@
             </plugin>
 
             <plugin>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <version>2.4.43</version>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.11.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -325,7 +323,7 @@
                         </goals>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/schema/koju/koju-api_v2.json</inputSpec>
-                            <language>java</language>
+                            <generatorName>java</generatorName>
                             <generateApis>false</generateApis>
                             <generateApiTests>false</generateApiTests>
                             <generateApiDocumentation>false</generateApiDocumentation>
@@ -333,12 +331,15 @@
                             <generateModelDocumentation>false</generateModelDocumentation>
                             <apiPackage>fi.finrail.koju.api</apiPackage>
                             <modelPackage>fi.finrail.koju.model</modelPackage>
-                            <library>resttemplate</library>
+                            <output>${project.build.directory}/generated-sources/koju-api</output>
                             <configOptions>
                                 <sourceFolder>src/main/java</sourceFolder>
-                                <dateLibrary>java8</dateLibrary>
+                                <serializationLibrary>jackson</serializationLibrary>
+                                <annotationLibrary>swagger2</annotationLibrary>
+                                <library>native</library>
+                                <openApiNullable>false</openApiNullable>
+                                <booleanGetterPrefix>is</booleanGetterPrefix>
                             </configOptions>
-                            <output>${project.build.directory}/generated-sources/koju-api</output>
                         </configuration>
                     </execution>
                 </executions>
