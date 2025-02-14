@@ -8,69 +8,29 @@
     <suppress until="2025-06-01">
         <notes><![CDATA[file name: ion-java-1.0.2.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
-        <!-- waiting for update -->
+        <!-- waiting for update (last updated Feb 02, 2023) -->
         <!-- we're not using ion-java -->
         <cve>CVE-2024-21634</cve>
     </suppress>
 
-    <!-- Waiting for Spring to be updated -->
-    <suppress until="2025-06-01">
+    <!-- Waiting for update to aws-secretsmanager-jdbc 2.0.2 -->
+    <suppress until="2025-03-15">
         <notes><![CDATA[
-   file name: netty-common-4.1.114.Final.jar
+   file name: netty-common-4.1.116.Final.jar
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.netty/netty-common@.*$</packageUrl>
-        <!-- We don't have Windows applications -->
-        <vulnerabilityName>CVE-2024-47535</vulnerabilityName>
+        <vulnerabilityName>CVE-2025-25193</vulnerabilityName>
     </suppress>
-
-    <!-- Waiting for update to Spring Boot -->
-    <suppress until="2025-02-01">
+    <suppress until="2025-03-15">
         <notes><![CDATA[
-   file name: logback-core-1.5.11.jar
+   file name: netty-handler-4.1.116.Final.jar
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-12798</vulnerabilityName>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty-handler@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-24970</vulnerabilityName>
     </suppress>
 
-    <!-- From swagger-codegen-maven-plugin -->
-    <!-- We use this just for code generation -->
-    <suppress until="2025-06-01">
-        <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: gradle-wrapper.jar]]></notes>
-        <sha1>0f6f1fa2b59ae770ca14f975726bed8d6620ed9b</sha1>
-        <cve>CVE-2016-6199</cve>
-        <cve>CVE-2019-15052</cve>
-        <cve>CVE-2023-35947</cve>
-        <cve>CVE-2021-29428</cve>
-        <cve>CVE-2020-11979</cve>
-        <cve>CVE-2021-32751</cve>
-        <cve>CVE-2019-11065</cve>
-        <cve>CVE-2019-16370</cve>
-        <cve>CVE-2021-29429</cve>
-        <cve>CVE-2023-35946</cve>
-        <cve>CVE-2023-42445</cve>
-        <cve>CVE-2021-29428</cve>
-        <cve>CVE-2020-11979</cve>
-        <cve>CVE-2021-32751</cve>
-        <cve>CVE-2023-44387</cve>
-        <cve>CVE-2019-11065</cve>
-        <cve>CVE-2019-16370</cve>
-        <cve>CVE-2021-29429</cve>
-        <cve>CVE-2023-35946</cve>
-        <cve>CVE-2023-42445</cve>
-    </suppress>
 
-    <!-- From swagger-codegen-maven-plugin -->
-    <!-- We are not using jquery, this is just for code generation-->
-    <suppress until="2025-06-01">
-        <notes><![CDATA[file name: swagger-codegen-2.4.43.jar: jquery-1.8.3.min.js]]></notes>
-        <packageUrl regex="true">^pkg:javascript/jquery@.*$</packageUrl>
-        <cve>CVE-2012-6708</cve>
-        <cve>CVE-2015-9251</cve>
-        <cve>CVE-2019-11358</cve>
-        <cve>CVE-2020-11022</cve>
-        <cve>CVE-2020-11023</cve>
-        <cve>CVE-2020-7656</cve>
-    </suppress>
+
 
     <!--
         Permanent suppressions
