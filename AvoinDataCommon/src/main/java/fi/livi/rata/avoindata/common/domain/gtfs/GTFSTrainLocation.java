@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 public interface GTFSTrainLocation {
-    int getId();
+    long getId();
 
     LocalDate getDepartureDate();
 
