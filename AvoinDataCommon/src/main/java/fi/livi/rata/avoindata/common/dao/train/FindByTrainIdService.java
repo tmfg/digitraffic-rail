@@ -32,11 +32,11 @@ public class FindByTrainIdService {
     private AllTrainsRepository allTrainsRepository;
 
     private static List<TrainId> getSortedTrainIds(final Collection<TrainId> trainIds) {
-        return trainIds.stream().sorted((l,r) -> l.compareTo(r)).collect(Collectors.toList());
+        return trainIds.stream().sorted().toList();
     }
 
     private static Set<LocalDate> findUniqueDepartureDates(final Collection<TrainId> trainIds) {
-        Set<LocalDate> departureDates = new HashSet<>();
+        final Set<LocalDate> departureDates = new HashSet<>();
         for (final TrainId trainId : trainIds) {
             departureDates.add(trainId.departureDate);
         }

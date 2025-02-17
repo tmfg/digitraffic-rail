@@ -32,8 +32,6 @@ public class FeedMessageServiceTest extends BaseTest {
     private static final GTFSTrip TRIP_1 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_1, ROUTE_ID_1, 1);
     private static final GTFSTrip TRIP_2 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_2, ROUTE_ID_1, 1);
 
-    private static GeometryFactory geometryFactory = new GeometryFactory();
-
     @MockBean
     private GTFSTripRepository gtfsTripRepository;
 

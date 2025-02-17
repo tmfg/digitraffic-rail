@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.common.domain.cause;
 
 import java.nio.ByteBuffer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 
 import fi.livi.rata.avoindata.common.domain.jsonview.CategoryCodeJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Schema(name = "Cause", title = "Cause", description = "Details why a train is not on schedule. Train-responses only have ids and codes populated.")
@@ -81,14 +81,14 @@ public class Cause {
         return null;
     }
 
-    public static int causeOidToNumber(String oid) throws GSSException {
-        Oid oidObject = new Oid(oid);
-        byte[] oidObjectDER = oidObject.getDER();
-        byte[] intBytes = new byte[4];
+    public static int causeOidToNumber(final String oid) throws GSSException {
+        final Oid oidObject = new Oid(oid);
+        final byte[] oidObjectDER = oidObject.getDER();
+        final byte[] intBytes = new byte[4];
         for (int i = 0; i < 4; i++) {
              intBytes[i] = oidObjectDER[oidObjectDER.length-1-i];
         }
-        ByteBuffer byteBuffer = ByteBuffer.wrap(intBytes);
+        final ByteBuffer byteBuffer = ByteBuffer.wrap(intBytes);
         return byteBuffer.getInt();
     }
 }
