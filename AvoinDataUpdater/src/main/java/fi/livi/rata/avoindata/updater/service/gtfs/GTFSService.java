@@ -83,10 +83,13 @@ public class GTFSService {
     public GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
-                              final boolean filterOutNonStops) throws IOException {
-        final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(passengerAdhocSchedules, passengerRegularSchedules);
+                              final boolean filterOutNonStopsAndMuseumTrains) throws IOException {
+        // filter out museum trains when desired
+        final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream().filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
 
-        if (filterOutNonStops) {
+        final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, passengerRegularSchedules);
+
+        if (filterOutNonStopsAndMuseumTrains) {
             for (final Trip trip : gtfsDto.trips) {
                 trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
             }
