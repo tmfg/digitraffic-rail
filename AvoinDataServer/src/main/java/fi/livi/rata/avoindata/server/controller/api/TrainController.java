@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -60,54 +61,72 @@ public class TrainController extends ADataController {
     private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
     private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
 
-    @Operation(summary = "Returns trains that are newer than {version}", ignoreJsonView = true)
+    @Operation(summary = "Returns trains that are newer than {version}",
+               ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
-    @RequestMapping(method = RequestMethod.GET, path = "")
+    @RequestMapping(method = RequestMethod.GET,
+                    path = "")
     @Transactional(readOnly = true)
-    public List<Train> getTrainsByVersion(@RequestParam(required = false) Long version,
-                                          final HttpServletResponse response) {
+    public List<Train> getTrainsByVersion(
+            @RequestParam(required = false)
+            Long version,
+            final HttpServletResponse response) {
         if (version == null) {
             version = allTrainsRepository.getMaxVersion() - 1;
         }
 
-        final List<Object[]> rawIds = allTrainsRepository.findByVersionGreaterThanRawSql(version, MAX_ANNOUNCED_TRAINS);
-        final List<TrainId> trainIds = createTrainIdsFromRawIds(rawIds);
+        final List<AllTrainsRepository.FindByVersionQueryResult> results =
+                findByTrainIdService.getTrainsGreaterThanVersionRecursive(version, MAX_ANNOUNCED_TRAINS);
 
-        final List<Train> trains = trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
+        final List<TrainId> trainIds = createTrainIdsFromRawIds(results);
+
+        final List<Train> trains =
+                trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
         return trains;
     }
 
-    private List<TrainId> createTrainIdsFromRawIds(final List<Object[]> rawIds) {
-        return rawIds.stream().map(s -> {
-            final long trainNumber = (Long) s[0];
-            final LocalDate departureDate = ((Date) s[1]).toLocalDate();
-
-            return new TrainId(trainNumber, departureDate);
-        }).collect(Collectors.toList());
+    private List<TrainId> createTrainIdsFromRawIds(final List<AllTrainsRepository.FindByVersionQueryResult> rawIds) {
+        return rawIds.stream().map(s -> new TrainId(s.getTrain_number(), s.getDeparture_date())).collect(Collectors.toList());
     }
 
-    @Operation(summary = "Returns latest train", ignoreJsonView = true)
+    @Operation(summary = "Returns latest train",
+               ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
-    @RequestMapping(value = "/latest/{train_number}", method = RequestMethod.GET)
+    @RequestMapping(value = "/latest/{train_number}",
+                    method = RequestMethod.GET)
     @Transactional(readOnly = true)
-    public List<Train> getTrainByTrainNumber(@PathVariable final long train_number,
-                                             @RequestParam(required = false, defaultValue = "0") final long version,
-                                             final HttpServletResponse response) {
+    public List<Train> getTrainByTrainNumber(
+            @PathVariable
+            final long train_number,
+            @RequestParam(required = false,
+                          defaultValue = "0")
+            final long version,
+            final HttpServletResponse response) {
         return this.getTrainByTrainNumberAndDepartureDate(train_number, null, false, version, response);
     }
 
-    @Operation(summary = "Returns a specific train", ignoreJsonView = true)
+    @Operation(summary = "Returns a specific train",
+               ignoreJsonView = true)
     @JsonView(TrainJsonView.LiveTrains.class)
-    @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
+    @RequestMapping(value = "/{departure_date}/{train_number}",
+                    method = RequestMethod.GET)
     @Transactional(readOnly = true)
-    public List<Train> getTrainByTrainNumberAndDepartureDate(@PathVariable final long train_number,
-                                                             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date,
-                                                             @RequestParam(required = false, defaultValue = "false") final boolean include_deleted,
-                                                             @RequestParam(required = false, defaultValue = "0") final long version,
-                                                             final HttpServletResponse response) {
+    public List<Train> getTrainByTrainNumberAndDepartureDate(
+            @PathVariable
+            final long train_number,
+            @PathVariable
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            final LocalDate departure_date,
+            @RequestParam(required = false,
+                          defaultValue = "false")
+            final boolean include_deleted,
+            @RequestParam(required = false,
+                          defaultValue = "0")
+            final long version,
+            final HttpServletResponse response) {
 
         List<Train> trains = new ArrayList<>();
 
@@ -125,23 +144,32 @@ public class TrainController extends ADataController {
         return trains;
     }
 
-    @Operation(summary = "Returns trains run on {departure_date}", ignoreJsonView = true, responses = {
-            @ApiResponse(responseCode = "200", content = @Content(
-                    mediaType = "application/json",
-                    array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
+    @Operation(summary = "Returns trains run on {departure_date}",
+               ignoreJsonView = true,
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    content = @Content(
+                                            mediaType = "application/json",
+                                            array = @ArraySchema(schema = @Schema(implementation = Train.class)))) })
     @JsonView(TrainJsonView.LiveTrains.class)
-    @RequestMapping(method = RequestMethod.GET, path = "/{departure_date}")
+    @RequestMapping(method = RequestMethod.GET,
+                    path = "/{departure_date}")
     @Transactional(readOnly = true)
     public List<Train> getTrainsByDepartureDate(
-            @PathVariable("departure_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departureDate,
-            @RequestParam(name = "include_deleted", required = false, defaultValue = "false") final boolean includeDeleted,
+            @PathVariable("departure_date")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            final LocalDate departureDate,
+            @RequestParam(name = "include_deleted",
+                          required = false,
+                          defaultValue = "false")
+            final boolean includeDeleted,
             final HttpServletResponse response) {
 
         final List<TrainId> trainIds = trainRepository.findTrainIdByDepartureDate(departureDate);
 
         final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
-            if(includeDeleted) {
+            if (includeDeleted) {
                 trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
             } else {
                 trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
@@ -162,7 +190,8 @@ public class TrainController extends ADataController {
         final List<TrainId> trainsToRetrieve = extractNewerTrainIds(version, liveTrains);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return includeDeleted ? findByTrainIdService.findTrainsIncludeDeleted(trainsToRetrieve) : findByTrainIdService.findTrains(trainsToRetrieve);
+            return includeDeleted ? findByTrainIdService.findTrainsIncludeDeleted(trainsToRetrieve) :
+                   findByTrainIdService.findTrains(trainsToRetrieve);
         }
 
         return Collections.EMPTY_LIST;

@@ -2,10 +2,10 @@ package fi.livi.rata.avoindata.common.dao.train;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,4 +62,28 @@ public class FindByTrainIdService {
     public void removeByTrainId(final List<TrainId> trainIds) {
         trainRepository.removeByTrainId(getSortedTrainIds(trainIds), findUniqueDepartureDates(trainIds));
     }
+
+    public List<AllTrainsRepository.FindByVersionQueryResult> getTrainsGreaterThanVersionRecursive(final Long version, final int maxRows) {
+        final List<AllTrainsRepository.FindByVersionQueryResult> results =
+                allTrainsRepository.findByVersionGreaterThanRawSql(version, maxRows);
+
+        if (results.size() == maxRows) {
+            Collections.sort(results,
+                    (a, b) -> a.getVersion().compareTo(b.getVersion()));
+            // do not return results containing rows over maxRows that consist of only a single version, fetch again for next version in these cases
+            // partial versions should not be returned
+            // single versions containing over maxRows are historical anomalies that can be skipped
+            if (results.getFirst().getVersion().equals(results.getLast().getVersion())) {
+                log.warn("Version {} contains over {} rows, skipping and fetching for next version", version, maxRows);
+                return getTrainsGreaterThanVersionRecursive(results.getFirst().getVersion(), maxRows);
+            }
+            // filter out last version from results of over
+            // maxRows to avoid returning partial version sets
+            // it is assumed here that the results are in ASC order by version
+            return results.stream().filter(result -> !result.getVersion().equals(results.getLast().getVersion())).toList();
+        }
+
+        return results;
+    }
+
 }

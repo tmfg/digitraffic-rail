@@ -4,8 +4,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
 
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
@@ -14,11 +17,18 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 
+
 public class TrainControllerTest extends MockMvcBaseTest {
+
     @Autowired
     private TrainFactory trainFactory;
     @Autowired
     private TrainRepository trainRepository;
+
+    @AfterEach
+    public void cleanUp() {
+        trainRepository.deleteAll();
+    }
 
     @Test
     public void deletedShouldBeFilteredByDefault() throws Exception {
@@ -35,8 +45,6 @@ public class TrainControllerTest extends MockMvcBaseTest {
         getJson(String.format("/trains/%s/1", someDate)).andExpect(jsonPath("$.length()").value(1));
         getJson(String.format("/trains/%s/2", someDate)).andExpect(jsonPath("$.length()").value(0));
         getJson(String.format("/trains/%s", someDate)).andExpect(jsonPath("$.length()").value(2));
-
-        trainRepository.deleteAll();
     }
 
     @Test
@@ -59,8 +67,6 @@ public class TrainControllerTest extends MockMvcBaseTest {
 
         getJson(String.format("/trains/%s?include_deleted=true", someDate)).andExpect(jsonPath("$.length()").value(3));
         getJson(String.format("/trains/%s?include_deleted=false", someDate)).andExpect(jsonPath("$.length()").value(2));
-
-        trainRepository.deleteAll();
     }
 
     @Test
@@ -71,7 +77,20 @@ public class TrainControllerTest extends MockMvcBaseTest {
         getJson(String.format("/trains/latest/%d", train.id.trainNumber))
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].trainNumber").value(train.id.trainNumber));
+    }
 
-        trainRepository.deleteAll();
+    @Sql(scripts = "/trains/insert_over_2500_trains_one_version.sql", config = @SqlConfig(separator = "$$") )
+    @Test
+    public void singleVersionExceedingRowLimitIsFiltered() throws Exception {
+        getJson(String.format("/trains?version=%s", 0))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Sql(scripts = "/trains/insert_over_2500_trains_two_versions.sql", config = @SqlConfig(separator = "$$") )
+    @Test
+    public void partialVersionIsFilteredWhenRowLimitIsExceeded() throws Exception {
+        getJson(String.format("/trains?version=%s", 0))
+                .andExpect(jsonPath("$.length()").value(2499))
+                .andExpect(jsonPath("$[0].version").value(1));
     }
 }
