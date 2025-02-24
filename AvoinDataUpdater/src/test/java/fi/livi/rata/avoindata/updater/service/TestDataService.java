@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.internal.util.MockUtil;
 import org.slf4j.Logger;
@@ -75,17 +76,17 @@ public class TestDataService {
 
     @Modifying
     public void createSingleTrainComposition() throws IOException {
-        compositionService.addCompositions(deserializeSingleTrainJourneyCompositions());
+        compositionService.addCompositions(deserializeSingleTrainJourneyCompositions().getLeft());
     }
 
     @Modifying
     public void createOvernightComposition() throws IOException {
-        compositionService.addCompositions(deserializeOvernightJourneyCompositions());
+        compositionService.addCompositions(deserializeOvernightJourneyCompositions().getLeft());
     }
 
-    public List<JourneyComposition> getNewestJourneyCompositions(final String resourcePath) throws IOException {
+    public Pair<List<JourneyComposition>, List<KokoonpanoDto>> getNewestJourneyCompositions(final String resourcePath) throws IOException {
         final KokoonpanoDto[] kokoonpanot = readJourneyCompositions(resourcePath);
-        final ArrayList<KokoonpanoDto> newestVersions = journeyCompositionConverter.filterNewestVersions(kokoonpanot);
+        final ArrayList<KokoonpanoDto> newestVersions = journeyCompositionConverter.filterNewestVersions(new ArrayList<>(Arrays.asList(kokoonpanot)));
         return journeyCompositionConverter.transformToJourneyCompositions(newestVersions);
     }
 
@@ -93,11 +94,11 @@ public class TestDataService {
         return objectMapper.readValue(new ClassPathResource(resourcePath).getFile(), KokoonpanoDto[].class);
     }
 
-    public List<JourneyComposition> deserializeSingleTrainJourneyCompositions() throws IOException {
+    public Pair<List<JourneyComposition>, List<KokoonpanoDto>> deserializeSingleTrainJourneyCompositions() throws IOException {
         return getNewestJourneyCompositions("/koju/julkisetkokoonpanot/2024-11-13--9715.json");
     }
 
-    public List<JourneyComposition> deserializeOvernightJourneyCompositions() throws IOException {
+    public Pair<List<JourneyComposition>, List<KokoonpanoDto>> deserializeOvernightJourneyCompositions() throws IOException {
         return getNewestJourneyCompositions("/koju/julkisetkokoonpanot/2024-11-13--265-overnight.json");
     }
 

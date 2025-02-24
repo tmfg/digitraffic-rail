@@ -1,6 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService.PAST_LIMIT_MINUTES;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
 import com.google.transit.realtime.GtfsRealtime;
+
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
@@ -9,24 +23,12 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
-import java.util.List;
-
-import static fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService.PAST_LIMIT_MINUTES;
-import static org.mockito.Mockito.when;
 
 public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
     @Autowired
     private FeedMessageService feedMessageService;
 
-    @MockBean
+    @MockitoBean
     private GTFSTripRepository gtfsTripRepository;
 
     private final LocalDate TEST_DATE_TODAY = LocalDate.now();

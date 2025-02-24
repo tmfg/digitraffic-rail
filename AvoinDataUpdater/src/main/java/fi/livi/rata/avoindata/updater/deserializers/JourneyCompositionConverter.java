@@ -6,17 +6,17 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -81,42 +81,70 @@ public class JourneyCompositionConverter {
      * @param kokoonpanot Might contain multiple composition versions for same trains
      * @return Newest compositions for individual trains
      */
-    public ArrayList<KokoonpanoDto> filterNewestVersions(final KokoonpanoDto[] kokoonpanot) {
-        final Map<String, KokoonpanoDto> kokoonpanotFiltered = Arrays.stream(kokoonpanot)
+    public ArrayList<KokoonpanoDto> filterNewestVersions(final List<KokoonpanoDto> kokoonpanot) {
+        final Map<String, KokoonpanoDto> kokoonpanotFiltered = kokoonpanot.stream()
                 .collect(Collectors.toMap(
-                        (k) -> StringUtil.format("{}-{}", k.getJunanumero(), k.getLahtopaiva().toString()),
+                        JourneyCompositionConverter::getKeyForKokoonpano,
                         Function.identity(),
                         (kokoonpano1, kokoonpano2) -> {
                             final KokoonpanoDto current =
                                     kokoonpano1.getMessageDateTime().isAfter(kokoonpano2.getMessageDateTime()) ? kokoonpano1 : kokoonpano2;
-                            log.debug("method=filterNewestVersions Found duplicate versions for train trainNumber={} departureDate={} with messageDateTimes {} vs {} selecting version {}",
-                                      kokoonpano1.getJunanumero(), kokoonpano1.getLahtopaiva(), kokoonpano1.getMessageDateTime(), kokoonpano2.getMessageDateTime(), current.getMessageDateTime());
+                            log.debug(
+                                    "method=filterNewestVersions Found duplicate versions for train trainNumber={} departureDate={} with messageDateTimes {} vs {} selecting version {}",
+                                    kokoonpano1.getJunanumero(), kokoonpano1.getLahtopaiva(), kokoonpano1.getMessageDateTime(),
+                                    kokoonpano2.getMessageDateTime(), current.getMessageDateTime());
                             return current;
                         }
                 ));
         return new ArrayList<>(kokoonpanotFiltered.values());
     }
 
-
-    public List<JourneyComposition> transformToJourneyCompositions(final List<KokoonpanoDto> kokoonpanot) {
+    /**
+     * Returns list of successfull transformations to JourneyComposition and failed kokoonpanot
+     */
+    public Pair<List<JourneyComposition>, List<KokoonpanoDto>> transformToJourneyCompositions(final List<KokoonpanoDto> kokoonpanot) {
         final long version = Instant.now().toEpochMilli();
-        return kokoonpanot.stream()
-                .map(kokoonpanoDto -> transformToJourneyCompositions(kokoonpanoDto, version))
-                .flatMap(Collection::stream)
-                .toList();
+        final List<JourneyComposition> success = new ArrayList<>(kokoonpanot.size());
+        final List<KokoonpanoDto> failed = new ArrayList<>();
+        final Pair<List<JourneyComposition>, List<KokoonpanoDto>> result = Pair.of(success, failed);
+
+        kokoonpanot.forEach(kokoonpanoDto -> {
+            try {
+                final List<JourneyComposition> transformationResult = transformToJourneyCompositions(kokoonpanoDto, version);
+                success.addAll(transformationResult);
+            } catch (final CompositionFailedException e) {
+                failed.add(kokoonpanoDto);
+            }
+        });
+        return result;
     }
 
-    private List<JourneyComposition> transformToJourneyCompositions(final KokoonpanoDto kokoonpano, final long version) {
+    /**
+     * Transforms KokoonpanoDto to list of JourneyCompositions. If composition cannot be formed because not all data is available
+     * then CompositionFailedException is thrown.
+     *
+     * @param kokoonpano to be transformed
+     * @param version    version for composition
+     * @return composition with needed data to be saved to db
+     * @throws CompositionFailedException if not all data is available
+     */
+    private List<JourneyComposition> transformToJourneyCompositions(final KokoonpanoDto kokoonpano, final long version)
+            throws CompositionFailedException {
         final List<JourneyComposition> compositions =
                 kokoonpano.getOsavalit().stream().map(ov -> transformToJourneyComposition(kokoonpano, ov, version)).toList();
         final long countNoStartStation = compositions.stream().filter(journeyComposition -> journeyComposition.startStation == null).count();
         final long countNoEndStation = compositions.stream().filter(journeyComposition -> journeyComposition.endStation == null).count();
         if (countNoStartStation > 0 || countNoEndStation > 0) {
-            log.error("method=transformToJourneyCompositions JourneyComposition for trainNumber={} on departureDate={} had empty start or end stations countNoStartStation={} countNoEndStation={} of compositions={}  messageDateTime={} compositions: returning zero compositions",
-                    kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(), countNoStartStation, countNoEndStation, compositions.size(), compositions.isEmpty() ? null : compositions.getFirst().messageDateTime);
-            return Collections.emptyList();
+            final String msg = StringUtil.format(
+                    "method=transformToJourneyCompositions JourneyComposition for trainNumber={} on departureDate={} had empty start or end stations countNoStartStation={} countNoEndStation={} of compositions={}  messageDateTime={} compositions: returning zero compositions",
+                    kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(), countNoStartStation, countNoEndStation, compositions.size(),
+                    compositions.getFirst().messageDateTime);
+            throw new CompositionFailedException(kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(), msg);
         } else {
-            log.info("method=transformToJourneyCompositions JourneyComposition for trainNumber={} on departureDate={} was OK for compositions={} messageDateTime={}", kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(), compositions.size(), compositions.isEmpty() ? null : compositions.getFirst().messageDateTime);
+            log.info(
+                    "method=transformToJourneyCompositions JourneyComposition for trainNumber={} on departureDate={} was OK for compositions={} messageDateTime={}",
+                    kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(), compositions.size(),
+                    compositions.isEmpty() ? null : compositions.getFirst().messageDateTime);
         }
         return compositions;
     }
@@ -124,8 +152,6 @@ public class JourneyCompositionConverter {
     private JourneyComposition transformToJourneyComposition(final KokoonpanoDto kokoonpano,
                                                              final fi.finrail.koju.model.OsavaliDto osavali,
                                                              final long version) {
-
-
 
         final fi.livi.rata.avoindata.common.domain.metadata.Operator o =
                 kokoonpano.getSender() != null ?
@@ -146,11 +172,12 @@ public class JourneyCompositionConverter {
         // JRI -> {ArrayNode@25383} "[{"tunniste":"1.2.246.586.1.39.81517","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
         final Station startStation = getStationByTrafficLocationOid(osavali.getAlkuAikataulupaikka(), osavali.getAlkuUICKoodi());
 
-        if (startStation == null) {
-            log.error("method=transformToJourneyComposition startStation not found with oid={} or uicCode={} for trainNumber={} on departureDate={}", osavali.getAlkuAikataulupaikka(), osavali.getAlkuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
+        if (startStation == null || osavali.getAlkuaika() == null) {
+            log.warn("method=transformToJourneyComposition startStation not found with oid={} or uicCode={} for trainNumber={} on departureDate={}",
+                    osavali.getAlkuAikataulupaikka(), osavali.getAlkuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
         }
         final Optional<SimpleTimeTableRow> startTimetable =
-                startStation != null ?
+                startStation != null && osavali.getAlkuaika() != null ?
                 getTimetableRow(
                         kokoonpano.getJunanumero(),
                         kokoonpano.getLahtopaiva(),
@@ -162,15 +189,20 @@ public class JourneyCompositionConverter {
                 startTimetable.isPresent() ?
                 createJourneyCompositionRow(TimeTableRow.TimeTableRowType.DEPARTURE, osavali.getAlkuaika(), startStation) : null;
         if (startStation != null && startTimetable.isEmpty()) {
-            log.error("method=transformToJourneyComposition startTimetable not found with oid={} or uicCode={} for trainNumber={} on departureDate={}", osavali.getAlkuAikataulupaikka(), osavali.getAlkuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
+            log.warn(
+                    "method=transformToJourneyComposition startTimetable not found with oid={} or uicCode={} for trainNumber={} on departureDate={}",
+                    osavali.getAlkuAikataulupaikka(), osavali.getAlkuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
         }
 
         final Station endStation = getStationByTrafficLocationOid(osavali.getLoppuAikataulupaikka(), osavali.getLoppuUICKoodi());
-        if (endStation == null) {
-            log.error("method=transformToJourneyComposition endStation not found with oid={} or uicCode={} for trainNumber={} on departureDate={}", osavali.getLoppuAikataulupaikka(), osavali.getLoppuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
+        if (endStation == null || osavali.getLoppuaika() == null) {
+            log.warn(
+                    "method=transformToJourneyComposition endStation not found with oid={} or uicCode={} for trainNumber={} on departureDate={} endTime={}",
+                    osavali.getLoppuAikataulupaikka(), osavali.getLoppuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva(),
+                    osavali.getLoppuaika());
         }
         final Optional<SimpleTimeTableRow> endTimetable =
-                endStation != null ?
+                endStation != null && osavali.getLoppuaika() != null ?
                 getTimetableRow(
                         kokoonpano.getJunanumero(),
                         kokoonpano.getLahtopaiva(),
@@ -182,7 +214,8 @@ public class JourneyCompositionConverter {
                 endTimetable.isPresent() ?
                 createJourneyCompositionRow(TimeTableRow.TimeTableRowType.ARRIVAL, osavali.getLoppuaika(), endStation) : null;
         if (endStation != null && endTimetable.isEmpty()) {
-            log.error("method=transformToJourneyComposition endTimetable not found with oid={} or uicCode={} for trainNumber={} on departureDate={}", osavali.getLoppuAikataulupaikka(), osavali.getLoppuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
+            log.warn("method=transformToJourneyComposition endTimetable not found with oid={} or uicCode={} for trainNumber={} on departureDate={}",
+                    osavali.getLoppuAikataulupaikka(), osavali.getLoppuUICKoodi(), kokoonpano.getJunanumero(), kokoonpano.getLahtopaiva());
         }
         return new JourneyComposition(
                 operator,
@@ -190,8 +223,8 @@ public class JourneyCompositionConverter {
                 kokoonpano.getLahtopaiva(), // LocalDate departureDate,
                 trainType.isPresent() ? trainType.get().trainCategory.id : 0, // trainCategoryId
                 trainType.isPresent() ? trainType.get().id : 0, // trainTypeId
-                osavali.getKokonaispituus().intValue()/1000, // totalLength (convert from mm to m)
-                osavali.getMaxNopeus(), // maximumSpeed
+                Objects.requireNonNullElse(osavali.getKokonaispituus(), 0).intValue() / 1000, // totalLength (convert from mm to m)
+                Objects.requireNonNullElse(osavali.getMaxNopeus(), 0), // maximumSpeed
 
                 version, // version,
                 kokoonpano.getMessageDateTime().toInstant(), // messageDateTime from koju api
@@ -222,13 +255,14 @@ public class JourneyCompositionConverter {
         count.addAndGet(1);
         match.addAndGet(result.isPresent() ? 1 : 0);
         if (result.isEmpty()) {
-            log.error("method=getTimetableRow TimetableRow not found for trainNumber={} departureDate={} time={}, stationShortCode={}, type={} ({})",
-                      junanumero, lahtopaiva, aika.toZonedDateTime(), stationShortCode, type, type.ordinal());
+            log.warn("method=getTimetableRow TimetableRow not found for trainNumber={} departureDate={} time={}, stationShortCode={}, type={} ({})",
+                    junanumero, lahtopaiva, aika.toZonedDateTime(), stationShortCode, type, type.ordinal());
         }
         return result;
     }
 
-    private static JourneyCompositionRow createJourneyCompositionRow(final TimeTableRow.TimeTableRowType type, final OffsetDateTime scheduledTime, final Station location) {
+    private static JourneyCompositionRow createJourneyCompositionRow(final TimeTableRow.TimeTableRowType type, final OffsetDateTime scheduledTime,
+                                                                     final Station location) {
         final ZonedDateTime scheduledTimeUtc = scheduledTime.toZonedDateTime().withZoneSameInstant(ZoneId.of("Z"));
         return new JourneyCompositionRow(scheduledTimeUtc, location.shortCode, location.uicCode, location.countryCode, type);
     }
@@ -243,7 +277,6 @@ public class JourneyCompositionConverter {
             if (station != null) {
                 return station;
             }
-            log.error("method=getStationByTrafficLocationOid could not find station by oid={} with shortCode={}", stationOid, liikennepaikka.get().get("lyhenne").asText());
         }
         if (uicCodeFallback != null) {
             final Optional<Station> station = stationRepository.findByUicCode(uicCodeFallback);
@@ -251,19 +284,56 @@ public class JourneyCompositionConverter {
                 return station.get();
             }
         }
-        log.error("method=getStationByTrafficLocationOid could not find station by oid={} or uicCode={}", stationOid, uicCodeFallback);
+        log.warn("method=getStationByTrafficLocationOid could not find station by oid={} and shortCode={} or uicCode={}", stationOid,
+                liikennepaikka.isPresent() ? liikennepaikka.get().get("lyhenne").asText() : "null", uicCodeFallback);
         return null;
     }
 
-    @Scheduled(fixedRate = 1000*60)
+    @Scheduled(fixedRate = 1000 * 60)
     public void logStatistics() {
         final long totalTime = took.getAndSet(0);
         final long totalCount = count.getAndSet(0);
         final long totalMatch = match.getAndSet(0);
         if (totalCount > 0) {
-            log.info("method=logStatistics statistics=timeTableRowRepository.findSimpleBy tookMs={} ms, found / queries = {} / {} timePerQuery = {} ms", totalTime,
+            log.info(
+                    "method=logStatistics statistics=timeTableRowRepository.findSimpleBy tookMs={} ms, found / queries = {} / {} timePerQuery = {} ms",
+                    totalTime,
                     totalMatch, totalCount, String.format("%.2f", (double) totalTime / (double) totalCount));
         }
+    }
+
+    public static class CompositionFailedException extends Exception {
+        private final Integer junanumero;
+        private final LocalDate lahtopaiva;
+        private final String msg;
+
+        public CompositionFailedException(final Integer junanumero, final LocalDate lahtopaiva, final String msg) {
+            this.junanumero = junanumero;
+            this.lahtopaiva = lahtopaiva;
+            this.msg = msg;
+        }
+
+        public Integer getJunanumero() {
+            return junanumero;
+        }
+
+        public LocalDate getLahtopaiva() {
+            return lahtopaiva;
+        }
+
+        public String getMsg() {
+            return msg;
+        }
+    }
+
+    /**
+     * Returns key to be used in maps for kokoonpano. Key is formed as "departureDate-trainNumber"
+     *
+     * @param kokoonpano to get key for
+     * @return "departureDate-trainNumber"
+     */
+    public static String getKeyForKokoonpano(final KokoonpanoDto kokoonpano) {
+        return StringUtil.format("{}-{}", kokoonpano.getLahtopaiva().toString(), kokoonpano.getJunanumero());
     }
 }
 

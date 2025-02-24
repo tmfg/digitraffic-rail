@@ -9,12 +9,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,13 +34,13 @@ public class JourneyCompositionConverterTest extends BaseTest {
     @Autowired
     private JourneyCompositionConverter journeyCompositionConverter;
 
-    @MockBean
+    @MockitoBean
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     @Test
     public void filterNewestVersions() throws Exception {
         final KokoonpanoDto[] all = testDataService.readJourneyCompositions("/koju/julkisetkokoonpanot/2024-11-13--9715.json");
-        final ArrayList<KokoonpanoDto> newest = journeyCompositionConverter.filterNewestVersions(all);
+        final ArrayList<KokoonpanoDto> newest = journeyCompositionConverter.filterNewestVersions(Arrays.asList(all));
         assertEquals(3, all.length);
         assertEquals(1, newest.size());
         assertEquals(19539509L, newest.getFirst().getMessageReference());
@@ -53,7 +54,7 @@ public class JourneyCompositionConverterTest extends BaseTest {
     public void deserializePublicCompositions() throws Exception {
         testDataService.mockGetTrakediaLiikennepaikkaNodes(trakediaLiikennepaikkaService);
 
-        final JourneyComposition journeyComposition = testDataService.deserializeSingleTrainJourneyCompositions().getFirst();
+        final JourneyComposition journeyComposition = testDataService.deserializeSingleTrainJourneyCompositions().getLeft().getFirst();
 
         assertEquals(((double) Instant.now().toEpochMilli()), (double) journeyComposition.version, 500); // 100 ms variation
         assertEquals(Instant.parse("2024-11-13T05:48:46Z"), journeyComposition.messageDateTime); // "messageDateTime": "2024-11-13T05:48:46Z"

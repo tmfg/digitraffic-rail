@@ -1,16 +1,27 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
+import static fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionConverter.getKeyForKokoonpano;
+
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +40,6 @@ import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.CompositionPersistService;
 
-
 @Service
 public class CompositionInitializerService extends AbstractDatabaseInitializer<JourneyComposition> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -44,6 +54,20 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
     private JourneyCompositionConverter journeyCompositionConverter;
 
     private final RipaService.ETagRef latestVersionETag = new RipaService.ETagRef(null, log);
+
+    private final Map<String, KokoonpanoDto> failedCompositionsInMemory =
+            Collections.synchronizedMap(new PassiveExpiringMap<>(Duration.ofHours(1).toMillis()) {
+                // Only called when removing expired objects from map.
+                // We clean map by iterating and this is not called from iterator, only by PassiveExpiringMap when expiring value
+                @Override
+                public KokoonpanoDto remove(final Object key) {
+                    final KokoonpanoDto value = super.remove(key);
+                    if (value != null) { // null if already removed by iterator
+                        log.error("method=failedCompositionsInMemoryExpired Removing failed composition in memory as it expired trainKey={}", key);
+                    }
+                    return value;
+                }
+            } );
 
     @Override
     public String getPrefix() {
@@ -70,9 +94,8 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
     }
 
     /**
-     *
-     * @param path server path to query
-     * @param responseType the return type of api (ignored for compositions custom implementation)
+     * @param path          server path to query
+     * @param responseType  the return type of api (ignored for compositions custom implementation)
      * @param latestVersion version in koju-api is latestVersion-journeyCompositionVersionOffset
      * @return newest JourneyCompositions
      */
@@ -96,24 +119,35 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
             final Instant usedMessageDateTime = messageDateTime.minus(5, ChronoUnit.MINUTES).with(ChronoField.NANO_OF_SECOND, 0);
             final String targetPath = StringUtil.format("{}.json?time={}/P1M", path, usedMessageDateTime);
             final String usedEtag = latestVersionETag.getETag();
-            log.info("method=getObjectsNewerThanVersion Fetching prefix={} from api={} with etag={} with original messageDateTime={} minus 5 min", this.prefix,
+            log.info("method=getObjectsNewerThanVersion Fetching prefix={} from api={} with etag={} with original messageDateTime={} minus 5 min",
+                    this.prefix,
                     targetPath, usedEtag, messageDateTime);
             final KokoonpanoDto[] kokoonpanot =
                     ObjectUtils.getFirstNonNull(() -> ripaService.getFromKojuApiRestTemplate(targetPath, KokoonpanoDto[].class, latestVersionETag),
                             () -> new KokoonpanoDto[0]);
+
+            final List<KokoonpanoDto> kokoonpanoDtos = combineCompositionsWithFailedCompositionsInMemory(kokoonpanot);
+
             // Api returns all versions/train after the version/time so filter only latest
             // null is returned when data is not modified
-            final List<KokoonpanoDto> kokoonpanotNewest = journeyCompositionConverter.filterNewestVersions(kokoonpanot);
-            final List<JourneyComposition> compositions = journeyCompositionConverter.transformToJourneyCompositions(kokoonpanotNewest);
-            final Instant messageDateTimeNew = compositions.stream().map(c -> c.messageDateTime).filter(Objects::nonNull).max(Instant::compareTo).orElse(null);
+            final List<KokoonpanoDto> kokoonpanotNewest = journeyCompositionConverter.filterNewestVersions(kokoonpanoDtos);
+            final Pair<List<JourneyComposition>, List<KokoonpanoDto>> result =
+                    journeyCompositionConverter.transformToJourneyCompositions(kokoonpanotNewest);
+            final List<JourneyComposition> compositions = result.getLeft();
+            // Update failed compositions to memory
+            final Triple<Integer, Integer, Integer> failedInfo = updateFailedCompositionsInMemory(result.getRight());
+
+            final Instant messageDateTimeNew =
+                    compositions.stream().map(c -> c.messageDateTime).filter(Objects::nonNull).max(Instant::compareTo).orElse(null);
             logTrainsPerDepartureDate("getObjectsNewerThanVersion", compositions);
 
             log.info(
                     "method=getObjectsNewerThanVersion prefix={} from api={} etag={} and updatedEtag={} returned originalCount={} compositions and after newest filter and " +
-                            "deserialization count={} compositions with {} new, updated latest messageDateTime from messageDateTimeOld={} to messageDateTimeNew={}",
+                            "deserialization count={} compositions with {} new, updated latest messageDateTime from messageDateTimeOld={} to messageDateTimeNew={} " +
+                            "failedCompositionsAddedToMemory={} failedCompositionsRemovedFromMemory={} failedCompositionsInMemory={}",
                     this.prefix, targetPath, usedEtag, latestVersionETag, kokoonpanot.length, kokoonpanotNewest.size(), compositions.size(),
                     messageDateTime,
-                    messageDateTimeNew);
+                    messageDateTimeNew, failedInfo.getLeft(), failedInfo.getMiddle(), failedInfo.getRight());
             return compositions;
         } catch (final Exception e) {
             log.error("method=getObjectsNewerThanVersion failed with {} reset latestVersionETag={}", e.getMessage(), latestVersionETag.getETag(), e);
@@ -134,13 +168,23 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
     @Override
     protected List<JourneyComposition> getForADay(final String path, final LocalDate localDate, final Class<JourneyComposition[]> type) {
         final String targetPath = String.format("%s/%s.json", path, localDate);
-        final KokoonpanoDto[] kokoonpanot = ObjectUtils.getFirstNonNull(() -> getForObjectWithRetry(targetPath, KokoonpanoDto[].class), () -> new KokoonpanoDto[0]);
+        final KokoonpanoDto[] kokoonpanot =
+                ObjectUtils.getFirstNonNull(() -> getForObjectWithRetry(targetPath, KokoonpanoDto[].class), () -> new KokoonpanoDto[0]);
+
         // Api returns all versions/train so filter only latest for
-        final  ArrayList<KokoonpanoDto> kokoonpanotNewest = journeyCompositionConverter.filterNewestVersions(kokoonpanot);
-        final List<JourneyComposition> compositions = journeyCompositionConverter.transformToJourneyCompositions(kokoonpanotNewest);
+        final ArrayList<KokoonpanoDto> kokoonpanotNewest =
+                journeyCompositionConverter.filterNewestVersions(new ArrayList<>(Arrays.asList(kokoonpanot)));
+
+        final Pair<List<JourneyComposition>, List<KokoonpanoDto>> result =
+                journeyCompositionConverter.transformToJourneyCompositions(kokoonpanotNewest);
+        final List<JourneyComposition> compositions = result.getLeft();
+
+        addFailedCompositionsToMemory(result.getRight());
+
         logTrainsPerDepartureDate("getForADay", compositions);
-        log.info("method=getForADay prefix={} from api={} departureDate={} returned compositions originalCount={} and after newest filter and deserialization count={} compositions with {} new ones",
-                this.prefix, targetPath, localDate, kokoonpanot.length, compositions.size(), kokoonpanotNewest.size() );
+        log.info(
+                "method=getForADay prefix={} from api={} departureDate={} returned compositions originalCount={} and after newest filter and deserialization count={} compositions with {} new ones",
+                this.prefix, targetPath, localDate, kokoonpanot.length, compositions.size(), kokoonpanotNewest.size());
         return compositions;
     }
 
@@ -171,6 +215,73 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
                         )
                 );
         departureDateToTrains.forEach(
-                (key, value) -> log.info("method={} prefix={} update count={} trains for departureDate={} trainNumbers: {}", method, getPrefix(), value.size(), key, value));
+                (key, value) -> log.info("method={} prefix={} update count={} trains for departureDate={} trainNumbers: {}", method, getPrefix(),
+                        value.size(), key, value));
+    }
+
+    /**
+     * Returns given compositions with failed compositions fom memory so they will be also tried to update.
+     *
+     * @param compositions current list of compositions
+     */
+    private List<KokoonpanoDto> combineCompositionsWithFailedCompositionsInMemory(final KokoonpanoDto[] compositions) {
+        final ArrayList<KokoonpanoDto> all = new ArrayList<>(Arrays.asList(compositions));
+        all.addAll(failedCompositionsInMemory.values());
+        return all;
+    }
+
+    /**
+     * Add given failed compositions in memory
+     * If train is already registered on the failed ones, then update it only if we have newer to add.
+     *
+     * @param failedCompositions failed compositions to add to memory.
+     * @return keys added failed compositions in format "departureDate-trainNumber"
+     */
+    private Set<String> addFailedCompositionsToMemory(final List<KokoonpanoDto> failedCompositions) {
+        final HashSet<String> addedKeys = new HashSet<>();
+        if (!failedCompositions.isEmpty()) {
+            failedCompositions.forEach(kokoonpano -> {
+                final String key = getKeyForKokoonpano(kokoonpano);
+                final KokoonpanoDto previousInMemory = failedCompositionsInMemory.get(key);
+                // Only put if it has changed as put will reset expiration
+                if (previousInMemory == null || previousInMemory.getMessageDateTime().isBefore(kokoonpano.getMessageDateTime())) {
+                    failedCompositionsInMemory.put(key, kokoonpano);
+                    addedKeys.add(key);
+                }
+            });
+        }
+        return addedKeys;
+    }
+
+    /**
+     * Update failed compositions in memory with latest failed ones and remove ones not listed as failed.
+     * If train is already registered on the failed ones, then update it only if we have newer to add.
+     *
+     * @param failedCompositions failed ones on last update to add to memory.
+     * @return Sum of added, removed and current size of failed compositions in memory
+     */
+    private Triple<Integer, Integer, Integer> updateFailedCompositionsInMemory(final List<KokoonpanoDto> failedCompositions) {
+        // First remove compositions from memory that has not failed anymore
+        final HashSet<String> fixedKeys = new HashSet<>();
+        final Set<String> failedKeys =
+                failedCompositions.stream().map(JourneyCompositionConverter::getKeyForKokoonpano).collect(Collectors.toSet());
+        final Iterator<String> iter = failedCompositionsInMemory.keySet().iterator();
+        while (iter.hasNext()) {
+            final String existingKeyInMemory = iter.next();
+            if (!failedKeys.contains(existingKeyInMemory)) {
+                iter.remove();
+                fixedKeys.add(existingKeyInMemory);
+            }
+        }
+
+        // Then add failed to memory
+        final Set<String> addedKeys = addFailedCompositionsToMemory(failedCompositions);
+        if (!addedKeys.isEmpty() || !fixedKeys.isEmpty()) {
+            log.info(
+                    "method=updateFailedCompositionsInMemory addedKeys={} addedKeysSize={} fixedKeys={} fixedKeysSize={} keysInMemory={} keysInMemorySize={}",
+                    addedKeys, addedKeys.size(), fixedKeys, fixedKeys.size(),
+                    failedCompositionsInMemory.keySet(), failedCompositionsInMemory.size());
+        }
+        return Triple.of(addedKeys.size(), fixedKeys.size(), failedCompositionsInMemory.size());
     }
 }

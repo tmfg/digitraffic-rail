@@ -1,24 +1,25 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.google.transit.realtime.GtfsRealtime;
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
-import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
-import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSTripService.TRIP_REPLACEMENT;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.google.transit.realtime.GtfsRealtime;
+
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
+import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 
 public class FeedMessageServiceTest extends BaseTest {
     private static final LocalDate DATE_1 = LocalDate.of(2022, 1, 1);
@@ -32,7 +33,7 @@ public class FeedMessageServiceTest extends BaseTest {
     private static final GTFSTrip TRIP_1 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_1, ROUTE_ID_1, 1);
     private static final GTFSTrip TRIP_2 = new GTFSTrip(1L, DATE_1, DATE_2, TRIP_ID_2, ROUTE_ID_1, 1);
 
-    @MockBean
+    @MockitoBean
     private GTFSTripRepository gtfsTripRepository;
 
     @Autowired

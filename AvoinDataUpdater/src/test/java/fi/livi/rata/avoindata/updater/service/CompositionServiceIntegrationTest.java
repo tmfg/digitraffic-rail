@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,7 +55,7 @@ public class CompositionServiceIntegrationTest extends BaseTest {
     @Autowired
     private EntityManager entityManager;
 
-    @MockBean
+    @MockitoBean
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--9715.sql" })
@@ -133,13 +133,13 @@ public class CompositionServiceIntegrationTest extends BaseTest {
     @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--265-overnight.sql" })
     @Test
     public void testUpdateCompositions() throws Exception {
-        final List<JourneyComposition> journeyCompositionsFirstTwo = testDataService.deserializeOvernightJourneyCompositions().subList(0, 2);
+        final List<JourneyComposition> journeyCompositionsFirstTwo = testDataService.deserializeOvernightJourneyCompositions().getLeft().subList(0, 2);
 
         compositionService.addCompositions(journeyCompositionsFirstTwo); // Add first two journey sections
         assertEquals(1, compositionRepository.count(), "Journey compositions for a single train should create one composition");
         assertEquals(2, compositionRepository.findAll().getFirst().journeySections.size(), "Composition should have first two journey sections");
 
-        final List<JourneyComposition> journeyCompositionsAll = testDataService.deserializeOvernightJourneyCompositions();
+        final List<JourneyComposition> journeyCompositionsAll = testDataService.deserializeOvernightJourneyCompositions().getLeft();
 
         entityManager.flush();
         entityManager.clear();

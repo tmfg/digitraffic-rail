@@ -31,9 +31,9 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.core.io.Resource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,16 +80,16 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     @Autowired
     private InfraApiPlatformService infraApiPlatformService;
-    @MockBean
+    @MockitoBean
     private GTFSShapeService gtfsShapeService;
 
     @SpyBean
     private TimeTableRowService timeTableRowService;
 
-    @MockBean
+    @MockitoBean
     private PlatformDataService platformDataService;
 
-    @MockBean
+    @MockitoBean
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     @Value("classpath:gtfs/263.json")

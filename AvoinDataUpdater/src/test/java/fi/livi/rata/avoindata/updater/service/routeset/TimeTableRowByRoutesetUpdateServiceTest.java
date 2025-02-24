@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Iterables;
@@ -44,7 +44,7 @@ public class TimeTableRowByRoutesetUpdateServiceTest extends BaseTest {
     @Autowired
     private RoutesetFactory routesetFactory;
 
-    @MockBean
+    @MockitoBean
     private TrainLockExecutor trainLockExecutor;
 
     @BeforeEach

@@ -19,7 +19,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.RumaNotificationIdAndVersion;
@@ -48,9 +48,9 @@ public class TrafficRestrictionNotificationUpdaterTest extends BaseTest {
     private LocalTrafficRestrictionNotificationService localTrafficRestrictionNotificationService;
     @Autowired
     private TrafficRestrictionNotificationFactory factory;
-    @MockBean
+    @MockitoBean
     private RemoteTrafficRestrictionNotificationService remoteTrafficRestrictionNotificationService;
-    @MockBean
+    @MockitoBean
     private LastUpdateService lastUpdateService;
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
