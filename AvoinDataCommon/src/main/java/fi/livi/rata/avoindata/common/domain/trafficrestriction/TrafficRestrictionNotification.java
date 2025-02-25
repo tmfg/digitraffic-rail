@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.common.domain.trafficrestriction;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.locationtech.jts.geom.Geometry;
@@ -109,6 +110,19 @@ public class TrafficRestrictionNotification {
         public TrafficRestrictionNotificationId(final String id, final Long version) {
             this.id = id;
             this.version = version;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (!(o instanceof final TrafficRestrictionNotificationId that)) {
+                return false;
+            }
+            return Objects.equals(id, that.id) && Objects.equals(version, that.version);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, version);
         }
     }
 
