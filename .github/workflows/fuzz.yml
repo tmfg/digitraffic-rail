@@ -13,6 +13,7 @@ jobs:
         with:
           url: https://rata-beta.digitraffic.fi/swagger/openapi.json
           fuzzcount: 5
+          headers: "digitraffic-user:internal-digitraffic-fuzz"
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
