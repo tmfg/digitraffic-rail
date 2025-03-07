@@ -6,7 +6,7 @@ on:
 jobs:
   Mirror-action:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master' && github.repository == 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Mirror
         uses: tmfg/digitraffic-actions@mirror/v2

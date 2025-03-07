@@ -8,7 +8,7 @@ on:
 jobs:
   check_alerts:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Dependabot alerts
         uses: tmfg/digitraffic-actions@dependabot-slack/v1
