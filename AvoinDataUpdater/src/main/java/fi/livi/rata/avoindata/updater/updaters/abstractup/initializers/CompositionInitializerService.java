@@ -56,14 +56,14 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
     private final RipaService.ETagRef latestVersionETag = new RipaService.ETagRef(null, log);
 
     private final Map<String, KokoonpanoDto> failedCompositionsInMemory =
-            Collections.synchronizedMap(new PassiveExpiringMap<>(Duration.ofHours(1).toMillis()) {
+            Collections.synchronizedMap(new PassiveExpiringMap<>(Duration.ofHours(24).toMillis()) {
                 // Only called when removing expired objects from map.
                 // We clean map by iterating and this is not called from iterator, only by PassiveExpiringMap when expiring value
                 @Override
                 public KokoonpanoDto remove(final Object key) {
                     final KokoonpanoDto value = super.remove(key);
                     if (value != null) { // null if already removed by iterator
-                        log.error("method=failedCompositionsInMemoryExpired Removing failed composition in memory as it expired trainKey={}", key);
+                        log.error("method=failedCompositionsInMemoryExpired Removing failed composition in memory as it expired after 24h trainKey={}", key);
                     }
                     return value;
                 }
