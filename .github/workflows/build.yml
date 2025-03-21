@@ -45,7 +45,7 @@ jobs:
         run: |
           mvn org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report -pl AvoinDataServer test
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         if: success() || failure()
         with:
           name: jUnit tests
