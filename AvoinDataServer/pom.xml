@@ -61,6 +61,14 @@
             <version>${spring.cloud.commons.version}</version>
         </dependency>
 
+        <!-- TODO: Temporary patch for CVE-2025-22228 in spring-security-crypto 6.4.3 -->
+        <!-- Remove this dependency once spring-cloud-starter-bootstrap is updated -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>6.4.4</version>
+        </dependency>
+
         <dependency>
             <groupId>io.awspring.cloud</groupId>
             <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
