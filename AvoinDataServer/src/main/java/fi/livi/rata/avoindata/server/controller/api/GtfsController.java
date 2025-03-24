@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import com.amazonaws.services.s3.Headers;
 import jakarta.servlet.http.HttpServletResponse;
 
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,14 +21,21 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
+    private final GTFSRepository gtfsRepository;
 
-    @Autowired
-    private GTFSRepository gtfsRepository;
+    private static final int CACHE_SECONDS_FOR_RT_LOCATIONS = 10;
+    private static final int CACHE_SECONDS_FOR_RT_UPDATES = 60;
+    private static final int CACHE_SECONDS_FOR_STATIC = 60*15;
+
+    public GtfsController(final GTFSRepository gtfsRepository) {
+        this.gtfsRepository = gtfsRepository;
+    }
 
     @Operation(summary = "Returns GTFS zip file")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-all.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForAllTrains(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_STATIC);
         return getData(response, "gtfs-all.zip");
     }
 
@@ -36,6 +43,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerTrains(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_STATIC);
         return getData(response, "gtfs-passenger.zip");
     }
 
@@ -43,7 +51,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-locations", produces = "application/protobuf")
     @Transactional(readOnly = true)
     public byte[] getGtfsRtLocations(final HttpServletResponse response) {
-        CacheControl.setCacheMaxAgeSeconds(response, 10);
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_RT_LOCATIONS);
         return getData(response, "gtfs-rt-locations");
     }
 
@@ -51,7 +59,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-updates", produces = "application/protobuf")
     @Transactional(readOnly = true)
     public byte[] getGtfsRtUpdates(final HttpServletResponse response) {
-        CacheControl.setCacheMaxAgeSeconds(response, 60);
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_RT_UPDATES);
         return getData(response, "gtfs-rt-updates");
     }
 
@@ -59,6 +67,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTRETrains(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_STATIC);
         return getData(response, "gtfs-vr-tre.zip");
     }
 
@@ -66,6 +75,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger-stops.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerNoNonstops(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_STATIC);
         return getData(response, "gtfs-passenger-stops.zip");
     }
 
@@ -73,6 +83,7 @@ public class GtfsController {
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTrains(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS_FOR_STATIC);
         return getData(response, "gtfs-vr.zip");
     }
 
@@ -81,6 +92,7 @@ public class GtfsController {
 
         response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
+        response.addHeader(Headers.CONTENT_LENGTH, String.valueOf(gtfs.data.length));
 
         return gtfs.data;
     }
