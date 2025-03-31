@@ -3,12 +3,14 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +82,16 @@ public class GTFSService {
 //        log.info("Ids {}",filteredSchedules.stream().map(s->s.id).collect(Collectors.toList()));
 //    }
 
+    /**
+     * Include stops that are set for passenger traffic and
+     * stops that are used in the included stop times
+     */
+    private List<Stop> filterStops(final GTFSDto gtfsDto, final Set<String> stopIds) {
+        return gtfsDto.stops.stream().filter(
+                s -> BooleanUtils.isTrue(s.source.passengerTraffic) || stopIds.contains(s.stopId)
+                ).toList();
+    }
+
     public GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
@@ -90,11 +102,18 @@ public class GTFSService {
         final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, passengerRegularSchedules);
 
         if (filterOutNonStopsAndMuseumTrains) {
+            final Set<String> stopIds = new HashSet<>();
+
             for (final Trip trip : gtfsDto.trips) {
-                trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
+                // gather used stop-ids to include also those stops that are used but are not set for
+                // passenger traffic
+                final var stopTimes = this.filterOutNonStops(trip.stopTimes);
+
+                trip.stopTimes = stopTimes;
+                stopIds.addAll(stopTimes.stream().map(st -> st.stopId).toList());
             }
 
-            gtfsDto.stops = gtfsDto.stops.stream().filter(s -> BooleanUtils.isTrue(s.source.passengerTraffic)).toList();
+            gtfsDto.stops = filterStops(gtfsDto, stopIds);
         }
 
         gtfsWritingService.writeGTFSFiles(gtfsDto, zipFileName);
