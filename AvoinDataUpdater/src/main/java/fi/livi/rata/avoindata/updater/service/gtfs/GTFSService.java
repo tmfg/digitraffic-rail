@@ -110,7 +110,7 @@ public class GTFSService {
                 final var stopTimes = this.filterOutNonStops(trip.stopTimes);
 
                 trip.stopTimes = stopTimes;
-                stopIds.addAll(stopTimes.stream().map(st -> st.stopId).toList());
+                stopIds.addAll(stopTimes.stream().map(StopTime::getStopCodeWithPlatform).toList());
             }
 
             gtfsDto.stops = filterStops(gtfsDto, stopIds);

@@ -18,7 +18,9 @@ public class StopTime extends GTFSEntity<ScheduleRow> {
         super(source);
     }
 
-    public String getStopCodeWithPlatform() { return stopId + "_" + track; }
+    public String getStopCodeWithPlatform() {
+        return track != null ? stopId + "_" + track : stopId + "_0";
+    }
 
     @Override
     public String toString() {
