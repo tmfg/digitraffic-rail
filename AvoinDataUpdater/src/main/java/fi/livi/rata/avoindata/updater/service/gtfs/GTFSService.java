@@ -111,6 +111,7 @@ public class GTFSService {
 
                 trip.stopTimes = stopTimes;
                 stopIds.addAll(stopTimes.stream().map(StopTime::getStopCodeWithPlatform).toList());
+                stopIds.addAll(stopTimes.stream().map(s -> s.stopId).toList());
             }
 
             gtfsDto.stops = filterStops(gtfsDto, stopIds);
