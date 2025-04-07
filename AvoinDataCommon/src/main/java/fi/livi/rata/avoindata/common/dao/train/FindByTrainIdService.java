@@ -2,10 +2,11 @@ package fi.livi.rata.avoindata.common.dao.train;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 // This service adds departureDate as an explicit argument in sql where, because Mysql does not work well with pair arguments in where
 @Service
 public class FindByTrainIdService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private TrainRepository trainRepository;
@@ -36,11 +37,7 @@ public class FindByTrainIdService {
     }
 
     private static Set<LocalDate> findUniqueDepartureDates(final Collection<TrainId> trainIds) {
-        final Set<LocalDate> departureDates = new HashSet<>();
-        for (final TrainId trainId : trainIds) {
-            departureDates.add(trainId.departureDate);
-        }
-        return departureDates;
+        return trainIds.stream().map(trainId -> trainId.departureDate).collect(Collectors.toCollection(HashSet::new));
     }
 
     public List<Train> findTrains(final Collection<TrainId> trainIds) {
@@ -68,8 +65,7 @@ public class FindByTrainIdService {
                 allTrainsRepository.findByVersionGreaterThanRawSql(version, maxRows);
 
         if (results.size() == maxRows) {
-            Collections.sort(results,
-                    (a, b) -> a.getVersion().compareTo(b.getVersion()));
+            // already sorted by version
             // do not return results containing rows over maxRows that consist of only a single version, fetch again for next version in these cases
             // partial versions should not be returned
             // single versions containing over maxRows are historical anomalies that can be skipped

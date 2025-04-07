@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -99,24 +100,45 @@ public class JourneyCompositionConverter {
         return new ArrayList<>(kokoonpanotFiltered.values());
     }
 
+    final AtomicLong compositionVersionHolder = new AtomicLong(0);
     /**
      * Returns list of successfull transformations to JourneyComposition and failed kokoonpanot
      */
     public Pair<List<JourneyComposition>, List<KokoonpanoDto>> transformToJourneyCompositions(final List<KokoonpanoDto> kokoonpanot) {
-        final long version = Instant.now().toEpochMilli();
+        // Generate new version for compositions form curren time
+        final long newVersion = Instant.now().toEpochMilli();
+        if (newVersion <= compositionVersionHolder.get()) {
+            // If new version is same or smaller (should not happen) as on previous run then increment it by 1 ms
+            compositionVersionHolder.addAndGet(1L);
+            log.warn("method=transformToJourneyCompositions Version was same as on previous run incrementing to version={} epoc ms", compositionVersionHolder.get());
+        } else {
+            compositionVersionHolder.set(newVersion);
+        }
+
         final List<JourneyComposition> success = new ArrayList<>(kokoonpanot.size());
         final List<KokoonpanoDto> failed = new ArrayList<>();
         final Pair<List<JourneyComposition>, List<KokoonpanoDto>> result = Pair.of(success, failed);
-
+        final AtomicInteger compositionsCount = new AtomicInteger(0);
         kokoonpanot.forEach(kokoonpanoDto -> {
+            compositionsCount.addAndGet(1);
+            // If creating version with over 1000 compositions then increment version by 1 ms to keep composition version max size in 1000.
+            if (shouldIncrementVersion(compositionsCount.get())) {
+                log.warn("method=transformToJourneyCompositions count={} is over 1000 compositions for version={} epoc ms, increasing by 1 ms", compositionsCount.get(), compositionVersionHolder.get());
+                compositionVersionHolder.addAndGet(1L);
+            }
             try {
-                final List<JourneyComposition> transformationResult = transformToJourneyCompositions(kokoonpanoDto, version);
+                final List<JourneyComposition> transformationResult = transformToJourneyCompositions(kokoonpanoDto, compositionVersionHolder.get());
                 success.addAll(transformationResult);
             } catch (final CompositionFailedException e) {
                 failed.add(kokoonpanoDto);
             }
         });
         return result;
+    }
+
+    public static boolean shouldIncrementVersion(final int compositionsCount) {
+        // 1001, 2001, 3001, ...
+        return compositionsCount > 1000 && (compositionsCount-1) % 1000 == 0;
     }
 
     /**

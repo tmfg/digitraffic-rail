@@ -18,12 +18,10 @@ public abstract class MockMvcBaseTest extends BaseTest {
     protected MockMvc mockMvc;
 
     protected ResultActions getJson(final URI url) throws Exception {
-        final ResultActions resultActions = this.mockMvc.perform(
+        return this.mockMvc.perform(
                 get(url).accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
-
-        return resultActions;
     }
 
     protected ResultActions getJson(final String url) throws Exception {
@@ -31,26 +29,29 @@ public abstract class MockMvcBaseTest extends BaseTest {
     }
 
     protected ResultActions getJson(final String url, final String apiVersion) throws Exception {
-        final ResultActions resultActions = this.mockMvc.perform(
+        return this.mockMvc.perform(
                 get("/api/" + apiVersion + "/" + url).accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-
-        return resultActions;
     }
 
     protected ResultActions getGeoJson(final String url) throws Exception {
-        final ResultActions resultActions = this.mockMvc.perform(
+        return this.mockMvc.perform(
                 get("/api/v1" + url).accept(MediaType.parseMediaType("application/vnd.geo+json")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.features").exists());
 //                .andExpect(content().contentType("application/vnd.geo+json")); // does not work for some reason
-
-        return resultActions;
     }
 
     protected void assertLength(final String url, final int length) throws Exception {
         final ResultActions r1 = getJson(url);
+        r1.andExpect(jsonPath("$.length()").value(length));
+    }
+
+    protected void assertLengthAndVersion(final String url, final int length, final long firsVersion, final long lastVersion) throws Exception {
+        final ResultActions r1 = getJson(url);
+        r1.andExpect(jsonPath("$[0].version").value((int)firsVersion));
+        r1.andExpect(jsonPath("$[-1:].version").value((int)lastVersion));
         r1.andExpect(jsonPath("$.length()").value(length));
     }
 

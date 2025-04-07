@@ -1,10 +1,16 @@
 package fi.livi.rata.avoindata.server.factory;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,11 +31,39 @@ public class CompositionFactory {
     @Autowired
     private CompositionRepository compositionRepository;
 
+
+    public void createVersions(final Pair<Long, Integer>...versionCountPairs) {
+        final List<Composition> compositions = new ArrayList<>();
+        final AtomicReference<Instant> messageDateTime = new AtomicReference<>(Instant.now().minus(30, ChronoUnit.DAYS));
+        for (final Pair<Long, Integer> versionCountPair : versionCountPairs) {
+            final long version = versionCountPair.getLeft();
+            final int count = versionCountPair.getRight();
+            final List<Composition> newCompositions = IntStream.range(0, count).boxed()
+                    .map(i -> createInternal(version, messageDateTime.get(), i))
+                    .toList();
+            messageDateTime.set(messageDateTime.get().plus(1, ChronoUnit.DAYS));
+            compositions.addAll(newCompositions);
+        }
+        compositionRepository.persist(compositions);
+    }
+
     public Composition create(final long version, final Instant messageDateTime) {
+        final Composition composition = createInternal(version, messageDateTime, 51L);
+        compositionRepository.persist(Lists.newArrayList(composition));
+        return composition;
+    }
+
+    private Composition create(final long version, final Instant messageDateTime, final long trainNumber) {
+        final Composition composition = createInternal(version, messageDateTime, trainNumber);
+        compositionRepository.persist(Lists.newArrayList(composition));
+        return composition;
+    }
+
+    private Composition createInternal(final long version, final Instant messageDateTime, final long trainNumber) {
         final Operator operator = new Operator();
         operator.operatorUICCode = 1;
         operator.operatorShortCode = "vr";
-        final Composition composition = new Composition(operator, 51L, LocalDate.now(), 1L, 1L, version, messageDateTime);
+        final Composition composition = new Composition(operator, trainNumber, messageDateTime.atZone(ZoneOffset.UTC).toLocalDate(), 1L, 1L, version, messageDateTime);
 
         final CompositionTimeTableRow beginTimeTableRow = createCompositionTimeTableRow(DateProvider.nowInHelsinki(), "HKI", 1);
         final CompositionTimeTableRow endTimeTableRow = createCompositionTimeTableRow(DateProvider.nowInHelsinki(), "TPE", 2);
@@ -46,7 +80,7 @@ public class CompositionFactory {
 
         composition.journeySections.add(journeySection);
 
-        compositionRepository.persist(Lists.newArrayList(composition));
+
 
         return composition;
     }

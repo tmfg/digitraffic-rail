@@ -11,7 +11,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +89,14 @@ public class JourneyCompositionConverterTest extends BaseTest {
         for (final Locomotive locomotive : journeyComposition.locomotives) {
             assertLocomotive(locomotive);
         }
+    }
+
+    @Test
+    public void ddeserializePublicCompositions() throws Exception {
+        final List<Integer> trueValues = Arrays.asList(1001, 2001, 3001, 4001, 5001, 6001, 7001, 8001, 9001, 10001, 11001);
+        IntStream.range(0, 12000).forEach(i -> {
+            assertEquals(trueValues.contains(i), JourneyCompositionConverter.shouldIncrementVersion(i));
+        });
     }
 
     private static void assertLocomotive(final Locomotive locomotive) {
