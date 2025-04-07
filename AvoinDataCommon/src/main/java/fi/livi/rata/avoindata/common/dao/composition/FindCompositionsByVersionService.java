@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.common.dao.composition;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class FindCompositionsByVersionService {
             // single versions containing over maxRows are historical anomalies but return it anyway
             if (results.getFirst().getVersion() == results.getLast().getVersion()) {
                 log.error(
-                        "method=getCompositionsByVersion with version={} firstVersion={} contains count={} rows that is over {} rows. " +
+                        "method=findIdsByVersionGreaterThanRecursive with version={} firstVersion={} contains count={} rows that is over {} rows. " +
                         "Returning them, but this should only happen when fetching historical compositions.",
                         version, results.getFirst().getVersion(), results.size(), maxRows);
                 return results;
@@ -57,7 +56,7 @@ public class FindCompositionsByVersionService {
             // maxRows to avoid returning partial version sets
             // it is assumed here that the results are in ASC order by version
             log.warn(
-                    "method=getCompositionsByVersion with version={} firstVersion={} lastVersion={} contains count={} rows that is over {} rows. " +
+                    "method=findIdsByVersionGreaterThanRecursive with version={} firstVersion={} lastVersion={} contains count={} rows that is over {} rows. " +
                     "skipping last version",
                     version, results.getFirst().getVersion(), results.getLast().getVersion(), results.size(), maxRows);
             return results.stream().filter(result -> result.getVersion() != results.getLast().getVersion()).toList();
