@@ -40,7 +40,12 @@ public interface CompositionRepository extends CustomGeneralRepository<Compositi
     @Query(value = "select train_number as trainNumber, departure_date as departureDate, version from composition " +
             "where composition.version > ?1 " +
             "order by composition.version", nativeQuery = true)
-    List<TrainIdWithVersion> findIdsByVersionGreaterThan(Long version, Pageable pageable);
+    List<TrainIdWithVersion> findIdsByVersionGreaterThan(final Long version, final Pageable pageable);
+
+    @Query(value = "select train_number as trainNumber, departure_date as departureDate, version from composition " +
+            "where composition.version = ?1 " +
+            "order by composition.version", nativeQuery = true)
+    List<TrainIdWithVersion> findIdsByVersion(final Long version);
 
     @Query("select coalesce(max(composition.version),0) from Composition composition")
     long getMaxVersion();
