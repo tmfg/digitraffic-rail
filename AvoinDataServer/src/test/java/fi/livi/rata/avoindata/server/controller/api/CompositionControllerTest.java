@@ -39,6 +39,18 @@ public class CompositionControllerTest extends MockMvcBaseTest {
 
     @Test
     @Transactional
+    public void withoutVersionShouldWork() throws Exception {
+        final long version = Instant.now().toEpochMilli();
+        final Instant messageDateTime = Instant.ofEpochSecond(random.nextLong(0L, 2208988800L));
+        compositionFactory.create(version, messageDateTime);
+
+        assertLength("/compositions", 1);
+
+        Assertions.assertEquals(messageDateTime, compositionRepository.getMaxMessageDateTime());
+    }
+
+    @Test
+    @Transactional
     public void versionSearchShouldWorkOver1000() throws Exception {
         final long version100 = 1001;
         final long version200 = 1002;
