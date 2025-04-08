@@ -49,8 +49,10 @@ public class CompositionController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = "")
     @Transactional(timeout = 30, readOnly = true)
     public List<Composition> getCompositionsByVersion(@Parameter(description = "version") @RequestParam(required = false)
-                                                      final Long version, final HttpServletResponse response) {
-
+                                                      Long version, final HttpServletResponse response) {
+        if (version == null) {
+            version = compositionRepository.getMaxVersion() - 1;
+        }
         final List<Composition> compositions = compositionService.findByVersionGreaterThan(version, MAX_ANNOUNCED_COPOSITIONS);
         if (!compositions.isEmpty()) {
             CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions, version);
