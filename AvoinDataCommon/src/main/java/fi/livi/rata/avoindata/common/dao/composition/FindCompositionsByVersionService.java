@@ -47,7 +47,7 @@ public class FindCompositionsByVersionService {
             // single versions containing over maxRows are historical anomalies but return it anyway
             if (results.getFirst().getVersion() == results.getLast().getVersion()) {
                 final List<TrainIdWithVersion> resultsForVersion = compositionRepository.findIdsByVersion(results.getFirst().getVersion());
-                log.error(
+                log.warn(
                         "method=findIdsByVersionGreaterThanRecursive with version={} firstVersion={} contains count={} rows that is over {} rows. " +
                         "Returning them, but this should only happen when fetching historical compositions.",
                         version, results.getFirst().getVersion(), resultsForVersion.size(), maxRows);
