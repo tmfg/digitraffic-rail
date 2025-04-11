@@ -16,7 +16,7 @@
     <properties>
         <start-class>fi.livi.rata.avoindata.server.ServerApplication</start-class>
         <spring.cloud.aws.version>2.4.4</spring.cloud.aws.version>
-        <spring.cloud.commons.version>4.2.0</spring.cloud.commons.version>
+        <spring.cloud.commons.version>4.2.1</spring.cloud.commons.version>
     </properties>
 
     <dependencies>
@@ -61,19 +61,12 @@
             <version>${spring.cloud.commons.version}</version>
         </dependency>
 
-        <!-- TODO: Temporary patch for CVE-2025-22228 in spring-security-crypto 6.4.3 -->
-        <!-- Remove this dependency once spring-cloud-starter-bootstrap is updated -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-            <version>6.4.4</version>
-        </dependency>
-
         <dependency>
             <groupId>io.awspring.cloud</groupId>
             <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
             <version>${spring.cloud.aws.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jdk8</artifactId>
@@ -152,7 +145,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.18.3</version>
+            <version>1.19.1</version>
             <scope>test</scope>
         </dependency>
 
@@ -191,7 +184,7 @@
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-junit-platform</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.5.3</version>
                     </dependency>
                 </dependencies>
             </plugin>
