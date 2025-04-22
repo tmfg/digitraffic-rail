@@ -16,7 +16,7 @@ import java.util.Set;
 
 @Service
 public class TrainPublishingService {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private MQTTPublishService mqttPublishService;

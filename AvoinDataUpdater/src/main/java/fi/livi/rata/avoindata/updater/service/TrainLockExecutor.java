@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ public class TrainLockExecutor {
     private SimpleTransactionManager simpleTransactionManager;
     private final Logger log = LoggerFactory.getLogger(TrainLockExecutor.class);
 
+    private final AtomicInteger itemsInQueue = new AtomicInteger(0);
+
     public <T> T executeInTransactionLock(final String context, final Callable<T> callable) {
         return execute(context, true, callable);
     }
@@ -33,8 +36,6 @@ public class TrainLockExecutor {
         final ZonedDateTime submittedAt = ZonedDateTime.now();
 
         final Callable<T> wrappedCallable = () -> {
-            log.debug("method=execute Executing callable for " + context);
-
             final ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
             final T returnValue;
@@ -44,8 +45,13 @@ public class TrainLockExecutor {
                 returnValue = callable.call();
             }
 
+            log.info("method=execute waitMs={} executeMs={} context={}",
+                    Duration.between(submittedAt, executionStartedAt).toMillis(),
+                    Duration.between(executionStartedAt, ZonedDateTime.now()).toMillis(),
+                    context);
+
             if (shouldLog(submittedAt, executionStartedAt)) {
-                log.info("method=execute Waited: {}, Executed: {}, Context: {}",
+                log.error("method=execute Waited: {}, Executed: {}, Context: {}",
                     Duration.between(submittedAt, executionStartedAt),
                     Duration.between(executionStartedAt, ZonedDateTime.now()),
                     context);
@@ -60,6 +66,8 @@ public class TrainLockExecutor {
         } catch (final Exception e) {
             log.error("method=execute Error executing callable in TrainLockExecutor, context: " + context, e);
             return null;
+        } finally {
+            itemsInQueue.decrementAndGet();
         }
     }
 
@@ -69,7 +77,7 @@ public class TrainLockExecutor {
     }
 
     private <T> Future<T> submitCallable(final String context, final Callable<T> callable) {
-        log.debug("method=submitCallable Submitting callable for " + context);
+        log.info("method=submitCallable context={} queueSize={}", context, itemsInQueue.incrementAndGet());
 
         return executorService.submit(callable);
     }

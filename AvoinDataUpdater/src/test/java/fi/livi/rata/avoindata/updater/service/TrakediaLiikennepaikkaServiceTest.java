@@ -4,7 +4,7 @@ import fi.livi.rata.avoindata.updater.BaseTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.mockito.Mockito.times;
@@ -14,7 +14,7 @@ public class TrakediaLiikennepaikkaServiceTest extends BaseTest {
     @Autowired
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
-    @SpyBean(name = "webClient")
+    @MockitoSpyBean(name = "webClient")
     private WebClient webClient;
 
     @Test

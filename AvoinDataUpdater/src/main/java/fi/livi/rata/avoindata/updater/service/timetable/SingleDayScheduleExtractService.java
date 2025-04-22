@@ -55,7 +55,7 @@ public class SingleDayScheduleExtractService {
         log.info("Parsing todays schedules for {}", date);
         final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules, regularSchedules);
 
-        log.info("Extrating all possible schedules for {}", date);
+        log.info("Extracting all possible schedules for {}", date);
         final Function<Train, TrainId> idFunc = s -> s.id;
         final Map<Train, Schedule> newTrains = scheduleToTrainConverter.extractSchedules(todaysSchedules, date);
         final Map<TrainId, Train> newTrainMap = Maps.uniqueIndex(newTrains.keySet(), idFunc::apply);
@@ -95,6 +95,7 @@ public class SingleDayScheduleExtractService {
         for (final Train train : allTrains) {
             extractedSchedules.add(createExtractedSchedule(date, newTrains.get(train)));
         }
+
         extractedScheduleRepository.persist(extractedSchedules);
     }
 

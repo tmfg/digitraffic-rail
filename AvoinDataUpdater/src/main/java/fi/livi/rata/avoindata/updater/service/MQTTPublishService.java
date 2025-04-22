@@ -78,10 +78,9 @@ public class MQTTPublishService {
     public Future<Message<String>> publishString(final String topic, final String entity) {
         try {
             final Message<String> message = buildMessage(topic, entity);
-
             final ZonedDateTime submittedAt = ZonedDateTime.now();
 
-            final Future<Message<String>> future = executor.submit(() -> {
+            return executor.submit(() -> {
                 try {
                     final ZonedDateTime executionStartedAt = ZonedDateTime.now();
 
@@ -97,8 +96,6 @@ public class MQTTPublishService {
                     return null;
                 }
             });
-
-            return future;
         } catch (final Exception e) {
             log.error("Error publishing to: " + topic, e);
             return null;

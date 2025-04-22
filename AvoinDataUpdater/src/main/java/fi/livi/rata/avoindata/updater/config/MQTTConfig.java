@@ -34,9 +34,9 @@ public class MQTTConfig {
 
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
-        DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
+        final DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
 
-        MqttConnectOptions options = new MqttConnectOptions();
+        final MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{mqttServerUrl});
         options.setUserName(mqtt_username);
         options.setPassword(mqtt_password.toCharArray());
@@ -49,8 +49,8 @@ public class MQTTConfig {
 
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
-    public MessageHandler mqttOutbound(MqttPahoClientFactory mqttPahoClientFactory) {
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(mqttClientId+new Random().nextInt(1000),
+    public MessageHandler mqttOutbound(final MqttPahoClientFactory mqttPahoClientFactory) {
+        final MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(mqttClientId+new Random().nextInt(1000),
                 mqttPahoClientFactory);
         return messageHandler;
     }
@@ -62,6 +62,6 @@ public class MQTTConfig {
 
     @MessagingGateway(defaultRequestChannel = "mqttOutboundChannel")
     public interface MQTTGateway {
-        void sendToMqtt(Message data);
+        void sendToMqtt(final Message<String> data);
     }
 }

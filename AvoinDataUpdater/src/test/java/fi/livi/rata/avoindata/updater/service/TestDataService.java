@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
+import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.internal.util.MockUtil;
 import org.slf4j.Logger;
@@ -75,8 +76,8 @@ public class TestDataService {
     }
 
     @Modifying
-    public void createSingleTrainComposition() throws IOException {
-        compositionService.addCompositions(deserializeSingleTrainJourneyCompositions().getLeft());
+    public List<Composition> createSingleTrainComposition() throws IOException {
+        return compositionService.addCompositions(deserializeSingleTrainJourneyCompositions().getLeft());
     }
 
     @Modifying

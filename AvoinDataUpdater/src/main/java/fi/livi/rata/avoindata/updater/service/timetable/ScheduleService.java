@@ -5,10 +5,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -23,8 +23,12 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 public class ScheduleService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private SingleDayScheduleExtractService singleDayScheduleExtractService;
+    private final TrainLockExecutor trainLockExecutor;
+    private final SingleDayScheduleExtractService singleDayScheduleExtractService;
+    private final ScheduleProviderService scheduleProviderService;
+    private final LastUpdateService lastUpdateService;
+
+    private final StopSectorService stopSectorService;
 
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
@@ -35,14 +39,13 @@ public class ScheduleService {
     @Value("${updater.trains.numberOfFutureDaysToInitialize}")
     protected Integer numberOfFutureDaysToInitialize;
 
-    @Autowired
-    private TrainLockExecutor trainLockExecutor;
-
-    @Autowired
-    private ScheduleProviderService scheduleProviderService;
-
-    @Autowired
-    private LastUpdateService lastUpdateService;
+    public ScheduleService(final TrainLockExecutor trainLockExecutor, final SingleDayScheduleExtractService singleDayScheduleExtractService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService, final StopSectorService stopSectorService) {
+        this.trainLockExecutor = trainLockExecutor;
+        this.singleDayScheduleExtractService = singleDayScheduleExtractService;
+        this.scheduleProviderService = scheduleProviderService;
+        this.lastUpdateService = lastUpdateService;
+        this.stopSectorService = stopSectorService;
+    }
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
     public synchronized void extractSchedules() {
@@ -60,6 +63,7 @@ public class ScheduleService {
             log.info("Schedules fetched adHoc {} regular {}", adhocSchedules.size(), regularSchedules.size());
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+                final StopWatch stopWatchForDate = StopWatch.createStarted();
                 final ZonedDateTime nowInHelsinki = DateProvider.nowInHelsinki();
                 log.info("Extracting for date {}", date);
 
@@ -69,13 +73,22 @@ public class ScheduleService {
                     log.error("Stopping schedule extraction due to taking too long. Start: {}, Now: {}", startDate, nowInHelsinki);
                     return;
                 }
+
+                // sleep, so we don't block the train locker executor totally
+                try {
+                    // if it takes longer to extract, sleep a bit longer too
+                    final var sleepTime = Math.max(1000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
+                    Thread.sleep(sleepTime);
+                } catch (final InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.FUTURE_TRAINS);
         } catch (final Exception e) {
             log.error("Error extracting schedules", e);
         } finally {
-            log.info("Ending extract, tookMs={}", stopWatch.getTime());
+            log.info("Ending extract, tookMs={}", stopWatch.getDuration().toMillis());
         }
     }
 
@@ -84,6 +97,8 @@ public class ScheduleService {
 
         final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
                 () -> singleDayScheduleExtractService.extract(adhocSchedules, regularSchedules, date, true));
+
+        stopSectorService.addTrains(extractedTrains, "Schedule");
 
         throttle(extractedTrains.size());
     }

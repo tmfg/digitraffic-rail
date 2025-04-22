@@ -155,6 +155,10 @@ public class TimeTableRow {
     @JsonIgnore
     public Long version;
 
+    @Column
+    @JsonView(LiveTrains.class)
+    @Nullable
+    public String stopSector;
 
     protected TimeTableRow() {
     }

@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.common.dao.stopsector.StopSectorQueueItemRepository;
+import fi.livi.rata.avoindata.common.domain.stopsector.StopSectorQueueItem;
+import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,28 +31,31 @@ import jakarta.persistence.PersistenceContext;
 
 @Service
 public class TrainPersistService extends AbstractPersistService<Train> {
-    @Autowired
-    private TrainRepository trainRepository;
+    private final TrainRepository trainRepository;
+    private final TimeTableRowRepository timeTableRowRepository;
+    private final CauseRepository causeRepository;
+    private final TrainReadyRepository trainReadyRepository;
 
-    @Autowired
-    private TimeTableRowRepository timeTableRowRepository;
-
-    @Autowired
-    private CauseRepository causeRepository;
-
-    @Autowired
-    private TrainReadyRepository trainReadyRepository;
-
-    @Autowired
-    private BatchExecutionService bes;
-
-    @Autowired
-    private FindByTrainIdService findByTrainIdService;
+    private final StopSectorService serviceStopSector;
+    private final BatchExecutionService bes;
+    private final FindByTrainIdService findByTrainIdService;
+    private final StopSectorService stopSectorService;
 
     @PersistenceContext
-    private EntityManager entimanager;
+    private EntityManager entityManager;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    public TrainPersistService(final TrainRepository trainRepository, final TimeTableRowRepository timeTableRowRepository, final CauseRepository causeRepository, final TrainReadyRepository trainReadyRepository, final StopSectorService serviceStopSector, final BatchExecutionService bes, final FindByTrainIdService findByTrainIdService, final StopSectorService stopSectorService) {
+        this.trainRepository = trainRepository;
+        this.timeTableRowRepository = timeTableRowRepository;
+        this.causeRepository = causeRepository;
+        this.trainReadyRepository = trainReadyRepository;
+        this.serviceStopSector = serviceStopSector;
+        this.bes = bes;
+        this.findByTrainIdService = findByTrainIdService;
+        this.stopSectorService = stopSectorService;
+    }
 
     @Override
     @Transactional
@@ -62,19 +68,19 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         for (final Train entity : entities) {
             for (final TimeTableRow timeTableRow : entity.timeTableRows) {
                 for (final Cause cause : timeTableRow.causes) {
-                    entimanager.detach(cause);
+                    entityManager.detach(cause);
                 }
                 for (final TrainReady trainReady : timeTableRow.trainReadies) {
-                    entimanager.detach(trainReady);
+                    entityManager.detach(trainReady);
                 }
-                entimanager.detach(timeTableRow);
+                entityManager.detach(timeTableRow);
             }
-            entimanager.detach(entity);
+            entityManager.detach(entity);
         }
 
         final List<TrainId> trainIds = entities.stream().map(s->s.id).sorted(TrainId::compareTo).collect(Collectors.toList());
 
-        bes.consume(trainIds, s -> findByTrainIdService.removeByTrainId(s));
+        bes.consume(trainIds, findByTrainIdService::removeByTrainId);
 
         addEntities(entities);
 
@@ -95,12 +101,12 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     @Override
     @Transactional
     public void addEntities(final List<Train> entities) {
-        List<TrainReady> trainReadies = new ArrayList<>();
-        List<TimeTableRow> timeTableRows = new ArrayList<>();
-        List<Cause> causes = new ArrayList<>();
+        final List<TrainReady> trainReadies = new ArrayList<>();
+        final List<TimeTableRow> timeTableRows = new ArrayList<>();
+        final List<Cause> causes = new ArrayList<>();
 
         for (final Train train : entities) {
-            TimeTableRow lastTimeTableRow = Iterables.getLast(train.timeTableRows);
+            final TimeTableRow lastTimeTableRow = Iterables.getLast(train.timeTableRows);
             if (lastTimeTableRow.type == TimeTableRow.TimeTableRowType.DEPARTURE) {
                 /* In Liike, a train can end at "OL__V330" for example (a station which is not shown in DT).
                  This results in a broken train if we do not delete the second last stop */
@@ -119,6 +125,8 @@ public class TrainPersistService extends AbstractPersistService<Train> {
                 timeTableRows.add(timeTableRow);
             }
         }
+
+        stopSectorService.addTrains(entities, "Train");
 
         trainRepository.persist(entities);
         timeTableRowRepository.persist(timeTableRows);

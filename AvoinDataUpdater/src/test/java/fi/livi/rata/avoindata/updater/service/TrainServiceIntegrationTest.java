@@ -34,9 +34,6 @@ public class TrainServiceIntegrationTest extends BaseTest {
     @Autowired
     private CauseRepository causeRepository;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @Test
     @Transactional
     public void testAddTrains() throws Exception {
@@ -82,7 +79,7 @@ public class TrainServiceIntegrationTest extends BaseTest {
     @Test
     public void testUpdateTrains() throws Exception {
         final List<Train> trains = testDataService.parseTrains("trainsSingle.json");
-        final Train originalTrain = trains.get(0);
+        final Train originalTrain = trains.getFirst();
         originalTrain.timeTableRows.forEach(x -> x.actualTime = null);
         trainService.updateEntities(trains);
         final Train trainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
@@ -97,8 +94,7 @@ public class TrainServiceIntegrationTest extends BaseTest {
         Assertions.assertEquals(1, trainRepository.count());
         final Train updatedTrainFromRepository = trainRepository.findByDepartureDateAndTrainNumber(originalTrain.id.departureDate,
                 originalTrain.id.trainNumber, false);
-        timeTableRowsWithActualTime = updatedTrainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null).collect(
-                Collectors.toList());
+        timeTableRowsWithActualTime = updatedTrainFromRepository.timeTableRows.stream().filter(x -> x.actualTime != null).toList();
         Assertions.assertFalse(timeTableRowsWithActualTime.isEmpty());
         Assertions.assertEquals(46, timeTableRowRepository.count());
 

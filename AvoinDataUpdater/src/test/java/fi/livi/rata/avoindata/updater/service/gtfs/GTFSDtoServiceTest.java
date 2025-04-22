@@ -1,25 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
-import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,37 +26,27 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
-import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Translation;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 @Transactional
 @Sql({ "/gtfs/import_test_stations.sql" })
@@ -83,7 +68,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     @MockitoBean
     private GTFSShapeService gtfsShapeService;
 
-    @SpyBean
+    @MockitoSpyBean
     private TimeTableRowService timeTableRowService;
 
     @MockitoBean

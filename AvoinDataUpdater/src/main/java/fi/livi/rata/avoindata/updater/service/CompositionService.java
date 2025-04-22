@@ -13,10 +13,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,34 +41,31 @@ import fi.livi.rata.avoindata.common.utils.OptionalUtil;
 @Service
 @Transactional
 public class CompositionService extends VersionedService<JourneyComposition> {
-
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     protected AtomicReference<Instant> maxMessageDateTime = new AtomicReference<>(Instant.MIN);
 
-    @Autowired
-    private CompositionRepository compositionRepository;
+    private final StopSectorService stopSectorService;
+    private final CompositionRepository compositionRepository;
+    private final JourneySectionRepository journeySectionRepository;
+    private final CompositionTimeTableRowRepository compositionTimeTableRowRepository;
+    private final WagonRepository wagonRepository;
+    private final LocomotiveRepository locomotiveRepository;
+    private final TrainCategoryRepository trainCategoryRepository;
+    private final PowerTypeRepository powerTypeRepository;
+    private final TrainTypeRepository trainTypeRepository;
 
-    @Autowired
-    private JourneySectionRepository journeySectionRepository;
-
-    @Autowired
-    private CompositionTimeTableRowRepository compositionTimeTableRowRepository;
-
-    @Autowired
-    private WagonRepository wagonRepository;
-
-    @Autowired
-    private LocomotiveRepository locomotiveRepository;
-
-    @Autowired
-    private TrainCategoryRepository trainCategoryRepository;
-
-    @Autowired
-    private PowerTypeRepository powerTypeRepository;
-
-    @Autowired
-    private TrainTypeRepository trainTypeRepository;
+    public CompositionService(final StopSectorService stopSectorService, final CompositionRepository compositionRepository, final JourneySectionRepository journeySectionRepository, final CompositionTimeTableRowRepository compositionTimeTableRowRepository, final WagonRepository wagonRepository, final LocomotiveRepository locomotiveRepository, final TrainCategoryRepository trainCategoryRepository, final PowerTypeRepository powerTypeRepository, final TrainTypeRepository trainTypeRepository) {
+        this.stopSectorService = stopSectorService;
+        this.compositionRepository = compositionRepository;
+        this.journeySectionRepository = journeySectionRepository;
+        this.compositionTimeTableRowRepository = compositionTimeTableRowRepository;
+        this.wagonRepository = wagonRepository;
+        this.locomotiveRepository = locomotiveRepository;
+        this.trainCategoryRepository = trainCategoryRepository;
+        this.powerTypeRepository = powerTypeRepository;
+        this.trainTypeRepository = trainTypeRepository;
+    }
 
     public List<Composition> findCompositions() {
         return compositionRepository.findAll();
@@ -89,17 +86,20 @@ public class CompositionService extends VersionedService<JourneyComposition> {
                 x -> compositionRepository.deleteWithId(x.departureDate, x.trainNumber));
     }
 
-    public void addCompositions(final List<JourneyComposition> journeyCompositions) {
+    public List<Composition> addCompositions(final List<JourneyComposition> journeyCompositions) {
         final Map<TrainId, List<JourneyComposition>> journeyCompositionsByTrain = journeyCompositions.stream().collect(
                 Collectors.groupingBy(TrainId::new));
         final List<Composition> compositions = journeyCompositionsByTrain.values().stream().map(this::createCompositionFromJourneys)
                 .collect(Collectors.toList());
 
         saveCompositions(compositions);
+        stopSectorService.addCompositions(compositions);
 
         maxVersion.set(compositions.stream().map(e -> e.version).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(maxVersion.get()));
         maxMessageDateTime.set(compositions.stream().map(e -> e.messageDateTime).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(
                 maxMessageDateTime.get()));
+
+        return compositions;
     }
 
     private void saveCompositions(final List<Composition> compositions) {
