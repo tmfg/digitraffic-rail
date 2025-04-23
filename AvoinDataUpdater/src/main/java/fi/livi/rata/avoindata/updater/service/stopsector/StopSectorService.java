@@ -49,15 +49,14 @@ public class StopSectorService {
     }
 
     private void handleItem(final StopSectorQueueItem item) {
-        final var train = trainRepository.findByDepartureDateAndTrainNumber(item.id.departureDate, item.id.trainNumber, false);
+        final var composition = compositionRepository.findById(item.id);
 
-        if(train == null) {
-            log.error("could not find train for {}", item.id);
-        } else {
-            final var composition = compositionRepository.findById(item.id);
+        // train might not have yet got the composition
+        if(composition.isPresent()) {
+            final var train = trainRepository.findByDepartureDateAndTrainNumber(item.id.departureDate, item.id.trainNumber, false);
 
-            if(composition.isEmpty()) {
-                log.error("could not find composition for {}", item.id);
+            if (train == null) {
+                log.error("could not find train for {}", item.id);
             } else {
                 stopSectorUpdater.updateStopSectors(train, composition.get(), item.source);
             }
