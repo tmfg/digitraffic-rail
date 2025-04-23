@@ -41,11 +41,11 @@ public class StopSectorService {
     }
 
     public void addTrains(final List<Train> trains, final String source) {
-        stopSectorQueueItemRepository.saveAll(trains.stream().map(t -> new StopSectorQueueItem(t.id, source)).toList());
+//        stopSectorQueueItemRepository.saveAll(trains.stream().map(t -> new StopSectorQueueItem(t.id, source)).toList());
     }
 
     public void addCompositions(final List<Composition> compositions) {
-        stopSectorQueueItemRepository.saveAll(compositions.stream().map(StopSectorQueueItem::new).toList());
+ //       stopSectorQueueItemRepository.saveAll(compositions.stream().map(StopSectorQueueItem::new).toList());
     }
 
     private void handleItem(final StopSectorQueueItem item) {
