@@ -3,9 +3,10 @@ package fi.livi.rata.avoindata.common.domain.stopsector;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.annotation.Nonnull;
+import jakarta.persistence.*;
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
 import org.springframework.data.annotation.CreatedDate;
@@ -16,8 +17,15 @@ import java.time.ZonedDateTime;
 @Entity
 @Table(name = "stop_sector_queue_item")
 public class StopSectorQueueItem {
-    @EmbeddedId
-    public TrainId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
+    @Nonnull
+    public Long trainNumber;
+
+    @Nonnull
+    public LocalDate departureDate;
 
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     @CreatedDate
@@ -29,16 +37,17 @@ public class StopSectorQueueItem {
     }
 
     public StopSectorQueueItem(final TrainId id, final String source) {
-        this.id = id;
+        this.trainNumber = id.trainNumber;
+        this.departureDate = id.departureDate;
         this.source = source;
         this.created = ZonedDateTime.now();
     }
 
     public StopSectorQueueItem(final Train train) {
-        this(new TrainId(train.id.trainNumber, train.id.departureDate), "Train");
+        this(train.id, "Train");
     }
 
     public StopSectorQueueItem(final Composition composition) {
-        this(new TrainId(composition.id.trainNumber, composition.id.departureDate), "Composition");
+        this(composition.id, "Composition");
     }
 }

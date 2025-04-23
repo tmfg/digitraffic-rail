@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.stopsector;
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.stopsector.StopSectorQueueItemRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.stopsector.StopSectorQueueItem;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -41,19 +42,19 @@ public class StopSectorService {
     }
 
     public void addTrains(final List<Train> trains, final String source) {
-//        stopSectorQueueItemRepository.saveAll(trains.stream().map(t -> new StopSectorQueueItem(t.id, source)).toList());
+        stopSectorQueueItemRepository.saveAll(trains.stream().map(t -> new StopSectorQueueItem(t.id, source)).toList());
     }
 
     public void addCompositions(final List<Composition> compositions) {
- //       stopSectorQueueItemRepository.saveAll(compositions.stream().map(StopSectorQueueItem::new).toList());
+        stopSectorQueueItemRepository.saveAll(compositions.stream().map(StopSectorQueueItem::new).toList());
     }
 
     private void handleItem(final StopSectorQueueItem item) {
-        final var composition = compositionRepository.findById(item.id);
+        final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
 
         // train might not have yet got the composition
         if(composition.isPresent()) {
-            final var train = trainRepository.findByDepartureDateAndTrainNumber(item.id.departureDate, item.id.trainNumber, false);
+            final var train = trainRepository.findByDepartureDateAndTrainNumber(item.departureDate, item.trainNumber, false);
 
             if (train == null) {
                 log.error("could not find train for {}", item.id);
