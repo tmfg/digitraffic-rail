@@ -157,6 +157,11 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and (?3 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
     Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Boolean include_deleted);
 
+    @Query("select distinct train from Train train " +
+    " inner join fetch train.timeTableRows timeTableRow " +
+    " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and " + IS_NOT_DELETED + BASE_TRAIN_ORDER)
+    Train findForSectorUpdate(final LocalDate departureDate, final Long trainNumber);
+
     @Modifying
     @Query("DELETE FROM Train train WHERE train.id.departureDate in (?2) and train.id in (?1)")
     void removeByTrainId(final List<TrainId> trainIds, final Set<LocalDate> departureDates);

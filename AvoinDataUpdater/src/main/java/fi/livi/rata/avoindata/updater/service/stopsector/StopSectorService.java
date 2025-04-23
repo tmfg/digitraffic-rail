@@ -42,7 +42,9 @@ public class StopSectorService {
     }
 
     public void addTrains(final List<Train> trains, final String source) {
-        stopSectorQueueItemRepository.saveAll(trains.stream().map(t -> new StopSectorQueueItem(t.id, source)).toList());
+        stopSectorQueueItemRepository.saveAll(trains.stream()
+                .filter(t -> !t.cancelled)
+                .map(t -> new StopSectorQueueItem(t.id, source)).toList());
     }
 
     public void addCompositions(final List<Composition> compositions) {
@@ -54,7 +56,7 @@ public class StopSectorService {
 
         // train might not have yet got the composition
         if(composition.isPresent()) {
-            final var train = trainRepository.findByDepartureDateAndTrainNumber(item.departureDate, item.trainNumber, false);
+            final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
 
             if (train == null) {
                 log.error("could not find train for {}", item.id);

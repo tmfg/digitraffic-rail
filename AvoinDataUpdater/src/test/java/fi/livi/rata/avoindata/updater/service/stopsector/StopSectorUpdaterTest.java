@@ -34,7 +34,6 @@ public class StopSectorUpdaterTest extends BaseTest {
     @MockitoBean
     public StopSectorQueueItemRepository stopSectorQueueItemRepository;
 
-    private static final String TEST_TRAIN_TYPE = "IC";
     private static final TrainId TRAIN_ID = new TrainId(1L, LocalDate.of(2000, 1, 1));
 
     private JourneySection createJourneySection() {
@@ -72,7 +71,7 @@ public class StopSectorUpdaterTest extends BaseTest {
     @Test
     public void matchWithComposition() throws Exception {
         final Composition composition = testDataService.createSingleTrainComposition().getFirst();
-        final Train train = trainRepository.findByDepartureDateAndTrainNumber(LocalDate.of(2024, 11, 13), 9715L, false);
+        final Train train = trainRepository.findForSectorUpdate(LocalDate.of(2024, 11, 13), 9715L);
 
         final StopSectorUpdater stopSectorUpdater = new StopSectorUpdater(trainTypeRepository);
         stopSectorUpdater.updateStopSectors(train, composition, "Test");
