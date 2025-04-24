@@ -72,7 +72,7 @@ public class SingleDayScheduleExtractService {
         log.info("Grouping into lists for {}", date);
         groupIntoLists(newTrainMap, oldTrainMap, toBeAdded, toBeUpdated, toBeCancelled);
 
-        printChanges(toBeAdded, toBeUpdated, toBeCancelled);
+        //printChanges(toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Persisting trains for {}", date);
         persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);

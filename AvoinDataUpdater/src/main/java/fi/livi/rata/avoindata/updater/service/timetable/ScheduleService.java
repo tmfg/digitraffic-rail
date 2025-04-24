@@ -77,7 +77,7 @@ public class ScheduleService {
                 // sleep, so we don't block the train locker executor totally
                 try {
                     // if it takes longer to extract, sleep a bit longer too
-                    final var sleepTime = Math.max(1000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
+                    final var sleepTime = 200 + Math.max(10000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
                     Thread.sleep(sleepTime);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
@@ -97,17 +97,5 @@ public class ScheduleService {
 
         final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
                 () -> singleDayScheduleExtractService.extract(adhocSchedules, regularSchedules, date, true));
-
-        throttle(extractedTrains.size());
-    }
-
-    /**
-     * Sleep for a while so clients do not choke on new json.
-     * Length of sleeping is dependant of the amount of trains extracted.
-     */
-    private void throttle(final int trainCount) throws InterruptedException {
-        if(trainCount > 10) {
-            Thread.sleep(trainCount > 400 ? 30000 : 10000);
-        }
     }
 }
