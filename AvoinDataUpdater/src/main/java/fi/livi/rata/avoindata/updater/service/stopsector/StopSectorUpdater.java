@@ -67,7 +67,7 @@ public class StopSectorUpdater {
                 return currentJourneySection;
             }
 
-            if(currentJourneySection.endTimeTableRow.station.stationShortCode.equals(currentRow.station.stationShortCode)) {
+            if(currentJourneySection.endTimeTableRow.station.stationShortCode.equals(currentRow.station.stationShortCode) && jsIterator.hasNext()) {
                 currentJourneySection= jsIterator.next();
             }
         }
@@ -81,7 +81,7 @@ public class StopSectorUpdater {
 
         // go through all commercial rows and update sectors for them
         // does not handle the last station and does not need to
-        for (int i = 0; i < train.timeTableRows.size(); i++) {
+        for (int i = 0; i < train.timeTableRows.size() - 1; i++) {
             final TimeTableRow current = train.timeTableRows.get(i);
 
             if (BooleanUtils.isTrue(current.commercialStop) && current.commercialTrack != null) {

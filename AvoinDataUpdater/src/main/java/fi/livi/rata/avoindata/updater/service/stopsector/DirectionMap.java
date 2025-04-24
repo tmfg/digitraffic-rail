@@ -65,11 +65,6 @@ public class DirectionMap {
     }
 
     public Boolean isSouth(final Train train, final int index) {
-        // no direction for last row
-        if(index == train.timeTableRows.size() - 1) {
-            return null;
-        }
-
         final var entries = getEntries(train.timeTableRows.get(index).station.stationShortCode);
 
         if(entries != null) {
