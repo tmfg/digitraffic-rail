@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.stopsector;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.CsvUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,34 +64,28 @@ public class DirectionMap {
         return getEntries(station) != null;
     }
 
-    public Boolean isSouth(final TimeTableRow fromRow) {
-        final var entries = getEntries(fromRow.station.stationShortCode);
+    public Boolean isSouth(final Train train, final int index) {
+        // no direction for last row
+        if(index == train.timeTableRows.size() - 1) {
+            return null;
+        }
 
-        // find the given row from the timetable rows
-        boolean rowFound = false;
+        final var entries = getEntries(train.timeTableRows.get(index).station.stationShortCode);
 
         if(entries != null) {
-            for(final var toRow : fromRow.train.timeTableRows) {
+            for(final var toRow : train.timeTableRows.subList(index + 1, train.timeTableRows.size())) {
+                // and check each arrival after given row, if we know the direction
                 if(toRow.type == TimeTableRow.TimeTableRowType.ARRIVAL) {
-                    if (rowFound) {
-                        // and check each station after that, if we know the direction
-                        final var isSouth = entries.get(toRow.station.stationShortCode);
-                        if (isSouth != null) {
-                            return isSouth;
-                        }
+                    final var isSouth = entries.get(toRow.station.stationShortCode);
+                    if (isSouth != null) {
+                        return isSouth;
+                    }
 
-                        // if we come to commercial stop, we can stop searching, we are not going to find anything
-                        if (BooleanUtils.isTrue(toRow.commercialStop)) {
-                            return null;
-                        }
-                    } else if (toRow.id.equals(fromRow.id)) {
-                        rowFound = true;
+                    // if we come to commercial stop, we can stop searching, we are not going to find anything
+                    if (BooleanUtils.isTrue(toRow.commercialStop)) {
+                        return null;
                     }
                 }
-            }
-
-            if(!rowFound) {
-                log.error("Could not find row for {}!", fromRow);
             }
         }
 

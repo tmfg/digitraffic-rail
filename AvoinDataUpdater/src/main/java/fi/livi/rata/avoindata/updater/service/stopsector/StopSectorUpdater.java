@@ -77,34 +77,30 @@ public class StopSectorUpdater {
 
     // update all stop sectors
     public void updateStopSectors(final Train train, final Composition composition, final String source) {
-        TimeTableRow current = null;
+//        TimeTableRow current = null;
 
-        // go through all commercial arrivals and update sectors for them
+        // go through all commercial rows and update sectors for them
         // does not handle the last station and does not need to
-        for(final var next : train.timeTableRows.stream()
-                .filter(row -> row.type == TimeTableRow.TimeTableRowType.ARRIVAL)
-                .filter(row -> BooleanUtils.isTrue(row.commercialStop))
-                .filter(row -> row.commercialTrack != null)
-                .toList()) {
-            if (current != null) {
+        for (int i = 0; i < train.timeTableRows.size(); i++) {
+            final TimeTableRow current = train.timeTableRows.get(i);
+
+            if (BooleanUtils.isTrue(current.commercialStop) && current.commercialTrack != null) {
                 final var journeySection = getJourneySection(current, composition);
-                final Boolean isSouth = directionMap.isSouth(current);
+                final Boolean isSouth = directionMap.isSouth(train, i);
 
                 // should we limit with actualTime?
 
                 if (journeySection == null) {
                     log.error("No journey section found for {}", current);
                 } else if (isSouth == null) {
-                    if(directionMap.hasStation(current.station.stationShortCode)) {
-                        log.warn("Could not find direction from {} to {}", current.station.stationShortCode, next.station.stationShortCode);
+                    if (directionMap.hasStation(current.station.stationShortCode)) {
+                        log.warn("Could not find direction from {} for train {} {}", current.station.stationShortCode, train.id.trainNumber, train.id.departureDate);
                     }
                 } else {
                     updateStopSector(current, journeySection, isSouth, source);
                 }
             }
-
-            current = next;
-        };
+        }
     }
 
     private String createStopSectorString(final TimeTableRow row, final String type, final boolean south, final int size) {

@@ -12,6 +12,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,9 +80,7 @@ public class SingleDayScheduleExtractService {
         log.info("Extracted trains for {}. Total: {}, Today's Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
                 regularSchedules.size() + adhocSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
 
-        final List<Train> allTrains = new ArrayList<>();
-        allTrains.addAll(toBeAdded);
-        allTrains.addAll(toBeUpdated);
+        final List<Train> allTrains = ListUtils.union(toBeAdded, toBeUpdated);
 
         log.info("Creating ExtractedSchedules for {}", date);
         createExtractedSchedules(date, newTrains, allTrains);
