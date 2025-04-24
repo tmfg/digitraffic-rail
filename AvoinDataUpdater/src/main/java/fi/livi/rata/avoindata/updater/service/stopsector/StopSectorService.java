@@ -8,6 +8,7 @@ import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.stopsector.StopSectorQueueItem;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
+import fi.livi.rata.avoindata.updater.service.SimpleTransactionManager;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +32,15 @@ public class StopSectorService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private static final int ITEMS_TO_HANDLE = 40;
+    private final SimpleTransactionManager simpleTransactionManager;
 
-    public StopSectorService(final StopSectorUpdater stopSectorUpdater, final StopSectorQueueItemRepository stopSectorQueueItemRepository, final TrainRepository trainRepository, final CompositionRepository compositionRepository, final TrainLockExecutor trainLockExecutor) {
+    public StopSectorService(final StopSectorUpdater stopSectorUpdater, final StopSectorQueueItemRepository stopSectorQueueItemRepository, final TrainRepository trainRepository, final CompositionRepository compositionRepository, final TrainLockExecutor trainLockExecutor, final SimpleTransactionManager simpleTransactionManager) {
         this.stopSectorUpdater = stopSectorUpdater;
         this.stopSectorQueueItemRepository = stopSectorQueueItemRepository;
         this.trainRepository = trainRepository;
         this.compositionRepository = compositionRepository;
         this.trainLockExecutor = trainLockExecutor;
+        this.simpleTransactionManager = simpleTransactionManager;
     }
 
     public void addTrains(final List<Train> trains, final String source) {
@@ -58,8 +61,6 @@ public class StopSectorService {
         } else {
             stopSectorUpdater.updateStopSectors(train, composition, item.source);
         }
-
-        stopSectorQueueItemRepository.delete(item);
     }
 
     @Scheduled(fixedDelay = 700)
@@ -74,16 +75,18 @@ public class StopSectorService {
             log.info("method=handleStopSectorQueue maxAge={} queueSize={}", maxAge, items.size());
 
             // take ITEMS_TO_HANDLE items from the queue and process them with TrainLockExecutor
-            items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> {
+            items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> simpleTransactionManager.executeInTransactionSimple(() -> {
                 final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
 
                 // train might not have yet got the composition
-                composition.ifPresent(value -> trainLockExecutor.executeInTransactionLock("handleStopSectorQueue", () -> {
+                composition.ifPresent(value -> trainLockExecutor.executeInLock("handleStopSectorQueue", () -> {
                     TimingUtil.log(log, "handleItem", () -> handleItem(item, value));
 
                     return null;
                 }));
-            });
+
+                stopSectorQueueItemRepository.delete(item);
+            }));
         });
     }
 }

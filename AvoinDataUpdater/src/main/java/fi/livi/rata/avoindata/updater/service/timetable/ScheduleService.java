@@ -98,8 +98,6 @@ public class ScheduleService {
         final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
                 () -> singleDayScheduleExtractService.extract(adhocSchedules, regularSchedules, date, true));
 
-        stopSectorService.addTrains(extractedTrains, "Schedule");
-
         throttle(extractedTrains.size());
     }
 

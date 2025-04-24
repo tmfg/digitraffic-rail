@@ -12,4 +12,14 @@ public class SimpleTransactionManager {
     public <T> T executeInTransaction(final Callable<T> callable) throws Exception {
         return callable.call();
     }
+
+    @Transactional
+    public <T> void executeInTransactionSimple(final Runnable callable) {
+        try {
+            callable.run();
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
