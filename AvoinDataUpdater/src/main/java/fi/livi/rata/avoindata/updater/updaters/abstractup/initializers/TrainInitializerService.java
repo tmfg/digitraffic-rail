@@ -51,13 +51,11 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @Override
     protected List<Train> doUpdate() {
-        return trainLockExecutor.executeInLock(this.getPrefix(), () -> {
-            final List<Train> updatedTrains = super.doUpdate();
+        final var updatedTrains = trainLockExecutor.executeInLock(this.getPrefix(), super::doUpdate);
 
-            trainPublishingService.publish(updatedTrains);
+        trainPublishingService.publish(updatedTrains);
 
-            return updatedTrains;
-        });
+        return updatedTrains;
     }
 
     @Override

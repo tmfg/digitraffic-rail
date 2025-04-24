@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -51,18 +50,13 @@ public class StopSectorService {
         stopSectorQueueItemRepository.saveAll(compositions.stream().map(StopSectorQueueItem::new).toList());
     }
 
-    private void handleItem(final StopSectorQueueItem item) {
-        final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
+    private void handleItem(final StopSectorQueueItem item, final Composition composition) {
+        final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
 
-        // train might not have yet got the composition
-        if(composition.isPresent()) {
-            final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
-
-            if (train == null) {
-                log.error("could not find train for {}", item.id);
-            } else {
-                stopSectorUpdater.updateStopSectors(train, composition.get(), item.source);
-            }
+        if (train == null) {
+            log.error("could not find train for {}", item.id);
+        } else {
+            stopSectorUpdater.updateStopSectors(train, composition, item.source);
         }
 
         stopSectorQueueItemRepository.delete(item);
@@ -72,7 +66,7 @@ public class StopSectorService {
     public void handleStopSectorQueue() {
         TimingUtil.log(log, "handleStopSectorQueue", () -> {
             final var now = ZonedDateTime.now();
-            final var items = stopSectorQueueItemRepository.findAlLByOrderByCreated();
+            final var items = stopSectorQueueItemRepository.findAllByOrderByCreated();
             final var maxAge = items.stream()
                     .map(item -> ChronoUnit.MILLIS.between(item.created, now))
                     .max(Long::compareTo).orElse(0L);
@@ -81,11 +75,14 @@ public class StopSectorService {
 
             // take ITEMS_TO_HANDLE items from the queue and process them with TrainLockExecutor
             items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> {
-                trainLockExecutor.executeInTransactionLock("handleStopSectorQueue", () -> {
-                    TimingUtil.log(log, "handleItem", () -> handleItem(item));
+                final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
+
+                // train might not have yet got the composition
+                composition.ifPresent(value -> trainLockExecutor.executeInTransactionLock("handleStopSectorQueue", () -> {
+                    TimingUtil.log(log, "handleItem", () -> handleItem(item, value));
 
                     return null;
-                });
+                }));
             });
         });
     }
