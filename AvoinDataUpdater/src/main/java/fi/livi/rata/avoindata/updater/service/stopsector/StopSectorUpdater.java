@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.stopsector;
 
 import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
+import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
@@ -12,18 +14,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
+import java.util.List;
 
 @Service
 public class StopSectorUpdater {
     private final TrainTypeRepository trainTypeRepository;
+    private final TimeTableRowRepository timeTableRowRepository;
 
     private final SectorMap sectorMap = new SectorMap();
     private final DirectionMap directionMap = new DirectionMap();
 
     private static final Logger log = LoggerFactory.getLogger(StopSectorUpdater.class);
 
-    public StopSectorUpdater(final TrainTypeRepository trainTypeRepository) {
+    public StopSectorUpdater(final TrainTypeRepository trainTypeRepository, final TimeTableRowRepository timeTableRowRepository) {
         this.trainTypeRepository = trainTypeRepository;
+        this.timeTableRowRepository = timeTableRowRepository;
 
         this.initialize();
     }
@@ -97,7 +102,11 @@ public class StopSectorUpdater {
                         log.warn("Could not find direction from {} for train {} {}", current.station.stationShortCode, train.id.trainNumber, train.id.departureDate);
                     }
                 } else {
-                    updateStopSector(current, journeySection, isSouth, source);
+                    final var updated = updateStopSector(current, journeySection, isSouth, source);
+
+                    if(updated) {
+                        timeTableRowRepository.save(current);
+                    }
                 }
             }
         }
@@ -107,7 +116,7 @@ public class StopSectorUpdater {
         return String.format("%s,%s,%s,%s,%d", row.station.stationShortCode, row.commercialTrack, type, south ? "SOUTH" : "NORTH", size);
     }
 
-    public void updateStopSector(final TimeTableRow row, final JourneySection journeySection, final Boolean south, final String source) {
+    public boolean updateStopSector(final TimeTableRow row, final JourneySection journeySection, final Boolean south, final String source) {
         final var type = getType(row, journeySection);
         final String stopSector = sectorMap.findStopSector(row, type, south, journeySection.wagons.size());
 
@@ -121,6 +130,10 @@ public class StopSectorUpdater {
             log.info("method=updateStopSector trainNumber={} departureDate={} stopSector={} oldSector={} source={}",
                     row.id.trainNumber, row.id.departureDate, stopSector, row.stopSector, source);
             row.stopSector = stopSector;
+
+            return true;
         }
+
+        return false;
     }
 }

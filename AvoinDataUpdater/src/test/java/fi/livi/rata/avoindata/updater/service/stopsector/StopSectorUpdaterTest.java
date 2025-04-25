@@ -31,6 +31,9 @@ public class StopSectorUpdaterTest extends BaseTest {
     @Autowired
     private TrainTypeRepository trainTypeRepository;
 
+    @Autowired
+    private StopSectorUpdater stopSectorUpdater;
+
     @MockitoBean
     public StopSectorQueueItemRepository stopSectorQueueItemRepository;
 
@@ -51,7 +54,6 @@ public class StopSectorUpdaterTest extends BaseTest {
         final Train train = trainFactory.createBaseTrain(TRAIN_ID);
         final JourneySection journeySection = createJourneySection();
 
-        final StopSectorUpdater stopSectorUpdater = new StopSectorUpdater(trainTypeRepository);
         stopSectorUpdater.updateStopSector(train.timeTableRows.getFirst(), journeySection, true, "Test");
         Assertions.assertNull(train.timeTableRows.get(1).stopSector);
     }
@@ -61,7 +63,6 @@ public class StopSectorUpdaterTest extends BaseTest {
         final Train train = trainFactory.createBaseTrain(TRAIN_ID);
         final JourneySection journeySection = createJourneySection();
 
-        final StopSectorUpdater stopSectorUpdater = new StopSectorUpdater(trainTypeRepository);
         stopSectorUpdater.updateStopSector(train.timeTableRows.getFirst(), journeySection, true, "Test");
         Assertions.assertNull(train.timeTableRows.get(1).stopSector);
     }
@@ -73,8 +74,10 @@ public class StopSectorUpdaterTest extends BaseTest {
         final Composition composition = testDataService.createSingleTrainComposition().getFirst();
         final Train train = trainRepository.findForSectorUpdate(LocalDate.of(2024, 11, 13), 9715L);
 
-        final StopSectorUpdater stopSectorUpdater = new StopSectorUpdater(trainTypeRepository);
         stopSectorUpdater.updateStopSectors(train, composition, "Test");
         Assertions.assertEquals("D5", train.timeTableRows.get(1).stopSector);
+
+        final Train train2 = trainRepository.findForSectorUpdate(LocalDate.of(2024, 11, 13), 9715L);
+        Assertions.assertEquals("D5", train2.timeTableRows.get(1).stopSector);
     }
 }

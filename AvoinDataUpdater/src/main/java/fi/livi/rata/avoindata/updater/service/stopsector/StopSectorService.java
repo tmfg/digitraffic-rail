@@ -54,8 +54,7 @@ public class StopSectorService {
     }
 
     private void handleItem(final StopSectorQueueItem item, final Composition composition) {
-        final var train = trainRepository.findByDepartureDateAndTrainNumber(item.departureDate, item.trainNumber, false);
-//        final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
+        final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
 
         if (train == null) {
             log.error("could not find train for {}", item.id);
