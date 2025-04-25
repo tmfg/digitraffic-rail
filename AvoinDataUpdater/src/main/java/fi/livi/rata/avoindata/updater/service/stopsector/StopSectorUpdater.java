@@ -118,8 +118,8 @@ public class StopSectorUpdater {
         }
 
         if(!StringUtils.equals(row.stopSector, stopSector)) {
-            log.info("method=updateStopSector trainNumber={} departureDate={} stopSector={} source={}",
-                    row.id.trainNumber, row.id.departureDate, stopSector, source);
+            log.info("method=updateStopSector trainNumber={} departureDate={} stopSector={} oldSector={} source={}",
+                    row.id.trainNumber, row.id.departureDate, stopSector, row.stopSector, source);
             row.stopSector = stopSector;
         }
     }

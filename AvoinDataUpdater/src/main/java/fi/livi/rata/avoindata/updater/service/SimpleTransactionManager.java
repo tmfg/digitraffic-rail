@@ -14,9 +14,9 @@ public class SimpleTransactionManager {
     }
 
     @Transactional
-    public <T> void executeInTransactionSimple(final Runnable callable) {
+    public void executeInTransaction(final Runnable runnable) {
         try {
-            callable.run();
+            runnable.run();
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

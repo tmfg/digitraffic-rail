@@ -54,7 +54,8 @@ public class StopSectorService {
     }
 
     private void handleItem(final StopSectorQueueItem item, final Composition composition) {
-        final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
+        final var train = trainRepository.findByDepartureDateAndTrainNumber(item.departureDate, item.trainNumber, false);
+//        final var train = trainRepository.findForSectorUpdate(item.departureDate, item.trainNumber);
 
         if (train == null) {
             log.error("could not find train for {}", item.id);
@@ -75,7 +76,7 @@ public class StopSectorService {
             log.info("method=handleStopSectorQueue maxAge={} queueSize={}", maxAge, items.size());
 
             // take ITEMS_TO_HANDLE items from the queue and process them with TrainLockExecutor
-            items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> simpleTransactionManager.executeInTransactionSimple(() -> {
+            items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> simpleTransactionManager.executeInTransaction(() -> {
                 final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
 
                 // train might not have yet got the composition
