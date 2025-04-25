@@ -31,7 +31,7 @@ public class StopSectorService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private static final int ITEMS_TO_HANDLE = 40;
+    private static final int ITEMS_TO_HANDLE = 80;
     private final SimpleTransactionManager simpleTransactionManager;
 
     public StopSectorService(final StopSectorUpdater stopSectorUpdater, final StopSectorQueueItemRepository stopSectorQueueItemRepository, final TrainRepository trainRepository, final CompositionRepository compositionRepository, final TrainLockExecutor trainLockExecutor, final SimpleTransactionManager simpleTransactionManager) {
@@ -63,7 +63,7 @@ public class StopSectorService {
         }
     }
 
-    @Scheduled(fixedDelay = 700)
+    @Scheduled(fixedDelay = 1000)
     public void handleStopSectorQueue() {
         TimingUtil.log(log, "handleStopSectorQueue", () -> {
             final var now = ZonedDateTime.now();

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.List;
 
@@ -85,6 +86,8 @@ public class StopSectorUpdater {
     // update all stop sectors
     public void updateStopSectors(final Train train, final Composition composition, final String source) {
 //        TimeTableRow current = null;
+        int updatedCount = 0;
+        int skippedCount = 0;
 
         // go through all commercial rows and update sectors for them
         // does not handle the last station and does not need to
@@ -92,10 +95,14 @@ public class StopSectorUpdater {
             final TimeTableRow current = train.timeTableRows.get(i);
 
             if (BooleanUtils.isTrue(current.commercialStop) && current.commercialTrack != null) {
+                // skip rows that have already happened
+                if(current.actualTime != null) {
+                    skippedCount++;
+                    continue;
+                }
+
                 final var journeySection = getJourneySection(current, composition);
                 final Boolean isSouth = directionMap.isSouth(train, i);
-
-                // should we limit with actualTime?
 
                 if (journeySection == null) {
                     log.error("No journey section found for {}", current);
@@ -107,10 +114,19 @@ public class StopSectorUpdater {
                     final var updated = updateStopSector(current, journeySection, isSouth, source);
 
                     if(updated) {
+                        updatedCount++;
                         timeTableRowRepository.save(current);
                     }
                 }
             }
+        }
+
+        log.debug("method=updateStopSector trainNumber={} departureDate={} updatedCount={} skippedCount={} source={}",
+                train.id.trainNumber, train.id.departureDate, updatedCount, skippedCount, source);
+
+        if(updatedCount > 0) {
+            log.info("method=updateStopSector trainNumber={} departureDate={} updatedCount={} source={}",
+                    train.id.trainNumber, train.id.departureDate, updatedCount, source);
         }
     }
 
@@ -129,9 +145,6 @@ public class StopSectorUpdater {
         }
 
         if(!StringUtils.equals(row.stopSector, stopSector)) {
-            log.debug("method=updateStopSector oldSector={}", row.stopSector);
-            log.info("method=updateStopSector trainNumber={} departureDate={} stopSector={} source={}",
-                    row.id.trainNumber, row.id.departureDate, stopSector, source);
             row.stopSector = stopSector;
 
             return true;
