@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
+
 @Service
 public class StopSectorUpdater {
     private final TrainTypeRepository trainTypeRepository;
@@ -128,7 +130,7 @@ public class StopSectorUpdater {
 
         if(!StringUtils.equals(row.stopSector, stopSector)) {
             log.info("method=updateStopSector trainNumber={} departureDate={} stopSector={} oldSector={} source={}",
-                    row.id.trainNumber, row.id.departureDate, stopSector, row.stopSector, source);
+                    row.id.trainNumber, row.id.departureDate, stopSector, firstNonNull(row.stopSector, "NULL"), source);
             row.stopSector = stopSector;
 
             return true;
