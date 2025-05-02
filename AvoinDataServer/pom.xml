@@ -67,6 +67,17 @@
             <version>${spring.cloud.aws.version}</version>
         </dependency>
 
+        <!-- TEMPORARY DEPS TO MITIGATE SECURITY VULNERABILITIES STARTS -->
+        <!-- TODO: Temporary patch for CVE-2025-22228 in spring-security-crypto 6.4.3 -->
+        <!-- Remove this dependency once spring-cloud-starter-bootstrap is updated -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>6.4.5</version>
+        </dependency>
+
+        <!-- TEMPORARY DEPS TO MITIGATE SECURITY VULNERABILITIES ENDS -->
+
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jdk8</artifactId>
