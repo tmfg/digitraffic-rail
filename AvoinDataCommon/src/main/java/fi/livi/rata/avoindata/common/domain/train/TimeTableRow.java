@@ -40,6 +40,9 @@ import jakarta.persistence.Transient;
         @Index(name = "timetablerow_stationShortCode", columnList = "stationShortCode")
 })
 @Schema(name = "TimeTableRow", title = "TimeTableRow", description = "A part of train's schedule")
+/**
+ * Please check the note in Train
+ */
 public class TimeTableRow {
     public enum TimeTableRowType {
         ARRIVAL,

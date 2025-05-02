@@ -32,6 +32,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Table(indexes = {@Index(name = "train_trainNumber_departureDate", columnList = "trainNumber,departureDate", unique = true), @Index(name
         = "train_departureDate", columnList = "departureDate"), @Index(name = "train_version", columnList = "version")})
 @Schema(name = "Train", title = "Train")
+/**
+ * Please note, that trains and time table rows are periodically rewritten by TrainInitializerService! So, if they have information
+ * that does not come from the integration, you need to merge that data in the TrainInitializerService or save it somewhere else.
+ */
 public class Train implements Comparable<Train> {
     public enum TimetableType {
         REGULAR,
@@ -122,13 +126,7 @@ public class Train implements Comparable<Train> {
         return String.format("%s: %s", id.departureDate, id.trainNumber);
     }
 
-    private static final Comparator<Train> COMPARATOR = (t1, t2) -> {
-        int trainNumberCompare = t1.id.departureDate.compareTo(t2.id.departureDate);
-        if (trainNumberCompare != 0) {
-            return trainNumberCompare;
-        }
-        return t1.id.trainNumber.compareTo(t2.id.trainNumber);
-    };
+    private static final Comparator<Train> COMPARATOR = Comparator.comparing((Train t) -> t.id.departureDate).thenComparingLong(t -> t.id.trainNumber);
 
     @Override
     public int compareTo(final Train o) {

@@ -14,8 +14,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
@@ -85,7 +88,6 @@ public class StopSectorUpdater {
 
     // update all stop sectors
     public void updateStopSectors(final Train train, final Composition composition, final String source) {
-//        TimeTableRow current = null;
         int updatedCount = 0;
         int skippedCount = 0;
 
@@ -151,5 +153,29 @@ public class StopSectorUpdater {
         }
 
         return false;
+    }
+
+    /**
+     * Get current stop sectors from the database for given trains and update them(train come from integration
+     * and do not have the stop sectors, that's why we merge them from previous values)
+     */
+    public void mergeStopSectors(final List<Train> trains) {
+        trains.forEach(t -> {
+            final var stopSectors = timeTableRowRepository.getRowsWithStopSectors(t.id.departureDate, t.id.trainNumber);
+
+            if(!stopSectors.isEmpty()) {
+                // map attapId -> stopSector
+                final var stopMap = stopSectors.stream()
+                        .collect(Collectors.toMap(v -> v[0], v -> v[1]));
+
+                t.timeTableRows.forEach(row -> {
+                    final var stopSector = (String)stopMap.get(row.id.attapId);
+
+                    if(stopSector != null) {
+                        row.stopSector = stopSector;
+                    }
+                });
+            }
+        });
     }
 }

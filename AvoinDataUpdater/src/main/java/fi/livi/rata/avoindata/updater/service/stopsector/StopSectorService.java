@@ -43,9 +43,16 @@ public class StopSectorService {
         this.simpleTransactionManager = simpleTransactionManager;
     }
 
+    /// must be Commuter or Long-Distance and traintype must NOT be V, HV or MV
+    private boolean isPassengerTrain(final Train train) {
+        return (train.trainCategoryId == 1 || train.trainCategoryId == 2)
+                && (train.trainTypeId != 81 && train.trainTypeId != 52 && train.trainTypeId != 53);
+    }
+
     public void addTrains(final List<Train> trains, final String source) {
         stopSectorQueueItemRepository.saveAll(trains.stream()
                 .filter(t -> !t.cancelled)
+                .filter(this::isPassengerTrain)
                 .map(t -> new StopSectorQueueItem(t.id, source)).toList());
     }
 
@@ -59,7 +66,9 @@ public class StopSectorService {
         if (train == null) {
             log.error("could not find train for {}", item.id);
         } else {
-            stopSectorUpdater.updateStopSectors(train, composition, item.source);
+            if(isPassengerTrain(train)) {
+                stopSectorUpdater.updateStopSectors(train, composition, item.source);
+            }
         }
     }
 

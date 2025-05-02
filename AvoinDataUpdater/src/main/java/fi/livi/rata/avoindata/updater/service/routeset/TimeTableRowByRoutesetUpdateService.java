@@ -42,7 +42,6 @@ public class TimeTableRowByRoutesetUpdateService {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
-
     public List<Train> updateByRoutesets(final List<Routeset> routesets) {
         return trainLockExecutor.executeInTransactionLock("routesets", () -> {
 

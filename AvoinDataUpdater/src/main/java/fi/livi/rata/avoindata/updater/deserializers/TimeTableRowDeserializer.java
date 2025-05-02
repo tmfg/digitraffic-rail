@@ -77,7 +77,6 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
             }
         }
 
-
         final TimeTableRow timeTableRow = new TimeTableRow(stationShortCode, stationcUICCode, countryCode, type, commercialTrack, cancelled,
                 scheduledTime, estimate, actualTime, differenceInMinutes, attapId, trainNumber, departureDate, commercialStop, version,
                 trainReadies, estimateSource, commercialTrackChanged);

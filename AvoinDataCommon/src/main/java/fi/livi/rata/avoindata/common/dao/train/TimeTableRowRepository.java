@@ -50,4 +50,12 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
             final String stationShortCode,
             @Param("type")
             final TimeTableRow.TimeTableRowType type);
+
+    @Query(value = """
+            select attap_id, stop_sector
+            from time_table_row ttr
+            where departure_date = ?1 and train_number = ?2
+            and stop_sector is not null
+""", nativeQuery = true)
+    List<Object[]> getRowsWithStopSectors(final LocalDate departureDate, final Long trainNumber);
 }

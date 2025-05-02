@@ -3,6 +3,9 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.utils.TimingUtil;
+import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
+import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorUpdater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,19 +23,21 @@ import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistSe
 
 @Service
 public class TrainInitializerService extends AbstractDatabaseInitializer<Train> {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final TrainPersistService trainPersistService;
+    private final TrainLockExecutor trainLockExecutor;
+    private final TrainPublishingService trainPublishingService;
+    private final TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
+    private final StopSectorUpdater stopSectorUpdater;
 
-    @Autowired
-    private TrainPersistService trainPersistService;
+    private static final Logger log = LoggerFactory.getLogger(TrainInitializerService.class);
 
-    @Autowired
-    private TrainLockExecutor trainLockExecutor;
-
-    @Autowired
-    private TrainPublishingService trainPublishingService;
-
-    @Autowired
-    private TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService;
+    public TrainInitializerService(final TrainPersistService trainPersistService, final TrainLockExecutor trainLockExecutor, final TrainPublishingService trainPublishingService, final TimeTableRowByRoutesetUpdateService timeTableRowByRoutesetUpdateService, final StopSectorUpdater stopSectorUpdater) {
+        this.trainPersistService = trainPersistService;
+        this.trainLockExecutor = trainLockExecutor;
+        this.trainPublishingService = trainPublishingService;
+        this.timeTableRowByRoutesetUpdateService = timeTableRowByRoutesetUpdateService;
+        this.stopSectorUpdater = stopSectorUpdater;
+    }
 
     @Override
     public String getPrefix() {
@@ -59,16 +64,20 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     @Override
-    public List<Train> modifyEntitiesBeforePersist(final List<Train> entities) {
-        final List<TrainId> trainIds = Lists.newArrayList(Iterables.transform(entities, f -> f.id));
-        if (!trainIds.isEmpty()) {
-            mergeRoutesets(entities);
+    public List<Train> modifyEntitiesBeforePersist(final List<Train> trains) {
+        if (!trains.isEmpty()) {
+            mergeStopSectors(trains);
+            mergeRoutesets(trains);
         }
 
-        return entities;
+        return trains;
     }
 
-    private void mergeRoutesets(final List<Train> entities) {
-        timeTableRowByRoutesetUpdateService.updateByTrains(entities);
+    private void mergeStopSectors(final List<Train> trains) {
+        TimingUtil.log(log, "mergeStopSectors", () -> stopSectorUpdater.mergeStopSectors(trains));
+    }
+
+    private void mergeRoutesets(final List<Train> trains) {
+        TimingUtil.log(log, "mergeRoutesets", () -> timeTableRowByRoutesetUpdateService.updateByTrains(trains));
     }
 }
