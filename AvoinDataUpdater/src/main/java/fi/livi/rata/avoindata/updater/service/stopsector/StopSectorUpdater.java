@@ -136,9 +136,14 @@ public class StopSectorUpdater {
         return String.format("%s,%s,%s,%s,%d", row.station.stationShortCode, row.commercialTrack, type, south ? "SOUTH" : "NORTH", size);
     }
 
+    private int getElementCount(final JourneySection section) {
+        return section.wagons.size() + section.locomotives.size();
+    }
+
     public boolean updateStopSector(final TimeTableRow row, final JourneySection journeySection, final Boolean south, final String source) {
         final var type = getType(row, journeySection);
-        final String stopSector = sectorMap.findStopSector(row, type, south, journeySection.wagons.size());
+        final var elementCount = getElementCount(journeySection);
+        final String stopSector = sectorMap.findStopSector(row, type, south, elementCount);
 
         if(stopSector == null) {
             if (sectorMap.hasStation(row.station.stationShortCode)) {
