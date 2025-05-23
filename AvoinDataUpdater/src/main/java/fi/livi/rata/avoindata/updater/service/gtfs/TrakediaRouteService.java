@@ -44,8 +44,11 @@ public class TrakediaRouteService {
     public List<Coordinate> createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
         final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        final String timeParameter = String.format("%s/%s", startOfDayIso8601, startOfDayIso8601);
 
-        final String routeUrl = String.format("https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s", correctTunniste(startTunniste), correctTunniste(endTunniste), String.format("%s/%s", startOfDayIso8601, startOfDayIso8601));
+        final String routeUrl = String.format(
+                "https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s&jatkokerroin=1",
+                correctTunniste(startTunniste), correctTunniste(endTunniste), timeParameter);
 
         log.info(routeUrl);
 
@@ -53,7 +56,7 @@ public class TrakediaRouteService {
 
         final List<List<Coordinate>> allLines = new ArrayList<>();
         final JsonNode geometria = apiRoute.get("geometria");
-        if (geometria.size() == 0){
+        if (geometria.isEmpty()){
             if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
                 log.warn("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
             }
