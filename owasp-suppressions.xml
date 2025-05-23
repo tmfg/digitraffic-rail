@@ -5,7 +5,7 @@
         Temporary suppressions, check and update these periodically
     -->
     <!-- From spring-cloud-starter-aws-secrets-manager-config-->
-    <suppress until="2025-07-15">
+    <suppress until="2025-09-01">
         <notes><![CDATA[file name: ion-java-1.0.2.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
         <!-- waiting for update (last updated Feb 02, 2023) -->
