@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.domain.common.ExceptionMessage;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractException;
 import fi.livi.rata.avoindata.server.controller.api.exception.AbstractNotFoundException;
@@ -117,6 +118,12 @@ public class DefaultExceptionHandler {
             log.error(HttpUtils.getFullURL(request), e);
             return createAndLogReturn(request, response, "Server load too high. Please try again later",
                     ExceptionMessage.ErrorCodeEnum.TOO_MUCH_LOAD_IN_SYSTEM);
+        } else if (e.getMessage().contains("collations")) {
+            log.error(HttpUtils.getFullURL(request), e);
+            return createAndLogReturn(request, response, StringUtil.format(
+                            "Invalid character found in the request target [{}]. The valid characters are defined in RFC 7230 and RFC 3986",
+                            HttpUtils.getFullURL(request)),
+                    ExceptionMessage.ErrorCodeEnum.ILLEGAL_ARGUMENT_EXCEPTION);
         } else {
             return handleRuntimeException(e, response, request);
         }
@@ -128,7 +135,7 @@ public class DefaultExceptionHandler {
             final MissingServletRequestParameterException e,
             final HttpServletResponse response,
             final HttpServletRequest request) {
-        log.debug("Debug handleMissingServletRequestParameterException exception {}", e);
+        log.debug(StringUtil.format("Debug handleMissingServletRequestParameterException exception {}", e.getMessage()), e);
         return createAndLogReturn(request, response,
                 String.format("The request was missing mandatory parameter. Parameter name is '%s' and type '%s'. Url: %s",
                         e.getParameterName(), e.getParameterType(), HttpUtils.getFullURL(request)),
@@ -140,7 +147,7 @@ public class DefaultExceptionHandler {
     public ExceptionMessage handleClientAbortException(final ClientAbortException e,
                                                        final HttpServletResponse response,
                                                        final HttpServletRequest request) {
-        log.warn("HandleClientAbortException exception {}", e);
+        log.warn(String.format("HandleClientAbortException exception {}", e.getMessage()), e);
         return createAndLogReturn(request, response, "Client aborted connection error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
     }
 
