@@ -4,6 +4,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DecimalStyle;
 import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.Disabled;
@@ -379,5 +381,60 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
         r1.andExpect(jsonPath("$[2].trainNumber").value(5));
 
         ReflectionTestUtils.setField(bes, "executor", Executors.newFixedThreadPool(10));
+    }
+
+    private String modifyTimestamp(final ZonedDateTime time) {
+        return time.format(DateTimeFormatter.ISO_INSTANT).substring(0, 23)+"Z";
+    }
+    @Test
+    @Transactional
+    public void noEstimateWhenUnknownDelay() throws Exception {
+        final Train train = trainFactory.createBaseTrain();
+
+        final ZonedDateTime row3estimate = train.timeTableRows.get(3).scheduledTime.plusMinutes(10);
+        final ZonedDateTime row5estimate = train.timeTableRows.get(5).scheduledTime.plusMinutes(10);
+
+        train.timeTableRows.get(3).liveEstimateTime = row3estimate;
+        train.timeTableRows.get(3).unknownDelay = null;
+        train.timeTableRows.get(4).liveEstimateTime = train.timeTableRows.get(4).scheduledTime.plusMinutes(10);
+        train.timeTableRows.get(4).unknownDelay = Boolean.TRUE;
+        train.timeTableRows.get(5).liveEstimateTime = row5estimate;
+        train.timeTableRows.get(5).unknownDelay = Boolean.FALSE;
+
+        final ResultActions r1 = getJson("/live-trains/51");
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[3].liveEstimateTime").value(modifyTimestamp(row3estimate)));
+        r1.andExpect(jsonPath("$[0].timeTableRows[3].unknownDelay").doesNotExist());
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[4].liveEstimateTime").doesNotExist());
+        r1.andExpect(jsonPath("$[0].timeTableRows[4].unknownDelay").value(Boolean.TRUE));
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[5].liveEstimateTime").value(modifyTimestamp(row5estimate)));
+        r1.andExpect(jsonPath("$[0].timeTableRows[5].unknownDelay").value(Boolean.FALSE));
+    }
+
+    @Test
+    @Transactional
+    public void noTrackWhenUnknownTrack() throws Exception {
+        final Train train = trainFactory.createBaseTrain();
+
+        train.timeTableRows.get(3).commercialTrack = "C1";
+        train.timeTableRows.get(4).commercialTrack = "C2";
+        train.timeTableRows.get(5).commercialTrack = "C3";
+        train.timeTableRows.get(3).unknownTrack = null;
+        train.timeTableRows.get(4).unknownTrack = Boolean.TRUE;
+        train.timeTableRows.get(5).unknownTrack = Boolean.FALSE;
+
+        final ResultActions r1 = getJson("/live-trains/51");
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[3].commercialTrack").value("C1"));
+        r1.andExpect(jsonPath("$[0].timeTableRows[3].unknownTrack").doesNotExist());
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[4].commercialTrack").doesNotExist());
+        r1.andExpect(jsonPath("$[0].timeTableRows[4].unknownTrack").value(Boolean.TRUE));
+
+        r1.andExpect(jsonPath("$[0].timeTableRows[5].commercialTrack").value("C3"));
+        r1.andExpect(jsonPath("$[0].timeTableRows[5].unknownTrack").value(Boolean.FALSE));
+
     }
 }

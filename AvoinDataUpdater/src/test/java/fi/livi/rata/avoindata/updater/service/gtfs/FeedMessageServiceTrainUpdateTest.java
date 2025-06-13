@@ -83,6 +83,27 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         }
     }
 
+    private void assertAssignedStopId(final GtfsRealtime.FeedMessage message, final int entityIndex, final int stopTimeUpdateCount, final String... stopIds) {
+        Assertions.assertEquals(stopTimeUpdateCount, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
+
+        if(stopIds.length > 0) {
+            final GtfsRealtime.TripUpdate tu = message.getEntity(entityIndex).getTripUpdate();
+
+            int tuIndex = 0;
+            for(final String stopId : stopIds) {
+                final GtfsRealtime.TripUpdate.StopTimeUpdate stu = tu.getStopTimeUpdate(tuIndex);
+
+                if(stopId == null) {
+                    Assertions.assertFalse(stu.hasStopTimeProperties());
+                } else {
+                    Assertions.assertEquals(stopId, stu.getStopTimeProperties().getAssignedStopId());
+                }
+
+                tuIndex++;
+            }
+        }
+    }
+
     private void assertCancelled(final GtfsRealtime.FeedMessage message, final int entityIndex, final boolean... cancelled) {
         Assertions.assertEquals(cancelled.length, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
 
@@ -326,5 +347,24 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
         assertFeedMessage(message, 1);
         assertStopIds(message, 0, 3, "S1_1", "S2_2", "S3_0");
+    }
+
+    @Test
+    public void unknownTrack() {
+        final GTFSTrain train2 = createTestTrain2();
+        // set tracks
+        final GTFSTimeTableRow r1d = getRow(train2, 0, TimeTableRow.TimeTableRowType.DEPARTURE);
+        final GTFSTimeTableRow r2a = getRow(train2, 1, TimeTableRow.TimeTableRowType.ARRIVAL);
+
+        r1d.commercialTrack = "1";
+        r1d.unknownTrack = true;
+        r2a.commercialTrack = "2";
+        r2a.unknownTrack = true;
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        assertStopIds(message, 0, 3, "S1_0", "S2_0", "S3_0");
+        assertAssignedStopId(message, 0, 3, "S1_0", "S2_0", null);
     }
 }

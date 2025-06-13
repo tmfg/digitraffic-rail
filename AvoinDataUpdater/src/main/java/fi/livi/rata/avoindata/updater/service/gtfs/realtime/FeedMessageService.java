@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs.realtime;
 import com.google.transit.realtime.GtfsRealtime;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.*;
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,7 @@ public class FeedMessageService {
     }
 
     private static String createStopId(final GTFSTimeTableRow row) {
-        return GTFSTrainLocation.createStopId(row.stationShortCode, row.commercialTrack);
+        return row.generateStopId();
     }
 
     private List<GtfsRealtime.FeedEntity> createVLEntities(final TripFinder tripFinder, final List<GTFSTrainLocation> locations) {
@@ -81,7 +82,8 @@ public class FeedMessageService {
             return null;
         }
 
-        final String stopId = GTFSTrainLocation.createStopId(location.getStationShortCode(), location.getCommercialTrack());
+        // handle unknown track
+        final String stopId = StopIdGenerator.createStopId(location.getStationShortCode(), BooleanUtils.isTrue(location.getUnknownTrack()) ? null : location.getCommercialTrack());
         final String id = createVesselLocationId(location);
         final GtfsRealtime.FeedEntity.Builder builder = GtfsRealtime.FeedEntity.newBuilder();
         final GtfsRealtime.VehiclePosition.Builder vpBuilder = GtfsRealtime.VehiclePosition.newBuilder();
@@ -142,9 +144,20 @@ public class FeedMessageService {
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate.Builder createStop(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         final String stopId = createStopId(arrival == null ? departure : arrival);
-        return GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
-                .setStopSequence(stopSequence)
-                .setStopId(stopId);
+
+        final GtfsRealtime.TripUpdate.StopTimeUpdate.Builder builder =
+            GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
+                .setStopSequence(stopSequence);
+
+        builder.setStopId(stopId);
+
+        if((arrival != null && BooleanUtils.isTrue(arrival.unknownTrack)) || (departure != null && BooleanUtils.isTrue(departure.unknownTrack))) {
+            builder.setStopTimeProperties(GtfsRealtime.TripUpdate.StopTimeUpdate.StopTimeProperties.newBuilder()
+                    .setAssignedStopId(stopId)
+            );
+        }
+
+        return builder;
     }
 
     private boolean isCancelled(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {

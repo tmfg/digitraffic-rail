@@ -18,11 +18,13 @@ import java.util.Set;
 public class TrainPublishingService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private MQTTPublishService mqttPublishService;
+    private final MQTTPublishService mqttPublishService;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    public TrainPublishingService(final MQTTPublishService mqttPublishService, final ObjectMapper objectMapper) {
+        this.mqttPublishService = mqttPublishService;
+        this.objectMapper = objectMapper;
+    }
 
     public void publish(final List<Train> updatedTrains) {
         final StopWatch sw = StopWatch.createStarted();
@@ -50,7 +52,7 @@ public class TrainPublishingService {
         } catch (final Exception e) {
             log.error("Error publishing trains to MQTT", e);
         } finally {
-            log.info("Publishing {} trains took {} ms", updatedTrains.size(), sw.getTime());
+            log.info("Publishing {} trains took {} ms", updatedTrains == null ? 0 : updatedTrains.size(), sw.getDuration().toMillis());
 
         }
     }

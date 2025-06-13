@@ -5,6 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
 import org.hibernate.proxy.HibernateProxy;
@@ -80,9 +81,19 @@ public class TimeTableRow {
     public Boolean commercialStop;
 
     @Column
+    @JsonIgnore
+    public String commercialTrack;
+
     @JsonView({LiveTrains.class, ScheduleTrains.class})
     @Schema(description = "Track where the train stops",example = "1")
-    public String commercialTrack;
+    @JsonProperty("commercialTrack")
+    public String getCommercialTrack() {
+        if(BooleanUtils.isTrue(unknownTrack)) {
+            return null;
+        }
+
+        return commercialTrack;
+    }
 
     @Column(nullable = false)
     @JsonView({LiveTrains.class, ScheduleTrains.class})
@@ -96,10 +107,20 @@ public class TimeTableRow {
     public ZonedDateTime scheduledTime;
 
     @Column
-    @JsonView(LiveTrains.class)
+    @JsonIgnore
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
-    @Schema(description = "Estimated time for departure/arrival of the train")
     public ZonedDateTime liveEstimateTime;
+
+    @JsonView(LiveTrains.class)
+    @Schema(description = "Estimated time for departure/arrival of the train")
+    @JsonProperty("liveEstimateTime")
+    public ZonedDateTime getLiveEstimateTime() {
+        if(BooleanUtils.isTrue(unknownDelay)) {
+            return null;
+        }
+
+        return liveEstimateTime;
+    }
 
     @JsonView(LiveTrains.class)
     @Schema(description = "Source for the estimate",example = "LIIKE_USER")
@@ -111,6 +132,13 @@ public class TimeTableRow {
     // Should be null when trainStopping == false
     @Schema(description = "Set if the train is delayed, but it is impossible to estimate for how long")
     public Boolean unknownDelay;
+
+    @JsonView({LiveTrains.class, ScheduleTrains.class})
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Nullable
+    // Should be null when trainStopping == false
+    @Schema(description = "Set if the track is not known")
+    public Boolean unknownTrack;
 
     @Nullable
     @Column

@@ -3,6 +3,12 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.apache.commons.lang3.BooleanUtils;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
@@ -16,6 +22,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import static fi.livi.rata.avoindata.common.domain.gtfs.StopIdGenerator.createStopId;
 
 @Entity
 @Immutable
@@ -31,6 +39,12 @@ public class GTFSTimeTableRow {
 
     @Column
     public String stationShortCode;
+
+    @Column
+    public Boolean unknownDelay;
+
+    @Column
+    public Boolean unknownTrack;
 
     @Column(nullable = false)
     public TimeTableRow.TimeTableRowType type;
@@ -64,6 +78,11 @@ public class GTFSTimeTableRow {
 
     public int delayInSeconds() {
         return (int) Duration.between(scheduledTime, getActualOrEstimate()).getSeconds();
+    }
+
+    public String generateStopId() {
+        return createStopId(stationShortCode,
+                BooleanUtils.isTrue(unknownTrack) ? null : commercialTrack);
     }
 
     public ZonedDateTime getActualOrEstimate() {

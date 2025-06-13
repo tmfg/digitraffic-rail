@@ -23,21 +23,18 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     /// generate (next) stop_id from the first commercial, not cancelled row
     /// that does not have actual_time yet and the estimate is in the future
     @Query(value = """
-            select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack from (
-                select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, rank()
-                over (partition by id order by scheduled_time asc, type desc) as r
-                from train_location tl
-                left join time_table_row tr
-                    on tl.departure_date = tr.departure_date
-                    and tl.train_number = tr.train_number
-                    and tr.commercial_stop is true
-                    and tr.cancelled is false
-                    and tr.actual_time is null
-                    and tr.live_estimate_time > CURRENT_TIMESTAMP()
-                where id in (:ids)) data
-            where r = 1""",
-           nativeQuery = true)
-    List<GTFSTrainLocation> getTrainLocations(
-            @Param("ids")
-            final List<Long> locationIds);
+select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack, ut as unknownTrack from (
+    select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, tr.unknown_track ut, rank()
+    over (partition by id order by scheduled_time asc, type desc) as r
+    from train_location tl
+    left join time_table_row tr
+        on tl.departure_date = tr.departure_date
+        and tl.train_number = tr.train_number
+        and tr.commercial_stop is true
+        and tr.cancelled is false
+        and tr.actual_time is null
+        and tr.live_estimate_time > CURRENT_TIMESTAMP()
+    where id in (:ids)) data
+where r = 1""", nativeQuery = true)
+    List<GTFSTrainLocation> getTrainLocations(@Param("ids") final List<Long> locationIds);
 }
