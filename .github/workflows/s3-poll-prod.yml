@@ -34,7 +34,7 @@ jobs:
         shell: bash
       - name: Checkout
         if: ${{ steps.versions.outputs.infra || steps.versions.outputs.etj2 }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Update etj2-api
         if: ${{ steps.versions.outputs.etj2 }}
         env:
