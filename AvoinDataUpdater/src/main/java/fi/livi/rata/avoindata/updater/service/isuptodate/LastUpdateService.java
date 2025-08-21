@@ -1,15 +1,14 @@
 package fi.livi.rata.avoindata.updater.service.isuptodate;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
-import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class LastUpdateService {
@@ -40,7 +39,7 @@ public class LastUpdateService {
     }
 
     private final Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();
-    private final Map<LastUpdatedType, ZonedDateTime> lastUpdateTimes = new HashMap<>();
+    private final Map<LastUpdatedType, Instant> lastUpdateTimes = new HashMap<>();
 
     @PostConstruct
     public void setup() {
@@ -71,10 +70,10 @@ public class LastUpdateService {
     }
 
     public void update(final LastUpdatedType lastUpdatedType) {
-        lastUpdateTimes.put(lastUpdatedType, ZonedDateTime.now(ZoneId.of("UTC")));
+        lastUpdateTimes.put(lastUpdatedType, Instant.now());
     }
 
-    public Map<LastUpdatedType, ZonedDateTime> getLastUpdateTimes() {
+    public Map<LastUpdatedType, Instant> getLastUpdateTimes() {
         return lastUpdateTimes;
     }
 }

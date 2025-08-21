@@ -14,34 +14,32 @@ import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateServic
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.annotation.PostConstruct;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class IsUpToDateService {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private LastUpdateService lastUpdateService;
 
-    private Map<LastUpdateService.LastUpdatedType, Duration> alarmLimits = new HashMap<>();
+    private final Map<LastUpdateService.LastUpdatedType, Duration> alarmLimits = new HashMap<>();
 
     public static class IsToUpToDateDto {
-        public ZonedDateTime lastUpdated;
+        public Instant lastUpdated;
         public Duration alarmLimit;
         public Duration durationSinceLastUpdate;
         public boolean isUpToDate;
 
-        public IsToUpToDateDto(ZonedDateTime lastUpdated, Duration alarmLimit, Duration durationSinceLastUpdate) {
+        public IsToUpToDateDto(final Instant lastUpdated, final Duration alarmLimit, final Duration durationSinceLastUpdate) {
             this.lastUpdated = lastUpdated;
             this.alarmLimit = alarmLimit;
             this.durationSinceLastUpdate = durationSinceLastUpdate;
@@ -52,7 +50,7 @@ public class IsUpToDateService {
     @PostConstruct
     private void setup() {
         // real time
-        for (LastUpdateService.LastUpdatedType value : LastUpdateService.LastUpdatedType.values()) {
+        for (final LastUpdateService.LastUpdatedType value : LastUpdateService.LastUpdatedType.values()) {
             alarmLimits.put(value, Duration.ofMinutes(5));
         }
 
@@ -71,23 +69,19 @@ public class IsUpToDateService {
     }
 
     public Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> getIsUpToDates() {
-        Map<LastUpdateService.LastUpdatedType, ZonedDateTime> lastUpdateTimes = lastUpdateService.getLastUpdateTimes();
+        final Map<LastUpdateService.LastUpdatedType, Instant> lastUpdateTimes = lastUpdateService.getLastUpdateTimes();
 
-        Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> result = new HashMap<>();
+        final Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> result = new HashMap<>();
 
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
 
-        for (LastUpdateService.LastUpdatedType value : LastUpdateService.LastUpdatedType.values()) {
-            ZonedDateTime lastUpdated = lastUpdateTimes.get(value);
-            Duration alarmLimit = alarmLimits.get(value);
+        for (final LastUpdateService.LastUpdatedType value : LastUpdateService.LastUpdatedType.values()) {
+            final Instant lastUpdated = lastUpdateTimes.get(value);
+            final Duration alarmLimit = alarmLimits.get(value);
             if (lastUpdated != null && alarmLimit != null) {
-                Duration between = Duration.between(lastUpdated, now);
-                IsToUpToDateDto upToDate = new IsToUpToDateDto(lastUpdated, alarmLimit, between);
+                final Duration between = Duration.between(lastUpdated, now);
+                final IsToUpToDateDto upToDate = new IsToUpToDateDto(lastUpdated, alarmLimit, between);
                 result.put(value, upToDate);
-
-                if (!upToDate.isUpToDate) {
-                    log.error("{} was not up to date. Last updated: {}, limit: {}, between: {}", value, lastUpdated, alarmLimit, between);
-                }
             }
         }
 
