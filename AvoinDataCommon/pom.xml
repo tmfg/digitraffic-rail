@@ -50,6 +50,18 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <!--suppress UnresolvedMavenProperty -->
             <version>${org.springdoc.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Get newer version than 3.17.0 (has CVE-2025-48924) what comes with org.springdoc above -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.18.0</version>
         </dependency>
 
         <dependency>

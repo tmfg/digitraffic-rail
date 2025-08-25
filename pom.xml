@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>3.5.4</spring.boot.version>
+        <spring.boot.version>3.5.5</spring.boot.version>
         <com.google.guava.version>33.4.7-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
         <org.flywaydb.version>11.10.5</org.flywaydb.version>
