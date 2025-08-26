@@ -295,9 +295,9 @@ public class JourneyCompositionConverter {
                 trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes().values().stream().map(arrayNode -> arrayNode.get(0))
                         .filter(jsonNode -> jsonNode.get("tunniste").asText().equals(stationOid)).findFirst();
         if (liikennepaikka.isPresent()) {
-            final Station station = stationRepository.findByShortCodeIgnoreCase(liikennepaikka.get().get("lyhenne").asText());
-            if (station != null) {
-                return station;
+            final Optional<Station> station = stationRepository.findByShortCodeIgnoreCase(liikennepaikka.get().get("lyhenne").asText());
+            if (station.isPresent()) {
+                return station.get();
             }
         }
         if (uicCodeFallback != null) {

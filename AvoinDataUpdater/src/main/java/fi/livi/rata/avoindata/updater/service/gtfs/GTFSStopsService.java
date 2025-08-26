@@ -86,16 +86,17 @@ public class GTFSStopsService {
 
         for (final StationEmbeddable stationEmbeddable : uniqueStationEmbeddables.values()) {
             final String stationShortCode = stationEmbeddable.stationShortCode;
-            final Station station = stationRepository.findByShortCodeIgnoreCase(stationShortCode);
+            final Optional<Station> optionalStation = stationRepository.findByShortCodeIgnoreCase(stationShortCode);
 
-            final Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
-            final Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
+            if(optionalStation.isPresent()) {
+                final Station station = optionalStation.get();
+                final Stop stationEntry = createStationStop(station, stationShortCode, LOCATION_TYPE_STATION);
+                final Stop tracklessStop = createStationStop(station, stationShortCode, LOCATION_TYPE_STOP);
 
-            stops.add(stationEntry);
-            stops.add(tracklessStop);
+                stops.add(stationEntry);
+                stops.add(tracklessStop);
 
-            for (final String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
-                if (station != null) {
+                for (final String scheduledTrack : tracksScheduledByStation.getOrDefault(stationShortCode, Collections.emptySet())) {
                     final Optional<InfraApiPlatform> infraApiPlatform = platformData.getStationPlatform(stationShortCode, scheduledTrack);
                     final Platform platformStop = createPlatformStop(station, infraApiPlatform, scheduledTrack);
 

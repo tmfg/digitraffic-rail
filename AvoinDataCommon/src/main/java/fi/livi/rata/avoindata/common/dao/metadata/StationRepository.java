@@ -9,6 +9,6 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 
 @Repository
 public interface StationRepository extends CustomGeneralRepository<Station, Long> {
-    Station findByShortCodeIgnoreCase(final String stationShortCode);
+    Optional<Station> findByShortCodeIgnoreCase(final String stationShortCode);
     Optional<Station> findByUicCode(final int uicCode);
 }
