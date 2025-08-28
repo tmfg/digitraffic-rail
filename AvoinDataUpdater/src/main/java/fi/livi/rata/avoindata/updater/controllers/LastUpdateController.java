@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +32,23 @@ public class LastUpdateController {
     @Autowired
     private WebClient webClient;
 
-
     @RequestMapping("/last-updated")
     @ResponseBody
     public Map<LastUpdateService.LastUpdatedType, IsUpToDateService.IsToUpToDateDto> getLastUpdated(final HttpServletResponse response) {
         response.setHeader("Cache-Control", String.format("max-age=%d, public", 1));
 
+        final StopWatch getIsUpToDates = StopWatch.createStarted();
         final Map<LastUpdateService.LastUpdatedType, IsUpToDateService.IsToUpToDateDto> isUpToDates = isUpToDateService.getIsUpToDates();
+        getIsUpToDates.stop();
 
-        isUpToDates.put(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP, createIsUpToDateForUrl(String.format("https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip", DateProvider.dateInHelsinki().minusDays(3)), Duration.ofHours(24 * 2)));
+        final StopWatch createIsUpToDateForUrl = StopWatch.createStarted();
+        isUpToDates.put(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP, createIsUpToDateForUrl(
+                String.format("https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip",
+                        DateProvider.dateInHelsinki().minusDays(3)), Duration.ofHours(24 * 2)));
+        createIsUpToDateForUrl.stop();
 
+        log.info("method=getLastUpdated getIsUpToDatesMs={} createIsUpToDateForUrlMs={} tookMs={} ", getIsUpToDates.getTime(),
+                createIsUpToDateForUrl.getTime(), getIsUpToDates.getTime() + createIsUpToDateForUrl.getTime());
         isUpToDates.forEach((key, value) -> {
             if (!value.isUpToDate) {
                 log.error("method=getLastUpdated data was outdated type={} lastUpdated={} limit={} sinceUpdate={} isUpToDate={}",
