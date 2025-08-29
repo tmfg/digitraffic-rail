@@ -47,31 +47,36 @@ public class OldTrainService {
         final LocalDate end = LocalDate.now().minusDays(2);
         final LocalDate start = LocalDate.now().minusDays(numberOfDaysToInitialize);
 
-        log.info("Starting to check for updated old trains from {} to {}", start, end);
+        log.info("method=updateOldTrains Starting to check for updated old trains from {} to {}", start, end);
 
-        for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-            log.info("Checking for updated old trains. Date: {}", date);
+        try {
+            for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+                log.info("method=updateOldTrains Checking for updated old trains. Date: {}", date);
 
-            final List<Train> trainResponse = getChangedTrains(date);
+                final List<Train> trainResponse = getChangedTrains(date);
 
-            trainLockExecutor.executeInLock("oldTrains", () -> {
+                trainLockExecutor.executeInLock("oldTrains", () -> {
 
-                if (!trainResponse.isEmpty()) {
-                    log.info("Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
+                    if (!trainResponse.isEmpty()) {
+                        log.info("method=updateOldTrains Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
 
-                    final long maxVersion = trainRepository.getMaxVersion();
-                    for (final Train train : trainResponse) {
-                        train.version = maxVersion + 1;
+                        final long maxVersion = trainRepository.getMaxVersion();
+                        for (final Train train : trainResponse) {
+                            train.version = maxVersion + 1;
+                        }
+
+                        trainPersistService.updateEntities(trainResponse);
                     }
 
-                    trainPersistService.updateEntities(trainResponse);
-                }
+                    return trainResponse;
+                });
+            }
 
-                return trainResponse;
-            });
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.OLD_TRAINS);
+        } catch (final Exception e) {
+            log.error("method=updateOldTrains Error while checking for updated old trains.", e);
+            throw e;
         }
-
-        lastUpdateService.update(LastUpdateService.LastUpdatedType.OLD_TRAINS);
     }
 
     private List<Train> getChangedTrains(final LocalDate date) {
@@ -100,11 +105,12 @@ public class OldTrainService {
         }
 
         final HashMap<String, Object> parts = new HashMap<>();
-        parts.put("date", date);
+        parts.put("date", date.toString());
         parts.put("versions", versions);
 
-        log.info("Fetching {} changed trains for {}", oldTrainPartition.size(), date);
+        log.info("method=getChangedTrainsByIds Fetching {} changed trains for {}", oldTrainPartition.size(), date);
 
         return Arrays.asList(ripaService.postToRipa("old-trains", parts, Train[].class));
     }
 }
+

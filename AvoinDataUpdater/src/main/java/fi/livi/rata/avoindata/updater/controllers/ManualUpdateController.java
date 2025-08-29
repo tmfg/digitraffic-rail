@@ -21,6 +21,7 @@ import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
+import fi.livi.rata.avoindata.updater.service.hack.OldTrainService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -33,8 +34,7 @@ public class ManualUpdateController {
     private TrainInitializerService trainInitializerService;
     @Autowired
     private TrainRepository trainRepository;
-    @Value("${updater.schedule-extracting.days-to-extract:365}")
-    protected Integer numberOfDaysToExtract;
+
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
@@ -55,6 +55,9 @@ public class ManualUpdateController {
 
     @Autowired
     private ScheduleProviderService scheduleProviderService;
+
+    @Autowired
+    private OldTrainService oldTrainService;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -121,6 +124,15 @@ public class ManualUpdateController {
 
         gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
         logger.info("method=generateDevGTFS End manual gtfs");
+        return true;
+    }
+
+    @RequestMapping("/update-old-trains")
+    @ResponseBody
+    public boolean updateOldTrains() {
+        logger.info("method=updateOldTrains Starting manual update");
+        oldTrainService.updateOldTrains();
+        logger.info("method=updateOldTrains End manual update");
         return true;
     }
 }
