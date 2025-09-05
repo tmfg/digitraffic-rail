@@ -1,6 +1,6 @@
 services:
   db:
-    image: mysql:8.0.41
+    image: mysql:8.0.42
     restart: always
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -9,7 +9,7 @@ services:
     command: ['--character-set-server=latin1', '--collation-server=latin1_swedish_ci']
 
   db-init:
-    image: flyway/flyway:11.8.0-alpine
+    image: flyway/flyway:11-alpine
     volumes:
       - "../AvoinDataUpdater/src/main/resources/db/migration/:/flyway/sql"
       - "~/.m2:/root/.m2"
