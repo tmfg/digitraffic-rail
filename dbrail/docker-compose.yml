@@ -11,7 +11,7 @@ services:
   db-init:
     image: flyway/flyway:11-alpine
     volumes:
-      - "../AvoinDataUpdater/src/main/resources/db/migration/:/flyway/sql"
+      - "../AvoinDataUpdater/src/main/resources/db/:/flyway/sql"
       - "~/.m2:/root/.m2"
     links:
       - "db:db"
