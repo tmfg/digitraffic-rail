@@ -1,3 +1,9 @@
+-- Test and production environments has been applied manually these:
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- ALTER TABLE `track_work_notification` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+-- ALTER TABLE `track_work_part` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+-- SET FOREIGN_KEY_CHECKS = 1;
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 ALTER TABLE `category_code` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
