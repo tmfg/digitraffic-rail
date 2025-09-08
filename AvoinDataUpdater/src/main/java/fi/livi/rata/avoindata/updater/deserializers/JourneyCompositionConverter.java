@@ -102,7 +102,7 @@ public class JourneyCompositionConverter {
 
     final AtomicLong compositionVersionHolder = new AtomicLong(0);
     /**
-     * Returns list of successfull transformations to JourneyComposition and failed kokoonpanot
+     * Returns list of successful transformations to JourneyComposition and failed kokoonpanot
      */
     public Pair<List<JourneyComposition>, List<KokoonpanoDto>> transformToJourneyCompositions(final List<KokoonpanoDto> kokoonpanot) {
         // Generate new version for compositions form curren time

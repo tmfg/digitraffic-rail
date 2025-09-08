@@ -6,7 +6,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     ports:
       - "3306:3306"
-    command: ['--character-set-server=latin1', '--collation-server=latin1_swedish_ci']
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_swedish_ci']
 
   db-init:
     image: flyway/flyway:11-alpine

@@ -63,7 +63,7 @@ public class CompositionInitializerService extends AbstractDatabaseInitializer<J
                 public KokoonpanoDto remove(final Object key) {
                     final KokoonpanoDto value = super.remove(key);
                     if (value != null) { // null if already removed by iterator
-                        log.error("method=failedCompositionsInMemoryExpired Removing failed composition in memory as it expired after 24h trainKey={}", key);
+                        log.warn("method=failedCompositionsInMemoryExpired Removing failed composition in memory as it expired after 24h trainKey={}", key);
                     }
                     return value;
                 }

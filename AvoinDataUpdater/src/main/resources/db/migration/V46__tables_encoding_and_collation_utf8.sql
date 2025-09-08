@@ -1,0 +1,81 @@
+-- Description: Change all existing tables to utf8mb4 character set and utf8mb4_swedish_ci collation
+
+-- Disable FK checks temporarily
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Step 1: Generate ALTER TABLE statements
+-- Parent tables first
+-- SELECT CONCAT('ALTER TABLE `', TABLE_NAME, '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;') AS stmt
+-- FROM information_schema.TABLES t
+-- WHERE t.TABLE_SCHEMA = DATABASE()
+--   AND t.TABLE_TYPE = 'BASE TABLE'
+--   AND t.TABLE_NAME NOT IN (
+--     SELECT DISTINCT rc.TABLE_NAME
+--     FROM information_schema.REFERENTIAL_CONSTRAINTS rc
+--     WHERE rc.CONSTRAINT_SCHEMA = DATABASE()
+-- )
+-- ORDER BY TABLE_NAME;
+
+ALTER TABLE `category_code` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `composition` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `composition_time_table_row` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `composition_ttr_identity_generator` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `detailed_category_code` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `extracted_schedule` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `flyway_schema_history` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `forecast` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `gtfs` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `gtfs_trip` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `operator` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `power_type` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_message` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_stop_monitoring_message` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_udot` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_udot_history` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `routeset` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `station` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `stop_sector` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `stop_sector_direction` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `stop_sector_queue_item` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `system_state_property` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `third_category_code` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `time_table_period` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `track_section` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `track_work_notification` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `traffic_restriction_notification` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_category` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_location` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_running_message` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_running_message_rule` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+
+
+-- Child tables after
+-- SELECT CONCAT('ALTER TABLE `', rc.TABLE_NAME, '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;') AS stmt
+-- FROM information_schema.REFERENTIAL_CONSTRAINTS rc
+-- WHERE rc.CONSTRAINT_SCHEMA = DATABASE()
+-- GROUP BY rc.TABLE_NAME
+-- ORDER BY rc.TABLE_NAME;
+
+ALTER TABLE `cause` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `element_range` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `identifier_range` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `journey_section` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `locomotive` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `operator_train_number` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_message_audio` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_message_station` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `rami_message_video` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `routesection` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `ruma_location` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `time_table_period_change_date` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `time_table_row` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `track_range` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `track_work_part` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_ready` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `train_type` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+ALTER TABLE `wagon` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_swedish_ci;
+
+-- Re-enable FK checks
+SET FOREIGN_KEY_CHECKS = 1;
+
