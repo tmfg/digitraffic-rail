@@ -84,6 +84,9 @@ public class GTFSTripService {
         }
 
         final LocalDate now = DateProvider.dateInHelsinki();
+
+        filterStopsInTrips(trips, stopMap);
+
         final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
             if (trip.stopTimes.isEmpty() || trip.calendar.endDate.isBefore(now)) {
@@ -112,6 +115,13 @@ public class GTFSTripService {
         }
 
         return trips;
+    }
+
+    private void filterStopsInTrips(final List<Trip> trips, final Map<String, Stop> stopMap) {
+        trips.forEach(trip -> {
+            final var stopsToRemove = trip.stopTimes.stream().filter(st -> !stopMap.containsKey(st.stopId));
+            trip.stopTimes.removeAll(stopsToRemove.toList());
+        });
     }
 
     private boolean isTripFullyCancelled(final Trip trip, final List<Trip> partialCancellationTrips) {
