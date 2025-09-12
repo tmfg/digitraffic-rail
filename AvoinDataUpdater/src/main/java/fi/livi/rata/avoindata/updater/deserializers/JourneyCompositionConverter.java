@@ -277,7 +277,7 @@ public class JourneyCompositionConverter {
         count.addAndGet(1);
         match.addAndGet(result.isPresent() ? 1 : 0);
         if (result.isEmpty()) {
-            log.warn("method=getTimetableRow TimetableRow not found for trainNumber={} departureDate={} time={}, stationShortCode={}, type={} ({})",
+            log.warn("method=getTimetableRow TimetableRow not found for trainNumber={} departureDate={} time={} stationShortCode={} type={} ({})",
                     junanumero, lahtopaiva, aika.toZonedDateTime(), stationShortCode, type, type.ordinal());
         }
         return result;
