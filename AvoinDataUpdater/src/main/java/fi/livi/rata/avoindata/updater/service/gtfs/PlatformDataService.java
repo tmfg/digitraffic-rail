@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +42,7 @@ public class PlatformDataService {
                         stationShortCode -> {
                             final String stationLiikennepaikkaId = liikennePaikkaNodes.get(stationShortCode).get(0).get("tunniste").asText();
                             final String stationLiikennepaikkaIdPart = InfraApiPlatformService.extractLiikennepaikkaIdPart(stationLiikennepaikkaId);
-                            return platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList())
-                                    .stream()
-                                    .collect(Collectors.toList());
+                            return new ArrayList<>(platformsByLiikennepaikkaIdPart.getOrDefault(stationLiikennepaikkaIdPart, Collections.emptyList()));
                         })
                 );
 

@@ -102,6 +102,8 @@ public class GTFSStopsService {
 
                     stops.add(platformStop);
                 }
+            } else {
+                log.error("Skipping missing station {}", stationShortCode);
             }
         }
 
