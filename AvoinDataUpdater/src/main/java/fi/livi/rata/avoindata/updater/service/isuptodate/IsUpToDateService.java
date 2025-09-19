@@ -11,6 +11,7 @@ import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateServic
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACKSECTIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES;
 
 import java.time.Duration;
@@ -66,7 +67,10 @@ public class IsUpToDateService {
         alarmLimits.put(OLD_TRAINS, Duration.ofHours(60));
         alarmLimits.put(STATIONS, Duration.ofHours(25));
         alarmLimits.put(CATEGORY_CODES, Duration.ofHours(25));
+        alarmLimits.put(TRAIN_LOCATIONS_DUMP, Duration.ofHours(24 * 2));
     }
+
+
 
     public Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> getIsUpToDates() {
         final Map<LastUpdateService.LastUpdatedType, Instant> lastUpdateTimes = lastUpdateService.getLastUpdateTimes();
