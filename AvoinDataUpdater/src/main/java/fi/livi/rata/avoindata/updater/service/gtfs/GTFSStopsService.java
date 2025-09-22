@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.micrometer.common.util.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
@@ -68,7 +69,11 @@ public class GTFSStopsService {
         final Map<String, Set<String>> tracksScheduledByStation = new HashMap<>();
 
         timeTableRows.forEach(ttr -> {
-            if (platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack)) {
+//            final var isValidTrack = platformData.isValidTrack(ttr.stationShortCode, ttr.commercialTrack);
+
+            if(StringUtils.isNotBlank(ttr.commercialTrack)) {
+//                log.debug("method=createStops validTrack={} station={} track={}", isValidTrack, ttr.stationShortCode, ttr.commercialTrack);
+
                 tracksScheduledByStation.putIfAbsent(ttr.stationShortCode, new HashSet<>());
                 tracksScheduledByStation.get(ttr.stationShortCode).add(ttr.commercialTrack);
             }
@@ -103,7 +108,7 @@ public class GTFSStopsService {
                     stops.add(platformStop);
                 }
             } else {
-                log.error("Skipping missing station {}", stationShortCode);
+                log.warn("Skipping missing station {}", stationShortCode);
             }
         }
 

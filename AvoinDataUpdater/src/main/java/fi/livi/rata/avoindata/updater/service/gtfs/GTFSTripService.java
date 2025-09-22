@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -320,32 +321,45 @@ public class GTFSTripService {
     private boolean timeTableRowMatchesScheduleRow(final SimpleTimeTableRow simpleTimeTableRow, final ScheduleRow scheduleRow) {
         if (scheduleRow.arrival != null) {
             return simpleTimeTableRow.type.equals(TimeTableRow.TimeTableRowType.ARRIVAL)
-                    && simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id)
-                    && scheduleRow.schedule.isRunOnDay(simpleTimeTableRow.scheduledTime.toLocalDate());
+                    && simpleTimeTableRow.id.attapId.equals(scheduleRow.arrival.id);
 
         } else if (scheduleRow.departure != null) {
             return simpleTimeTableRow.type.equals(TimeTableRow.TimeTableRowType.DEPARTURE)
-                    && simpleTimeTableRow.id.attapId.equals(scheduleRow.departure.id)
-                    && scheduleRow.schedule.isRunOnDay(simpleTimeTableRow.scheduledTime.toLocalDate());
+                    && simpleTimeTableRow.id.attapId.equals(scheduleRow.departure.id);
         }
         return false;
     }
 
-    private Optional<String> findTrack(final ScheduleRow scheduleRow, final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber) {
-        final Long trainNumber = scheduleRow.schedule.trainNumber;
-
-        return timeTableRowsByTrainNumber.getOrDefault(trainNumber, Collections.emptyList())
+    private Optional<String> findTrack(final ScheduleRow scheduleRow, final List<SimpleTimeTableRow> timeTableRows) {
+        return timeTableRows
                 .stream()
-                .filter(simpleTimeTableRow -> simpleTimeTableRow.commercialTrack != null)
                 .filter(simpleTimeTableRow -> timeTableRowMatchesScheduleRow(simpleTimeTableRow, scheduleRow))
                 .map(matchingRow -> matchingRow.commercialTrack)
                 .findAny();
+    }
+
+    private List<SimpleTimeTableRow> getRowsForSchedule(final Schedule schedule, final List<SimpleTimeTableRow> timeTableRows) {
+        return timeTableRows
+            .stream()
+            .filter(r -> StringUtils.isNotBlank(r.commercialTrack))
+            .filter(r -> schedule.isRunOnDay(r.scheduledTime.toLocalDate()))
+            .toList();
     }
 
     private List<StopTime> createStopTimes(final Schedule schedule, final String tripId,
                                            final Map<Long, List<SimpleTimeTableRow>> timeTableRowsByTrainNumber,
                                            final PlatformData platformData) {
         final List<StopTime> stopTimes = new ArrayList<>();
+        final List<SimpleTimeTableRow> allTrainRows = timeTableRowsByTrainNumber.getOrDefault(schedule.trainNumber, Collections.emptyList());
+        final List<SimpleTimeTableRow> timeTableRows = getRowsForSchedule(schedule, allTrainRows);
+
+        if(timeTableRows.isEmpty()) {
+            log.debug("method=createStopTimes no timeTableRows found for train {} original count {}", schedule.trainNumber, allTrainRows.size());
+        }
+
+        if(schedule.trainNumber == 1L) {
+            timeTableRows.forEach(r -> log.debug("method=createStopTimes row {}", r.toString()));
+        }
 
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {
             final ScheduleRow scheduleRow = schedule.scheduleRows.get(i);
@@ -363,10 +377,15 @@ public class GTFSTripService {
                 stopTime.arrivalTime = scheduleRow.departure.timestamp;
             }
 
-            final Optional<String> trackNumber = findTrack(scheduleRow, timeTableRowsByTrainNumber);
-            if (trackNumber.isPresent()
-                    && platformData.isValidTrack(scheduleRow.station.stationShortCode, trackNumber.get())) {
-                stopTime.track = trackNumber.get();
+            final Optional<String> trackNumberOptional = findTrack(scheduleRow, timeTableRows);
+
+            if (trackNumberOptional.isPresent()) {
+                stopTime.track = trackNumberOptional.get();
+//                final var isValidTrack = platformData.isValidTrack(scheduleRow.station.stationShortCode, stopTime.track);
+
+//                log.debug("method=createStopTimes validTrack={} station={} track={}", isValidTrack, scheduleRow.station.stationShortCode, stopTime.track);
+            } else {
+//                log.debug("method=createStopTimes no track for {} on {}", schedule.trainNumber, scheduleRow.station.stationShortCode);
             }
 
             stopTime.stopId = scheduleRow.station.stationShortCode;
@@ -382,7 +401,7 @@ public class GTFSTripService {
         }
 
         stopTimes.getFirst().dropoffType = 1;
-        Iterables.getLast(stopTimes).pickupType = 1;
+        stopTimes.getLast().pickupType = 1;
 
         return stopTimes;
     }

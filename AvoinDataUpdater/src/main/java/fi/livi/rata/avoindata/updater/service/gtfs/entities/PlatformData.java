@@ -1,5 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.entities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PlatformData {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     public final Map<String, List<InfraApiPlatform>> platformsByStation;
     public final Map<String, Set<String>> validTracksByStation;
@@ -23,6 +27,10 @@ public class PlatformData {
                                 .map(infraApiPlatform -> infraApiPlatform.commercialTrack)
                                 .collect(Collectors.toSet()))
                 );
+
+//        log.debug("PlatformData platforms {}", platformsByStation);
+//        log.debug("PlatformData stations {}", validTracksByStation.keySet());
+//        log.debug("PlatformData tracks for HKI {}", validTracksByStation.get("HKI"));
     }
 
     public Optional<InfraApiPlatform> getStationPlatform(final String stationShortCode, final String track) {

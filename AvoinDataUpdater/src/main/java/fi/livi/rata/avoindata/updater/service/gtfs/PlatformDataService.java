@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +22,15 @@ import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
 
 @Service
 public class PlatformDataService {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private InfraApiPlatformService infraApiPlatformService;
+    private final InfraApiPlatformService infraApiPlatformService;
+    private final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
-    @Autowired
-    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
+    public PlatformDataService(final InfraApiPlatformService infraApiPlatformService, final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService) {
+        this.infraApiPlatformService = infraApiPlatformService;
+        this.trakediaLiikennepaikkaService = trakediaLiikennepaikkaService;
+    }
 
     public PlatformData getCurrentPlatformData() {
         final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
