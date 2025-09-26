@@ -20,3 +20,5 @@ AvoinDataUpdater/src/main/resources/application-localhost.properties
 /AvoinDataUpdater/stop_times.txt
 /AvoinDataUpdater/stops.txt
 /AvoinDataUpdater/trips.txt
+/AvoinDataUpdater/translations.txt
+/**/application-localhost*.properties
