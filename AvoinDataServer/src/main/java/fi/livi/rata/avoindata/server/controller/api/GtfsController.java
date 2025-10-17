@@ -1,9 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import com.amazonaws.services.s3.Headers;
-import jakarta.servlet.http.HttpServletResponse;
-
-import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -13,9 +10,11 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Tag(name = "trains", description = "Returns trains as gtfs")
 @RestController
@@ -92,7 +91,7 @@ public class GtfsController {
 
         response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
-        response.addHeader(Headers.CONTENT_LENGTH, String.valueOf(gtfs.data.length));
+        response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(gtfs.data.length));
 
         return gtfs.data;
     }

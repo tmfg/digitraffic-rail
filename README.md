@@ -21,3 +21,13 @@ rata.digitraffic.fi koostuu kolmesta komponentista:
   
 * AvoinDataCommon
     * Yhteisiä toimintoja em. mainituille komponenteille. Mm. tietokannasta haku
+
+# Run dependency check
+
+    mvn -Pdepcheck
+
+Report can be found at  [target/dependency-check-report.html](target/dependency-check-report.html)
+
+Oneliner to run dependency check and open the report in default browser (MacOS):
+
+    mvn -Pdepcheck; open target/dependency-check-report.html

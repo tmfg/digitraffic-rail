@@ -32,12 +32,24 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!--This is used to add support for bootstrap.properties file-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <version>${spring.cloud.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.springframework.integration/spring-integration-mqtt -->
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-mqtt</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -72,12 +84,6 @@
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
             <version>2.0.12</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.amazonaws.secretsmanager</groupId>
-            <artifactId>aws-secretsmanager-jdbc</artifactId>
-            <version>2.0.2</version>
         </dependency>
 
         <dependency>

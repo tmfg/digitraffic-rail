@@ -15,6 +15,7 @@
         <java.version>21</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>3.5.6</spring.boot.version>
+        <spring.cloud.version>4.3.0</spring.cloud.version>
         <com.google.guava.version>33.4.7-jre</com.google.guava.version>
         <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
         <org.flywaydb.version>11.10.5</org.flywaydb.version>

@@ -15,7 +15,6 @@
 
     <properties>
         <start-class>fi.livi.rata.avoindata.server.ServerApplication</start-class>
-        <spring.cloud.aws.version>2.4.4</spring.cloud.aws.version>
         <spring.cloud.commons.version>4.3.0</spring.cloud.commons.version>
     </properties>
 
@@ -58,13 +57,13 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
-            <version>${spring.cloud.commons.version}</version>
+            <version>${spring.cloud.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.awspring.cloud</groupId>
-            <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
-            <version>${spring.cloud.aws.version}</version>
+            <artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
+            <version>3.4.0</version>
         </dependency>
 
         <dependency>

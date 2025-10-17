@@ -2,6 +2,9 @@ package fi.livi.rata.avoindata.server.config;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +12,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 public class RailApplicationConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(RailApplicationConfiguration.class);
 
     @Autowired
     private Environment env;
@@ -20,8 +25,6 @@ public class RailApplicationConfiguration {
     @Bean
     @Primary
     public DataSource dataSource(
-            @Autowired(required = false)
-            final AWSDataSourceCredentials awsDataSourceCredentials,
             @Value("${spring.datasource.url}")
             final String url,
             @Value("${spring.datasource.username}")
@@ -44,21 +47,28 @@ public class RailApplicationConfiguration {
             final boolean readOnly
     ) {
 
-        final String actualUsername = awsDataSourceCredentials != null ? awsDataSourceCredentials.getUsername() : username;
-        final String actualPassword = awsDataSourceCredentials != null ? awsDataSourceCredentials.getPassword() : password;
+        log.info("method=dataSource url {} driver {} maximumPoolSize {}",
+                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default", maximumPoolSize);
 
-        final HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(url);
-        dataSource.setUsername(actualUsername);
-        dataSource.setPassword(actualPassword);
-        dataSource.setDriverClassName(driverClassName);
-        dataSource.setMaximumPoolSize(maximumPoolSize);
-        dataSource.setMaxLifetime(maxLifetime);
-        dataSource.setIdleTimeout(idleTimeout);
-        dataSource.setConnectionTimeout(connectionTimeout);
-        dataSource.setLeakDetectionThreshold(leakDetectionThreshold);
-        dataSource.setReadOnly(readOnly);
+        final HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(url);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setDriverClassName(driverClassName);
+        config.setMaximumPoolSize(maximumPoolSize);
+        config.setMaxLifetime(maxLifetime);
+        config.setIdleTimeout(idleTimeout);
+        config.setConnectionTimeout(connectionTimeout);
+        config.setLeakDetectionThreshold(leakDetectionThreshold);
+        config.setReadOnly(readOnly);
+        config.setPoolName("application_pool");
+        // register mbeans for debug
+        config.setRegisterMbeans(true);
 
-        return dataSource;
+        log.info("method=dataSource url {} driver {} maximumPoolSize {}",
+                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default", maximumPoolSize);
+
+
+        return new HikariDataSource(config);
     }
 }
