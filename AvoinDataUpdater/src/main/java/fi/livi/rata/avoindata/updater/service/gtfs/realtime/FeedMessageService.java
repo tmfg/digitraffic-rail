@@ -100,7 +100,8 @@ public class FeedMessageService {
                 .setPosition(GtfsRealtime.Position.newBuilder()
                         .setLatitude((float)location.getY())
                         .setLongitude((float)location.getX())
-                        .setSpeed(location.getSpeed())
+                        // change km/h to m/s and round to two decimals
+                        .setSpeed(Math.round(100*location.getSpeed() / 3.6f)/100.0f)
                         .build())
                 .setVehicle(GtfsRealtime.VehicleDescriptor.newBuilder()
                         .setId(trip.id.trainNumber.toString())

@@ -46,6 +46,7 @@ public class FeedMessageServiceVehicleLocationTest extends BaseTest {
         when(location.getDepartureDate()).thenReturn(departureDate);
         when(location.getX()).thenReturn(60.0);
         when(location.getY()).thenReturn(20.0);
+        when(location.getSpeed()).thenReturn(120); // km/h
 
         when(location.getStationShortCode()).thenReturn(STATION_1);
         when(location.getCommercialTrack()).thenReturn(TRACK_1);
@@ -80,6 +81,7 @@ public class FeedMessageServiceVehicleLocationTest extends BaseTest {
         final GtfsRealtime.FeedMessage message = feedMessageService.createVehicleLocationFeedMessage(List.of(location));
 
         assertVehicle(message, TRIP_ID_1, ROUTE_ID_1, String.format("%s_0", STATION_1));
+        Assertions.assertEquals(33.33f, message.getEntity(0).getVehicle().getPosition().getSpeed()); // m/s
     }
 
     @Test

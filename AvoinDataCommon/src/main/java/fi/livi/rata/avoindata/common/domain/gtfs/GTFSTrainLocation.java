@@ -16,6 +16,7 @@ public interface GTFSTrainLocation {
 
     double getY();
 
+    ///  this is km/h
     int getSpeed();
 
     int getAccuracy();
