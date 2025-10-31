@@ -17,7 +17,7 @@
         <start-class>fi.livi.rata.avoindata.updater.DatabaseUpdaterApplication</start-class>
         <proj4j.version>1.4.1</proj4j.version>
         <!-- https://mvnrepository.com/artifact/com.google.protobuf/protoc -->
-        <com.google.protobuf.version>4.31.1</com.google.protobuf.version>
+        <com.google.protobuf.version>4.33.0</com.google.protobuf.version>
     </properties>
 
     <dependencies>
@@ -139,7 +139,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.5</version>
+            <version>5.5.1</version>
         </dependency>
 
         <dependency>
@@ -189,13 +189,13 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>2.2.35</version>
+            <version>2.2.40</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.18.0</version>
+            <version>3.19.0</version>
         </dependency>
 
         <dependency>
