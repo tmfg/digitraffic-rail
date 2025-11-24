@@ -36,7 +36,7 @@ jobs:
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout CI-repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
