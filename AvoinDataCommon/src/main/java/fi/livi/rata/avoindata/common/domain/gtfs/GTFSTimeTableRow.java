@@ -70,6 +70,10 @@ public class GTFSTimeTableRow {
     @Column
     public String commercialTrack;
 
+    @Column
+    @TimeZoneStorage(TimeZoneStorageType.NATIVE)
+    public ZonedDateTime commercialTrackChanged;
+
     @ManyToOne
     @JoinColumns({
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false, insertable = false, updatable = false),
@@ -97,5 +101,9 @@ public class GTFSTimeTableRow {
 
     public boolean hasEstimateOrActualTime() {
         return liveEstimateTime != null || actualTime != null;
+    }
+
+    public boolean hasTrackChanged() {
+        return commercialTrackChanged != null;
     }
 }

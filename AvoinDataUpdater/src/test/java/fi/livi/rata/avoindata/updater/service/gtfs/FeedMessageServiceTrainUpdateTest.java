@@ -104,6 +104,11 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         }
     }
 
+    private void assertHasNoStopId(final GtfsRealtime.FeedMessage message, final int entityIndex, final int stopTimeUpdateIndex) {
+        final GtfsRealtime.TripUpdate.StopTimeUpdate stu = message.getEntity(entityIndex).getTripUpdate().getStopTimeUpdate(stopTimeUpdateIndex);
+        Assertions.assertFalse(stu.hasStopId(), String.format("Stop time update %d should not have stop_id set", stopTimeUpdateIndex));
+    }
+
     private void assertCancelled(final GtfsRealtime.FeedMessage message, final int entityIndex, final boolean... cancelled) {
         Assertions.assertEquals(cancelled.length, message.getEntityList().get(entityIndex).getTripUpdate().getStopTimeUpdateCount());
 
@@ -347,6 +352,8 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
 
         assertFeedMessage(message, 1);
         assertStopIds(message, 0, 3, "S1_1", "S2_2", "S3_0");
+        // Normal tracks should not have assigned_stop_id
+        assertAssignedStopId(message, 0, 3, null, null, null);
     }
 
     @Test
@@ -364,7 +371,52 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
         final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
 
         assertFeedMessage(message, 1);
-        assertStopIds(message, 0, 3, "S1_0", "S2_0", "S3_0");
+        // When unknown track is set, stop_id should NOT be set, only assigned_stop_id should be in stop_time_properties
+        assertHasNoStopId(message, 0, 0);
+        assertHasNoStopId(message, 0, 1);
         assertAssignedStopId(message, 0, 3, "S1_0", "S2_0", null);
+    }
+
+    @Test
+    public void trackChanged() {
+        final GTFSTrain train2 = createTestTrain2();
+        // set tracks and mark them as changed
+        final GTFSTimeTableRow r1d = getRow(train2, 0, TimeTableRow.TimeTableRowType.DEPARTURE);
+        final GTFSTimeTableRow r2a = getRow(train2, 1, TimeTableRow.TimeTableRowType.ARRIVAL);
+        final GTFSTimeTableRow r2d = getRow(train2, 2, TimeTableRow.TimeTableRowType.DEPARTURE);
+
+        r1d.commercialTrack = "1";
+        r1d.commercialTrackChanged = ZonedDateTime.now();
+        r2a.commercialTrack = "2";
+        r2a.commercialTrackChanged = ZonedDateTime.now();
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        // When track has changed, stop_id should NOT be set, only assigned_stop_id should be in stop_time_properties
+        assertHasNoStopId(message, 0, 0);
+        assertHasNoStopId(message, 0, 1);
+        assertAssignedStopId(message, 0, 3, "S1_1", "S2_2", null);
+    }
+
+    @Test
+    public void trackChangedAndUnknownTrack() {
+        final GTFSTrain train2 = createTestTrain2();
+        // set one track as changed and another as unknown
+        final GTFSTimeTableRow r1d = getRow(train2, 0, TimeTableRow.TimeTableRowType.DEPARTURE);
+        final GTFSTimeTableRow r2a = getRow(train2, 1, TimeTableRow.TimeTableRowType.ARRIVAL);
+
+        r1d.commercialTrack = "1";
+        r1d.commercialTrackChanged = ZonedDateTime.now();
+        r2a.commercialTrack = "2";
+        r2a.unknownTrack = true;
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train2));
+
+        assertFeedMessage(message, 1);
+        // Both should use assigned_stop_id in stop_time_properties, not stop_id
+        assertHasNoStopId(message, 0, 0);
+        assertHasNoStopId(message, 0, 1);
+        assertAssignedStopId(message, 0, 3, "S1_1", "S2_0", null);
     }
 }
