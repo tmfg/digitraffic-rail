@@ -145,13 +145,14 @@ public class FeedMessageService {
 
     private GtfsRealtime.TripUpdate.StopTimeUpdate.Builder createStop(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         final GTFSTimeTableRow timeTableRow = arrival == null ? departure : arrival;
+        final boolean isUnknownTrack = (arrival != null && BooleanUtils.isTrue(arrival.unknownTrack)) || (departure != null && BooleanUtils.isTrue(departure.unknownTrack));
         final String stopId = createStopId(timeTableRow);
 
         final GtfsRealtime.TripUpdate.StopTimeUpdate.Builder builder =
             GtfsRealtime.TripUpdate.StopTimeUpdate.newBuilder()
                 .setStopSequence(stopSequence);
 
-        if (timeTableRow.hasTrackChanged() || BooleanUtils.isTrue(timeTableRow.unknownTrack)) {
+        if (timeTableRow.hasTrackChanged() || isUnknownTrack) {
             builder.setStopTimeProperties(GtfsRealtime.TripUpdate.StopTimeUpdate.StopTimeProperties.newBuilder()
                             .setAssignedStopId(stopId)
             );
