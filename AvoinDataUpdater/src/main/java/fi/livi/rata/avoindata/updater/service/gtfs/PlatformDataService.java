@@ -32,6 +32,20 @@ public class PlatformDataService {
         this.trakediaLiikennepaikkaService = trakediaLiikennepaikkaService;
     }
 
+    /*
+    Here we map platform data from Infra-API to specific "liikennepaikanOsa" or "rautatieliikennepaikka" objects (these objects are part of the "Trakedia" data, also fetched from Infra-API).
+    Rautatieliikennepaikkas and liikennepaikanOsas are in turn mapped to station short codes, which are identifiers from LIIKE interface and should mostly correspond to stations as they exist in Infra-API/Trakedia data as rautatieliikennepaikkas or liikennepaikanOsas.
+
+    However, there is no absolute link between platforms and liikennepaikkas in Infra-API, so we might or might not match a station to its platforms based on the value of "liikennepaikanOsa" or "rautatieliikennepaikka".
+
+    "liikennepaikanOsa", when it has a non-null value for a platform in Infra-API, should normally point to the correct station represented as a liikennepaikanOsa in Infra-API and matched to a Digitraffic station via the related short form of the station's name.
+
+    In some cases, "rautatieliikennepaikka" in the platform data will contain the reference to the appropriate rautatieliikennepaikka representing the station in Infra-API. In these cases "liikennepaikanOsa" is probably null?
+
+    If a platform has values for both "liikennepaikanOsa" and "rautatieliikennepaikka", we pick liikennepaikanOsa as the identifier to map the
+    associated liikennepaikanOsa in Infra-API to a Digitraffic station short code.
+     */
+
     public PlatformData getCurrentPlatformData() {
         final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
