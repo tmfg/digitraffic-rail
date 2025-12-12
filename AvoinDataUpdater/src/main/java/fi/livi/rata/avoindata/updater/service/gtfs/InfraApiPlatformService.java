@@ -65,20 +65,20 @@ public class InfraApiPlatformService {
     }
 
     private InfraApiPlatform deserializePlatform(final JsonNode node) {
-
         final String liikennepaikkaId;
         final String name;
         final String description;
         final String commercialTrack;
         final Geometry geometry;
 
-        final JsonNode rautatieliikennepaikka = node.get("rautatieliikennepaikka");
-        if (!rautatieliikennepaikka.isNull()) {
-            liikennepaikkaId = rautatieliikennepaikka.asText();
+        final JsonNode liikennepaikanOsa = node.get("liikennepaikanOsa");
+
+
+        if (!liikennepaikanOsa.isNull()) {
+            liikennepaikkaId = liikennepaikanOsa.asText();
         } else {
-            final JsonNode liikennepaikanOsa = node.get("liikennepaikanOsa");
-            liikennepaikkaId = liikennepaikanOsa.isNull() ?
-                               "" : liikennepaikanOsa.asText();
+            final JsonNode rautatieliikennepaikka = node.get("rautatieliikennepaikka");
+            liikennepaikkaId = rautatieliikennepaikka.isNull() ? "" : rautatieliikennepaikka.asText();
         }
 
         name = node.get("tunnus").asText();
