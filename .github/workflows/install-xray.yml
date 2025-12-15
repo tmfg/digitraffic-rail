@@ -22,7 +22,7 @@ jobs:
           echo "Environment ${{ github.event.inputs.env }}" >> parameters.txt
           echo "config-repo-branch ${{ github.event.inputs.config-repo-branch }}" >> parameters.txt
       - name: Upload parameters.txt
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: parameters.txt
           path: parameters.txt
