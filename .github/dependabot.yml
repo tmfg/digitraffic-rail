@@ -8,6 +8,14 @@ updates:
       default-days: 7       # Wait 7 days for any update
       semver-major-days: 14 # Wait 14 days for major version bumps
 
+  - package-ecosystem: "docker"
+    directory: "/dbrail"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7       # Wait 7 days for any update
+      semver-major-days: 14 # Wait 14 days for major version bumps
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
