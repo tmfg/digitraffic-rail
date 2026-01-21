@@ -75,7 +75,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload SBOM
         run: |
-          aws s3 cp ${{ github.event.inputs.application-name }}-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env]['${{ github.event.inputs.application-name }}'] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp ${{ github.event.inputs.application-name }}-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env][github.event.inputs.application-name] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
