@@ -81,6 +81,13 @@ jobs:
               --pull=true \
               --file=Dockerfile .
           docker push ${{ secrets.ECR_URL }}/rata-nginx:latest
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: image
+          image-ref: ${{ secrets.ECR_URL }}/rata-nginx:latest
+          format: cyclonedx
+          output: nginx-sbom.json
       - name: Update nginx task-def
         id: update
         uses: tmfg/digitraffic-actions@update-task-def/v2
@@ -102,6 +109,15 @@ jobs:
           cluster-name: ${{ secrets.CLUSTER_NAME }}
           task-definition: rail-${{ github.event.inputs.env }}-nginx
           desired-count: 1
+      - name: Configure AWS credentials for SBOM
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.SBOM_AWS_ROLE }}
+          role-session-name: gh-actions-upload-sbom-rail-nginx-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Upload SBOM
+        run: |
+          aws s3 cp nginx-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env]['nginx'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
