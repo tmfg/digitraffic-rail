@@ -299,12 +299,12 @@ jobs:
           desired-count: 1
       - name: Download server-SBOM
         if: github.event.inputs.install-server == 'true'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: server-sbom.json
       - name: Download updater-SBOM
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: updater-sbom.json
       - name: Configure AWS credentials for SBOM install
