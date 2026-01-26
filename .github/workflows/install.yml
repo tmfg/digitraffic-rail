@@ -108,13 +108,13 @@ jobs:
           path: updater.jar
       - name: Upload server SBOM
         if: github.event.inputs.install-server == 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: server-sbom.json
           path: AvoinDataServer/target/server-sbom.json
       - name: Upload updater SBOM
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: updater-sbom.json
           path: AvoinDataUpdater/target/updater-sbom.json
