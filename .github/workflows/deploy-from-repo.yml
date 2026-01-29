@@ -51,6 +51,18 @@ jobs:
           ci-repo-branch: ${{ github.event.inputs.config-branch }}
           ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           environment-value: ${{ github.event.inputs.suffix }}
+
+      - name: Read SBOM config
+        id: sbom-config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/rail.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "common<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT      
+
       - name: Generate SBOM
         uses: aquasecurity/trivy-action@0.33.1
         with:
@@ -67,15 +79,16 @@ jobs:
           service-name: ${{ github.event.inputs.application-name }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
           desired-count: ${{ github.event.inputs.env == 'prod' && 2 || 1 }}
+
       - name: Configure AWS credentials for SBOM
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.SBOM_AWS_ROLE }}
+          role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-mosquitto-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload SBOM
         run: |
-          aws s3 cp ${{ github.event.inputs.application-name }}-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env][github.event.inputs.application-name] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp ${{ github.event.inputs.application-name }}-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env][github.event.inputs.application-name] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3

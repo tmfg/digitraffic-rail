@@ -124,7 +124,7 @@ jobs:
       - name: Configure AWS credentials for SBOM
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.SBOM_AWS_ROLE }}
+          role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-nginx-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload SBOM

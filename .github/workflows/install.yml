@@ -276,7 +276,6 @@ jobs:
     runs-on: ubuntu-24.04
     environment: ${{ github.event.inputs.env }}
     steps:
-
       - name: Update avoindata-server ECS service
         if: github.event.inputs.install-server == 'true'
         uses: tmfg/digitraffic-actions@ecs-service-update/v1
@@ -307,20 +306,32 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: updater-sbom.json
+
+      - name: Read SBOM config
+        id: sbom-config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/rail.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "common<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT      
+
       - name: Configure AWS credentials for SBOM install
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.SBOM_AWS_ROLE }}
+          role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload server SBOM
         if: github.event.inputs.install-server == 'true'
         run: |
-          aws s3 cp server-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env]['server'] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp server-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['server'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Upload updater SBOM
         if: github.event.inputs.install-updater == 'true'
         run: |
-          aws s3 cp updater-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env]['updater'] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp updater-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['updater'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
