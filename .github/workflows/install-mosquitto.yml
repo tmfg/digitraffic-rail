@@ -124,7 +124,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload SBOM
         run: |
-          aws s3 cp mosquitto-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }} }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['mosquitto'] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp mosquitto-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['mosquitto'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3

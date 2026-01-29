@@ -50,6 +50,18 @@ jobs:
           else
             echo "ENVIRONMENT=${{ github.event.inputs.env }}" >> $GITHUB_ENV
           fi
+
+      - name: Read SBOM config
+        id: sbom-config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/rail.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "common<<EOF" >> $GITHUB_OUTPUT
+          cat digitraffic-ci/aws/sbom/config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Check nginx configurations
         run: |
           cd digitraffic-ci/aws/nginx-rail
@@ -117,7 +129,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload SBOM
         run: |
-          aws s3 cp nginx-sbom.json s3://${{ secrets.SBOM_BUCKET }}/${{ fromJson(secrets.SBOM_PROJECT_KEYS)[github.event.inputs.env]['nginx'] }}/${{ github.run_id }}-${{ github.sha }}.json
+          aws s3 cp nginx-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['nginx'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
