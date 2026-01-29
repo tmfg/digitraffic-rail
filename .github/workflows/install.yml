@@ -53,13 +53,6 @@ jobs:
           java-version: 21
           distribution: corretto
           cache: maven
-      - name: Checkout CI-repo
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ secrets.CONFIG_REPO_NAME }}
-          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-          ref: ${{ inputs.config-repo-branch }}
-          path: config
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -296,16 +289,26 @@ jobs:
           service-name: avoindata-updater
           cluster-name: ${{ secrets.CLUSTER_NAME }}
           desired-count: 1
+
       - name: Download server-SBOM
         if: github.event.inputs.install-server == 'true'
         uses: actions/download-artifact@v7
         with:
           name: server-sbom.json
+
       - name: Download updater-SBOM
         if: github.event.inputs.install-updater == 'true'
         uses: actions/download-artifact@v7
         with:
           name: updater-sbom.json
+
+      - name: Checkout CI-repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
 
       - name: Read SBOM config
         id: sbom-config
