@@ -135,6 +135,14 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     @Override
+    protected void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion, final String prefix,
+                             final long middleMs, final List<Train> objects) {
+        final Long dbMaxVersion = trainPersistService.getMaxVersion();
+        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
+            count, prefix, tookMs, middleMs, latestVersion, newVersion, (newVersion - latestVersion), dbMaxVersion);
+    }
+
+    @Override
     public List<Train> modifyEntitiesBeforePersist(final List<Train> trains) {
         if (!trains.isEmpty()) {
             mergeUdots(trains);
