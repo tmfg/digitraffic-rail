@@ -75,6 +75,24 @@ public class RipaService {
         }
     }
 
+    public <ENTITYTYPE> ResponseWithVersion<ENTITYTYPE> getFromRipaRestTemplateWithVersion(final String path, final Class<ENTITYTYPE> clazz) {
+        final String finalPath = String.format("%s/%s", liikeInterfaceUrl, path);
+
+        log.info("method=getFromRipaRestTemplateWithVersion Fetching from api={} type={}", finalPath, clazz.getSimpleName());
+        try {
+            final ResponseEntity<ENTITYTYPE> response = ripaRestTemplate.getForEntity(finalPath, clazz);
+            final String versionHeader = response.getHeaders().getFirst("fira-data-version");
+            final Long version = versionHeader != null ? Long.parseLong(versionHeader) : null;
+            return new ResponseWithVersion<>(response.getBody(), version);
+        } catch (final Exception e) {
+            log.error("method=getFromRipaRestTemplateWithVersion Fetching from api={} type={} failed with error {}",
+                    finalPath, clazz.getSimpleName(), e.getMessage());
+            throw e;
+        }
+    }
+
+    public record ResponseWithVersion<T>(T body, Long version) {}
+
     public <ENTITYTYPE> ENTITYTYPE getFromKojuApiRestTemplate(final String path, final Class<ENTITYTYPE> clazz) {
         return getFromKojuApiRestTemplate(path, clazz, null);
     }
