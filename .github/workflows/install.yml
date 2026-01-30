@@ -261,7 +261,7 @@ jobs:
         run: echo "revision_server=${{ steps.server-task-def.outputs.revision }}" >> $GITHUB_OUTPUT
   deploy:
     needs: [install]
-    if: github.repository != 'tmfg/digitraffic-rail' && ${{ always() && contains(needs.*.result, 'success') && !(contains(needs.*.result, 'failure')) }}
+    if: ${{ always() && github.repository != 'tmfg/digitraffic-rail' && contains(needs.*.result, 'success') && !(contains(needs.*.result, 'failure')) }}
     permissions:
       id-token: write
       contents: read
