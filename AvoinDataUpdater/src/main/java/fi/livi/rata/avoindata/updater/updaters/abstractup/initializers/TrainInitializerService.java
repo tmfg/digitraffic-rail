@@ -111,19 +111,23 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
             final List<Train> updatedEntities = trainPersistService.updateEntities(objects);
 
+            final Long dbMaxVersion = trainPersistService.getMaxVersion();
+            final long previousVersion = currentVersion.get();
+
             // Update currentVersion from the fira-data-version header if present
             if (response.version() != null) {
-                final long previousVersion = currentVersion.get();
                 currentVersion.set(response.version());
                 log.info("method=doUpdateWithVersionHeader Updated currentVersion from {} to {} (from fira-data-version header)",
                     previousVersion, response.version());
             } else {
-                log.warn("method=doUpdateWithVersionHeader fira-data-version header not present in response, keeping currentVersion={}",
-                    currentVersion.get());
+                currentVersion.set(dbMaxVersion);
+                log.warn("method=doUpdateWithVersionHeader fira-data-version header not present in response, updating with max value from db from {} to {}",
+                        previousVersion, dbMaxVersion);
             }
 
-            logUpdate(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
-                currentVersion.get(), getPrefix(), middle, updatedEntities);
+            // log both dbMaxVersion and the version from the fira-data-version header for any debugging purposes
+            logUpdateWithDbVersion(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
+                currentVersion.get(), dbMaxVersion, getPrefix(), middle);
 
             lastUpdateService.update(getPrefix());
 
@@ -134,10 +138,9 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         }
     }
 
-    @Override
-    protected void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion, final String prefix,
-                             final long middleMs, final List<Train> objects) {
-        final Long dbMaxVersion = trainPersistService.getMaxVersion();
+    private void logUpdateWithDbVersion(final long latestVersion, final long tookMs, final long count, final long newVersion, final long dbMaxVersion, final String prefix,
+                             final long middleMs) {
+
         log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
             count, prefix, tookMs, middleMs, latestVersion, newVersion, (newVersion - latestVersion), dbMaxVersion);
     }
