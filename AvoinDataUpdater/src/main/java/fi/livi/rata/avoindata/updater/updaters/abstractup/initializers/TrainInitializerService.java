@@ -121,7 +121,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
                     previousVersion, response.version());
             } else {
                 currentVersion.set(dbMaxVersion);
-                log.warn("method=doUpdateWithVersionHeader fira-data-version header not present in response, updating with max value from db from {} to {}",
+                log.error("method=doUpdateWithVersionHeader fira-data-version header not present in response, updating with max value from db from {} to {}",
                         previousVersion, dbMaxVersion);
             }
 
