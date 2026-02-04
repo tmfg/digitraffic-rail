@@ -280,12 +280,27 @@ public class FeedMessageServiceTrainUpdateTest  extends BaseTest {
     }
 
     @Test
-    public void estimatesInPast() {
+    public void estimatesInPastNoActualTime() {
         final GTFSTrain train1 = createTestTrain();
         train1.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 20);
         train1.timeTableRows.get(0).liveEstimateTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 20);
+        train1.timeTableRows.get(0).actualTime = null;
         train1.timeTableRows.get(1).scheduledTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 15);
         train1.timeTableRows.get(1).liveEstimateTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 15);
+        train1.timeTableRows.get(1).actualTime = null;
+
+        final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train1));
+
+        assertFeedMessage(message, 0);
+    }
+
+    @Test
+    public void actualTimeInPast() {
+        final GTFSTrain train1 = createTestTrain();
+        train1.timeTableRows.get(0).scheduledTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 20);
+        train1.timeTableRows.get(0).actualTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 20);
+        train1.timeTableRows.get(1).scheduledTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 15);
+        train1.timeTableRows.get(1).actualTime = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES + 15);
 
         final GtfsRealtime.FeedMessage message = feedMessageService.createTripUpdateFeedMessage(List.of(train1));
 

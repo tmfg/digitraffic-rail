@@ -132,14 +132,17 @@ public class FeedMessageService {
     private boolean isInThePast(final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
         final ZonedDateTime limit = ZonedDateTime.now().minusMinutes(PAST_LIMIT_MINUTES);
 
-        final boolean isArrivalInPast = arrival == null || isBefore(arrival, limit);
-        final boolean isDepartureInPast = departure == null || isBefore(departure, limit);
+        final boolean isArrivalInPast = arrival == null || isTheRowInThePast(arrival, limit);
+        final boolean isDepartureInPast = departure == null || isTheRowInThePast(departure, limit);
 
         return isArrivalInPast && isDepartureInPast;
     }
 
-    private boolean isBefore(final GTFSTimeTableRow row, final ZonedDateTime limit) {
+    private boolean isTheRowInThePast(final GTFSTimeTableRow row, final ZonedDateTime limit) {
         // both scheduled time and live-estimate must be in the past to be skipped
+        if(row.actualTime != null) {
+            return row.actualTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
+        }
         return row.liveEstimateTime != null && row.liveEstimateTime.isBefore(limit) && row.scheduledTime.isBefore(limit);
     }
 
@@ -171,17 +174,18 @@ public class FeedMessageService {
         // check cancellation on arrival only when there is no departure
         return arrival != null && arrival.cancelled;
     }
+
     private GtfsRealtime.TripUpdate.StopTimeUpdate createStopTimeUpdate(final int stopSequence, final GTFSTimeTableRow arrival, final GTFSTimeTableRow departure) {
+        // it's in the past(PAST_LIMIT_MINUTES), don't report it!
+        if(isInThePast(arrival, departure)) {
+            return null;
+        }
+
         // setting cancelled stops as SKIPPED
         if(isCancelled(arrival, departure)) {
             return createStop(stopSequence, arrival, departure)
                     .setScheduleRelationship(GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)
                     .build();
-        }
-
-        // it's in the past(PAST_LIMIT_MINUTES), don't report it!
-        if(isInThePast(arrival, departure)) {
-            return null;
         }
 
         final boolean arrivalHasTime = arrival != null && arrival.hasEstimateOrActualTime();
@@ -356,7 +360,7 @@ public class FeedMessageService {
 
         final TripFinder tripFinder = new TripFinder(gtfsTripRepository.findAll());
 
-        log.info("creating TripUpdateFeedMessages trainNumberCount={}", tripFinder.tripMap.entrySet().size());
+        log.info("creating TripUpdateFeedMessages trainNumberCount={}", tripFinder.tripMap.size());
 
         final GtfsRealtime.FeedMessage message = createBuilderWithHeader()
                 .addAllEntity(createTUEntities(tripFinder, trains))
@@ -416,7 +420,7 @@ public class FeedMessageService {
                 return replacement.orElse(null);
             }
 
-            return filtered.get(0);
+            return filtered.getFirst();
         }
 
         Optional<GTFSTrip> findReplacement(final List<GTFSTrip> trips) {

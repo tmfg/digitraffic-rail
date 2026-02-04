@@ -92,7 +92,7 @@ public class GTFSWritingService {
 
     @Transactional
     public void writeRealtimeGTFS(final GtfsRealtime.FeedMessage message, final String fileName) {
-        log.info("Generating {} with {} entities", fileName, message.getEntityCount());
+        log.info("method=writeRealtimeGTFS gtfsFileName={} entityCount={}", fileName, message.getEntityCount());
 
         persist(message.toByteArray(), fileName);
     }
