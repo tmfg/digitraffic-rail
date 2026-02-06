@@ -406,8 +406,6 @@ public class GTFSTripService {
         for (final ScheduleException scheduleException : schedule.scheduleExceptions) {
             if(dateRange.isInclusivelyBetween(scheduleException.date)) {
                 calendarDates.add(createCalendarDate(serviceId, scheduleException.date, !scheduleException.isRun));
-            } else {
-                log.info("Skipping calendarDate {} for serviceId {}", scheduleException.date, serviceId);
             }
         }
 
@@ -418,8 +416,6 @@ public class GTFSTripService {
                     scheduleCancellation.endDate); date = date.plusDays(1)) {
                 if(dateRange.isInclusivelyBetween(date)) {
                     calendarDates.add(createCalendarDate(serviceId, date, true));
-                } else {
-                  log.info("Skipping calendarDate cancelled {} for serviceId {}", date, serviceId);
                 }
             }
         }
