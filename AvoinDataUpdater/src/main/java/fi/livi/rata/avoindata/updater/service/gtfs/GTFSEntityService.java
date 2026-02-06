@@ -5,7 +5,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Translation;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +17,6 @@ import com.google.common.collect.Table;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
@@ -55,7 +52,7 @@ public class GTFSEntityService {
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
-        final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
+        final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
         final PlatformData platformData = platformDataService.getCurrentPlatformData();
         final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformData);
@@ -102,7 +99,7 @@ public class GTFSEntityService {
         return translations;
     }
 
-    private Map<Long, Map<List<LocalDate>, Schedule>> createScheduleIntervals(final List<Schedule> adhocSchedules,
+    private Map<Long, Map<DateRange, Schedule>> createScheduleIntervals(final List<Schedule> adhocSchedules,
                                                                               final List<Schedule> regularSchedules) {
         final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
         final LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
@@ -118,21 +115,21 @@ public class GTFSEntityService {
             }
         }
 
-        final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervals = new HashMap<>();
+        final Map<Long, Map<DateRange, Schedule>> scheduleIntervals = new HashMap<>();
 
         for (final Long trainNumber : daysSchedulesByTrainNumber.columnKeySet()) {
-            final Map<List<LocalDate>, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
-            final Map<List<LocalDate>, Schedule> endCorrectedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
-            final Map<List<LocalDate>, Schedule> startCorrectedTrainsScheduleIntervals = correctIntervalStarts(endCorrectedTrainsScheduleIntervals);
+            final Map<DateRange, Schedule> trainsScheduleIntervals = createIntervalForATrain(start, end, daysSchedulesByTrainNumber, trainNumber);
+            final Map<DateRange, Schedule> endCorrectedTrainsScheduleIntervals = correctIntervalEnds(trainsScheduleIntervals);
+            final Map<DateRange, Schedule> startCorrectedTrainsScheduleIntervals = correctIntervalStarts(endCorrectedTrainsScheduleIntervals);
 
             scheduleIntervals.put(trainsScheduleIntervals.values().iterator().next().trainNumber, startCorrectedTrainsScheduleIntervals);
         }
         return scheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> createIntervalForATrain(final LocalDate start, final LocalDate end,
+    private Map<DateRange, Schedule> createIntervalForATrain(final LocalDate start, final LocalDate end,
                                                                    final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, final Long trainNumber) {
-        final Map<List<LocalDate>, Schedule> trainsScheduleIntervals = new HashMap<>();
+        final Map<DateRange, Schedule> trainsScheduleIntervals = new HashMap<>();
 
         Schedule previousSchedule = null;
         LocalDate intervalStart = start;
@@ -142,11 +139,11 @@ public class GTFSEntityService {
             if (date.equals(end)) {
                 final Schedule usedSchedule = schedule == null ? previousSchedule : schedule;
                 final LocalDate intervalStartDate = usedSchedule.startDate.isAfter(intervalStart) ? usedSchedule.startDate : intervalStart;
-                trainsScheduleIntervals.put(Arrays.asList(intervalStartDate, date), usedSchedule);
+                trainsScheduleIntervals.put(new DateRange(intervalStartDate, date), usedSchedule);
             } else if (schedule == null) {
                 continue;
             } else if (previousSchedule != null && previousSchedule.id != schedule.id) {
-                trainsScheduleIntervals.put(Arrays.asList(intervalStart, date.minusDays(1)), previousSchedule);
+                trainsScheduleIntervals.put(new DateRange(intervalStart, date.minusDays(1)), previousSchedule);
                 intervalStart = date;
             }
 
@@ -155,13 +152,13 @@ public class GTFSEntityService {
         return trainsScheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> correctIntervalEnds(final Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
-        final Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
-        for (final Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
-            final List<LocalDate> oldKey = entry.getKey();
+    private Map<DateRange, Schedule> correctIntervalEnds(final Map<DateRange, Schedule> trainsScheduleIntervals) {
+        final Map<DateRange, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (final Map.Entry<DateRange, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            final DateRange oldKey = entry.getKey();
             final LocalDate scheduleEndDate = entry.getValue().endDate;
-            if (scheduleEndDate != null && oldKey.get(1).isAfter(scheduleEndDate)) {
-                final List<LocalDate> newKey = Lists.newArrayList(oldKey.get(0), scheduleEndDate);
+            if (scheduleEndDate != null && oldKey.endDate.isAfter(scheduleEndDate)) {
+                final DateRange newKey = new DateRange(oldKey.startDate, scheduleEndDate);
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());
@@ -170,13 +167,13 @@ public class GTFSEntityService {
         return correctedTrainsScheduleIntervals;
     }
 
-    private Map<List<LocalDate>, Schedule> correctIntervalStarts(final Map<List<LocalDate>, Schedule> trainsScheduleIntervals) {
-        final Map<List<LocalDate>, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
-        for (final Map.Entry<List<LocalDate>, Schedule> entry : trainsScheduleIntervals.entrySet()) {
-            final List<LocalDate> oldKey = entry.getKey();
+    private Map<DateRange, Schedule> correctIntervalStarts(final Map<DateRange, Schedule> trainsScheduleIntervals) {
+        final Map<DateRange, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
+        for (final Map.Entry<DateRange, Schedule> entry : trainsScheduleIntervals.entrySet()) {
+            final DateRange oldKey = entry.getKey();
             final LocalDate scheduleStartDate = entry.getValue().startDate;
-            if (scheduleStartDate != null && oldKey.get(0).isBefore(scheduleStartDate)) {
-                final List<LocalDate> newKey = Lists.newArrayList(scheduleStartDate, oldKey.get(1));
+            if (scheduleStartDate != null && oldKey.startDate.isBefore(scheduleStartDate)) {
+                final DateRange newKey = new DateRange(scheduleStartDate, oldKey.endDate);
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());

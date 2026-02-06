@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import io.micrometer.common.util.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.proj4j.ProjCoordinate;
@@ -27,10 +28,6 @@ import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Platform;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import jakarta.annotation.PostConstruct;
@@ -62,7 +59,7 @@ public class GTFSStopsService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
-    public Map<String, Stop> createStops(final Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain,
+    public Map<String, Stop> createStops(final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain,
                                          final List<SimpleTimeTableRow> timeTableRows,
                                          final PlatformData platformData) {
         final List<Stop> stops = new ArrayList<>();
@@ -80,9 +77,9 @@ public class GTFSStopsService {
         });
 
         final Map<String, StationEmbeddable> uniqueStationEmbeddables = new HashMap<>();
-        for (final Map<List<LocalDate>, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
-            for (final List<LocalDate> localDates : trainsSchedules.keySet()) {
-                final Schedule schedule = trainsSchedules.get(localDates);
+        for (final Map<DateRange, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
+            for (final DateRange dateRange : trainsSchedules.keySet()) {
+                final Schedule schedule = trainsSchedules.get(dateRange);
                 for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
                     uniqueStationEmbeddables.putIfAbsent(scheduleRow.station.stationShortCode, scheduleRow.station);
                 }

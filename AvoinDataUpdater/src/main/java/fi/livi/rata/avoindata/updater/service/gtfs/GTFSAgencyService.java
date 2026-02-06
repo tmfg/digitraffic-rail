@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.DateRange;
 import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
@@ -47,16 +48,15 @@ public class GTFSAgencyService {
         phoneNumbers.put("vr", "+35860041900");
     }
 
-    public List<Agency> createAgencies(Map<Long, Map<List<LocalDate>, Schedule>> scheduleIntervalsByTrain) {
-        List<Agency> agencies = new ArrayList<>();
+    public List<Agency> createAgencies(final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain) {
+        final List<Agency> agencies = new ArrayList<>();
 
-        Map<Integer, Operator> operators = new HashMap<>();
-        for (final Map<List<LocalDate>, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
+        final Map<Integer, Operator> operators = new HashMap<>();
+        for (final Map<DateRange, Schedule> trainsSchedules : scheduleIntervalsByTrain.values()) {
             for (final Schedule schedule : trainsSchedules.values()) {
                 operators.putIfAbsent(schedule.operator.operatorUICCode, schedule.operator);
             }
         }
-
 
         for (final Operator operator : operators.values()) {
             final Agency agency = new Agency();
@@ -71,21 +71,21 @@ public class GTFSAgencyService {
         return agencies;
     }
 
-    private String getPhoneNumber(String operatorShortCode) {
-        String phoneNumber = phoneNumbers.get(operatorShortCode);
+    private String getPhoneNumber(final String operatorShortCode) {
+        final String phoneNumber = phoneNumbers.get(operatorShortCode);
         if (phoneNumber == null) {
             return "";
         }
         return phoneNumber;
     }
 
-    private String getName(String operatorShortCode) {
-        String name = names.get(operatorShortCode);
+    private String getName(final String operatorShortCode) {
+        final String name = names.get(operatorShortCode);
         if (name != null) {
             return name;
         }
 
-        fi.livi.rata.avoindata.common.domain.metadata.Operator operator = operatorRepository.findByOperatorShortCode(operatorShortCode);
+        final fi.livi.rata.avoindata.common.domain.metadata.Operator operator = operatorRepository.findByOperatorShortCode(operatorShortCode);
         if (operator != null) {
             return operator.operatorName;
         } else {
@@ -93,8 +93,8 @@ public class GTFSAgencyService {
         }
     }
 
-    private String getUrl(Operator operator) {
-        String url = urls.get(operator.operatorShortCode);
+    private String getUrl(final Operator operator) {
+        final String url = urls.get(operator.operatorShortCode);
         if (url == null) {
             log.warn("Url not found for operator {}", operator.operatorShortCode);
             return "https://google.com";

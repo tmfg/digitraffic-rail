@@ -17,27 +17,28 @@ import java.util.concurrent.ExecutionException;
 
 @Component
 public class ScheduleProviderService {
-    @Autowired
-    private RipaService ripaService;
+    private final RipaService ripaService;
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    public ScheduleProviderService(final RipaService ripaService) {
+        this.ripaService = ripaService;
+    }
 
     public List<Schedule> getAdhocSchedules(final LocalDate date) throws ExecutionException, InterruptedException {
         final String path = String.format("adhoc-schedule-ids?date=%s",  date.toString());
+
         final List<Long> scheduleIds = getScheduleIds(path);
 
-        final List<Schedule> output = getSchedules(scheduleIds);
-
-        return output;
+        return getSchedules(scheduleIds);
     }
 
     public List<Schedule> getRegularSchedules(final LocalDate date) throws ExecutionException, InterruptedException {
         final String path = String.format("regular-schedule-ids?date=%s", date.toString());
+
         final List<Long> scheduleIds = getScheduleIds(path);
 
-        final List<Schedule> output = getSchedules(scheduleIds);
-
-        return output;
+        return getSchedules(scheduleIds);
     }
 
     private List<Long> getScheduleIds(final String path) {
