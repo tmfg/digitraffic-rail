@@ -34,7 +34,7 @@ jobs:
       actions: read
     steps:
       - name: Configure AWS credentials for rail-${{ github.event.inputs.env }}
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-deploy-rail-${{ github.event.inputs.env }}
@@ -89,7 +89,7 @@ jobs:
           desired-count: ${{ github.event.inputs.env == 'prod' && 2 || 1 }}
 
       - name: Configure AWS credentials for SBOM
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-mosquitto-${{ github.event.inputs.env }}
