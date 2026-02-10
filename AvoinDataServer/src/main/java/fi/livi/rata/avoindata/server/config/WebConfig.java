@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.server.config;
 
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -12,17 +14,21 @@ import org.springframework.web.util.UrlPathHelper;
 public class WebConfig implements WebMvcConfigurer {
     public static final String CONTEXT_PATH = "/api/v1/";
 
-    @Autowired
-    private DatabaseInitializationInterceptor databaseInitializionInterceptor;
+    private final DatabaseInitializationInterceptor databaseInitializionInterceptor;
+    private final ExecuteTimeInterceptor executeTimeInterceptor;
+    private final ParameterValidationInterceptor parameterValidationInterceptor;
+    private final ContentTypeInterceptor contentTypeInterceptor;
+    private final OSIVInterceptor osivInterceptor;
 
-    @Autowired
-    private ExecuteTimeInterceptor executeTimeInterceptor;
+    public WebConfig(final DatabaseInitializationInterceptor databaseInitializionInterceptor, final ExecuteTimeInterceptor executeTimeInterceptor, final ParameterValidationInterceptor parameterValidationInterceptor, final ContentTypeInterceptor contentTypeInterceptor, final SessionFactory sessionFactory) {
+        this.databaseInitializionInterceptor = databaseInitializionInterceptor;
+        this.executeTimeInterceptor = executeTimeInterceptor;
+        this.parameterValidationInterceptor = parameterValidationInterceptor;
+        this.contentTypeInterceptor = contentTypeInterceptor;
 
-    @Autowired
-    private ParameterValidationInterceptor parameterValidationInterceptor;
-
-    @Autowired
-    private ContentTypeInterceptor contentTypeInterceptor;
+        this.osivInterceptor = new OSIVInterceptor();
+        this.osivInterceptor.setSessionFactory(sessionFactory);
+    }
 
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
@@ -30,6 +36,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(executeTimeInterceptor);
         registry.addInterceptor(parameterValidationInterceptor);
         registry.addInterceptor(contentTypeInterceptor);
+
+        registry.addWebRequestInterceptor(osivInterceptor);
     }
 
     @Override

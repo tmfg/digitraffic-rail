@@ -47,9 +47,9 @@ public class RoutesetController extends ADataController {
     @RequestMapping(value = "/{departure_date}/{train_number}", method = RequestMethod.GET)
     @Transactional(timeout = 30, readOnly = true)
     public List<Routeset> getRoutesetsByTrainNumber(
-            HttpServletResponse response,
+            final HttpServletResponse response,
             @Parameter(description = "train_number") @PathVariable final String train_number,
-            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date) {
 
         final List<Routeset> routesets = routesetRepository.findByTrainNumberAndDepartureDate(train_number, departure_date);
 
@@ -62,11 +62,11 @@ public class RoutesetController extends ADataController {
     @RequestMapping(path = "station/{station}/{departure_date}", method = RequestMethod.GET)
     @Transactional(timeout = 30, readOnly = true)
     public List<Routeset> getRoutesetsByStationAndDepartureDate(
-            HttpServletResponse response,
+            final HttpServletResponse response,
             @Parameter(description = "station") @PathVariable final String station,
-            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date) {
+            @Parameter(description = "departure_date") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate departure_date) {
 
-        List<Long> ids = routesetRepository.findIdByStationAndDepartureDate(departure_date, station);
+        final List<Long> ids = routesetRepository.findIdByStationAndDepartureDate(departure_date, station);
 
         cacheControl.setCacheParameter(response, ids, -1);
         return findByIds(ids);
@@ -87,7 +87,7 @@ public class RoutesetController extends ADataController {
         return findByIds(ids);
     }
 
-    public List<Routeset> findByIds(List<Long> ids) {
+    public List<Routeset> findByIds(final List<Long> ids) {
         return bes.mapAndSort(s -> routesetRepository.findAllById(s), ids, COMPARATOR);
     }
 }
