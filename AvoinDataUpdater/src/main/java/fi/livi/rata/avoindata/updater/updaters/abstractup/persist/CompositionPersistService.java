@@ -3,8 +3,6 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 import java.time.Instant;
 import java.util.List;
 
-import fi.livi.rata.avoindata.common.dao.stopsector.StopSectorQueueItemRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
