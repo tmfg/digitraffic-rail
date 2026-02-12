@@ -47,6 +47,18 @@ jobs:
         run: |
           GIT_SHA=$(git rev-parse --short HEAD)
           echo "sha_short=$GIT_SHA" >> $GITHUB_OUTPUT
+      - name: Log workflow inputs and environment
+        run: |
+          echo "## Workflow Inputs" >> $GITHUB_STEP_SUMMARY
+          echo "| Name | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| env | ${{ github.event.inputs.env }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ref | ${{ github.event.inputs.ref }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| config-repo-branch | ${{ github.event.inputs.config-repo-branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-server | ${{ github.event.inputs.install-updater }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-updater | ${{ github.event.inputs.install-server }} |" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
       - name: Setup Java
         uses: actions/setup-java@v5
         with:

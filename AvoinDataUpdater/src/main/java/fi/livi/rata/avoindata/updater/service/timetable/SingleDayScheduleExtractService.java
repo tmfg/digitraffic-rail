@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,37 +32,44 @@ import java.util.stream.Collectors;
 
 @Service
 public class SingleDayScheduleExtractService {
-
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private ScheduleToTrainConverter scheduleToTrainConverter;
-
-    @Autowired
-    private TrainPersistService trainPersistService;
-
-    @Autowired
-    private TrainRepository trainRepository;
-
-    @Autowired
-    private ExtractedScheduleRepository extractedScheduleRepository;
-
-    @Autowired
-    private TodaysScheduleService todaysScheduleService;
+    private final ScheduleToTrainConverter scheduleToTrainConverter;
+    private final TrainPersistService trainPersistService;
+    private final TrainRepository trainRepository;
+    private final ExtractedScheduleRepository extractedScheduleRepository;
+    private final TodaysScheduleService todaysScheduleService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Transactional
-    public List<Train> extract(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules, final LocalDate date, final boolean shouldFakeVersions) {
+    private static final Function<Train, TrainId> idFunc = s -> s.id;
+
+    public record ExtractedTrains(List<Train> added, List<Train> updated, List<Train> cancelled) {}
+
+    public SingleDayScheduleExtractService(final ScheduleToTrainConverter scheduleToTrainConverter, final TrainPersistService trainPersistService, final TrainRepository trainRepository, final ExtractedScheduleRepository extractedScheduleRepository, final TodaysScheduleService todaysScheduleService) {
+        this.scheduleToTrainConverter = scheduleToTrainConverter;
+        this.trainPersistService = trainPersistService;
+        this.trainRepository = trainRepository;
+        this.extractedScheduleRepository = extractedScheduleRepository;
+        this.todaysScheduleService = todaysScheduleService;
+    }
+
+    public Pair<Map<Train, Schedule>, Map<TrainId, Train>> extractTrains(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules, final LocalDate date) {
         log.info("Parsing todays schedules for {}", date);
         final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules, regularSchedules);
 
         log.info("Extracting all possible schedules for {}", date);
-        final Function<Train, TrainId> idFunc = s -> s.id;
         final Map<Train, Schedule> newTrains = scheduleToTrainConverter.extractSchedules(todaysSchedules, date);
-        final Map<TrainId, Train> newTrainMap = Maps.uniqueIndex(newTrains.keySet(), idFunc::apply);
 
+        log.info("Parsing schedules trains for {}. Total: {}, Today's Schedules: {}", date,
+                regularSchedules.size() + adhocSchedules.size(), todaysSchedules.size());
+
+        return Pair.of(newTrains, Maps.uniqueIndex(newTrains.keySet(), idFunc::apply));
+    }
+
+    @Transactional
+    public ExtractedTrains extract(final Map<TrainId, Train> newTrainMap, final LocalDate date, final boolean shouldFakeVersions) {
         log.info("Fetching existing trains for {}", date);
         final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc::apply);
 
@@ -77,20 +85,14 @@ public class SingleDayScheduleExtractService {
         log.info("Persisting trains for {}", date);
         persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);
 
-        log.info("Extracted trains for {}. Total: {}, Today's Schedules: {} Added: {}, Updated: {}, Cancelled: {}", date,
-                regularSchedules.size() + adhocSchedules.size(), todaysSchedules.size(), toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
+        log.info("Extracted trains for {}. Added: {}, Updated: {}, Cancelled: {}", date,
+                toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
 
-        final List<Train> allTrains = ListUtils.union(toBeAdded, toBeUpdated);
-
-        log.info("Creating ExtractedSchedules for {}", date);
-        createExtractedSchedules(date, newTrains, allTrains);
-
-        allTrains.addAll(toBeCancelled);
-
-        return allTrains;
+        return new ExtractedTrains(toBeAdded, toBeUpdated, toBeCancelled);
     }
 
-    private void createExtractedSchedules(final LocalDate date, final Map<Train, Schedule> newTrains, final List<Train> allTrains) {
+    @Transactional
+    public void createExtractedSchedules(final LocalDate date, final Map<Train, Schedule> newTrains, final List<Train> allTrains) {
         final List<ExtractedSchedule> extractedSchedules = new ArrayList<>();
         for (final Train train : allTrains) {
             extractedSchedules.add(createExtractedSchedule(date, newTrains.get(train)));
@@ -153,7 +155,6 @@ public class SingleDayScheduleExtractService {
         final List<TimeTableRow> sortedLeftTimeTableRows = sortTimeTableRows(left.timeTableRows);
         final List<TimeTableRow> sortedRightTimeTableRows = sortTimeTableRows(right.timeTableRows);
 
-
         for (int i = 0; i < left.timeTableRows.size(); i++) {
             final TimeTableRow leftTimeTableRow = sortedLeftTimeTableRows.get(i);
             final TimeTableRow rightTimeTableRow = sortedRightTimeTableRows.get(i);
@@ -171,10 +172,6 @@ public class SingleDayScheduleExtractService {
             return true;
         }
 
-        if (!leftTimeTableRow.type.equals(rightTimeTableRow.type)) {
-            return true;
-        }
-
         if (!leftTimeTableRow.scheduledTime.withZoneSameInstant(ZoneId.of("UTC")).equals(
                 rightTimeTableRow.scheduledTime.withZoneSameInstant(ZoneId.of("UTC")))) {
             return true;
@@ -185,6 +182,10 @@ public class SingleDayScheduleExtractService {
         }
 
         if (!Objects.equals(leftTimeTableRow.commercialStop, rightTimeTableRow.commercialStop)) {
+            return true;
+        }
+
+        if (!leftTimeTableRow.type.equals(rightTimeTableRow.type)) {
             return true;
         }
 
@@ -202,11 +203,8 @@ public class SingleDayScheduleExtractService {
         }).collect(Collectors.toList());
     }
 
-
-    private List<Train> persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
+    private void persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
                                       final List<Train> toBeCancelled, final boolean shouldFakeVersions) {
-        final List<Train> changedtrains = new ArrayList<>();
-
         final long fakeVersion = trainPersistService.getMaxVersion() + 1;
         log.info("Using fakeVersion {}", fakeVersion);
 
@@ -216,7 +214,6 @@ public class SingleDayScheduleExtractService {
                     train.version = fakeVersion;
                 }
             }
-            changedtrains.addAll(toBeAdded);
 
             trainPersistService.addEntities(toBeAdded);
         }
@@ -227,35 +224,29 @@ public class SingleDayScheduleExtractService {
                     train.version = fakeVersion;
                 }
             }
-            changedtrains.addAll(toBeUpdated);
 
             trainPersistService.updateEntities(toBeUpdated);
         }
 
         if (!toBeCancelled.isEmpty()) {
-            final List<Train> trainsCancelled = new ArrayList<>();
             for (final Train trainToBeCancelled : toBeCancelled) {
                 trainToBeCancelled.deleted = true;
                 trainToBeCancelled.cancelled = true;
+
                 for (final TimeTableRow timeTableRow : trainToBeCancelled.timeTableRows) {
                     timeTableRow.cancelled = true;
                 }
-                trainsCancelled.add(trainToBeCancelled);
             }
 
             if (shouldFakeVersions) {
-                for (final Train train : trainsCancelled) {
+                for (final Train train : toBeCancelled) {
                     train.version = fakeVersion;
                 }
             }
-            changedtrains.addAll(trainsCancelled);
 
-            trainPersistService.updateEntities(trainsCancelled);
+            trainPersistService.updateEntities(toBeCancelled);
         }
-
-        return changedtrains;
     }
-
 
     private void groupIntoLists(final Map<TrainId, Train> newTrainMap, final Map<TrainId, Train> oldTrainMap, final List<Train> toBeAdded,
                                 final List<Train> toBeUpdated, final List<Train> toBeCancelled) {
@@ -281,10 +272,9 @@ public class SingleDayScheduleExtractService {
         }
 
         for (final TrainId oldTrainId : oldTrainMap.keySet()) {
-            final Train newTrain = newTrainMap.get(oldTrainId);
             final Train oldTrain = oldTrainMap.get(oldTrainId);
 
-            if (newTrain == null && !oldTrain.cancelled) {
+            if(!oldTrain.cancelled && !newTrainMap.containsKey(oldTrainId)) {
                 toBeCancelled.add(oldTrain);
             }
         }

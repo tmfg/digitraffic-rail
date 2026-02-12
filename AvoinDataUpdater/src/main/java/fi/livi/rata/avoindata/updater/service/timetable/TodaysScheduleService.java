@@ -17,14 +17,14 @@ public class TodaysScheduleService {
 
     public List<Schedule> getDaysSchedules(final LocalDate date, final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules) {
-        final List<Schedule> allSchedules = new ArrayList<>();
+        final List<Schedule> allSchedules = new ArrayList<>(regularSchedules.size() + adhocSchedules.size());
 
         allSchedules.addAll(getMostRecentRegularSchedules(date, regularSchedules));
         allSchedules.addAll(getMostRecentAdhocSchedules(date, adhocSchedules));
 
         final List<Schedule> todaysSchedules = Lists.newArrayList(Iterables.filter(allSchedules, s -> s.isAllowedByDates(date)));
 
-        final List<Schedule> output = new ArrayList<>();
+        final List<Schedule> output = new ArrayList<>(todaysSchedules.size());
         final ImmutableListMultimap<Long, Schedule> trainNumberMap = Multimaps.index(todaysSchedules, s -> s.trainNumber);
         for (final Long trainNumber : trainNumberMap.keySet()) {
             final ImmutableList<Schedule> trainsSchedules = trainNumberMap.get(trainNumber);
@@ -36,7 +36,7 @@ public class TodaysScheduleService {
     }
 
     private List<Schedule> getMostRecentRegularSchedules(final LocalDate date, final List<Schedule> regularSchedules) {
-        final List<Schedule> output = new ArrayList<>();
+        final List<Schedule> output = new ArrayList<>(regularSchedules.size());
         final Multimap<String, Schedule> capacityIdMap = Multimaps.index(regularSchedules, s -> s.capacityId);
         for (final String capacityId : capacityIdMap.keySet()) {
             final Collection<Schedule> schedulesByCapacityId = capacityIdMap.get(capacityId);

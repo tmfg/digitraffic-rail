@@ -28,16 +28,16 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 
 @Service
 public class ScheduleToTrainConverter {
-    private Logger log = LoggerFactory.getLogger(ScheduleToTrainConverter.class);
+    private final Logger log = LoggerFactory.getLogger(ScheduleToTrainConverter.class);
 
     @Autowired
     private DateUtils du;
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
-
     public Map<Train, Schedule> extractSchedules(final List<Schedule> schedules, final LocalDate extractedDate) {
-        Map<Train, Schedule> output = new HashMap<>();
+        final Map<Train, Schedule> output = new HashMap<>();
+
         for (final Schedule schedule : schedules) {
             log.trace("Trying to extract {} for date {}", schedule, extractedDate);
             if (schedule.isRunOnDay(extractedDate)) {
@@ -49,7 +49,7 @@ public class ScheduleToTrainConverter {
     }
 
     private Train createTrain(final Schedule schedule, final LocalDate extractedDate) {
-        Train train = new Train(schedule.trainNumber, extractedDate, schedule.operator.operatorUICCode, schedule.operator.operatorShortCode,
+        final Train train = new Train(schedule.trainNumber, extractedDate, schedule.operator.operatorUICCode, schedule.operator.operatorShortCode,
                 schedule.trainCategory.id, schedule.trainType.id, schedule.commuterLineId, false,
                 isScheduleCancelled(schedule, extractedDate), schedule.version, schedule.timetableType, schedule.acceptanceDate);
 
@@ -91,11 +91,11 @@ public class ScheduleToTrainConverter {
         }).collect(Collectors.toList());
     }
 
-    private boolean isScheduleCancelled(final Schedule schedule, LocalDate extractDate) {
+    private boolean isScheduleCancelled(final Schedule schedule, final LocalDate extractDate) {
         return schedule.changeType.equals("P") || isLimitedByScheduleExceptions(schedule, extractDate);
     }
 
-    private boolean isLimitedByScheduleExceptions(Schedule schedule, final LocalDate extractedDate) {
+    private boolean isLimitedByScheduleExceptions(final Schedule schedule, final LocalDate extractedDate) {
         for (final ScheduleException exception : schedule.scheduleExceptions) {
             if (exception.date.equals(extractedDate) && !exception.isRun) {
                 return true;
@@ -107,24 +107,23 @@ public class ScheduleToTrainConverter {
 
     private TimeTableRow createTimeTableRow(final Schedule schedule, final LocalDate extractedDate, final ScheduleRow scheduleRow,
                                             final ScheduleRowPart scheduleRowPart, final TimeTableRow.TimeTableRowType timeTableRowType) {
-        boolean isCancelled = isScheduleRowPartCancelled(extractedDate, schedule, scheduleRowPart,
+        final boolean isCancelled = isScheduleRowPartCancelled(extractedDate, schedule, scheduleRowPart,
                 ScheduleCancellation.ScheduleCancellationType.PARTIALLY);
 
         final ScheduleRowPart firstDeparture = schedule.scheduleRows.get(0).departure;
-        ZonedDateTime departureTime = ZonedDateTime.of(extractedDate, LocalTime.of(0, 0).plus(firstDeparture.timestamp),
+        final ZonedDateTime departureTime = ZonedDateTime.of(extractedDate, LocalTime.of(0, 0).plus(firstDeparture.timestamp),
                 ZoneId.of("Europe/Helsinki"));
-        Duration fromStart = scheduleRowPart.timestamp.minus(firstDeparture.timestamp);
+        final Duration fromStart = scheduleRowPart.timestamp.minus(firstDeparture.timestamp);
 
-        ZonedDateTime timestamp = departureTime.plus(fromStart);
+        final ZonedDateTime timestamp = departureTime.plus(fromStart);
 
-        TimeTableRow timeTableRow = new TimeTableRow(scheduleRow.station.stationShortCode, scheduleRow.station.stationUICCode,
+        final TimeTableRow timeTableRow = new TimeTableRow(scheduleRow.station.stationShortCode, scheduleRow.station.stationUICCode,
                 scheduleRow.station.countryCode, timeTableRowType, null, isCancelled, timestamp, null, null, null, scheduleRowPart.id,
                 schedule.trainNumber, extractedDate, scheduleRowPart.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL, 0L,
                 new HashSet<>(), null, null);
 
         return timeTableRow;
     }
-
 
     private boolean isScheduleRowPartCancelled(final LocalDate extractedDate, final Schedule schedule,
                                                final ScheduleRowPart scheduleRowPart, final ScheduleCancellation.ScheduleCancellationType cancellationType) {

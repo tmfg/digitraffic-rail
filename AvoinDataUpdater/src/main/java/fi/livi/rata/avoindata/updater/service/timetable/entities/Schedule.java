@@ -51,7 +51,6 @@ public class Schedule {
             return false;
         }
 
-
         return isAllowedByDates(extractedDate);
     }
 

@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
@@ -81,67 +82,74 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @Override
     protected List<Train> doUpdate() {
-        final var updatedTrains = trainLockExecutor.executeInLock(this.getPrefix(), this::doUpdateWithVersionHeader);
+        final StopWatch time = StopWatch.createStarted();
 
-        trainPublishingService.publish(updatedTrains);
+        try {
+            final long queryVersion = currentVersion.get();
+            final var response = fetchData(queryVersion);
+            final List<Train> trains = Arrays.asList(response.body());
+            final long middle = time.getDuration().toMillis();
 
-        return updatedTrains;
+            final var updatedTrains = trainLockExecutor.executeInLock(this.getPrefix(), () -> {
+                final Long dbMaxVersion = trainPersistService.getMaxVersion();
+
+                modifyEntitiesBeforePersist(trains);
+
+                final var updatedEntities = persistTrains(trains, dbMaxVersion, response.version(), queryVersion);
+
+                // log both dbMaxVersion and the version from the fira-data-version header for any debugging purposes
+                logUpdateWithDbVersion(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
+                        currentVersion.get(), dbMaxVersion, getPrefix(), middle);
+
+                return updatedEntities;
+            });
+
+           trainPublishingService.publish(updatedTrains);
+
+           return updatedTrains;
+        } catch (final Throwable t) {
+            log.error("method=doUpdate failed {} tookMs={}", t.getMessage(), time.getDuration().toMillis(), t);
+            throw new RuntimeException(t);
+        }
+    }
+
+    private RipaService.ResponseWithVersion<Train[]> fetchData(final long queryVersion) {
+        log.debug("method=fetchData Starting data update");
+
+        final String targetPath = String.format("%s?version=%d", getPrefix(), queryVersion);
+
+        log.info("method=fetchData Fetching prefix={} from api={}", getPrefix(), targetPath);
+
+        return ripaService.getFromRipaRestTemplateWithVersion(targetPath, Train[].class);
     }
 
     /**
      * Custom update logic that uses the fira-data-version response header for version tracking.
      */
-    private List<Train> doUpdateWithVersionHeader() {
-        final StopWatch time = StopWatch.createStarted();
-        try {
-            log.debug("method=doUpdateWithVersionHeader Starting data update");
+    private List<Train> persistTrains(final List<Train> trains, final Long dbMaxVersion, final Long responseVersion, final long queryVersion) {
+        final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
+        final long previousVersion = currentVersion.get();
 
-            final long queryVersion = currentVersion.get();
-            final String targetPath = String.format("%s?version=%d", getPrefix(), queryVersion);
-
-            log.info("method=doUpdateWithVersionHeader Fetching prefix={} from api={}", getPrefix(), targetPath);
-
-            final RipaService.ResponseWithVersion<Train[]> response =
-                ripaService.getFromRipaRestTemplateWithVersion(targetPath, Train[].class);
-
-            final long middle = time.getDuration().toMillis();
-
-            List<Train> objects = Arrays.asList(response.body());
-            objects = modifyEntitiesBeforePersist(objects);
-
-            final List<Train> updatedEntities = trainPersistService.updateEntities(objects);
-
-            final Long dbMaxVersion = trainPersistService.getMaxVersion();
-            final long previousVersion = currentVersion.get();
-
-            // Update currentVersion from the fira-data-version header if present
-            if (response.version() != null) {
-                currentVersion.set(response.version());
-                log.info("method=doUpdateWithVersionHeader Updated currentVersion from {} to {} (from fira-data-version header)",
-                    previousVersion, response.version());
-            } else {
-                currentVersion.set(dbMaxVersion);
-                log.error("method=doUpdateWithVersionHeader fira-data-version header not present in response, updating with max value from db from {} to {}",
-                        previousVersion, dbMaxVersion);
-            }
-
-            // log both dbMaxVersion and the version from the fira-data-version header for any debugging purposes
-            logUpdateWithDbVersion(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
-                currentVersion.get(), dbMaxVersion, getPrefix(), middle);
-
-            lastUpdateService.update(getPrefix());
-
-            return updatedEntities;
-        } catch (final Throwable t) {
-            log.error("method=doUpdateWithVersionHeader update failed {} tookMs={}", t.getMessage(), time.getDuration().toMillis(), t);
-            throw new RuntimeException(t);
+        // Update currentVersion from the fira-data-version header if present
+        if (responseVersion != null) {
+            currentVersion.set(responseVersion);
+            log.info("method=persistTrains Updated currentVersion from {} to {} (from fira-data-version header)",
+                previousVersion, responseVersion);
+        } else {
+            currentVersion.set(dbMaxVersion);
+            log.error("method=persistTrains fira-data-version header not present in response, updating with max value from db from {} to {}",
+                    previousVersion, dbMaxVersion);
         }
+
+        lastUpdateService.update(getPrefix());
+
+        return updatedEntities;
     }
 
     private void logUpdateWithDbVersion(final long latestVersion, final long tookMs, final long count, final long newVersion, final long dbMaxVersion, final String prefix,
                              final long middleMs) {
 
-        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
+        log.info("method=logUpdateWithDbVersion Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
             count, prefix, tookMs, middleMs, latestVersion, newVersion, (newVersion - latestVersion), dbMaxVersion);
     }
 

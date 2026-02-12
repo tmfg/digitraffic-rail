@@ -3,10 +3,14 @@ package fi.livi.rata.avoindata.updater.service.timetable;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,8 +32,6 @@ public class ScheduleService {
     private final ScheduleProviderService scheduleProviderService;
     private final LastUpdateService lastUpdateService;
 
-    private final StopSectorService stopSectorService;
-
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
@@ -39,12 +41,11 @@ public class ScheduleService {
     @Value("${updater.trains.numberOfFutureDaysToInitialize}")
     protected Integer numberOfFutureDaysToInitialize;
 
-    public ScheduleService(final TrainLockExecutor trainLockExecutor, final SingleDayScheduleExtractService singleDayScheduleExtractService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService, final StopSectorService stopSectorService) {
+    public ScheduleService(final TrainLockExecutor trainLockExecutor, final SingleDayScheduleExtractService singleDayScheduleExtractService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService) {
         this.trainLockExecutor = trainLockExecutor;
         this.singleDayScheduleExtractService = singleDayScheduleExtractService;
         this.scheduleProviderService = scheduleProviderService;
         this.lastUpdateService = lastUpdateService;
-        this.stopSectorService = stopSectorService;
     }
 
     @Scheduled(cron = "${updater.schedule-extracting.cron}", zone = "Europe/Helsinki")
@@ -60,7 +61,9 @@ public class ScheduleService {
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
 
-            log.info("Schedules fetched adHoc {} regular {}", adhocSchedules.size(), regularSchedules.size());
+            log.info("Schedules fetched from {} to {}, adHoc {} regular {}",
+                    start, end,
+                    adhocSchedules.size(), regularSchedules.size());
 
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
                 final StopWatch stopWatchForDate = StopWatch.createStarted();
@@ -92,10 +95,18 @@ public class ScheduleService {
         }
     }
 
-    private void extractForDate(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
-                                final LocalDate date) throws InterruptedException {
+    private void extractForDate(final List<Schedule> adhocSchedules,
+                                final List<Schedule> regularSchedules,
+                                final LocalDate date) {
 
-        final List<Train> extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
-                () -> singleDayScheduleExtractService.extract(adhocSchedules, regularSchedules, date, true));
+        final Pair<Map<Train, Schedule>, Map<TrainId, Train>> trains = singleDayScheduleExtractService.extractTrains(adhocSchedules, regularSchedules, date);
+
+        final SingleDayScheduleExtractService.ExtractedTrains extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
+                () -> singleDayScheduleExtractService.extract(trains.getRight(), date, true));
+
+        log.info("Creating ExtractedSchedules for {}", date);
+
+        // extract schedules from new and updated trains
+        singleDayScheduleExtractService.createExtractedSchedules(date, trains.getLeft(), ListUtils.union(extractedTrains.added(), extractedTrains.updated()));
     }
 }
