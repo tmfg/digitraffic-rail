@@ -70,7 +70,7 @@ public class ScheduleService {
                 final ZonedDateTime nowInHelsinki = DateProvider.nowInHelsinki();
                 log.info("Extracting for date {}", date);
 
-                if (stopWatch.getTime(TimeUnit.HOURS) < 3) { // Extraction should never cross dates: https://solitaoy.slack.com/archives/C033BR7RH54/p1661246597190849
+                if (stopWatch.getTime(TimeUnit.HOURS) < 3) { // Extraction should never cross dates
                     extractForDate(adhocSchedules, regularSchedules, date);
                 } else {
                     log.error("Stopping schedule extraction due to taking too long. Start: {}, Now: {}", startDate, nowInHelsinki);
@@ -80,7 +80,7 @@ public class ScheduleService {
                 // sleep, so we don't block the train locker executor totally
                 try {
                     // if it takes longer to extract, sleep a bit longer too
-                    final var sleepTime = 200 + Math.max(10000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
+                    final var sleepTime = 200 + Math.max(12000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
                     Thread.sleep(sleepTime);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
