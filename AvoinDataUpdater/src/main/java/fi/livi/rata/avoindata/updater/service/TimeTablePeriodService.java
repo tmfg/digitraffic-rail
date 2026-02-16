@@ -1,19 +1,25 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import java.util.Arrays;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import fi.livi.rata.avoindata.common.dao.metadata.TimeTablePeriodRepository;
+import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.rata.avoindata.common.dao.metadata.TimeTablePeriodRepository;
-import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
+import java.time.LocalDate;
+import java.util.Arrays;
 
 @Service
 public class TimeTablePeriodService {
-    @Autowired
-    private TimeTablePeriodRepository timeTablePeriodRepository;
+    private final TimeTablePeriodRepository timeTablePeriodRepository;
 
+    public TimeTablePeriodService(final TimeTablePeriodRepository timeTablePeriodRepository) {
+        this.timeTablePeriodRepository = timeTablePeriodRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public LocalDate getLastAllocatedDate() {
+        return timeTablePeriodRepository.getLastAllocatedDate();
+    }
 
     @Transactional
     public void update(final TimeTablePeriod[] entities) {

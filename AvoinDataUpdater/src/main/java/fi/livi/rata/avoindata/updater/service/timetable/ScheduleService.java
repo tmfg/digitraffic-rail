@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.updater.service.TimeTablePeriodService;
 import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -28,6 +29,7 @@ public class ScheduleService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final TrainLockExecutor trainLockExecutor;
+    private final TimeTablePeriodService timeTablePeriodService;
     private final SingleDayScheduleExtractService singleDayScheduleExtractService;
     private final ScheduleProviderService scheduleProviderService;
     private final LastUpdateService lastUpdateService;
@@ -35,14 +37,12 @@ public class ScheduleService {
     @Value("${updater.liikeinterface-url}")
     protected String liikeInterfaceUrl;
 
-    @Value("${updater.schedule-extracting.days-to-extract:365}")
-    protected Integer numberOfDaysToExtract;
-
     @Value("${updater.trains.numberOfFutureDaysToInitialize}")
     protected Integer numberOfFutureDaysToInitialize;
 
-    public ScheduleService(final TrainLockExecutor trainLockExecutor, final SingleDayScheduleExtractService singleDayScheduleExtractService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService) {
+    public ScheduleService(final TrainLockExecutor trainLockExecutor, final TimeTablePeriodService timeTablePeriodService, final SingleDayScheduleExtractService singleDayScheduleExtractService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService) {
         this.trainLockExecutor = trainLockExecutor;
+        this.timeTablePeriodService = timeTablePeriodService;
         this.singleDayScheduleExtractService = singleDayScheduleExtractService;
         this.scheduleProviderService = scheduleProviderService;
         this.lastUpdateService = lastUpdateService;
@@ -56,7 +56,7 @@ public class ScheduleService {
 
         try {
             final LocalDate start = DateProvider.dateInHelsinki().plusDays(numberOfFutureDaysToInitialize + 1);
-            final LocalDate end = start.plusDays(numberOfDaysToExtract);
+            final LocalDate end = timeTablePeriodService.getLastAllocatedDate();
 
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);

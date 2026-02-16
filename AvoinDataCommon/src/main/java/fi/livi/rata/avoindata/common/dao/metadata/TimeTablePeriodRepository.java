@@ -5,6 +5,7 @@ import fi.livi.rata.avoindata.common.domain.timetableperiod.TimeTablePeriod;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Repository
@@ -12,4 +13,6 @@ public interface TimeTablePeriodRepository extends CustomGeneralRepository<TimeT
     @Query("select ttp from TimeTablePeriod  ttp inner join fetch ttp.changeDates cd order by ttp.effectiveFrom desc,cd.effectiveFrom desc")
     Set<TimeTablePeriod> getTimeTablePeriods();
 
+    @Query(value = "select max(effective_to) from time_table_period where capacity_allocation_confirm_date < current_date", nativeQuery = true)
+    LocalDate getLastAllocatedDate();
 }

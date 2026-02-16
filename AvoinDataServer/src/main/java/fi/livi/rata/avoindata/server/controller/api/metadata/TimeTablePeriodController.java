@@ -5,6 +5,7 @@ import java.util.Collection;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,12 +16,16 @@ import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 public class TimeTablePeriodController extends AMetadataController {
-    @Autowired
-    private TimeTablePeriodRepository timeTablePeriodRepository;
+    private final TimeTablePeriodRepository timeTablePeriodRepository;
+
+    public TimeTablePeriodController(final TimeTablePeriodRepository timeTablePeriodRepository) {
+        this.timeTablePeriodRepository = timeTablePeriodRepository;
+    }
 
     @Operation(summary = "Returns list of time table periods")
     @RequestMapping(value = "time-table-periods", method = RequestMethod.GET)
-    public Collection<TimeTablePeriod> getTimeTablePeriods(HttpServletResponse response) {
+    @Transactional(readOnly = true)
+    public Collection<TimeTablePeriod> getTimeTablePeriods(final HttpServletResponse response) {
         final Collection<TimeTablePeriod> output = timeTablePeriodRepository.getTimeTablePeriods();
         setCache(response, output);
         return output;
