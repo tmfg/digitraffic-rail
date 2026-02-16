@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
+import fi.livi.rata.avoindata.server.controller.api.history.HistoryDto;
+import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,15 +37,17 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "compositions")
 public class CompositionController extends ADataController {
-    public static final int MAX_ANNOUNCED_COPOSITIONS = 1000;
-    @Autowired
-    private CompositionRepository compositionRepository;
+    public static final int MAX_ANNOUNCED_COMPOSITIONS = 1000;
 
-    @Autowired
-    private FindByTrainIdService findByTrainIdService;
+    private final CompositionRepository compositionRepository;
+    private final FindByTrainIdService findByTrainIdService;
+    private final FindCompositionsByVersionService compositionService;
 
-    @Autowired
-    private FindCompositionsByVersionService compositionService;
+    public CompositionController(final CompositionRepository compositionRepository, final FindByTrainIdService findByTrainIdService, final FindCompositionsByVersionService compositionService) {
+        this.compositionRepository = compositionRepository;
+        this.findByTrainIdService = findByTrainIdService;
+        this.compositionService = compositionService;
+    }
 
     @Operation(summary = "Returns all compositions that are newer than {version}")
     @RequestMapping(method = RequestMethod.GET, path = "")
@@ -53,7 +57,7 @@ public class CompositionController extends ADataController {
         if (version == null) {
             version = compositionRepository.getMaxVersion() - 1;
         }
-        final List<Composition> compositions = compositionService.findByVersionGreaterThan(version, MAX_ANNOUNCED_COPOSITIONS);
+        final List<Composition> compositions = compositionService.findByVersionGreaterThan(version, MAX_ANNOUNCED_COMPOSITIONS);
         if (!compositions.isEmpty()) {
             CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions, version);
         }
@@ -87,15 +91,27 @@ public class CompositionController extends ADataController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             final LocalDate departure_date,
             @PathVariable("train_number")
-            final Long train_number, final HttpServletResponse response) {
-        final List<Composition> compositions = findByTrainIdService.findCompositions(Lists.newArrayList(new TrainId(train_number, departure_date)));
+            final Long trainNumber, final HttpServletResponse response) {
+        final List<Composition> compositions = findByTrainIdService.findCompositions(Lists.newArrayList(new TrainId(trainNumber, departure_date)));
 
         if (compositions == null || compositions.isEmpty()) {
-            throw new CompositionNotFoundException(train_number, departure_date);
+            throw new CompositionNotFoundException(trainNumber, departure_date);
         }
 
         CacheConfig.COMPOSITION_CACHECONTROL.setCacheParameter(response, compositions);
 
         return compositions.getFirst();
+    }
+
+    /**
+     * This is a fake method that does not actually implement this call.  The implementation
+     * is in train-history-backend and faking the swagger is the easiest path.
+     */
+    @Operation(summary = "Returns all composition versions for given train. History is available for 14 days.")
+    @RequestMapping(method = RequestMethod.GET, path = "/history/{departure_date}/{train_number}")
+    public List<HistoryDto> getCompositionHistory(
+            @Parameter(description = "Departure date") @PathVariable("departure_date") final LocalDate departureDate,
+            @Parameter(description = "Train number") @PathVariable("train_number") final int trainNumber) {
+        throw new NotImplementedException();
     }
 }

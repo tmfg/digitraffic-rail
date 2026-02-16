@@ -8,6 +8,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.server.controller.api.history.HistoryDto;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,19 +50,21 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController extends ADataController {
     public static int MAX_ANNOUNCED_TRAINS = 2500;
-    @Autowired
-    private TrainRepository trainRepository;
-    @Autowired
-    private AllTrainsRepository allTrainsRepository;
-    @Autowired
-    private BatchExecutionService bes;
-    @Autowired
-    private FindByTrainIdService findByTrainIdService;
 
-    private Logger log = LoggerFactory.getLogger(TrainController.class);
+    private final TrainRepository trainRepository;
+    private final AllTrainsRepository allTrainsRepository;
+    private final BatchExecutionService bes;
+    private final FindByTrainIdService findByTrainIdService;
 
-    private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
-    private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
+    private final CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
+    private final CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
+
+    public TrainController(final TrainRepository trainRepository, final AllTrainsRepository allTrainsRepository, final BatchExecutionService bes, final FindByTrainIdService findByTrainIdService) {
+        this.trainRepository = trainRepository;
+        this.allTrainsRepository = allTrainsRepository;
+        this.bes = bes;
+        this.findByTrainIdService = findByTrainIdService;
+    }
 
     @Operation(summary = "Returns trains that are newer than {version}",
                ignoreJsonView = true)
@@ -181,6 +186,18 @@ public class TrainController extends ADataController {
         CacheControl.addHistoryCacheParametersForDailyResult(departureDate, response);
 
         return trainsResponse;
+    }
+
+    /**
+     * This is a fake method that does not actually implement this call.  The implementation
+     * is in train-history-backend and faking the swagger is the easiest path.
+     */
+    @Operation(summary = "Returns all train versions for given train.  History is available for 14 days.")
+    @RequestMapping(method = RequestMethod.GET, path = "history/{departure_date}/{train_number}")
+    public List<HistoryDto> getTrainHistory(
+            @Parameter(description = "Departure date") @PathVariable("departure_date") final LocalDate departureDate,
+            @Parameter(description = "Train number") @PathVariable("train_number") final int trainNumber) {
+        throw new NotImplementedException();
     }
 
     private List<Train> getTrainWithoutDepartureDate(final long trainNumber,

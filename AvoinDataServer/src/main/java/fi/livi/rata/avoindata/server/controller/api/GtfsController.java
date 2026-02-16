@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 
-@Tag(name = "trains", description = "Returns trains as gtfs")
+@Tag(name = "gtfs", description = "Returns trains as gtfs")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
