@@ -1,9 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.initializers;
 
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
@@ -98,7 +96,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
                 final var updatedEntities = persistTrains(trains, dbMaxVersion, response.version(), queryVersion);
 
                 // log both dbMaxVersion and the version from the fira-data-version header for any debugging purposes
-                logUpdateWithDbVersion(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
+                logUpdate(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
                         currentVersion.get(), dbMaxVersion, getPrefix(), middle);
 
                 return updatedEntities;
@@ -146,10 +144,9 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         return updatedEntities;
     }
 
-    private void logUpdateWithDbVersion(final long latestVersion, final long tookMs, final long count, final long newVersion, final long dbMaxVersion, final String prefix,
-                             final long middleMs) {
-
-        log.info("method=logUpdateWithDbVersion Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
+    private void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion, final long dbMaxVersion, final String prefix,
+                           final long middleMs) {
+        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
             count, prefix, tookMs, middleMs, latestVersion, newVersion, (newVersion - latestVersion), dbMaxVersion);
     }
 
