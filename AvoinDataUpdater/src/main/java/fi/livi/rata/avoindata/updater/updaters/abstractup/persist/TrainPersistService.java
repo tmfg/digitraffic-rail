@@ -45,13 +45,14 @@ public class TrainPersistService extends AbstractPersistService<Train> {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    public TrainPersistService(final TrainRepository trainRepository, final TimeTableRowRepository timeTableRowRepository, final CauseRepository causeRepository, final TrainReadyRepository trainReadyRepository, final StopSectorService serviceStopSector, final BatchExecutionService bes, final FindByTrainIdService findByTrainIdService) {
+    public TrainPersistService(final TrainRepository trainRepository, final TimeTableRowRepository timeTableRowRepository, final CauseRepository causeRepository, final TrainReadyRepository trainReadyRepository, final StopSectorService serviceStopSector, final BatchExecutionService bes, final FindByTrainIdService findByTrainIdService, final StopSectorService stopSectorService) {
         this.trainRepository = trainRepository;
         this.timeTableRowRepository = timeTableRowRepository;
         this.causeRepository = causeRepository;
         this.trainReadyRepository = trainReadyRepository;
         this.bes = bes;
         this.findByTrainIdService = findByTrainIdService;
+        this.stopSectorService = stopSectorService;
     }
 
     @Override
