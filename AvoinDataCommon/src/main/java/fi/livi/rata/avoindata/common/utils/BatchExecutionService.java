@@ -45,6 +45,8 @@ public class BatchExecutionService {
                 entities.addAll(streamFuture.get());
             } catch (final Exception e) {
                 log.error("Error fetching entities", e);
+
+                throw new RuntimeException("Fetching failed");
             }
         }
 

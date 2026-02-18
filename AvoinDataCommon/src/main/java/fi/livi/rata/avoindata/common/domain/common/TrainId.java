@@ -13,7 +13,7 @@ import jakarta.persistence.Column;
 import javax.annotation.Nonnull;
 
 @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-public class TrainId implements Serializable, Comparable {
+public class TrainId implements Serializable, Comparable<TrainId> {
     @Nonnull
     @Column
     @Schema(description = "Identifies the train inside a single departure date", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -65,12 +65,8 @@ public class TrainId implements Serializable, Comparable {
     }
 
     @Override
-    public int compareTo(final Object o) {
-        if (!(o instanceof final TrainId another)) {
-            throw new IllegalStateException("Can only compare against another TrainId");
-        }
-
-        final Comparator<TrainId> comparing = comparing(s -> s.departureDate);
-        return comparing.thenComparing(s -> s.trainNumber).compare(this, another);
+    public int compareTo(final TrainId o) {
+        return comparing((TrainId t) -> t.departureDate)
+                .thenComparing(t -> t.trainNumber).compare(this, o);
     }
 }

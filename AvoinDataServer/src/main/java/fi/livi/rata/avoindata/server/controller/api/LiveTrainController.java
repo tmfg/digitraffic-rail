@@ -1,23 +1,7 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import java.sql.Date;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -40,30 +24,39 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name = "live-trains",
      description = "Returns trains that have been recently active")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "live-trains")
 public class LiveTrainController extends ADataController {
-    @Autowired
-    private TrainRepository trainRepository;
-
-    @Autowired
-    private BatchExecutionService bes;
-
-    @Autowired
-    private FindByTrainIdService findByTrainIdService;
-
-    @Autowired
-    private TrainCategoryRepository trainCategoryRepository;
+    private final TrainRepository trainRepository;
+    private final BatchExecutionService bes;
+    private final FindByTrainIdService findByTrainIdService;
+    private final TrainCategoryRepository trainCategoryRepository;
 
     @Value("${avoindataserver.livetrains.maxTrainRerieveRequest:1000}")
     private int maxTrainRetrieveRequest;
 
-    private CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
-    private CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
-    private CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
+    private final CacheControl forAllLiveTrains = CacheConfig.LIVE_TRAIN_ALL_TRAINS_CACHECONTROL;
+    private final CacheControl forStationLiveTrains = CacheConfig.LIVE_TRAIN_STATION_CACHECONTROL;
+    private final CacheControl forSingleLiveTrains = CacheConfig.LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL;
+
+    public LiveTrainController(final TrainRepository trainRepository, final BatchExecutionService bes, final FindByTrainIdService findByTrainIdService, final TrainCategoryRepository trainCategoryRepository) {
+        this.trainRepository = trainRepository;
+        this.bes = bes;
+        this.findByTrainIdService = findByTrainIdService;
+        this.trainCategoryRepository = trainCategoryRepository;
+    }
 
     @Operation(summary = "Returns active trains that are newer than {version}",
                ignoreJsonView = true)
@@ -181,7 +174,7 @@ public class LiveTrainController extends ADataController {
         CacheControl.setCacheMaxAgeSeconds(response, forStationLiveTrains.WITHOUT_CHANGENUMBER_RESULT);
 
         if (!trainsToRetrieve.isEmpty()) {
-            return bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainsToRetrieve, Train::compareTo);
+            return bes.mapAndSort(findByTrainIdService::findTrains, trainsToRetrieve, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
@@ -206,7 +199,7 @@ public class LiveTrainController extends ADataController {
 
         if (!liveTrains.isEmpty()) {
             final List<TrainId> trainIds = Lists.transform(liveTrains, s -> s.id);
-            return bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
+            return bes.mapAndSort(findByTrainIdService::findTrains, trainIds, Train::compareTo);
         } else {
             return Lists.newArrayList();
         }
@@ -228,10 +221,10 @@ public class LiveTrainController extends ADataController {
     }
 
     private List<TrainId> extractNewerTrainIds(final long version, final List<Object[]> liveTrains) {
-        return liveTrains.stream().filter(train -> ((Long) train[3]).longValue() > version).map(tuple -> {
-            final LocalDate departureDate = LocalDate.from(((Date) tuple[1]).toLocalDate());
+        return liveTrains.stream().filter(train -> (Long) train[3] > version).map(tuple -> {
+            final LocalDate departureDate = ((Date) tuple[1]).toLocalDate();
             final Long trainNumber = (Long) tuple[2];
-            return new TrainId(trainNumber.longValue(), departureDate);
+            return new TrainId(trainNumber, departureDate);
         }).collect(Collectors.toList());
     }
 

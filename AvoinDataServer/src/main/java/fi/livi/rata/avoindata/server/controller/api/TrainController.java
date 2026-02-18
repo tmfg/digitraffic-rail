@@ -3,17 +3,14 @@ package fi.livi.rata.avoindata.server.controller.api;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import fi.livi.rata.avoindata.server.controller.api.history.HistoryDto;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -86,7 +83,7 @@ public class TrainController extends ADataController {
         final List<TrainId> trainIds = createTrainIdsFromRawIds(results);
 
         final List<Train> trains =
-                trainIds.isEmpty() ? List.of() : bes.mapAndSort(s -> findByTrainIdService.findAllTrainsByIds(s), trainIds, Train::compareTo);
+                trainIds.isEmpty() ? Collections.emptyList() : bes.mapAndSort(findByTrainIdService::findAllTrainsByIds, trainIds, Train::compareTo);
 
         forAllLiveTrains.setCacheParameter(response, trains, version);
 
@@ -140,7 +137,7 @@ public class TrainController extends ADataController {
         } else {
             final Train train = trainRepository.findByDepartureDateAndTrainNumber(departure_date, train_number, include_deleted);
             if (train != null) {
-                trains = Arrays.asList(train);
+                trains = List.of(train);
             }
         }
 
@@ -175,9 +172,9 @@ public class TrainController extends ADataController {
         final List<Train> trainsResponse;
         if (!trainIds.isEmpty()) {
             if (includeDeleted) {
-                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrainsIncludeDeleted(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(findByTrainIdService::findTrainsIncludeDeleted, trainIds, Train::compareTo);
             } else {
-                trainsResponse = bes.mapAndSort(s -> findByTrainIdService.findTrains(s), trainIds, Train::compareTo);
+                trainsResponse = bes.mapAndSort(findByTrainIdService::findTrains, trainIds, Train::compareTo);
             }
         } else {
             trainsResponse = Lists.newArrayList();
@@ -211,14 +208,14 @@ public class TrainController extends ADataController {
                    findByTrainIdService.findTrains(trainsToRetrieve);
         }
 
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     private List<TrainId> extractNewerTrainIds(final long version, final List<Object[]> liveTrains) {
-        return liveTrains.stream().filter(train -> ((Long) train[3]).longValue() > version).map(tuple -> {
+        return liveTrains.stream().filter(train -> (Long) train[3] > version).map(tuple -> {
             final LocalDate departureDate = LocalDate.from(((Date) tuple[1]).toLocalDate());
             final Long trainNumber = (Long) tuple[2];
-            return new TrainId(trainNumber.longValue(), departureDate);
+            return new TrainId(trainNumber, departureDate);
         }).collect(Collectors.toList());
     }
 }
