@@ -49,6 +49,11 @@ public class TrainFactory {
 
     @Transactional
     public Train createBaseTrain(final TrainId id) {
+        return createBaseTrain(id, 1L);
+    }
+
+    @Transactional
+    public Train createBaseTrain(final TrainId id, final Long version) {
         final int operatorUICCode = 1;
         final String operatorShortCode = "test";
         final long trainCategoryId = 1;
@@ -56,7 +61,6 @@ public class TrainFactory {
         final String commuterLineID = "Z";
         final boolean runningCurrently = true;
         final boolean cancelled = false;
-        final Long version = 1L;
 
         final LocalDate departureDate = id.departureDate;
 

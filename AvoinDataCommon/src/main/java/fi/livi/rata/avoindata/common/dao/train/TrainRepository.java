@@ -154,8 +154,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
                                                final TimeTableRow.TimeTableRowType arrival, final ZonedDateTime scheduledStart, final ZonedDateTime scheduledEnd,
                                                final LocalDate departureDateStart, final LocalDate departureDateEnd, final Boolean includeNonstopping);
 
-    @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and (?3 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
-    Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Boolean include_deleted);
+    @Query(BASE_TRAIN_SELECT + " where train.id.departureDate = ?1 and train.id.trainNumber = ?2 and train.version > ?3 and (?4 = true or " + IS_NOT_DELETED + ") " + BASE_TRAIN_ORDER)
+    Train findByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber, final Long version, final Boolean include_deleted);
 
     @Query("select distinct train from Train train " +
     " inner join fetch train.timeTableRows timeTableRow " +

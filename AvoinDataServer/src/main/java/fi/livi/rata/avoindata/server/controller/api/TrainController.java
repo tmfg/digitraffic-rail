@@ -135,7 +135,7 @@ public class TrainController extends ADataController {
         if (departure_date == null) {
             trains = getTrainWithoutDepartureDate(train_number, version, include_deleted);
         } else {
-            final Train train = trainRepository.findByDepartureDateAndTrainNumber(departure_date, train_number, include_deleted);
+            final Train train = trainRepository.findByDepartureDateAndTrainNumber(departure_date, train_number, version, include_deleted);
             if (train != null) {
                 trains = List.of(train);
             }
