@@ -28,7 +28,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrip;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.common.utils.DateUtils;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
@@ -141,9 +140,9 @@ public class GTFSTripService {
             }
 
             final LocalDate cancellationStartDate = dateRange.isInclusivelyBetween(scheduleCancellation.startDate)
-                    ? scheduleCancellation.startDate : dateRange.startDate;
+                    ? scheduleCancellation.startDate : dateRange.startDate();
             final LocalDate cancellationEndDate = dateRange.isInclusivelyBetween(scheduleCancellation.endDate)
-                    ? scheduleCancellation.endDate : dateRange.endDate;
+                    ? scheduleCancellation.endDate : dateRange.endDate();
 
             for (LocalDate date = cancellationStartDate; date.isBefore(cancellationEndDate) || date.isEqual(
                     cancellationEndDate); date = date.plusDays(1)) {
@@ -251,7 +250,7 @@ public class GTFSTripService {
                             final PlatformData platformData) {
         final String tripId = String.format("%s_%s%s",
                 schedule.trainNumber,
-                dateRange.endDate.format(DateTimeFormatter.BASIC_ISO_DATE),
+                dateRange.endDate().format(DateTimeFormatter.BASIC_ISO_DATE),
                 scheduleSuffix);
         final String serviceId = tripId;
 
@@ -307,8 +306,8 @@ public class GTFSTripService {
         calendar.friday = runOnDayToString(schedule.runOnFriday, DayOfWeek.FRIDAY, schedule.startDate);
         calendar.saturday = runOnDayToString(schedule.runOnSaturday, DayOfWeek.SATURDAY, schedule.startDate);
         calendar.sunday = runOnDayToString(schedule.runOnSunday, DayOfWeek.SUNDAY, schedule.startDate);
-        calendar.startDate = dateRange.startDate;
-        calendar.endDate = MoreObjects.firstNonNull(dateRange.endDate, schedule.startDate);
+        calendar.startDate = dateRange.startDate();
+        calendar.endDate = MoreObjects.firstNonNull(dateRange.endDate(), schedule.startDate);
         return calendar;
     }
 
@@ -409,16 +408,17 @@ public class GTFSTripService {
             }
         }
 
-        final Collection<ScheduleCancellation> wholeDayCancellations = Collections2.filter(schedule.scheduleCancellations,
-                c -> c.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY);
-        for (final ScheduleCancellation scheduleCancellation : wholeDayCancellations) {
+        schedule.scheduleCancellations.stream()
+                .filter(c -> c.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY)
+                .forEach(scheduleCancellation -> {
             for (LocalDate date = scheduleCancellation.startDate; date.isBefore(scheduleCancellation.endDate) || date.isEqual(
                     scheduleCancellation.endDate); date = date.plusDays(1)) {
                 if(dateRange.isInclusivelyBetween(date)) {
                     calendarDates.add(createCalendarDate(serviceId, date, true));
                 }
             }
-        }
+        });
+
         return calendarDates;
     }
 

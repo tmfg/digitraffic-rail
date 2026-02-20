@@ -4,14 +4,7 @@ import fi.livi.rata.avoindata.common.utils.DateUtils;
 
 import java.time.LocalDate;
 
-public class DateRange {
-    public final LocalDate startDate;
-    public final LocalDate endDate;
-
-    public DateRange(final LocalDate startDate, final LocalDate endDate) {
-        this.startDate = startDate;
-        this.endDate = endDate;
-    }
+public record DateRange(LocalDate startDate, LocalDate endDate) {
 
     public boolean isInclusivelyBetween(final LocalDate candidate) {
         return DateUtils.isInclusivelyBetween(candidate, startDate, endDate);

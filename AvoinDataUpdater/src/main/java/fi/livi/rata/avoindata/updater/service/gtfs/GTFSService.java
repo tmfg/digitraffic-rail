@@ -38,20 +38,19 @@ public class GTFSService {
 
     public static int FIRST_STOP_SEQUENCE = 1;
 
-    @Autowired
-    private GTFSEntityService gtfsEntityService;
+    private final GTFSEntityService gtfsEntityService;
+    private final GTFSWritingService gtfsWritingService;
+    private final ScheduleProviderService scheduleProviderService;
+    private final LastUpdateService lastUpdateService;
+    private final GTFSTripService gtfsTripService;
 
-    @Autowired
-    private GTFSWritingService gtfsWritingService;
-
-    @Autowired
-    private ScheduleProviderService scheduleProviderService;
-
-    @Autowired
-    private LastUpdateService lastUpdateService;
-
-    @Autowired
-    private GTFSTripService gtfsTripService;
+    public GTFSService(final GTFSEntityService gtfsEntityService, final GTFSWritingService gtfsWritingService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService, final GTFSTripService gtfsTripService) {
+        this.gtfsEntityService = gtfsEntityService;
+        this.gtfsWritingService = gtfsWritingService;
+        this.scheduleProviderService = scheduleProviderService;
+        this.lastUpdateService = lastUpdateService;
+        this.gtfsTripService = gtfsTripService;
+    }
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "UTC")
     public void generateGTFS() {
@@ -125,10 +124,8 @@ public class GTFSService {
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
         final GTFSDto gtfs = this.createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip", false);
 
-        final List<Schedule> passengerAdhocSchedules = Lists.newArrayList(
-                Collections2.filter(adhocSchedules, this::isPassengerTrain));
-        final List<Schedule> passengerRegularSchedules = Lists.newArrayList(
-                Collections2.filter(regularSchedules, this::isPassengerTrain));
+        final List<Schedule> passengerAdhocSchedules = adhocSchedules.stream().filter(this::isPassengerTrain).toList();
+        final List<Schedule> passengerRegularSchedules = regularSchedules.stream().filter(this::isPassengerTrain).toList();
 
         this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip", false);
         this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger-stops.zip", true);

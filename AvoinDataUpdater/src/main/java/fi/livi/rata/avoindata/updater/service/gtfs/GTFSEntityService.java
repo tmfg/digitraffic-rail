@@ -157,8 +157,8 @@ public class GTFSEntityService {
         for (final Map.Entry<DateRange, Schedule> entry : trainsScheduleIntervals.entrySet()) {
             final DateRange oldKey = entry.getKey();
             final LocalDate scheduleEndDate = entry.getValue().endDate;
-            if (scheduleEndDate != null && oldKey.endDate.isAfter(scheduleEndDate)) {
-                final DateRange newKey = new DateRange(oldKey.startDate, scheduleEndDate);
+            if (scheduleEndDate != null && oldKey.endDate().isAfter(scheduleEndDate)) {
+                final DateRange newKey = new DateRange(oldKey.startDate(), scheduleEndDate);
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());
@@ -172,8 +172,8 @@ public class GTFSEntityService {
         for (final Map.Entry<DateRange, Schedule> entry : trainsScheduleIntervals.entrySet()) {
             final DateRange oldKey = entry.getKey();
             final LocalDate scheduleStartDate = entry.getValue().startDate;
-            if (scheduleStartDate != null && oldKey.startDate.isBefore(scheduleStartDate)) {
-                final DateRange newKey = new DateRange(scheduleStartDate, oldKey.endDate);
+            if (scheduleStartDate != null && oldKey.startDate().isBefore(scheduleStartDate)) {
+                final DateRange newKey = new DateRange(scheduleStartDate, oldKey.endDate());
                 correctedTrainsScheduleIntervals.put(newKey, entry.getValue());
             } else {
                 correctedTrainsScheduleIntervals.put(entry.getKey(), entry.getValue());

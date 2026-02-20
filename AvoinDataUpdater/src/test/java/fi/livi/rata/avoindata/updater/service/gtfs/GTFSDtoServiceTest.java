@@ -150,9 +150,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         assertTrips(trips, 1);
 
         // test that wheelchair is 0, create better test when it has other values than 0
-        assert(trips.get(0).wheelchair).equals(0);
+        assert(trips.getFirst().wheelchair).equals(0);
         // the train is type S, so bikesAllowed should be 2 (not allowed)
-        assert(trips.get(0).bikesAllowed).equals(2);
+        assert(trips.getFirst().bikesAllowed).equals(2);
     }
 
     private JsonNode createLiikennepaikkaNode(final String nameEn, final String nameSe) throws JsonProcessingException {
@@ -244,9 +244,9 @@ public class GTFSDtoServiceTest extends BaseTest {
         final Trip KAJTrip = tripsByServiceId.get("66_20191201_replacement");
         final Trip KUOTrip = tripsByServiceId.get("66_20191202_replacement");
 
-        assertEquals(normalTrip.stopTimes.get(0).stopId, "OL");
-        assertEquals(KAJTrip.stopTimes.get(0).stopId, "KAJ");
-        assertEquals(KUOTrip.stopTimes.get(0).stopId, "KUO");
+        assertEquals(normalTrip.stopTimes.getFirst().stopId, "OL");
+        assertEquals(KAJTrip.stopTimes.getFirst().stopId, "KAJ");
+        assertEquals(KUOTrip.stopTimes.getFirst().stopId, "KUO");
 
         assertEquals(Iterables.getLast(normalTrip.stopTimes).stopId, "HKI");
         assertEquals(Iterables.getLast(KAJTrip.stopTimes).stopId, "HKI");
@@ -267,14 +267,14 @@ public class GTFSDtoServiceTest extends BaseTest {
         final ImmutableMap<String, Trip> tripsByServiceId = Maps.uniqueIndex(gtfsDto.trips, t -> t.serviceId);
         final Trip normalTrip = tripsByServiceId.get("9705_20241214");
 
-        assertEquals("HKI", normalTrip.stopTimes.get(0).stopId);
+        assertEquals("HKI", normalTrip.stopTimes.getFirst().stopId);
 
         assertEquals(LocalDate.of(2023, 12, 10), normalTrip.calendar.startDate);
         assertEquals(LocalDate.of(2024, 12, 14), normalTrip.calendar.endDate);
 
         assertEquals(1, normalTrip.calendar.calendarDates.size());
-        assertEquals(2, normalTrip.calendar.calendarDates.get(0).exceptionType);
-        assertEquals(LocalDate.of(2023, 12, 14), normalTrip.calendar.calendarDates.get(0).date);
+        assertEquals(2, normalTrip.calendar.calendarDates.getFirst().exceptionType);
+        assertEquals(LocalDate.of(2023, 12, 14), normalTrip.calendar.calendarDates.getFirst().date);
     }
 
     @Test
@@ -420,8 +420,8 @@ public class GTFSDtoServiceTest extends BaseTest {
         final List<StopTime> stopTimes = firstTrip.stopTimes;
         assertEquals(stopTypes.size(), stopTimes.size());
 
-        assertEquals(1, stopTimes.get(0).dropoffType);
-        assertEquals(0, stopTimes.get(0).pickupType);
+        assertEquals(1, stopTimes.getFirst().dropoffType);
+        assertEquals(0, stopTimes.getFirst().pickupType);
 
         assertEquals(0, Iterables.getLast(stopTimes).dropoffType);
         assertEquals(1, Iterables.getLast(stopTimes).pickupType);
@@ -626,7 +626,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
             final List<String[]> parsedRows = csvParser.parseAll(stopsFile);
 
-            final String[] headers = parsedRows.get(0);
+            final String[] headers = parsedRows.getFirst();
             final Map<String, Integer> gtfsFieldIndices = IntStream
                     .range(0, headers.length)
                     .boxed()
@@ -674,8 +674,8 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 
     private void assertTripStops(final Trip trip, final String departureStopId, final String arrivalStopId) {
-        assertEquals(departureStopId, trip.stopTimes.get(0).stopId);
-        assertEquals(arrivalStopId, trip.stopTimes.get(trip.stopTimes.size() - 1).stopId);
+        assertEquals(departureStopId, trip.stopTimes.getFirst().stopId);
+        assertEquals(arrivalStopId, trip.stopTimes.getLast().stopId);
     }
 
     private void assertTrip(final Trip trip, final LocalDate startDate, final LocalDate endDate, final boolean monday,
