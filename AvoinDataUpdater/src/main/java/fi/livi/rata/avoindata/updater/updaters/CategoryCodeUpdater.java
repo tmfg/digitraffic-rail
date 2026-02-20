@@ -59,7 +59,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
 
         log.info("Found {} categoryCodes", categoryCodes.length);
 
-        this.persist(reasonCategoryPath + reasonCodePath, this.categoryCodeService::update, categoryCodes);
+        this.persist("categorycodes", this.categoryCodeService::update, categoryCodes);
     }
 
     private CategoryCode[] merge(final JsonNode reasonCategoryResult, final JsonNode reasonCodeResult) {

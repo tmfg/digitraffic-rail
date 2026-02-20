@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.lang.reflect.Array;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -65,7 +66,10 @@ public abstract class AEntityUpdater<T> {
 
     protected final void persist(final String path, final Consumer<T> updater, final T results) {
         updater.accept(results);
-        log.info(String.format("Updated %s", path));
+
+        final var count = results.getClass().isArray() ? ((Object[])results).length : 1;
+
+        log.info("method=persist Updated data for count={} prefix={}", count, path);
 
         lastUpdateService.update(path);
     }

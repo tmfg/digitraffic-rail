@@ -34,7 +34,6 @@ import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationSe
 
 @Service
 public class TrackWorkNotificationUpdater {
-
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final RemoteTrackWorkNotificationService remoteTrackWorkNotificationService;
@@ -72,7 +71,7 @@ public class TrackWorkNotificationUpdater {
             final Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .filter(twn -> !ignoredTwns.contains(twn.id))
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
-            if (statuses.size() == 0) {
+            if (statuses.isEmpty()) {
                 log.info("Received track work notifications but all were on ignore list");
                 return;
             }

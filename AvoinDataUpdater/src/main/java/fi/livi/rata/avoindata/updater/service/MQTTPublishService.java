@@ -12,6 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.event.ContextStartedEvent;
+import org.springframework.context.event.ContextStoppedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -28,16 +32,20 @@ public class MQTTPublishService {
     public static final int NUMBER_OF_THREADS = 1;
     private static final Logger log = LoggerFactory.getLogger(MQTTPublishService.class);
 
-    @Autowired
-    private MQTTConfig.MQTTGateway MQTTGateway;
+    private final MQTTConfig.MQTTGateway MQTTGateway;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private boolean contextActive = false;
 
     @Value("${mqtt.enable:true}")
     private boolean enableMqtt;
 
-    private ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    private final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+    public MQTTPublishService(final MQTTConfig.MQTTGateway mqttGateway, final ObjectMapper objectMapper) {
+        MQTTGateway = mqttGateway;
+        this.objectMapper = objectMapper;
+    }
 
     @PostConstruct
     public void setup() {
@@ -69,8 +77,18 @@ public class MQTTPublishService {
         return null;
     }
 
+    @EventListener(classes = ContextStartedEvent.class )
+    public void handleContextStarted() {
+        this.contextActive = true;
+    }
+
+    @EventListener(classes = ContextStoppedEvent.class )
+    public void handleContextStopped() {
+        this.contextActive = false;
+    }
+
     private void publishMessage(final Message<String> message) {
-        if(enableMqtt) {
+        if(enableMqtt && contextActive) {
             MQTTGateway.sendToMqtt(message);
         }
     }

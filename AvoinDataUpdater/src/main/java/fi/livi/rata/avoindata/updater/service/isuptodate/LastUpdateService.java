@@ -68,7 +68,7 @@ public class LastUpdateService {
         prefixToEnumMap.put("train-running-message-rules", LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES);
         prefixToEnumMap.put("tracksections", LastUpdatedType.TRACKSECTIONS);
         prefixToEnumMap.put("stations", LastUpdatedType.STATIONS);
-        prefixToEnumMap.put("/v1/reason-categories/latest/v1/reason-codes/latest", LastUpdatedType.CATEGORY_CODES);
+        prefixToEnumMap.put("categorycodes", LastUpdatedType.CATEGORY_CODES);
     }
 
     /**
@@ -105,8 +105,8 @@ public class LastUpdateService {
     private Instant getLastUpdatedForUrl(final String url) {
         try {
             final HttpHeaders httpHeaders = Objects.requireNonNull(webClient.head().uri(url).retrieve().toBodilessEntity().block()).getHeaders();
-            final Instant lastModified = TimeUtil.toInstant(httpHeaders.getLastModified());
-            return lastModified;
+
+            return TimeUtil.toInstant(httpHeaders.getLastModified());
         } catch (final Exception e) {
             log.error("method=getLastUpdatedForUrl Error getting last updated for url {}", url, e);
             return null;
