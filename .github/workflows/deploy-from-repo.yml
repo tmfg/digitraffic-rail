@@ -72,7 +72,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT      
 
       - name: Generate SBOM
-        uses: aquasecurity/trivy-action@0.34.0
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: image
           image-ref: ${{ secrets.FIRA_ECR_URL }}/${{ github.event.inputs.application-name }}:digitraffic-${{ github.event.inputs.env }}
