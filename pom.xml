@@ -17,7 +17,8 @@
         <spring.boot.version>3.5.7</spring.boot.version>
         <spring.cloud.version>4.3.0</spring.cloud.version>
         <com.google.guava.version>33.5.0-jre</com.google.guava.version>
-        <aws.msql.driver.version>1.1.15</aws.msql.driver.version>
+        <aws.advanced.jdbc.wrapper.version>3.2.0</aws.advanced.jdbc.wrapper.version>
+        <com.mysql.mysql-connector-j>9.6.0</com.mysql.mysql-connector-j>
         <org.flywaydb.version>11.16.0</org.flywaydb.version>
         <org.springdoc.version>2.8.14</org.springdoc.version>
         <net.logstash.logback.version>8.1</net.logstash.logback.version>

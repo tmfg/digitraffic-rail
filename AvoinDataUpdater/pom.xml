@@ -100,9 +100,14 @@
             <version>1.3.2</version>
         </dependency>
         <dependency>
-            <groupId>software.aws.rds</groupId>
-            <artifactId>aws-mysql-jdbc</artifactId>
-            <version>${aws.msql.driver.version}</version>
+            <groupId>software.amazon.jdbc</groupId>
+            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+            <version>${aws.advanced.jdbc.wrapper.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${com.mysql.mysql-connector-j}</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
