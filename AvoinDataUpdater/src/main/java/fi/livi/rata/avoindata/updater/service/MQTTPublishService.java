@@ -35,7 +35,7 @@ public class MQTTPublishService {
     private final MQTTConfig.MQTTGateway MQTTGateway;
     private final ObjectMapper objectMapper;
 
-    private boolean contextActive = false;
+    private boolean contextActive = true;
 
     @Value("${mqtt.enable:true}")
     private boolean enableMqtt;
