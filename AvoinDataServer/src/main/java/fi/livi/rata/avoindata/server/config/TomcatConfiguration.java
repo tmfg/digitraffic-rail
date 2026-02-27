@@ -16,8 +16,9 @@ import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.apache.tomcat.util.json.JSONFilter;
 import org.apache.tomcat.util.res.StringManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.websocket.servlet.TomcatWebSocketServletWebServerCustomizer;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 
 import fi.livi.digitraffic.common.util.StringUtil;
@@ -31,7 +32,7 @@ import fi.livi.rata.avoindata.server.controller.DefaultExceptionHandler;
  * </a>
  */
 @Component
-public class TomcatConfiguration extends TomcatWebSocketServletWebServerCustomizer {
+public class TomcatConfiguration implements WebServerFactoryCustomizer<TomcatServletWebServerFactory>, Ordered {
 
     private final DefaultExceptionHandler defaultExceptionHandler;
 

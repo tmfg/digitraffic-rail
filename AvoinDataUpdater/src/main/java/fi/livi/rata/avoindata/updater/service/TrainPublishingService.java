@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;

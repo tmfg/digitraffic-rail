@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
@@ -15,7 +15,6 @@ import fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 @Component
@@ -23,8 +22,8 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
 
     @Override
     public Schedule deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final Schedule schedule = new Schedule();
 
@@ -69,7 +68,7 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         schedule.runOnSunday = getNullableBoolean(node, "kulkuSu");
 
         schedule.scheduleRows = Lists.newArrayList(
-                jsonParser.getCodec().readValue(node.get("aikataulurivis").traverse(jsonParser.getCodec()), ScheduleRow[].class));
+                jsonParser.objectReadContext().readValue(node.get("aikataulurivis").traverse(jsonParser.objectReadContext()), ScheduleRow[].class));
 
         schedule.scheduleRows.sort((o1, o2) -> Long.compare(o1.id, o2.id));
 
@@ -78,10 +77,10 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         }
 
         schedule.scheduleCancellations = Sets.newHashSet(
-                jsonParser.getCodec().readValue(node.get("peruminens").traverse(jsonParser.getCodec()), ScheduleCancellation[].class));
+                jsonParser.objectReadContext().readValue(node.get("peruminens").traverse(jsonParser.objectReadContext()), ScheduleCancellation[].class));
 
         schedule.scheduleExceptions = Sets.newHashSet(
-                jsonParser.getCodec().readValue(node.get("poikkeuspaivas").traverse(jsonParser.getCodec()), ScheduleException[].class));
+                jsonParser.objectReadContext().readValue(node.get("poikkeuspaivas").traverse(jsonParser.objectReadContext()), ScheduleException[].class));
 
 
         improveLiikeCancellationLogic(schedule);

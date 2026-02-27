@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -9,9 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 
 import fi.finrail.koju.model.OsavalinVaunuDto;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
@@ -32,8 +31,8 @@ public class WagonDeserializer extends AEntityDeserializer<Wagon> {
     }
 
     @Override
-    public Wagon deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public Wagon deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final Wagon wagon = new Wagon();
         wagon.location = node.get("sijainti").asInt();

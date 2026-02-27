@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 
 import fi.finrail.koju.model.OsavalinVeturiDto;
 import fi.finrail.koju.model.TractionType;
@@ -35,8 +34,8 @@ public class LocomotiveDeserializer extends AEntityDeserializer<Locomotive> {
     }
 
     @Override
-    public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException {
-        final JsonNode node = jp.getCodec().readTree(jp);
+    public Locomotive deserialize(final JsonParser jp, final DeserializationContext ctxt) {
+        final JsonNode node = jp.readValueAsTree();
 
         final Locomotive locomotive = new Locomotive();
         locomotive.location = node.get("sijainti").asInt();

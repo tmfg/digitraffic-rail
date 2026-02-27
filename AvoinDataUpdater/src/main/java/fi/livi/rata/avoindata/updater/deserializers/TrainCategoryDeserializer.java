@@ -1,20 +1,19 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 @Component
-public class TrainCategoryDeserializer extends JsonDeserializer<TrainCategory> {
+public class TrainCategoryDeserializer extends ValueDeserializer<TrainCategory> {
     @Override
     public TrainCategory deserialize(final JsonParser jp,
-            final DeserializationContext ctxt) throws IOException {
-        final JsonNode node = jp.getCodec().readTree(jp);
+            final DeserializationContext ctxt) {
+        final JsonNode node = jp.readValueAsTree();
 
         final TrainCategory trainCategory = new TrainCategory();
         trainCategory.name = node.get("nimi").textValue();

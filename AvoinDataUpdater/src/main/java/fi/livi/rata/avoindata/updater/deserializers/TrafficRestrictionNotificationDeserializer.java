@@ -1,27 +1,26 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotificationState;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionType;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 @Component
 public class TrafficRestrictionNotificationDeserializer extends AEntityDeserializer<TrafficRestrictionNotification> {
 
     @Override
-    public TrafficRestrictionNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public TrafficRestrictionNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
         return deserializeTrafficRestrictionNotifications(node, jsonParser);
     }
 
-    private TrafficRestrictionNotification deserializeTrafficRestrictionNotifications(JsonNode node, JsonParser jsonParser) throws IOException {
+    private TrafficRestrictionNotification deserializeTrafficRestrictionNotifications(JsonNode node, JsonParser jsonParser) {
         final TrafficRestrictionNotification trafficRestrictionNotification = new TrafficRestrictionNotification();
         trafficRestrictionNotification.id = new TrafficRestrictionNotification.TrafficRestrictionNotificationId(node.get("id").textValue(), node.get("version").asLong());
         trafficRestrictionNotification.state = getState(getStringFromNode(node, "state"));
@@ -44,8 +43,8 @@ public class TrafficRestrictionNotificationDeserializer extends AEntityDeseriali
         return trafficRestrictionNotification;
     }
 
-    private Set<RumaLocation> deserializeRumaLocations(JsonNode rumaLocationsNode, JsonParser jsonParser) throws IOException {
-        return Set.of(jsonParser.getCodec().readValue(rumaLocationsNode.traverse(jsonParser.getCodec()), RumaLocation[].class));
+    private Set<RumaLocation> deserializeRumaLocations(JsonNode rumaLocationsNode, JsonParser jsonParser) {
+        return Set.of(jsonParser.objectReadContext().readValue(rumaLocationsNode.traverse(jsonParser.objectReadContext()), RumaLocation[].class));
     }
 
     private TrafficRestrictionType getType(String type) {

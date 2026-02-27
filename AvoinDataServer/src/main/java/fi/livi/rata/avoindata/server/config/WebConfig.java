@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.server.config;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -20,14 +19,14 @@ public class WebConfig implements WebMvcConfigurer {
     private final ContentTypeInterceptor contentTypeInterceptor;
     private final OSIVInterceptor osivInterceptor;
 
-    public WebConfig(final DatabaseInitializationInterceptor databaseInitializionInterceptor, final ExecuteTimeInterceptor executeTimeInterceptor, final ParameterValidationInterceptor parameterValidationInterceptor, final ContentTypeInterceptor contentTypeInterceptor, final SessionFactory sessionFactory) {
+    public WebConfig(final DatabaseInitializationInterceptor databaseInitializionInterceptor, final ExecuteTimeInterceptor executeTimeInterceptor, final ParameterValidationInterceptor parameterValidationInterceptor, final ContentTypeInterceptor contentTypeInterceptor, final EntityManagerFactory entityManagerFactory) {
         this.databaseInitializionInterceptor = databaseInitializionInterceptor;
         this.executeTimeInterceptor = executeTimeInterceptor;
         this.parameterValidationInterceptor = parameterValidationInterceptor;
         this.contentTypeInterceptor = contentTypeInterceptor;
 
         this.osivInterceptor = new OSIVInterceptor();
-        this.osivInterceptor.setSessionFactory(sessionFactory);
+        this.osivInterceptor.setEntityManagerFactory(entityManagerFactory);
     }
 
     @Override

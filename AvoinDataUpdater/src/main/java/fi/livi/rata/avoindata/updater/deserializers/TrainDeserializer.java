@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -13,9 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.dao.localization.TrainCategoryRepository;
 import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
@@ -38,8 +37,8 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
 
 
     @Override
-    public Train deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public Train deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
         final JsonNode id = node.get("id");
         final Long trainNumber = id.get("junanumero").asLong();
         final LocalDate departureDate = LocalDate.parse(id.get("lahtopvm").asText());
@@ -200,7 +199,7 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
                 !current.cancelled && !next.cancelled && current.scheduledTime.equals(next.scheduledTime);
     }
 
-    private List<TimeTableRow> deserializeTimeTableRows(final JsonParser jsonParser, final JsonNode jupaTapahtumas) throws IOException {
-        return Arrays.asList(jsonParser.getCodec().readValue(jupaTapahtumas.traverse(jsonParser.getCodec()), TimeTableRow[].class));
+    private List<TimeTableRow> deserializeTimeTableRows(final JsonParser jsonParser, final JsonNode jupaTapahtumas) {
+        return Arrays.asList(jsonParser.objectReadContext().readValue(jupaTapahtumas.traverse(jsonParser.objectReadContext()), TimeTableRow[].class));
     }
 }

@@ -30,7 +30,7 @@ public class TrainRunningMessageControllerTest extends MockMvcBaseTest {
                 .andExpect(jsonPath("$[0].version").value("1"))
                 .andExpect(jsonPath("$[0].trainNumber").value("1"))
                 .andExpect(jsonPath("$[0].departureDate").value("2018-01-01"))
-                .andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00.000Z"))
+                .andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00Z"))
                 .andExpect(jsonPath("$[0].trackSection").value("RAIDE_1"))
                 .andExpect(jsonPath("$[0].station").value("PSL"))
                 .andExpect(jsonPath("$[0].type").value("OCCUPY"));

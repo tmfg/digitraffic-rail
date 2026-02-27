@@ -1,18 +1,18 @@
 package fi.livi.rata.avoindata.server.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
 
 import org.n52.jackson.datatype.jts.JtsModule;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 @Configuration
 public class JacksonConfig {
@@ -20,15 +20,16 @@ public class JacksonConfig {
             ZoneId.of("Z"));
 
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jacksonCustomizer() {
-        return jackson2ObjectMapperBuilder -> {
-            jackson2ObjectMapperBuilder.defaultViewInclusion(true);
-            jackson2ObjectMapperBuilder.serializationInclusion(JsonInclude.Include.NON_NULL);
-            jackson2ObjectMapperBuilder.indentOutput(false);
-            jackson2ObjectMapperBuilder.serializers(new ZonedDateTimeSerializer(ISO_FIXED_FORMAT));
-            jackson2ObjectMapperBuilder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-            jackson2ObjectMapperBuilder.modules(new Jdk8Module(), new JavaTimeModule(), new JtsModule(), new StreamModule());
+    public JsonMapperBuilderCustomizer jacksonCustomizer() {
+        return builder -> {
+            builder.enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                    .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+                    .disable(SerializationFeature.INDENT_OUTPUT)
+                    .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                    .enable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+                    .enable(DateTimeFeature.WRITE_DATES_WITH_CONTEXT_TIME_ZONE)
+                    .addModule(new JtsModule())
+                    .addModule(new StreamModule());
         };
     }
 }

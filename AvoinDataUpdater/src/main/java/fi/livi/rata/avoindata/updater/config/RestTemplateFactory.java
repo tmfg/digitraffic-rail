@@ -27,15 +27,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 class RestTemplateFactory {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    private MappingJackson2HttpMessageConverter messageConverter;
+    private JsonMapper jsonMapper;
 
     @Bean
     public RequestConfig requestConfig(
@@ -105,7 +107,7 @@ class RestTemplateFactory {
 
                     return execution.execute(request, body);
                 }));
-        restTemplate.setMessageConverters(Arrays.asList(new MappingJackson2HttpMessageConverter[] { messageConverter }));
+        restTemplate.setMessageConverters(Arrays.asList(new JacksonJsonHttpMessageConverter(jsonMapper)));
 
         return restTemplate;
     }

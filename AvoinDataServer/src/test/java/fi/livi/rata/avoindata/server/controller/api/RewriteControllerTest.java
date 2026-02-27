@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
@@ -17,16 +17,16 @@ import fi.livi.rata.avoindata.server.factory.TrainCategoryFactory;
 import fi.livi.rata.avoindata.server.factory.TrainTypeFactory;
 
 public class RewriteControllerTest extends MockMvcBaseTest {
-    @SpyBean
+    @MockitoSpyBean
     private TrainController trainController;
 
-    @SpyBean
+    @MockitoSpyBean
     private CompositionController compositionController;
 
-    @SpyBean
+    @MockitoSpyBean
     private LiveTrainController liveTrainController;
 
-    @SpyBean
+    @MockitoSpyBean
     private ScheduleController scheduleController;
 
     @Autowired

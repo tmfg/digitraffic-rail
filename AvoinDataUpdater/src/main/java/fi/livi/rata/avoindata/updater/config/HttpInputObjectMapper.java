@@ -7,16 +7,15 @@ import java.util.TimeZone;
 
 import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
@@ -82,10 +81,9 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancell
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import jakarta.annotation.PostConstruct;
 
-@Component
-public class HttpInputObjectMapper extends ObjectMapper {
+@Configuration
+public class HttpInputObjectMapper {
     public static final DateTimeFormatter ISO_FIXED_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(
             ZoneId.of("Z"));
 
@@ -185,22 +183,11 @@ public class HttpInputObjectMapper extends ObjectMapper {
     @Autowired
     private ElementRangeDeserializer elementRangeDeserializer;
 
-    @PostConstruct
-    public void init() {
+    @Bean
+    public JsonMapper jsonMapper() {
         TimeZone.setDefault(TimeZone.getTimeZone("Etc/UTC"));
 
-        setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-
-        configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
-
-        registerModule(new Jdk8Module());
-        registerModule(new JavaTimeModule());
-        registerModule(new JtsModule());
-
         final SimpleModule module = new SimpleModule();
-        module.addSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer(ISO_FIXED_FORMAT));
         addTrainDeserializers(module);
         addCompositionDeserializers(module);
         addLocalizationDeserializers(module);
@@ -233,7 +220,16 @@ public class HttpInputObjectMapper extends ObjectMapper {
 
         module.addDeserializer(SimpleTimeTableRow.class, simpleTimeTableRowDeserializer);
 
-        registerModule(module);
+        // Build immutable JsonMapper with Jackson 3
+        // Jdk8Module and JavaTimeModule are now built-in to Jackson 3
+        return JsonMapper.builder()
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                .addModule(new JtsModule())
+                .addModule(module)
+                .build();
     }
 
     private void addTrainRunningMessageDeserializers(final SimpleModule module) {

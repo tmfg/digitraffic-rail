@@ -1,11 +1,11 @@
 package fi.livi.rata.avoindata.common.domain.stopmonitoring;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Generated;
 import org.springframework.data.annotation.ReadOnlyProperty;
 
 import java.time.LocalDate;
@@ -19,7 +19,7 @@ public class Udot {
     @Id
     public Long id;
 
-    @Generated
+    @Column(insertable = false, updatable = false)
     public ZonedDateTime modifiedDb;
 
     public ZonedDateTime modelUpdatedTime;

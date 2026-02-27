@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.server.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
-import org.springframework.orm.hibernate5.support.OpenSessionInViewInterceptor;
+import org.springframework.orm.jpa.support.OpenEntityManagerInViewInterceptor;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
@@ -11,7 +11,7 @@ import org.springframework.web.context.request.WebRequest;
 import java.util.Set;
 
 @Configuration
-public class OSIVInterceptor extends OpenSessionInViewInterceptor {
+public class OSIVInterceptor extends OpenEntityManagerInViewInterceptor {
     private final static String ATTRIBUTE_NAME = "USE_OSIV";
 
     private final static Set<String> OSIV_URL_LIST = Set.of(

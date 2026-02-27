@@ -1,14 +1,13 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.metadata.Operator;
 import fi.livi.rata.avoindata.common.domain.metadata.OperatorTrainNumber;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,8 +17,8 @@ public class OperatorDeserializer extends AEntityDeserializer<Operator> {
 
     @Override
     public Operator deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final Operator operator = new Operator();
 
@@ -31,7 +30,7 @@ public class OperatorDeserializer extends AEntityDeserializer<Operator> {
         final JsonNode junanumerosarjat = node.get("junanumerosarjat");
         if (junanumerosarjat != null) {
             final Set<OperatorTrainNumber> operatorTrainNumbers = new HashSet<OperatorTrainNumber>(Arrays.asList(
-                    jsonParser.getCodec().readValue(junanumerosarjat.traverse(jsonParser.getCodec()), OperatorTrainNumber[].class)));
+                    jsonParser.objectReadContext().readValue(junanumerosarjat.traverse(jsonParser.objectReadContext()), OperatorTrainNumber[].class)));
             operator.trainNumbers = operatorTrainNumbers;
 
             for (final OperatorTrainNumber operatorTrainNumber : operatorTrainNumbers) {

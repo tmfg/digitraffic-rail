@@ -1,11 +1,9 @@
 package fi.livi.rata.avoindata.common.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -19,8 +17,7 @@ public class BigDecimalSerializer extends StdSerializer<BigDecimal> {
     }
 
     @Override
-    public void serialize(final BigDecimal value, final JsonGenerator gen, final SerializerProvider arg2)
-            throws IOException {
+    public void serialize(final BigDecimal value, final JsonGenerator gen, final SerializationContext arg2) {
         gen.writeNumber(scale(value));
     }
 

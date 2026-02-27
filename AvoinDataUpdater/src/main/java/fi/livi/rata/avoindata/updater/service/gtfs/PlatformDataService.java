@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;

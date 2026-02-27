@@ -2,7 +2,7 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -18,12 +18,12 @@ public class TimeTableRowDeserializerTest extends BaseTest {
     private static final LocalDateTime ESTIMATED_TIME = LocalDateTime.of(2014, 12, 9, 22, 15, 14);
 
     @Autowired
-    private HttpInputObjectMapper httpInputObjectMapper;
+    private JsonMapper jsonMapper;
 
     @SuppressWarnings("MessageMissingOnJUnitAssertion")
     @Test
     public void testDeserializer() throws Exception {
-        final TimeTableRow timeTableRow = httpInputObjectMapper.readValue(new ClassPathResource("timetablerow.json").getFile(), TimeTableRow.class);
+        final TimeTableRow timeTableRow = jsonMapper.readValue(new ClassPathResource("timetablerow.json").getFile(), TimeTableRow.class);
 
         assertEquals("HEK", timeTableRow.station.stationShortCode);
         assertEquals(UIC_CODE, timeTableRow.station.stationUICCode);
