@@ -101,25 +101,25 @@ jobs:
           mvn -DoutputName=server-sbom cyclonedx:makeBom
       - name: Upload server.jar
         if: github.event.inputs.install-server == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: server.jar
           path: server.jar
       - name: Upload updater.jar
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: updater.jar
           path: updater.jar
       - name: Upload server SBOM
         if: github.event.inputs.install-server == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: server-sbom.json
           path: AvoinDataServer/target/server-sbom.json
       - name: Upload updater SBOM
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: updater-sbom.json
           path: AvoinDataUpdater/target/updater-sbom.json
