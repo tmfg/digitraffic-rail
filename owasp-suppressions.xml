@@ -4,6 +4,20 @@
     <!--
         Temporary suppressions, check and update these periodically
     -->
+    <!-- We dont use logger to send logs to remote servers -->
+    <suppress until="2026-06-01">
+        <notes><![CDATA[file name: log4j-api-2.24.3.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j-api@.*$</packageUrl>
+        <cve>CVE-2025-68161</cve>
+    </suppress>
+
+    <!-- In Eclipse Paho Go MQTT v3.1 library (paho.mqtt.golang) versions <=1.5.0 UTF-8 encoded strings, passed into the library, may be incorrectly encoded if their length exceeds 65535 bytes.
+         Hopefully we are not doing that big payloads and if we are, we have ticket to update to new client -->
+    <suppress>
+        <notes><![CDATA[file name: org.eclipse.paho.client.mqttv3-1.2.5.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.paho/org\.eclipse\.paho\.client\.mqttv3@.*$</packageUrl>
+        <cve>CVE-2025-10543</cve>
+    </suppress>
 
     <!--
         Permanent suppressions
