@@ -1,6 +1,30 @@
 # Repositoryn tarkoitus
 Sisältää lähdekoodin palvelulle [rata.digitraffic.fi](https://rata.digitraffic.fi/)
 
+# Build 
+
+## Ennen ensimmäistä buildia
+
+Varmista, että git submoduulit on alustettu ja päivitetty:
+
+```bash
+git submodule update --init --recursive
+```
+
+Tämä varmistaa, että kaikki tarvittavat lähdekoodit ovat käytettävissä Maven-buildissä.
+
+## Build ja testaus
+
+Käynnistä kanta
+```bash
+cd dbrail
+./db-rm-build-up.sh
+```
+
+```bash
+mvn clean test
+```
+
 # Arkkitehtuuri
 
 rata.digitraffic.fi koostuu kolmesta komponentista:
