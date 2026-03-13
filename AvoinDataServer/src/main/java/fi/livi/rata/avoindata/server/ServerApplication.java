@@ -2,10 +2,9 @@ package fi.livi.rata.avoindata.server;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepositoryImpl;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -17,9 +16,10 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 @Configuration
-@EnableAutoConfiguration
+@SpringBootApplication(
+    scanBasePackages = {"fi.livi.rata.avoindata.server", "fi.livi.rata.avoindata.common"}
+)
 @EnableAspectJAutoProxy(proxyTargetClass = true)
-@ComponentScan(basePackages = {"fi.livi.rata.avoindata.server", "fi.livi.rata.avoindata.common"})
 @EntityScan(basePackages = "fi.livi.rata.avoindata.common.domain")
 @EnableJpaRepositories(basePackages = "fi.livi.rata.avoindata.common.dao", repositoryBaseClass = CustomGeneralRepositoryImpl.class)
 @EnableScheduling
