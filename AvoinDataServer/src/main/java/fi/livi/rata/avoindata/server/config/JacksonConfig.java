@@ -28,6 +28,7 @@ public class JacksonConfig {
                     .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
                     .enable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
                     .enable(DateTimeFeature.WRITE_DATES_WITH_CONTEXT_TIME_ZONE)
+                    .defaultTimeZone(TimeZone.getTimeZone("UTC"))
                     .addModule(new JtsModule())
                     .addModule(new StreamModule());
         };
