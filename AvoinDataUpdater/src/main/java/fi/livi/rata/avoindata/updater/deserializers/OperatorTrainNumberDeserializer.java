@@ -1,20 +1,19 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.metadata.OperatorTrainNumber;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 
 @Component
 public class OperatorTrainNumberDeserializer extends AEntityDeserializer<OperatorTrainNumber> {
     @Override
     public OperatorTrainNumber deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final OperatorTrainNumber operatorTrainNumber = new OperatorTrainNumber();
 

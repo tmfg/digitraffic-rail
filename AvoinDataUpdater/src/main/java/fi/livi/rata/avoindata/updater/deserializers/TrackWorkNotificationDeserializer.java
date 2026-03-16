@@ -1,22 +1,21 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotification;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkNotificationState;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 @Component
 public class TrackWorkNotificationDeserializer extends AEntityDeserializer<TrackWorkNotification> {
 
     @Override
-    public TrackWorkNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public TrackWorkNotification deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
         final TrackWorkNotification trackWorkNotification = deserializeTrackWorkNotifications(node, jsonParser);
         trackWorkNotification.trackWorkParts = deserializeTrackWorkParts(node.get("tyonosat"), jsonParser);
          for (TrackWorkPart trackWorkPart : trackWorkNotification.trackWorkParts) {
@@ -25,11 +24,11 @@ public class TrackWorkNotificationDeserializer extends AEntityDeserializer<Track
         return trackWorkNotification;
     }
 
-    private Set<TrackWorkPart> deserializeTrackWorkParts(JsonNode workPartsNode, JsonParser jsonParser) throws IOException {
-        return Set.of(jsonParser.getCodec().readValue(workPartsNode.traverse(jsonParser.getCodec()), TrackWorkPart[].class));
+    private Set<TrackWorkPart> deserializeTrackWorkParts(JsonNode workPartsNode, JsonParser jsonParser) {
+        return Set.of(jsonParser.objectReadContext().readValue(workPartsNode.traverse(jsonParser.objectReadContext()), TrackWorkPart[].class));
     }
 
-    private TrackWorkNotification deserializeTrackWorkNotifications(JsonNode node, JsonParser jsonParser) throws IOException {
+    private TrackWorkNotification deserializeTrackWorkNotifications(JsonNode node, JsonParser jsonParser) {
         final TrackWorkNotification trackWorkNotification = new TrackWorkNotification();
         trackWorkNotification.id = new TrackWorkNotification.TrackWorkNotificationId(node.get("id").textValue(), node.get("version").asLong());
         trackWorkNotification.state = getState(getStringFromNode(node, "state"));

@@ -1,12 +1,11 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +15,8 @@ import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTra
 public class ElementRangeDeserializer extends AEntityDeserializer<ElementRange> {
 
     @Override
-    public ElementRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode elementRangeNode = jsonParser.getCodec().readTree(jsonParser);
+    public ElementRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode elementRangeNode = jsonParser.readValueAsTree();
         final ElementRange elementRange = new ElementRange();
         elementRange.elementId1 = normalizeTrakediaInfraOid(elementRangeNode.get("elementtiId1").asText());
         elementRange.elementId2 = normalizeTrakediaInfraOid(elementRangeNode.get("elementtiId2").asText());

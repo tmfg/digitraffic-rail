@@ -11,11 +11,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.JacksonJsonDecoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
@@ -83,7 +83,7 @@ public class WebClientConfiguration {
 
     @Bean
     public WebClient webClient(final HttpClient defaultHttpClient,
-                               final ObjectMapper objectMapper) {
+                               final JsonMapper objectMapper) {
 
         // more memory for default web-client
         return WebClient.builder()
@@ -92,7 +92,7 @@ public class WebClientConfiguration {
                         .codecs(codecs -> codecs
                                 .defaultCodecs().maxInMemorySize(200 * 1024 * 1024))
                         .codecs(codecs -> codecs
-                                .defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper)))
+                                .defaultCodecs().jacksonJsonDecoder(new JacksonJsonDecoder(objectMapper)))
                         .build())
                 .build();
     }

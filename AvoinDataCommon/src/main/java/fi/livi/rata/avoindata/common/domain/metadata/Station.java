@@ -3,8 +3,7 @@ package fi.livi.rata.avoindata.common.domain.metadata;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.SerializableSerializer;
+import tools.jackson.databind.annotation.JsonSerialize;
 import fi.livi.rata.avoindata.common.serializer.BigDecimalSerializer;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 
 import fi.livi.rata.avoindata.updater.BaseTest;
-import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -19,11 +19,11 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 
 public class ScheduleDeserializerTest extends BaseTest {
     @Autowired
-    private HttpInputObjectMapper httpInputObjectMapper;
+    private JsonMapper jsonMapper;
 
     @Test
     public void testDeserializer() throws Exception {
-        final Schedule schedule = httpInputObjectMapper.readValue(new ClassPathResource("schedule.json").getFile(), Schedule.class);
+        final Schedule schedule = jsonMapper.readValue(new ClassPathResource("schedule.json").getFile(), Schedule.class);
 
         assertSchedule(schedule);
 
@@ -41,7 +41,7 @@ public class ScheduleDeserializerTest extends BaseTest {
 
     @Test
     public void overnightScheduleIntegrationTest() throws Exception {
-        final Schedule schedule = httpInputObjectMapper.readValue(new ClassPathResource("schedule_overnight.json").getFile(),
+        final Schedule schedule = jsonMapper.readValue(new ClassPathResource("schedule_overnight.json").getFile(),
                 Schedule.class);
 
 

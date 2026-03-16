@@ -3,7 +3,7 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.time.LocalDate;
 import java.util.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.slf4j.Logger;

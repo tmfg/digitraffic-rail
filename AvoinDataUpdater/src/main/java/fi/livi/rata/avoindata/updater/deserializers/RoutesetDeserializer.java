@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.common.StringTrainId;
@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,10 +26,10 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
 
     @Override
     public Routeset deserialize(final JsonParser jsonParser,
-                                final DeserializationContext deserializationContext) throws IOException {
+                                final DeserializationContext deserializationContext) {
         final Routeset routeset = new Routeset();
 
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        final JsonNode node = jsonParser.readValueAsTree();
 
         routeset.id = node.get("id").asLong();
         final String trainNumber = getNullableString(node, "trainNumber");
@@ -61,7 +60,7 @@ public class RoutesetDeserializer extends AEntityDeserializer<Routeset> {
         return routeset;
     }
 
-    private static List<Routesection> deserializeRoutesections(final JsonParser jsonParser, final JsonNode node) throws IOException {
-        return Lists.newArrayList(jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Routesection[].class));
+    private static List<Routesection> deserializeRoutesections(final JsonParser jsonParser, final JsonNode node) {
+        return Lists.newArrayList(jsonParser.objectReadContext().readValue(node.traverse(jsonParser.objectReadContext()), Routesection[].class));
     }
 }

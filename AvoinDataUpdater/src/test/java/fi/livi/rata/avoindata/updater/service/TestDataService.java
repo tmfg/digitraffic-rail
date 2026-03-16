@@ -22,7 +22,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import fi.finrail.koju.model.KokoonpanoDto;
 import fi.livi.rata.avoindata.common.dao.trackwork.TrackWorkNotificationRepository;
@@ -30,7 +31,6 @@ import fi.livi.rata.avoindata.common.dao.trafficrestriction.TrafficRestrictionNo
 import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
-import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
 import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionConverter;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
@@ -46,7 +46,7 @@ public class TestDataService {
     private TrainPersistService trainService;
 
     @Autowired
-    private HttpInputObjectMapper objectMapper;
+    private JsonMapper objectMapper;
 
     @Autowired
     private TrackWorkNotificationRepository trackWorkNotificationRepository;

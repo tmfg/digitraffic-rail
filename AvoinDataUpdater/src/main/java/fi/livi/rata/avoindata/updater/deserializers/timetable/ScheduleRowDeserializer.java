@@ -1,10 +1,10 @@
 package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer;
@@ -12,7 +12,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 @Component
@@ -20,8 +19,8 @@ public class ScheduleRowDeserializer extends AEntityDeserializer<ScheduleRow> {
 
     @Override
     public ScheduleRow deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final ScheduleRow scheduleRow = new ScheduleRow();
 
@@ -33,10 +32,10 @@ public class ScheduleRowDeserializer extends AEntityDeserializer<ScheduleRow> {
         scheduleRow.station = stationEmbeddable;
 
         final Set<ScheduleRowPart> departure = Sets.newHashSet(
-                jsonParser.getCodec().readValue(node.get("lahto").traverse(jsonParser.getCodec()), ScheduleRowPart[].class));
+                jsonParser.objectReadContext().readValue(node.get("lahto").traverse(jsonParser.objectReadContext()), ScheduleRowPart[].class));
 
         final Set<ScheduleRowPart> arrival = Sets.newHashSet(
-                jsonParser.getCodec().readValue(node.get("saapuminen").traverse(jsonParser.getCodec()), ScheduleRowPart[].class));
+                jsonParser.objectReadContext().readValue(node.get("saapuminen").traverse(jsonParser.objectReadContext()), ScheduleRowPart[].class));
 
         scheduleRow.arrival = getFirstOrNull(arrival);
         scheduleRow.departure = getFirstOrNull(departure);

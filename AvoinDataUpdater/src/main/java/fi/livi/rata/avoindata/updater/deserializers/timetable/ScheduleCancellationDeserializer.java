@@ -1,17 +1,16 @@
 package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 @Component
@@ -19,8 +18,8 @@ public class ScheduleCancellationDeserializer extends AEntityDeserializer<Schedu
 
     @Override
     public ScheduleCancellation deserialize(final JsonParser jsonParser,
-            final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+            final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final ScheduleCancellation scheduleCancellation = new ScheduleCancellation();
 
@@ -33,7 +32,7 @@ public class ScheduleCancellationDeserializer extends AEntityDeserializer<Schedu
         scheduleCancellation.scheduleCancellationType = cancellationType;
 
         final ArrayList<ScheduleRow> cancelledScheduleRows = Lists.newArrayList(
-                jsonParser.getCodec().readValue(node.get("aikataulurivis").traverse(jsonParser.getCodec()), ScheduleRow[].class));
+                jsonParser.objectReadContext().readValue(node.get("aikataulurivis").traverse(jsonParser.objectReadContext()), ScheduleRow[].class));
 
         for (final ScheduleRow cancelledScheduleRow : cancelledScheduleRows) {
             scheduleCancellation.cancelledRows.add(cancelledScheduleRow.departure);

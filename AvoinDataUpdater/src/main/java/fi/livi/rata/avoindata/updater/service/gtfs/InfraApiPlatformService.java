@@ -21,7 +21,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
@@ -96,10 +96,10 @@ public class InfraApiPlatformService {
         final GeometryFactory geometryFactory = new GeometryFactory();
         final List<LineString> lineStrings = new ArrayList<>();
 
-        geometryNode.elements().forEachRemaining(lineStringElement -> {
+        geometryNode.forEach(lineStringElement -> {
             final List<Coordinate> lineStringCoordinates = new ArrayList<>();
             if (lineStringElement.isArray()) {
-                lineStringElement.elements().forEachRemaining(coordinateElement -> {
+                lineStringElement.forEach(coordinateElement -> {
                     if (coordinateElement.isArray()) {
                         lineStringCoordinates.add(new Coordinate(coordinateElement.get(0).asDouble(), coordinateElement.get(1).asDouble()));
                     } else {

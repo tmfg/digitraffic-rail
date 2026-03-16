@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -8,9 +7,9 @@ import org.locationtech.proj4j.ProjCoordinate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocationId;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
@@ -25,8 +24,8 @@ public class TrainLocationDeserializer extends AEntityDeserializer<TrainLocation
     private GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
-    public TrainLocation deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public TrainLocation deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final TrainLocation trainLocation = new TrainLocation();
         trainLocation.trainLocationId = new TrainLocationId(node.get("junanumero").asLong(), getNodeAsLocalDate(node.get("lahtopaiva")),

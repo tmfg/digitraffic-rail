@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -11,9 +10,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
@@ -26,8 +25,8 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
     private TrainReadyDeserializer trainReadyDeserializer;
 
     @Override
-    public TimeTableRow deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public TimeTableRow deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         final JsonNode liikennepaikka = node.get("liikennepaikka");
 
@@ -96,8 +95,8 @@ public class TimeTableRowDeserializer extends AEntityDeserializer<TimeTableRow> 
         return timeTableRow;
     }
 
-    private static Set<Cause> deserializeCauseRows(final JsonParser jsonParser, final JsonNode syytietos) throws IOException {
-        return new HashSet<>(Arrays.asList(jsonParser.getCodec().readValue(syytietos.traverse(jsonParser.getCodec()), Cause[].class)));
+    private static Set<Cause> deserializeCauseRows(final JsonParser jsonParser, final JsonNode syytietos) {
+        return new HashSet<>(Arrays.asList(jsonParser.objectReadContext().readValue(syytietos.traverse(jsonParser.objectReadContext()), Cause[].class)));
     }
 
     @Nullable

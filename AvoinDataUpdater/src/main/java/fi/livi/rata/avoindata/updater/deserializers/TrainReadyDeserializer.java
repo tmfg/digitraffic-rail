@@ -1,19 +1,18 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.train.TrainReady;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 
 @Component
 public class TrainReadyDeserializer {
     private final Logger log = LoggerFactory.getLogger(TrainReadyDeserializer.class);
 
-    public TrainReady deserialize(final JsonNode node) throws IOException {
+    public TrainReady deserialize(final JsonNode node) {
         if (node.get("lviTila") == null || node.get("lviLahde") == null) {
             return null;
         }

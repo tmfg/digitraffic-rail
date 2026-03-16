@@ -384,7 +384,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     }
 
     private String modifyTimestamp(final ZonedDateTime time) {
-        return time.format(DateTimeFormatter.ISO_INSTANT).substring(0, 23)+"Z";
+        return time.toInstant().atZone(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
     @Test
     @Transactional

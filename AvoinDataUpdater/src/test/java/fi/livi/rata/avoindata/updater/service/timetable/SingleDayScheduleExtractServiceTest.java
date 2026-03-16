@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import fi.livi.rata.avoindata.updater.config.HttpInputObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.commons.collections4.ListUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     private SingleDayScheduleExtractService singleDayScheduleExtractService;
 
     @Autowired
-    private HttpInputObjectMapper httpInputObjectMapper;
+    private JsonMapper jsonMapper;
 
     final LocalDate extractDate = LocalDate.of(2017, 1, 1);
 
@@ -730,7 +730,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
     @Test
     @Transactional
     public void multipleSchedulesWithSameKapasiteettiId() throws Exception {
-        final Schedule[] schedules = httpInputObjectMapper.readValue(new ClassPathResource("schedules-kapasiteetti-id.json").getFile(), Schedule[].class);
+        final Schedule[] schedules = jsonMapper.readValue(new ClassPathResource("schedules-kapasiteetti-id.json").getFile(), Schedule[].class);
 
         final List<Train> trains = extract(Collections.emptyList(), List.of(schedules),
                 LocalDate.of(2024, 12, 20));

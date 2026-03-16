@@ -1,13 +1,12 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +18,8 @@ import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeJet
 public class TrackWorkPartDeserializer extends AEntityDeserializer<TrackWorkPart> {
 
     @Override
-    public TrackWorkPart deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode trackWorkPartNode = jsonParser.getCodec().readTree(jsonParser);
+    public TrackWorkPart deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode trackWorkPartNode = jsonParser.readValueAsTree();
         final TrackWorkPart trackWorkpart = new TrackWorkPart();
         trackWorkpart.partIndex = trackWorkPartNode.get("numero").asLong();
         trackWorkpart.startDay = getNodeAsLocalDate(trackWorkPartNode.get("aloituspaiva"));
@@ -36,8 +35,8 @@ public class TrackWorkPartDeserializer extends AEntityDeserializer<TrackWorkPart
         return trackWorkpart;
     }
 
-    private Set<RumaLocation> deserializeRumaLocations(JsonNode rumaLocationsNode, JsonParser jsonParser) throws IOException {
-        return Set.of(jsonParser.getCodec().readValue(rumaLocationsNode.traverse(jsonParser.getCodec()), RumaLocation[].class));
+    private Set<RumaLocation> deserializeRumaLocations(JsonNode rumaLocationsNode, JsonParser jsonParser) {
+        return Set.of(jsonParser.objectReadContext().readValue(rumaLocationsNode.traverse(jsonParser.objectReadContext()), RumaLocation[].class));
     }
 
 }

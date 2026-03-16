@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.server.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import fi.livi.rata.avoindata.server.controller.api.geojson.Feature;

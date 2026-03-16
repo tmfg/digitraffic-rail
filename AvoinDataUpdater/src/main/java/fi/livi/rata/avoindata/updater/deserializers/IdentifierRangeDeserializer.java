@@ -1,14 +1,13 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.ElementRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.SpeedLimit;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTrakediaInfraOid;
@@ -17,8 +16,8 @@ import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTra
 public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierRange> {
 
     @Override
-    public IdentifierRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode identifierRangeNode = jsonParser.getCodec().readTree(jsonParser);
+    public IdentifierRange deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode identifierRangeNode = jsonParser.readValueAsTree();
         final IdentifierRange identifierRange = new IdentifierRange();
         JsonNode elementNode = identifierRangeNode.get("elementtiId");
         identifierRange.elementId = elementNode.isNull() ? null : normalizeTrakediaInfraOid(elementNode.asText());
@@ -36,8 +35,8 @@ public class IdentifierRangeDeserializer extends AEntityDeserializer<IdentifierR
         return identifierRange;
     }
 
-    private Set<ElementRange> deserializeElementRanges(JsonNode erNode, JsonParser jsonParser) throws IOException {
-        return Set.of(jsonParser.getCodec().readValue(erNode.traverse(jsonParser.getCodec()), ElementRange[].class));
+    private Set<ElementRange> deserializeElementRanges(JsonNode erNode, JsonParser jsonParser) {
+        return Set.of(jsonParser.objectReadContext().readValue(erNode.traverse(jsonParser.objectReadContext()), ElementRange[].class));
     }
 
     private SpeedLimit deserializeSpeedLimit(JsonNode speedLimitNode) {

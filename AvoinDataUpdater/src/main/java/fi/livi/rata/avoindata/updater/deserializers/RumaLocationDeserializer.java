@@ -1,14 +1,13 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
 import fi.livi.rata.avoindata.common.domain.trackwork.LocationType;
 import fi.livi.rata.avoindata.common.domain.trackwork.RumaLocation;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Set;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTrakediaInfraOid;
@@ -17,8 +16,8 @@ import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.normalizeTra
 public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> {
 
     @Override
-    public RumaLocation deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode locationNode = jsonParser.getCodec().readTree(jsonParser);
+    public RumaLocation deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode locationNode = jsonParser.readValueAsTree();
         final RumaLocation rumaLocation = new RumaLocation();
         rumaLocation.locationType = LocationType.fromKohdeType(locationNode.get("type").asText());
         final JsonNode operatingPointNode = locationNode.get("liikennepaikkaId");
@@ -34,7 +33,7 @@ public class RumaLocationDeserializer extends AEntityDeserializer<RumaLocation> 
         return rumaLocation;
     }
 
-    private Set<IdentifierRange> deserializeIdentifierRanges(final JsonNode irNode, final JsonParser jsonParser) throws IOException {
-        return Set.of(jsonParser.getCodec().readValue(irNode.traverse(jsonParser.getCodec()), IdentifierRange[].class));
+    private Set<IdentifierRange> deserializeIdentifierRanges(final JsonNode irNode, final JsonParser jsonParser) {
+        return Set.of(jsonParser.objectReadContext().readValue(irNode.traverse(jsonParser.objectReadContext()), IdentifierRange[].class));
     }
 }

@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Map;
 
@@ -12,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.metadata.StationTypeEnum;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
@@ -32,14 +31,14 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
 
     @Override
     public Station deserialize(final JsonParser jsonParser,
-                               final DeserializationContext deserializationContext) throws IOException {
+                               final DeserializationContext deserializationContext) {
         // To break circular reference
         final var trakediaLiikennepaikkaService = applicationContext.getBean(TrakediaLiikennepaikkaService.class);
         final var liikennepaikkaMap = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkas();
 
         final Station station = new Station();
 
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        final JsonNode node = jsonParser.readValueAsTree();
 
         station.id = node.get("id").asLong();
         station.name = getStringFromNode(node, "nimi");

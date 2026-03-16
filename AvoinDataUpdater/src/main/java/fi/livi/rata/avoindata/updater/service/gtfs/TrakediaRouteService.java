@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.djikstra.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;

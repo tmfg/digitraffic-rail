@@ -1,16 +1,15 @@
 package fi.livi.rata.avoindata.updater.deserializers;
 
 
-import java.io.IOException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
@@ -21,8 +20,8 @@ public class CauseDeserializer extends AEntityDeserializer<Cause> {
     private EntityManager entityManager;
 
     @Override
-    public Cause deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) throws IOException {
-        final JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+    public Cause deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
+        final JsonNode node = jsonParser.readValueAsTree();
 
         Cause cause = new Cause();
 

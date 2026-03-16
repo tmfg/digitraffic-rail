@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -19,8 +19,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 import org.locationtech.jts.geom.MultiLineString;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -155,7 +155,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         assert(trips.getFirst().bikesAllowed).equals(2);
     }
 
-    private JsonNode createLiikennepaikkaNode(final String nameEn, final String nameSe) throws JsonProcessingException {
+    private JsonNode createLiikennepaikkaNode(final String nameEn, final String nameSe) throws JacksonException {
         final String json = String.format(
 """
 [
@@ -165,7 +165,7 @@ public class GTFSDtoServiceTest extends BaseTest {
     }
 ]
 """, nameEn, nameSe);
-        return new ObjectMapper().readTree(json);
+        return JsonMapper.builder().build().readTree(json);
     }
 
     private void assertTranslations(final GTFSDto gtfsDto, final int index,
@@ -723,7 +723,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         final String geometryString =
                 "[[[506423.228795,6943376.039063],[506422.0625,6943401.15625]],[[506422.0625,6943401.15625],[506420.703125,6943426.515625],[506418.6875,6943451.84375],[506414.5625,6943502.21875]],[[506414.5625,6943502.21875],[506396.201907,6943723.197646]]]";
 
-        final ObjectMapper mapper = new ObjectMapper();
+        final var mapper = JsonMapper.builder().build();
         final JsonNode geometryNode = mapper.readTree(geometryString);
 
         final MultiLineString geometry = infraApiPlatformService.deserializePlatformGeometry(geometryNode);

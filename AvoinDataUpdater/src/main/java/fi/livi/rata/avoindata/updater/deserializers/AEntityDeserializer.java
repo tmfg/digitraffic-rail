@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.deserializers;
 
 import static fi.livi.rata.avoindata.updater.service.ruma.RumaUtils.ratakmvaliToString;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,20 +11,20 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Geometry;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.JsonNode;
 
-public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
+public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
 
     protected <Type> List<Type> getObjectsFromNode(final JsonParser jsonParser, final JsonNode node, final Class<Type[]> objectClass,
-                                                   final String nodeName) throws IOException {
-        return Arrays.asList(jsonParser.getCodec().readValue(node.get(nodeName).traverse(jsonParser.getCodec()), objectClass));
+                                                   final String nodeName) {
+        return Arrays.asList(jsonParser.objectReadContext().readValue(node.get(nodeName).traverse(jsonParser.objectReadContext()), objectClass));
     }
 
     protected <Type> Type getObjectFromNode(final JsonParser jp, final JsonNode node, final String nodeName,
-                                            final Class<? extends Type> objectClass) throws IOException {
-        return jp.getCodec().readValue(node.get(nodeName).traverse(jp.getCodec()), objectClass);
+                                            final Class<? extends Type> objectClass) {
+        return jp.objectReadContext().readValue(node.get(nodeName).traverse(jp.objectReadContext()), objectClass);
     }
 
     protected Boolean nullIfFalse(final JsonNode value) {
@@ -159,8 +158,8 @@ public abstract class AEntityDeserializer<T> extends JsonDeserializer<T> {
         return LocalTime.parse(stringNode.asText());
     }
 
-    protected Geometry deserializeGeometry(final JsonNode node, final JsonParser jsonParser) throws IOException {
-        return jsonParser.getCodec().readValue(node.traverse(jsonParser.getCodec()), Geometry.class);
+    protected Geometry deserializeGeometry(final JsonNode node, final JsonParser jsonParser) {
+        return jsonParser.objectReadContext().readValue(node.traverse(jsonParser.objectReadContext()), Geometry.class);
     }
 
 }

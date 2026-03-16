@@ -22,8 +22,8 @@ import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import fi.livi.rata.avoindata.updater.config.MQTTConfig;
 
 @Service
@@ -132,7 +132,7 @@ public class MQTTPublishService {
         return topic.replace("+", "").replace("#", "").replaceAll("/null/", "//").replaceAll("/null/", "//").replaceFirst("/null$", "/");
     }
 
-    private <E> String getEntityAsString(final E entity, final Class viewClass) throws JsonProcessingException {
+    private <E> String getEntityAsString(final E entity, final Class viewClass) throws JacksonException {
         final String entityAsString;
         if (viewClass != null) {
             entityAsString = objectMapper.writerWithView(viewClass).writeValueAsString(entity);

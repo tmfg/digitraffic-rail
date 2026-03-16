@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import fi.finrail.koju.model.KokoonpanoDto;
 import fi.livi.digitraffic.common.util.StringUtil;
