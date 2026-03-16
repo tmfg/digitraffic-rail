@@ -1,50 +1,49 @@
-# Repositoryn tarkoitus
-Sisältää lähdekoodin palvelulle [rata.digitraffic.fi](https://rata.digitraffic.fi/)
+# Digitraffic-rail
+
+This repository contains source code for Java applications that serve some of the APIs in [rata.digitraffic.fi](https://rata.digitraffic.fi/)
+
+Digitraffic is operated by [Fintraffic](https://www.fintraffic.fi)
 
 # Build 
 
-## Ennen ensimmäistä buildia
-
-Varmista, että git submoduulit on alustettu ja päivitetty:
+## Init git submodules
 
 ```bash
 git submodule update --init --recursive
 ```
 
-Tämä varmistaa, että kaikki tarvittavat lähdekoodit ovat käytettävissä Maven-buildissä.
+## Building and testing
 
-## Build ja testaus
-
-Käynnistä kanta
+Init and start database
 ```bash
 cd dbrail
 ./db-rm-build-up.sh
 ```
 
+Run tests
 ```bash
 mvn clean test
 ```
 
-# Arkkitehtuuri
+# Architecture
 
-rata.digitraffic.fi koostuu kolmesta komponentista:
+This repository has three main components:
 
 * AvoinDataServer
-    * Tarjoaa tietoja ulospäin
-  * AvoindataUpdater
-      * Hakee tietoja lähdejärjestelmistä ja pitää tietokantaa siistinä
-      * HTTP-serveri pyörii täällä healthcheckkiä ja manuaalista jobien triggeröintiä varten
-      * Alla esimerkkejä
-      ```
-      curl "http://localhost:18081/reinitialize?date=2024-11-25"  
-      curl "http://localhost:18081/reinitialize-compositions?date=2024-11-25"
-      curl "http://localhost:18081/extract"
-      curl "http://localhost:18081/gtfs"
-      curl "http://localhost:18081/gtfs-dev"
-      ```
-  
+    * Spring Boot application that serves APIs
+* AvoindataUpdater
+    * Fetches data from integration sources and updates the database
+    * Also has HTTP-server for health check and for manually triggering jobs
+    * Some examples
+    ```
+    curl "http://localhost:18081/reinitialize?date=2024-11-25"  
+    curl "http://localhost:18081/reinitialize-compositions?date=2024-11-25"
+    curl "http://localhost:18081/extract"
+    curl "http://localhost:18081/gtfs"
+    curl "http://localhost:18081/gtfs-dev"
+    ```
 * AvoinDataCommon
-    * Yhteisiä toimintoja em. mainituille komponenteille. Mm. tietokannasta haku
+    * Place for shared code, db related things etc
 
 # Run dependency check
 
