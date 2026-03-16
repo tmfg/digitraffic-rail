@@ -49,9 +49,7 @@ jobs:
         if: success() || failure()
         with:
           name: jUnit tests
-          path: |
-            AvoinDataUpdater/target/surefire-reports/*.xml
-            AvoinDataServer/target/surefire-reports/*.xml
+          path: AvoinDataUpdater/target/surefire-reports/*.xml,AvoinDataServer/target/surefire-reports/*.xml
           reporter: java-junit
       - name: Notify Slack
         if: failure()
