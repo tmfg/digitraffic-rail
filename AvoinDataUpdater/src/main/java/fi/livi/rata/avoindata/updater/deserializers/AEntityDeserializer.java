@@ -47,7 +47,7 @@ public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
     }
 
     protected LocalDate getNodeAsLocalDate(final JsonNode node) {
-        if (node == null) {
+        if (isNodeNull(node) || node.asText().isEmpty()) {
             return null;
         } else {
             return LocalDate.parse(node.asText());
@@ -55,14 +55,14 @@ public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
     }
 
     protected ZonedDateTime getNodeAsDateTime(final JsonNode node) {
-        if (isNodeNull(node)) {
+        if (isNodeNull(node) || node.asText().isEmpty()) {
             return null;
         }
         return ZonedDateTime.parse(node.asText());
     }
 
     protected LocalDateTime getNodeAsLocalDateTime(final JsonNode node) {
-        if (node == null) {
+        if (isNodeNull(node) || node.asText().isEmpty()) {
             return null;
         }
         return LocalDateTime.parse(node.asText());
@@ -74,7 +74,7 @@ public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
         }
 
         final JsonNode stringNode = node.get(nodeName);
-        if (stringNode == null) {
+        if (isNodeNull(stringNode)) {
             return null;
         }
 
@@ -87,7 +87,7 @@ public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
         }
 
         final JsonNode stringNode = node.get(nodeName);
-        if (stringNode == null) {
+        if (isNodeNull(stringNode)) {
             return null;
         }
 
@@ -151,7 +151,7 @@ public abstract class AEntityDeserializer<T> extends ValueDeserializer<T> {
         }
 
         final JsonNode stringNode = node.get(nodeName);
-        if (stringNode == null || stringNode.asText() == null || stringNode.asText().equals("null")) {
+        if (isNodeNull(stringNode) || stringNode.asText().isEmpty()) {
             return null;
         }
 
