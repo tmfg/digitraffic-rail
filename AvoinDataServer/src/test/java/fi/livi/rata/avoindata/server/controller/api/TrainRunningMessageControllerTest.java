@@ -6,11 +6,13 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 import fi.livi.rata.avoindata.server.factory.TrainRunningMessageFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @Transactional
@@ -30,10 +32,20 @@ public class TrainRunningMessageControllerTest extends MockMvcBaseTest {
                 .andExpect(jsonPath("$[0].version").value("1"))
                 .andExpect(jsonPath("$[0].trainNumber").value("1"))
                 .andExpect(jsonPath("$[0].departureDate").value("2018-01-01"))
-                .andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00Z"))
+                .andExpect(jsonPath("$[0].timestamp").value("2018-01-01T06:00:00.000Z"))
                 .andExpect(jsonPath("$[0].trackSection").value("RAIDE_1"))
                 .andExpect(jsonPath("$[0].station").value("PSL"))
                 .andExpect(jsonPath("$[0].type").value("OCCUPY"));
+    }
+
+    @Test
+    public void timestampShouldAlwaysIncludeMilliseconds() throws Exception {
+        trainRunningMessageFactory.create();
+
+        final ResultActions result = getJson("/train-tracking/station/PSL/2018-01-01/RAIDE_1");
+
+        // Timestamp must always use format yyyy-MM-dd'T'HH:mm:ss.SSS'Z' (exactly 3 decimal places)
+        result.andExpect(jsonPath("$[0].timestamp", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z")));
     }
 
     @Test

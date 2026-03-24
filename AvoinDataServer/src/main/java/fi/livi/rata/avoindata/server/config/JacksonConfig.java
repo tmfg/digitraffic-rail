@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.ext.javatime.ser.ZonedDateTimeSerializer;
+import tools.jackson.databind.module.SimpleModule;
 
 import org.n52.jackson.datatype.jts.JtsModule;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
@@ -11,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -21,6 +24,9 @@ public class JacksonConfig {
 
     @Bean
     public JsonMapperBuilderCustomizer jacksonCustomizer() {
+        final SimpleModule dateModule = new SimpleModule();
+        dateModule.addSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer(ISO_FIXED_FORMAT));
+
         return builder -> {
             builder.enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                     .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
@@ -29,7 +35,8 @@ public class JacksonConfig {
                     .enable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
                     .enable(DateTimeFeature.WRITE_DATES_WITH_CONTEXT_TIME_ZONE)
                     .defaultTimeZone(TimeZone.getTimeZone("UTC"))
-                    .addModule(new JtsModule());
+                    .addModule(new JtsModule())
+                    .addModule(dateModule);
         };
     }
 }
