@@ -34,6 +34,7 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
+import fi.livi.rata.avoindata.server.config.JacksonConfig;
 import fi.livi.rata.avoindata.server.factory.TrainCategoryFactory;
 import fi.livi.rata.avoindata.server.factory.TrainFactory;
 import fi.livi.rata.avoindata.server.factory.TrainReadyFactory;
@@ -384,7 +385,7 @@ public class LiveTrainControllerTest extends MockMvcBaseTest {
     }
 
     private String modifyTimestamp(final ZonedDateTime time) {
-        return time.toInstant().atZone(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        return time.toInstant().atZone(java.time.ZoneOffset.UTC).format(JacksonConfig.ISO_FIXED_FORMAT);
     }
     @Test
     @Transactional
