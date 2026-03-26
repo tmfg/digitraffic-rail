@@ -350,10 +350,6 @@ public class GTFSTripService {
             log.debug("method=createStopTimes no timeTableRows found for train {} original count {}", schedule.trainNumber, allTrainRows.size());
         }
 
-        if(schedule.trainNumber == 1L) {
-            timeTableRows.forEach(r -> log.debug("method=createStopTimes row {}", r.toString()));
-        }
-
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {
             final ScheduleRow scheduleRow = schedule.scheduleRows.get(i);
             final StopTime stopTime = new StopTime(scheduleRow);

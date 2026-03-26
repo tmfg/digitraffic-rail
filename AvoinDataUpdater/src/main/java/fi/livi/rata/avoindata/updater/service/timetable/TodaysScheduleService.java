@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TodaysScheduleService {
@@ -44,26 +45,21 @@ public class TodaysScheduleService {
             if (regularScheduleInEffect != null) {
                 output.add(regularScheduleInEffect);
             } else {
-                log.trace("Cant decide best schedule. CapacityId: {} Schedules: {}", capacityId, schedulesByCapacityId);
+                log.trace("Can't decide best schedule. CapacityId: {} Schedules: {}", capacityId, schedulesByCapacityId);
             }
         }
 
         return output;
     }
 
+    ///  group all adhoc schedules by (train number, start date) and get the schedule in effect for each
     private List<Schedule> getMostRecentAdhocSchedules(final LocalDate date, final List<Schedule> adhocSchedules) {
-        final List<Schedule> output = new ArrayList<>();
-
-        final Iterable<Schedule> todaysAdhocSchedules = Iterables.filter(adhocSchedules, s -> s.isAllowedByDates(date));
-
-        final ImmutableListMultimap<TrainId, Schedule> trainIdMap = Multimaps.index(todaysAdhocSchedules,
-                s -> new TrainId(s.trainNumber, s.startDate));
-        for (final TrainId trainId : trainIdMap.keySet()) {
-            final ImmutableList<Schedule> schedulesForDay = trainIdMap.get(trainId);
-            output.add(getAdhocScheduleInEffect(schedulesForDay));
-        }
-
-        return output;
+        return adhocSchedules.stream()
+                .filter(s -> s.isAllowedByDates(date))
+                .collect(Collectors.groupingBy(s -> new TrainId(s.trainNumber, s.startDate)))
+                .values().stream()
+                .map(this::getAdhocScheduleInEffect)
+                .toList();
     }
 
     private Schedule getAdhocScheduleInEffect(final Collection<Schedule> schedulesByCapacityId) {

@@ -79,16 +79,7 @@ public class Schedule {
             }
         }
 
-        final boolean isBetweenStartAndEnd = isBetweenStartAndEnd(extractedDate);
-        if (!isBetweenStartAndEnd) {
-            return false;
-        }
-
-        if (isLimitedByWeekday(extractedDate)) {
-            return false;
-        }
-
-        return true;
+        return isBetweenStartAndEnd(extractedDate) && !isLimitedByWeekday(extractedDate);
     }
 
     public boolean isBetweenStartAndEnd(final LocalDate date) {
@@ -97,10 +88,9 @@ public class Schedule {
 
     private boolean isLimitedByWholeDayCancellations(final LocalDate extractedDate) {
         for (final ScheduleCancellation scheduleCancellation : scheduleCancellations) {
-            final boolean isCancelledOnExtractedDate = DateUtils.isInclusivelyBetween(extractedDate, scheduleCancellation.startDate,
-                    scheduleCancellation.endDate);
-            if (isCancelledOnExtractedDate && scheduleCancellation.scheduleCancellationType == ScheduleCancellation
-                    .ScheduleCancellationType.WHOLE_DAY) {
+            if(scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY
+                && DateUtils.isInclusivelyBetween(extractedDate, scheduleCancellation.startDate,
+                    scheduleCancellation.endDate)) {
                 return true;
             }
         }

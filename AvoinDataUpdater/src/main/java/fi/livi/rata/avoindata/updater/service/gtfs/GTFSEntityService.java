@@ -8,7 +8,6 @@ import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.HashBasedTable;
@@ -24,32 +23,27 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 public class GTFSEntityService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private GTFSStopsService gtfsStopsService;
+    private final GTFSStopsService gtfsStopsService;
+    private final GTFSAgencyService gtfsAgencyService;
+    private final GTFSTripService gtfsTripService;
+    private final TodaysScheduleService todaysScheduleService;
+    private final GTFSRouteService gtfsRouteService;
+    private final GTFSShapeService gtfsShapeService;
+    private final TimeTableRowService timeTableRowService;
+    private final PlatformDataService platformDataService;
+    private final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
-    @Autowired
-    private GTFSAgencyService gtfsAgencyService;
-
-    @Autowired
-    private GTFSTripService gtfsTripService;
-
-    @Autowired
-    private TodaysScheduleService todaysScheduleService;
-
-    @Autowired
-    private GTFSRouteService gtfsRouteService;
-
-    @Autowired
-    private GTFSShapeService gtfsShapeService;
-
-    @Autowired
-    private TimeTableRowService timeTableRowService;
-
-    @Autowired
-    private PlatformDataService platformDataService;
-
-    @Autowired
-    private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
+    public GTFSEntityService(GTFSStopsService gtfsStopsService, GTFSAgencyService gtfsAgencyService, GTFSTripService gtfsTripService, TodaysScheduleService todaysScheduleService, GTFSRouteService gtfsRouteService, GTFSShapeService gtfsShapeService, TimeTableRowService timeTableRowService, PlatformDataService platformDataService, TrakediaLiikennepaikkaService trakediaLiikennepaikkaService) {
+        this.gtfsStopsService = gtfsStopsService;
+        this.gtfsAgencyService = gtfsAgencyService;
+        this.gtfsTripService = gtfsTripService;
+        this.todaysScheduleService = todaysScheduleService;
+        this.gtfsRouteService = gtfsRouteService;
+        this.gtfsShapeService = gtfsShapeService;
+        this.timeTableRowService = timeTableRowService;
+        this.platformDataService = platformDataService;
+        this.trakediaLiikennepaikkaService = trakediaLiikennepaikkaService;
+    }
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
@@ -85,12 +79,12 @@ public class GTFSEntityService {
                     final JsonNode translationSe = trakediaNode.get(0).get("nimiSe");
 
                     if (translationEn != null && !translationEn.isNull()) {
-                        translations.add(new Translation(stop.name, "en", translationEn.asText()));
+                        translations.add(new Translation(stop.name, "en", translationEn.asString()));
                     }
 
                     if (translationSe != null && !translationSe.isNull()) {
                         // language code is sv, even though trakedia uses se!
-                        translations.add(new Translation(stop.name, "sv", translationSe.asText()));
+                        translations.add(new Translation(stop.name, "sv", translationSe.asString()));
                     }
                 }
             }
@@ -127,12 +121,17 @@ public class GTFSEntityService {
         return scheduleIntervals;
     }
 
+    /**
+     * Iterate through all schedules and try to figure out the interval that the schedule is active
+     */
     private Map<DateRange, Schedule> createIntervalForATrain(final LocalDate start, final LocalDate end,
-                                                                   final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber, final Long trainNumber) {
+                                                             final Table<LocalDate, Long, Schedule> daysSchedulesByTrainNumber,
+                                                             final Long trainNumber) {
         final Map<DateRange, Schedule> trainsScheduleIntervals = new HashMap<>();
 
         Schedule previousSchedule = null;
         LocalDate intervalStart = start;
+        LocalDate intervalEnd = null;
         for (LocalDate date = start; date.isBefore(end) || date.isEqual(end); date = date.plusDays(1)) {
             final Schedule schedule = daysSchedulesByTrainNumber.get(date, trainNumber);
 
@@ -143,15 +142,19 @@ public class GTFSEntityService {
             } else if (schedule == null) {
                 continue;
             } else if (previousSchedule != null && previousSchedule.id != schedule.id) {
-                trainsScheduleIntervals.put(new DateRange(intervalStart, date.minusDays(1)), previousSchedule);
+                trainsScheduleIntervals.put(new DateRange(intervalStart, intervalEnd), previousSchedule);
                 intervalStart = date;
             }
 
+            intervalEnd = date;
             previousSchedule = schedule;
         }
         return trainsScheduleIntervals;
     }
 
+    /**
+     * Correct interval ends to be at maximum the end date of the schedule.
+     */
     private Map<DateRange, Schedule> correctIntervalEnds(final Map<DateRange, Schedule> trainsScheduleIntervals) {
         final Map<DateRange, Schedule> correctedTrainsScheduleIntervals = new HashMap<>();
         for (final Map.Entry<DateRange, Schedule> entry : trainsScheduleIntervals.entrySet()) {
