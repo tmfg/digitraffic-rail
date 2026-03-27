@@ -11,7 +11,7 @@ OR use script
 ./db-rm-build-up.sh
 ````
 
-For old version of database run SQL command to change derault character set and collation:
+For old version of database run SQL command to change default character set and collation:
 
 ````SQL
 ALTER DATABASE `{database name}` CHARACTER SET = utf8mb4 COLLATE = utf8mb4_swedish_ci;
