@@ -162,13 +162,13 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
       - name: Download updater jar
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         if: github.event.inputs.install-updater == 'true'
         with:
           name: updater.jar
           path: digitraffic-ci/aws
       - name: Download server jar
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         if: github.event.inputs.install-server == 'true'
         with:
           name: server.jar
@@ -304,13 +304,13 @@ jobs:
 
       - name: Download server-SBOM
         if: github.event.inputs.install-server == 'true'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: server-sbom.json
 
       - name: Download updater-SBOM
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: updater-sbom.json
 
