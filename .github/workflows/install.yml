@@ -123,15 +123,7 @@ jobs:
         with:
           name: updater-sbom.json
           path: AvoinDataUpdater/target/updater-sbom.json
-      - name: Notify Slack
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: FAILED Rail Install to ${{ github.event.inputs.env }}
-          fields: repo, job, took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
   images:
     if: github.repository != 'tmfg/digitraffic-rail'
     needs: build
@@ -209,15 +201,7 @@ jobs:
             --file=docker/Dockerfile-rail-avoindataserver .
 
           docker push ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }}
-      - name: Notify Slack
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: FAILED Rail deploy/install
-          fields: repo, job, took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
   install:
     if: github.repository != 'tmfg/digitraffic-rail'
     needs: [images, build]
@@ -347,12 +331,4 @@ jobs:
         if: github.event.inputs.install-updater == 'true'
         run: |
           aws s3 cp updater-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['updater'] }}/${{ github.run_id }}-${{ github.sha }}.json
-      - name: Notify Slack
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: FAILED Rail install
-          fields: repo, job, took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
