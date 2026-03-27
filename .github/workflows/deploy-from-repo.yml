@@ -97,12 +97,4 @@ jobs:
       - name: Upload SBOM
         run: |
           aws s3 cp ${{ github.event.inputs.application-name }}-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env][github.event.inputs.application-name] }}/${{ github.run_id }}-${{ github.sha }}.json
-      - name: Notify Slack
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: FAILED ${{ github.event.inputs.application-name }} deploy on ${{ github.event.inputs.env }}
-          fields: repo, job, took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
