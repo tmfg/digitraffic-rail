@@ -58,9 +58,9 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @PostConstruct
     private void initializeVersion() {
-        final Long dbMaxVersion = trainPersistService.getMaxVersion();
-        currentVersion.set(dbMaxVersion != null ? dbMaxVersion : -1L);
-        log.info("method=initializeVersion Initialized currentVersion={} from database", currentVersion.get());
+        final Long dbMaxSourceVersion = trainPersistService.getMaxSourceVersion();
+        currentVersion.set(dbMaxSourceVersion != null ? dbMaxSourceVersion : -1L);
+        log.info("method=initializeVersion Initialized currentVersion={} from database source_version", currentVersion.get());
     }
 
     @Override
@@ -125,19 +125,26 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
      * Custom update logic that uses the fira-data-version response header for version tracking.
      */
     private List<Train> persistTrains(final List<Train> trains, final Long dbMaxVersion, final Long responseVersion, final long queryVersion) {
-        final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
         final long previousVersion = currentVersion.get();
 
-        // Update currentVersion from the fira-data-version header if present
+        // Determine the source version to store on each train
+        final long newSourceVersion;
         if (responseVersion != null) {
-            currentVersion.set(responseVersion);
+            newSourceVersion = responseVersion;
             log.info("method=persistTrains Updated currentVersion from {} to {} (from fira-data-version header)",
                 previousVersion, responseVersion);
         } else {
-            currentVersion.set(dbMaxVersion);
+            newSourceVersion = dbMaxVersion != null ? dbMaxVersion : queryVersion;
             log.error("method=persistTrains fira-data-version header not present in response, updating with max value from db from {} to {}",
-                    previousVersion, dbMaxVersion);
+                    previousVersion, newSourceVersion);
         }
+
+        // Store the source version on every train so it can be used to resume polling after restart
+        trains.forEach(t -> t.sourceVersion = newSourceVersion);
+
+        final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
+
+        currentVersion.set(newSourceVersion);
 
         lastUpdateService.update(getPrefix());
 

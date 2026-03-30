@@ -86,6 +86,10 @@ public class Train implements Comparable<Train> {
     @Schema(description = "When was train last modified")
     public Long version;
 
+    @JsonIgnore
+    @Column(name = "source_version")
+    public Long sourceVersion;
+
     @Schema(description = "Is the train ADHOC or REGULAR. REGULAR trains are run for example every monday, ADHOC trains are one-time trains")
     public TimetableType timetableType;
 

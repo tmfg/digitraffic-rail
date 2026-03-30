@@ -144,6 +144,41 @@ public class TrainControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    public void sourceVersionIsNotIncludedInJsonResponse() throws Exception {
+        final LocalDate someDate = DateProvider.dateInHelsinki();
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, someDate));
+        train.sourceVersion = 99999L;
+        trainRepository.save(train);
+
+        getJson(String.format("/trains/%s/1", someDate))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].version").exists())
+                .andExpect(jsonPath("$[0].sourceVersion").doesNotExist());
+    }
+
+    @Test
+    public void versionFilteringUsesApiVersionNotSourceVersion() throws Exception {
+        final LocalDate someDate = DateProvider.dateInHelsinki();
+
+        // Train has API version 5 but a high sourceVersion
+        final Train train = trainFactory.createBaseTrain(new TrainId(1L, someDate), 5L);
+        train.sourceVersion = 9000L;
+        trainRepository.save(train);
+
+        // version=4 should return the train (API version 5 > 4)
+        getJson(String.format("/trains/%s/1?version=4", someDate))
+                .andExpect(jsonPath("$.length()").value(1));
+
+        // version=5 should NOT return the train (5 is not > 5)
+        getJson(String.format("/trains/%s/1?version=5", someDate))
+                .andExpect(jsonPath("$.length()").value(0));
+
+        // version equal to sourceVersion should NOT change behaviour — no train has version > 9000
+        getJson(String.format("/trains/%s/1?version=9000", someDate))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     public void defaultVersionShouldReturnTrain() throws Exception {
         final LocalDate someDate = DateProvider.dateInHelsinki();
 
