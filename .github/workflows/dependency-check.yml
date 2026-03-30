@@ -45,4 +45,4 @@ jobs:
           text: FAILED Rail Dependency Check
           fields: repo, job, took
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WARNINGS_WEBHOOK_URL }}
