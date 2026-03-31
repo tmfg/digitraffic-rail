@@ -58,9 +58,15 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     @PostConstruct
     private void initializeVersion() {
-        final Long dbMaxSourceVersion = trainPersistService.getMaxSourceVersion();
-        currentVersion.set(dbMaxSourceVersion != null ? dbMaxSourceVersion : -1L);
-        log.info("method=initializeVersion Initialized currentVersion={} from database source_version", currentVersion.get());
+        final long dbMaxSourceVersion = trainPersistService.getMaxSourceVersion();
+        if (dbMaxSourceVersion > 0) {
+            currentVersion.set(dbMaxSourceVersion);
+            log.info("method=initializeVersion Initialized currentVersion={} from database source_version", currentVersion.get());
+        } else {
+            final long dbMaxVersion = trainPersistService.getMaxVersion();
+            currentVersion.set(dbMaxVersion);
+            log.info("method=initializeVersion No source_version found in database, falling back to max train version currentVersion={}", currentVersion.get());
+        }
     }
 
     @Override

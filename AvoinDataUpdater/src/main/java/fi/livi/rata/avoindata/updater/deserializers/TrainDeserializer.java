@@ -70,8 +70,6 @@ public class TrainDeserializer extends AEntityDeserializer<Train> {
         final Train train = new Train(trainNumber, departureDate, operatorUICCode, operatorShortCode, trainCategoryId, trainTypeId,
                 commuterLineID, runningCurrently, cancelled, maxVersion, timetableType, timetableAcceptanceDate);
 
-        train.sourceVersion = maxVersion;
-
         for (final TimeTableRow timeTableRow : timeTableRows) {
             timeTableRow.train = train;
         }
