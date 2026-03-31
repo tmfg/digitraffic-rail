@@ -5,6 +5,7 @@ import java.sql.SQLTimeoutException;
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -159,6 +160,37 @@ public class DefaultExceptionHandler {
             return handleClientAbortException((ClientAbortException) e.getCause(), response, request);
         }
         return createAndLogReturn(request, response, e.getMessage(), ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
+    }
+
+    @ExceptionHandler(HttpMessageNotWritableException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ExceptionMessage handleHttpMessageNotWritableException(final HttpMessageNotWritableException e,
+                                                                  final HttpServletResponse response,
+                                                                  final HttpServletRequest request) {
+        if (isClientAbort(e)) {
+            log.debug("Client disconnected during response write: {}", HttpUtils.getFullURL(request));
+            return createAndLogReturn(request, response, "Client aborted connection error", ExceptionMessage.ErrorCodeEnum.INTERNAL_ERROR);
+        }
+        return handleRuntimeException(e, response, request);
+    }
+
+    private static boolean isClientAbort(final Throwable e) {
+        Throwable current = e;
+        while (current != null) {
+            if (current instanceof ClientAbortException || current instanceof AsyncRequestNotUsableException) {
+                return true;
+            }
+            if (current instanceof java.io.IOException && "Broken pipe".equals(current.getMessage())) {
+                return true;
+            }
+            for (final Throwable suppressed : current.getSuppressed()) {
+                if (isClientAbort(suppressed)) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     @ExceptionHandler({ Exception.class, RuntimeException.class })
