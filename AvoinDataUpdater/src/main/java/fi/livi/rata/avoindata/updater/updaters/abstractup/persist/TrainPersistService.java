@@ -63,11 +63,11 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     /**
      * Assigns sequential API version numbers to the given trains, splitting them into
      * chunks of at most MAX_VERSION_CHUNK_SIZE so that each version fits within one API response.
-     * Each chunk receives the next available version number (currentDbMax + 1, +2, …).
+     * Each chunk receives the next available API version number (currentDbMax + 1, +2, …).
      * The trains are mutated in place.
      */
-    void assignVersionsInChunks(final List<Train> entities) {
-        long currentMax = trainRepository.getMaxVersion();
+    void assignApiVersionsInChunks(final List<Train> entities) {
+        long currentMax = trainRepository.getMaxApiVersion();
         for (final List<Train> chunk : Lists.partition(entities, MAX_VERSION_CHUNK_SIZE)) {
             currentMax++;
             for (final Train train : chunk) {
@@ -83,7 +83,7 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             return entities;
         }
 
-        assignVersionsInChunks(entities);
+        assignApiVersionsInChunks(entities);
 
         for (final Train entity : entities) {
             for (final TimeTableRow timeTableRow : entity.timeTableRows) {
@@ -115,7 +115,7 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     @Override
     @Transactional
     public void addEntities(final List<Train> entities) {
-        assignVersionsInChunks(entities);
+        assignApiVersionsInChunks(entities);
         addEntitiesInternal(entities);
     }
 
@@ -153,8 +153,8 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         causeRepository.persist(causes);
     }
 
-    public Long getMaxVersion() {
-        return trainRepository.getMaxVersion();
+    public Long getMaxApiVersion() {
+        return trainRepository.getMaxApiVersion();
     }
 
     public Long getMaxSourceVersion() {
