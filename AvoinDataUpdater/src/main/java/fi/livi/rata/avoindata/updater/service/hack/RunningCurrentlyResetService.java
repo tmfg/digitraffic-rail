@@ -29,18 +29,18 @@ public class RunningCurrentlyResetService {
         final LocalDate maxDepartureDate = DateProvider.dateInHelsinki().minusDays(2);
         trainLockExecutor.executeInLock("resetOldRunningTrains", () -> {
             final List<Train> oldRunningTrains = trainRepository.findRunningTrains(maxDepartureDate);
-            final long maxVersion = trainRepository.getMaxVersion();
+            final long maxApiVersion = trainRepository.getMaxApiVersion();
 
             for (final Train oldRunningTrain : oldRunningTrains) {
                 oldRunningTrain.runningCurrently = false;
-                oldRunningTrain.version = maxVersion + 1;
+                oldRunningTrain.version = maxApiVersion + 1;
 
                 log.info("Resetting running-currently for {} at version {}", oldRunningTrain.id, oldRunningTrain.version);
             }
 
             trainRepository.saveAll(oldRunningTrains);
 
-            return maxVersion;
+            return maxApiVersion;
         });
     }
 }

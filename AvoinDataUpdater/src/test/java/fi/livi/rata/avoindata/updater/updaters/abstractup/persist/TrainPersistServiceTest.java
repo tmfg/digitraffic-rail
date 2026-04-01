@@ -89,7 +89,7 @@ public class TrainPersistServiceTest extends BaseTest {
 
     @Test
     public void updateEntitiesBelowChunkLimitAllGetSameVersion() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
         final List<Train> trains = createUnpersistedTrains(10);
 
         trainPersistService.updateEntities(trains);
@@ -100,18 +100,18 @@ public class TrainPersistServiceTest extends BaseTest {
         for (final Train t : saved) {
             Assertions.assertEquals(expectedVersion, t.version, "All trains in one chunk must share the same version");
         }
-        Assertions.assertEquals(expectedVersion, trainPersistService.getMaxVersion());
+        Assertions.assertEquals(expectedVersion, trainPersistService.getMaxApiVersion());
     }
 
     @Test
     public void updateEntitiesExactlyChunkSizeAllGetSameVersion() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
         final List<Train> trains = createUnpersistedTrains(TrainPersistService.MAX_VERSION_CHUNK_SIZE);
 
         trainPersistService.updateEntities(trains);
 
         final long expectedVersion = previousMax + 1;
-        Assertions.assertEquals(expectedVersion, trainPersistService.getMaxVersion());
+        Assertions.assertEquals(expectedVersion, trainPersistService.getMaxApiVersion());
         final long distinctVersionCount = trainRepository.findAll().stream()
                 .map(t -> t.version).distinct().count();
         Assertions.assertEquals(1, distinctVersionCount, "Exactly MAX_VERSION_CHUNK_SIZE trains must fit in one version");
@@ -119,14 +119,14 @@ public class TrainPersistServiceTest extends BaseTest {
 
     @Test
     public void updateEntitiesOneOverChunkLimitSplitsIntoTwoVersions() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
         final List<Train> trains = createUnpersistedTrains(TrainPersistService.MAX_VERSION_CHUNK_SIZE + 1);
 
         trainPersistService.updateEntities(trains);
 
         final long firstVersion = previousMax + 1;
         final long secondVersion = previousMax + 2;
-        Assertions.assertEquals(secondVersion, trainPersistService.getMaxVersion());
+        Assertions.assertEquals(secondVersion, trainPersistService.getMaxApiVersion());
 
         final List<Train> saved = trainRepository.findAll();
         final long countFirst = saved.stream().filter(t -> t.version == firstVersion).count();
@@ -138,7 +138,7 @@ public class TrainPersistServiceTest extends BaseTest {
 
     @Test
     public void updateEntitiesTwoFullChunksSplitsIntoTwoVersions() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
         final int twoChunks = TrainPersistService.MAX_VERSION_CHUNK_SIZE * 2;
         final List<Train> trains = createUnpersistedTrains(twoChunks);
 
@@ -146,7 +146,7 @@ public class TrainPersistServiceTest extends BaseTest {
 
         final long firstVersion = previousMax + 1;
         final long secondVersion = previousMax + 2;
-        Assertions.assertEquals(secondVersion, trainPersistService.getMaxVersion());
+        Assertions.assertEquals(secondVersion, trainPersistService.getMaxApiVersion());
 
         final List<Train> saved = trainRepository.findAll();
         final long countFirst = saved.stream().filter(t -> t.version == firstVersion).count();
@@ -157,27 +157,27 @@ public class TrainPersistServiceTest extends BaseTest {
 
     @Test
     public void sequentialCallsProduceStrictlyIncreasingVersions() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
 
         trainPersistService.updateEntities(createUnpersistedTrains(3, LocalDate.now().plusDays(10)));
-        final long versionAfterFirst = trainPersistService.getMaxVersion();
+        final long versionAfterFirst = trainPersistService.getMaxApiVersion();
         Assertions.assertEquals(previousMax + 1, versionAfterFirst);
 
         trainPersistService.updateEntities(createUnpersistedTrains(3, LocalDate.now().plusDays(11)));
-        final long versionAfterSecond = trainPersistService.getMaxVersion();
+        final long versionAfterSecond = trainPersistService.getMaxApiVersion();
         Assertions.assertEquals(previousMax + 2, versionAfterSecond);
     }
 
     @Test
     public void addEntitiesAlsoAssignsVersionsInChunks() {
-        final long previousMax = trainPersistService.getMaxVersion();
+        final long previousMax = trainPersistService.getMaxApiVersion();
         final List<Train> trains = createUnpersistedTrains(TrainPersistService.MAX_VERSION_CHUNK_SIZE + 1);
 
         trainPersistService.addEntities(trains);
 
         final long firstVersion = previousMax + 1;
         final long secondVersion = previousMax + 2;
-        Assertions.assertEquals(secondVersion, trainPersistService.getMaxVersion());
+        Assertions.assertEquals(secondVersion, trainPersistService.getMaxApiVersion());
 
         final List<Train> saved = trainRepository.findAll();
         final long countFirst = saved.stream().filter(t -> t.version == firstVersion).count();
