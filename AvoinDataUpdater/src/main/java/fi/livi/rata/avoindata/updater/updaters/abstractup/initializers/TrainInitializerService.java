@@ -102,7 +102,7 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
                 modifyEntitiesBeforePersist(trains);
 
-                final var updatedEntities = persistTrains(trains, response.version(), querySourceVersion);
+                final var updatedEntities = persistTrains(trains, response.version());
 
                 // log both dbMaxApiVersion and the source version from the fira-data-version header for debugging
                 logUpdate(querySourceVersion, time.getDuration().toMillis(), updatedEntities.size(),
@@ -132,26 +132,39 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
 
     /**
      * Persists trains and advances the source version cursor.
-     * If the fira-data-version response header is missing, trains are still persisted
-     * but sourceVersion and currentSourceVersion are left unchanged so the next poll
-     * retries from the same position and sourceVersion is never corrupted with an API version number.
+     *
+     * Each train's sourceVersion is set from train.version, which the deserializer
+     * populates with the max version number embedded in the payload (from TimeTableRow.version
+     * fields). This is done before updateEntities() overwrites train.version with the API version.
+     *
+     * currentSourceVersion is advanced from the fira-data-version response header (primary).
+     * If the header is absent, the max sourceVersion across the batch is used as fallback
+     * so the next poll does not re-fetch trains we already have.
      */
-    private List<Train> persistTrains(final List<Train> trains, final Long responseSourceVersion, final long querySourceVersion) {
+    private List<Train> persistTrains(final List<Train> trains, final Long responseSourceVersion) {
         final long previousSourceVersion = currentSourceVersion.get();
 
-        if (responseSourceVersion == null) {
-            log.error("method=persistTrains fira-data-version header not present in response, retaining currentSourceVersion={}", previousSourceVersion);
-            return trainPersistService.updateEntities(trains);
+        // Set each train's sourceVersion from its own embedded payload version (train.version),
+        // before updateEntities overwrites train.version with the API version.
+        trains.forEach(t -> t.sourceVersion = t.version);
+
+        final long newSourceVersion;
+        if (responseSourceVersion != null) {
+            newSourceVersion = responseSourceVersion;
+            log.info("method=persistTrains advancing currentSourceVersion from {} to {} (from fira-data-version header)",
+                    previousSourceVersion, newSourceVersion);
+        } else {
+            newSourceVersion = trains.stream()
+                    .mapToLong(t -> t.sourceVersion)
+                    .max()
+                    .orElse(previousSourceVersion);
+            log.error("method=persistTrains fira-data-version header not present in response, advancing currentSourceVersion from {} to {} using payload max",
+                    previousSourceVersion, newSourceVersion);
         }
-
-        log.info("method=persistTrains Updated currentSourceVersion from {} to {} (from fira-data-version header)",
-                previousSourceVersion, responseSourceVersion);
-
-        trains.forEach(t -> t.sourceVersion = responseSourceVersion);
 
         final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
 
-        currentSourceVersion.set(responseSourceVersion);
+        currentSourceVersion.set(newSourceVersion);
 
         lastUpdateService.update(getPrefix());
 

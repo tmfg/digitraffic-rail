@@ -153,6 +153,11 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         causeRepository.persist(causes);
     }
 
+    @Override
+    public Long getMaxVersion() {
+        return getMaxApiVersion();
+    }
+
     public Long getMaxApiVersion() {
         return trainRepository.getMaxApiVersion();
     }
