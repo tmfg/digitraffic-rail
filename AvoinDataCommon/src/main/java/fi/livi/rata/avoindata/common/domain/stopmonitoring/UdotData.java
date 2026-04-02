@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 public interface UdotData {
+    Long getId();
+
     int getAttapId();
 
     Boolean getUnknownDelay();

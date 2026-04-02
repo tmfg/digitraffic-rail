@@ -65,7 +65,7 @@ public class UnknownDelayOrTrackUpdaterService {
                 }
 
                 // set model updated for udot
-                udotRepository.setModelUpdated(u.getTrainDepartureDate(), u.getAttapId(), u.getModifiedDb());
+                udotRepository.setModelUpdated(u.getId(), u.getModifiedDb());
                 return null;
             }));
         }

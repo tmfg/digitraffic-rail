@@ -7,10 +7,13 @@ import fi.livi.rata.avoindata.common.domain.stopmonitoring.Udot;
 import fi.livi.rata.avoindata.common.domain.stopmonitoring.UdotData;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.BaseTest;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -29,6 +32,9 @@ public class UnknownDelayOrTrackUpdaterServiceTest extends BaseTest {
 
     @Autowired
     private TimeTableRowRepository timeTableRowRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private static final LocalDate DATE = LocalDate.of(2014, 12, 10);
     private static final int ATTAP_ID_1 = 20906355;
@@ -109,5 +115,38 @@ public class UnknownDelayOrTrackUpdaterServiceTest extends BaseTest {
         unknownDelayOrTrackUpdaterService.updateUdotInformation();
         assertUdotInRow(ATTAP_ID_1, false, null);
         assertUdotInRow(ATTAP_ID_2, false, null);
+    }
+
+    // --- New tests for deadlock fix (update by id with optimistic lock) ---
+
+    @Test
+    public void projectionIncludesId() {
+        // given
+        createUdot(true, true);
+
+        // when
+        final List<UdotData> unhandled = udotRepository.findByModelUpdatedTimeIsNullOrderByModifiedDb();
+
+        // then
+        Assertions.assertEquals(1, unhandled.size());
+        Assertions.assertNotNull(unhandled.get(0).getId());
+        Assertions.assertEquals(123L, unhandled.get(0).getId());
+    }
+
+    @Test
+    @Transactional
+    public void setModelUpdatedById_updatesWhenModifiedDbMatches() {
+        // given
+        createUdot(true, true);
+        final UdotData data = udotRepository.findByModelUpdatedTimeIsNullOrderByModifiedDb().get(0);
+
+        // when
+        final int updated = udotRepository.setModelUpdated(data.getId(), data.getModifiedDb());
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        Assertions.assertEquals(1, updated);
+        assertUnhandledCount(0);
     }
 }
