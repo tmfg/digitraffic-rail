@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.util.concurrent.MoreExecutors;
 
+import fi.livi.rata.avoindata.common.domain.common.TrainApiConstants;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.BatchExecutionService;
@@ -69,42 +70,45 @@ public class AllTrainsControllerTest extends MockMvcBaseTest {
     @Test
     @Transactional
     public void oldestTrainsShouldBeIncludedAndOrderedByTrainNumber() throws Exception {
-        final int maxAnnouncedTrains = trainController.MAX_ANNOUNCED_TRAINS;
-        trainController.MAX_ANNOUNCED_TRAINS = 5;
+        ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", 5);
 
-        for (long i = 1; i <= 10; i++) {
-            final Train baseTrain = trainFactory.createBaseTrain(new TrainId(i, LocalDate.now().plusDays(100)));
-            baseTrain.version = 10 - i + 1;
+        try {
+            for (long i = 1; i <= 10; i++) {
+                final Train baseTrain = trainFactory.createBaseTrain(new TrainId(i, LocalDate.now().plusDays(100)));
+                baseTrain.version = 10 - i + 1;
+            }
+
+            final int maxAnnouncedTrains = (int) ReflectionTestUtils.getField(trainController, "maxAnnouncedTrains");
+
+            final ResultActions r1 = getJson("/all-trains?version=0");
+            // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
+            r1.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains - 1));
+
+            r1.andExpect(jsonPath("$[0].version").value(4));
+            r1.andExpect(jsonPath("$[1].version").value(3));
+            r1.andExpect(jsonPath("$[2].version").value(2));
+            r1.andExpect(jsonPath("$[3].version").value(1));
+
+            r1.andExpect(jsonPath("$[0].trainNumber").value(7));
+            r1.andExpect(jsonPath("$[1].trainNumber").value(8));
+            r1.andExpect(jsonPath("$[2].trainNumber").value(9));
+            r1.andExpect(jsonPath("$[3].trainNumber").value(10));
+
+            final ResultActions r2 = getJson("/all-trains?version=5");
+            // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
+            r2.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains - 1));
+
+            r2.andExpect(jsonPath("$[0].version").value(9));
+            r2.andExpect(jsonPath("$[1].version").value(8));
+            r2.andExpect(jsonPath("$[2].version").value(7));
+            r2.andExpect(jsonPath("$[3].version").value(6));
+
+            r2.andExpect(jsonPath("$[0].trainNumber").value(2));
+            r2.andExpect(jsonPath("$[1].trainNumber").value(3));
+            r2.andExpect(jsonPath("$[2].trainNumber").value(4));
+            r2.andExpect(jsonPath("$[3].trainNumber").value(5));
+        } finally {
+            ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", TrainApiConstants.MAX_TRAINS_PER_VERSION);
         }
-
-        final ResultActions r1 = getJson("/all-trains?version=0");
-        // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
-        r1.andExpect(jsonPath("$.length()").value(trainController.MAX_ANNOUNCED_TRAINS - 1));
-
-        r1.andExpect(jsonPath("$[0].version").value(4));
-        r1.andExpect(jsonPath("$[1].version").value(3));
-        r1.andExpect(jsonPath("$[2].version").value(2));
-        r1.andExpect(jsonPath("$[3].version").value(1));
-
-        r1.andExpect(jsonPath("$[0].trainNumber").value(7));
-        r1.andExpect(jsonPath("$[1].trainNumber").value(8));
-        r1.andExpect(jsonPath("$[2].trainNumber").value(9));
-        r1.andExpect(jsonPath("$[3].trainNumber").value(10));
-
-        final ResultActions r2 = getJson("/all-trains?version=5");
-        // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
-        r2.andExpect(jsonPath("$.length()").value(trainController.MAX_ANNOUNCED_TRAINS - 1));
-
-        r2.andExpect(jsonPath("$[0].version").value(9));
-        r2.andExpect(jsonPath("$[1].version").value(8));
-        r2.andExpect(jsonPath("$[2].version").value(7));
-        r2.andExpect(jsonPath("$[3].version").value(6));
-
-        r2.andExpect(jsonPath("$[0].trainNumber").value(2));
-        r2.andExpect(jsonPath("$[1].trainNumber").value(3));
-        r2.andExpect(jsonPath("$[2].trainNumber").value(4));
-        r2.andExpect(jsonPath("$[3].trainNumber").value(5));
-
-        trainController.MAX_ANNOUNCED_TRAINS = maxAnnouncedTrains;
     }
 }
