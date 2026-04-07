@@ -175,22 +175,21 @@ public class DefaultExceptionHandler {
     }
 
     private static boolean isClientAbort(final Throwable e) {
-        Throwable current = e;
-        while (current != null) {
-            if (current instanceof ClientAbortException || current instanceof AsyncRequestNotUsableException) {
-                return true;
-            }
-            if (current instanceof java.io.IOException && "Broken pipe".equals(current.getMessage())) {
-                return true;
-            }
-            for (final Throwable suppressed : current.getSuppressed()) {
-                if (isClientAbort(suppressed)) {
-                    return true;
-                }
-            }
-            current = current.getCause();
+        if (e == null) {
+            return false;
         }
-        return false;
+        if (e instanceof ClientAbortException || e instanceof AsyncRequestNotUsableException) {
+            return true;
+        }
+        if (e instanceof java.io.IOException && "Broken pipe".equals(e.getMessage())) {
+            return true;
+        }
+        for (final Throwable suppressed : e.getSuppressed()) {
+            if (isClientAbort(suppressed)) {
+                return true;
+            }
+        }
+        return isClientAbort(e.getCause());
     }
 
     @ExceptionHandler({ Exception.class, RuntimeException.class })
