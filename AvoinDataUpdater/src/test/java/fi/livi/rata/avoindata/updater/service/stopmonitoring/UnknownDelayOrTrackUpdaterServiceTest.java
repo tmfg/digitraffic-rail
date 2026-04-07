@@ -141,12 +141,15 @@ public class UnknownDelayOrTrackUpdaterServiceTest extends BaseTest {
         final UdotData data = udotRepository.findByModelUpdatedTimeIsNullOrderByModifiedDb().get(0);
 
         // when
-        final int updated = udotRepository.setModelUpdated(data.getId(), data.getModifiedDb());
+        udotRepository.setModelUpdated(data.getId(), data.getModifiedDb());
         entityManager.flush();
         entityManager.clear();
 
         // then
-        Assertions.assertEquals(1, updated);
         assertUnhandledCount(0);
+        final Object result = entityManager.createNativeQuery("SELECT model_updated_time FROM rami_udot WHERE id = :id")
+            .setParameter("id", data.getId())
+            .getSingleResult();
+        Assertions.assertNotNull(result, "model_updated_time should be set after setModelUpdated");
     }
 }
