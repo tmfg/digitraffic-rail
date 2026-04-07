@@ -18,12 +18,8 @@ public interface UdotRepository extends CustomGeneralRepository<Udot, String> {
     List<UdotData> findByModelUpdatedTimeIsNullOrderByModifiedDb();
 
     @Modifying
-    @Query(value = """
-update rami_udot set model_updated_time = CURRENT_TIMESTAMP
-where modified_db = :modifiedDb
-and attap_id = :attapId
-and train_departure_date = :trainDepartureDate""", nativeQuery = true)
-    void setModelUpdated(@Param("trainDepartureDate") final LocalDate trainDepartureDate, @Param("attapId") final int attapId, @Param("modifiedDb") final ZonedDateTime modifiedDb);
+    @Query(value = "UPDATE rami_udot SET model_updated_time = CURRENT_TIMESTAMP WHERE id = :id AND modified_db = :modifiedDb", nativeQuery = true)
+    void setModelUpdated(@Param("id") final Long id, @Param("modifiedDb") final ZonedDateTime modifiedDb);
 
     @Query(value = """
 select attap_id, unknown_delay, unknown_track
