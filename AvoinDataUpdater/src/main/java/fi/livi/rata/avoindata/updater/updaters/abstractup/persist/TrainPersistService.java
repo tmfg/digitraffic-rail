@@ -18,6 +18,7 @@ import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainReadyRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.common.TrainApiConstants;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -29,13 +30,6 @@ import jakarta.persistence.PersistenceContext;
 
 @Service
 public class TrainPersistService extends AbstractPersistService<Train> {
-    /**
-     * Maximum number of trains that may share the same API version number.
-     * Must be kept in sync with TrainController.MAX_ANNOUNCED_TRAINS so that every
-     * version-chunk can be returned in a single API response.
-     */
-    public static final int MAX_VERSION_CHUNK_SIZE = 2500;
-
     private final TrainRepository trainRepository;
     private final TimeTableRowRepository timeTableRowRepository;
     private final CauseRepository causeRepository;
@@ -62,13 +56,14 @@ public class TrainPersistService extends AbstractPersistService<Train> {
 
     /**
      * Assigns sequential API version numbers to the given trains, splitting them into
-     * chunks of at most MAX_VERSION_CHUNK_SIZE so that each version fits within one API response.
+     * chunks of at most {@link TrainApiConstants#MAX_TRAINS_PER_VERSION} so that each
+     * version fits within one API response.
      * Each chunk receives the next available API version number (currentDbMax + 1, +2, …).
      * The trains are mutated in place.
      */
     void assignApiVersionsInChunks(final List<Train> entities) {
         long currentMax = trainRepository.getMaxApiVersion();
-        for (final List<Train> chunk : Lists.partition(entities, MAX_VERSION_CHUNK_SIZE)) {
+        for (final List<Train> chunk : Lists.partition(entities, TrainApiConstants.MAX_TRAINS_PER_VERSION)) {
             currentMax++;
             for (final Train train : chunk) {
                 train.version = currentMax;

@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.train.AllTrainsRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainApiConstants;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -45,7 +46,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class TrainController extends ADataController {
-    public static int MAX_ANNOUNCED_TRAINS = 2500;
+    int maxAnnouncedTrains = TrainApiConstants.MAX_TRAINS_PER_VERSION;
 
     private final TrainRepository trainRepository;
     private final AllTrainsRepository allTrainsRepository;
@@ -77,7 +78,7 @@ public class TrainController extends ADataController {
         }
 
         final List<AllTrainsRepository.FindByVersionQueryResult> results =
-                findByTrainIdService.getTrainsGreaterThanVersionRecursive(version, MAX_ANNOUNCED_TRAINS);
+                findByTrainIdService.getTrainsGreaterThanVersionRecursive(version, maxAnnouncedTrains);
 
         final List<TrainId> trainIds = createTrainIdsFromRawIds(results);
 
