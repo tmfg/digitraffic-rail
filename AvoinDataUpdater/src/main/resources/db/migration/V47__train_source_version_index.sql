@@ -1,0 +1,1 @@
+CREATE INDEX train_source_version_IDX ON train (source_version);
