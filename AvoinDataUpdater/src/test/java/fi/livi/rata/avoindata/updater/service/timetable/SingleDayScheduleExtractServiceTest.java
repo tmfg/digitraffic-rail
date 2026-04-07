@@ -48,7 +48,7 @@ public class SingleDayScheduleExtractServiceTest extends BaseTest {
 
     private List<Train> extract(final List<Schedule> adhoc, final List<Schedule> regular, final LocalDate date) {
         final var trains = singleDayScheduleExtractService.extractTrains(adhoc, regular, date);
-        final var extractedTrains = singleDayScheduleExtractService.extract(trains.getRight(), date, true);
+        final var extractedTrains = singleDayScheduleExtractService.extract(trains.getRight(), date);
 
         // need cancelled trains for testing
         return ListUtils.union(ListUtils.union(extractedTrains.added(), extractedTrains.updated()), extractedTrains.cancelled());
