@@ -201,12 +201,12 @@ public class DatabaseUpdaterApplication {
         }
 
         private boolean isInitializationNeeded() {
-            final long trainMaxVersion = trainPersistService.getMaxVersion();
+            final long trainMaxApiVersion = trainPersistService.getMaxApiVersion();
             final long compositionMaxVersion = compositionService.getMaxVersion();
             final long trainRunningMessageMaxVersion = trainRunningMessageService.getMaxVersion();
 
-            final boolean isInitializationNeeded = trainMaxVersion == 0 || compositionMaxVersion == 0 || trainRunningMessageMaxVersion == 0;
-            log.info("method=isInitializationNeeded trainMaxVersion: {} == 0 | compositionMaxVersion: {} == 0 || trainRunningMessageMaxVersion: {} == 0 => isInitializationNeeded={}", trainMaxVersion, compositionMaxVersion, trainRunningMessageMaxVersion, isInitializationNeeded);
+            final boolean isInitializationNeeded = trainMaxApiVersion == 0 || compositionMaxVersion == 0 || trainRunningMessageMaxVersion == 0;
+            log.info("method=isInitializationNeeded trainMaxApiVersion: {} == 0 | compositionMaxVersion: {} == 0 || trainRunningMessageMaxVersion: {} == 0 => isInitializationNeeded={}", trainMaxApiVersion, compositionMaxVersion, trainRunningMessageMaxVersion, isInitializationNeeded);
 
             return isInitializationNeeded;
         }

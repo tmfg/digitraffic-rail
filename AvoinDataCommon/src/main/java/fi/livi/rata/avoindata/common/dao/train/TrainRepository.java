@@ -184,7 +184,10 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     List<Object[]> findLiveTrainByTrainNumber(final long trainNumber);
 
     @Query("select coalesce(max(train.version),0) from Train train")
-    long getMaxVersion();
+    long getMaxApiVersion();
+
+    @Query("select coalesce(max(train.sourceVersion),0) from Train train")
+    long getMaxSourceVersion();
 
     @Query("select count(train) from Train train where train.id.departureDate = ?1")
     int countByDepartureDate(final LocalDate departureDate);

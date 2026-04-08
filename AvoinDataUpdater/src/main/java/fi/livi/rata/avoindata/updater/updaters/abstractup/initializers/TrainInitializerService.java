@@ -35,10 +35,11 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     private static final Logger log = LoggerFactory.getLogger(TrainInitializerService.class);
 
     /**
-     * Version number used for querying /trains API. Initialized from DB max version on startup,
-     * then updated from the fira-data-version response header after each successful query.
+     * Source version (fira-data-version) used for querying the /trains API.
+     * Initialized from DB max source_version on startup, then updated from the
+     * fira-data-version response header after each successful query.
      */
-    private final AtomicLong currentVersion = new AtomicLong(-1L);
+    private final AtomicLong currentSourceVersion = new AtomicLong(-1L);
 
     public TrainInitializerService(final TrainPersistService trainPersistService,
                                    final TrainLockExecutor trainLockExecutor,
@@ -57,10 +58,18 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     @PostConstruct
-    private void initializeVersion() {
-        final Long dbMaxVersion = trainPersistService.getMaxVersion();
-        currentVersion.set(dbMaxVersion != null ? dbMaxVersion : -1L);
-        log.info("method=initializeVersion Initialized currentVersion={} from database", currentVersion.get());
+    private void initializeSourceVersion() {
+        final long dbMaxSourceVersion = trainPersistService.getMaxSourceVersion();
+        if (dbMaxSourceVersion > 0) {
+            currentSourceVersion.set(dbMaxSourceVersion);
+            log.info("method=initializeSourceVersion Initialized currentSourceVersion={} from database source_version", currentSourceVersion.get());
+        }
+        // this path is relevant only when the application is being started in a situation where source_version hasn't yet been set for any Trains and the API version hasn't drifted from the source version
+        else {
+            final long dbMaxApiVersion = trainPersistService.getMaxApiVersion();
+            currentSourceVersion.set(dbMaxApiVersion);
+            log.info("method=initializeSourceVersion No source_version found in database, falling back to max API version currentSourceVersion={}", currentSourceVersion.get());
+        }
     }
 
     @Override
@@ -83,21 +92,21 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         final StopWatch time = StopWatch.createStarted();
 
         try {
-            final long queryVersion = currentVersion.get();
-            final var response = fetchData(queryVersion);
+            final long querySourceVersion = currentSourceVersion.get();
+            final var response = fetchData(querySourceVersion);
             final List<Train> trains = Arrays.asList(response.body());
             final long middle = time.getDuration().toMillis();
 
             final var updatedTrains = trainLockExecutor.executeInLock(this.getPrefix(), () -> {
-                final Long dbMaxVersion = trainPersistService.getMaxVersion();
+                final Long dbMaxApiVersion = trainPersistService.getMaxApiVersion();
 
                 modifyEntitiesBeforePersist(trains);
 
-                final var updatedEntities = persistTrains(trains, dbMaxVersion, response.version(), queryVersion);
+                final var updatedEntities = persistTrains(trains, response.version());
 
-                // log both dbMaxVersion and the version from the fira-data-version header for any debugging purposes
-                logUpdate(queryVersion, time.getDuration().toMillis(), updatedEntities.size(),
-                        currentVersion.get(), dbMaxVersion, getPrefix(), middle);
+                // log both dbMaxApiVersion and the source version from the fira-data-version header for debugging
+                logUpdate(querySourceVersion, time.getDuration().toMillis(), updatedEntities.size(),
+                        currentSourceVersion.get(), dbMaxApiVersion, getPrefix(), middle);
 
                 return updatedEntities;
             });
@@ -111,10 +120,10 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
         }
     }
 
-    private RipaService.ResponseWithVersion<Train[]> fetchData(final long queryVersion) {
+    private RipaService.ResponseWithVersion<Train[]> fetchData(final long querySourceVersion) {
         log.debug("method=fetchData Starting data update");
 
-        final String targetPath = String.format("%s?version=%d", getPrefix(), queryVersion);
+        final String targetPath = String.format("%s?version=%d", getPrefix(), querySourceVersion);
 
         log.info("method=fetchData Fetching prefix={} from api={}", getPrefix(), targetPath);
 
@@ -122,32 +131,50 @@ public class TrainInitializerService extends AbstractDatabaseInitializer<Train> 
     }
 
     /**
-     * Custom update logic that uses the fira-data-version response header for version tracking.
+     * Persists trains and advances the source version cursor.
+     *
+     * Each train's sourceVersion is set from train.version, which the deserializer
+     * populates with the max version number embedded in the payload (from TimeTableRow.version
+     * fields). This is done before updateEntities() overwrites train.version with the API version.
+     *
+     * currentSourceVersion is advanced from the fira-data-version response header (primary).
+     * If the header is absent, the max sourceVersion across the batch is used as fallback
+     * so the next poll does not re-fetch trains we already have.
      */
-    private List<Train> persistTrains(final List<Train> trains, final Long dbMaxVersion, final Long responseVersion, final long queryVersion) {
-        final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
-        final long previousVersion = currentVersion.get();
+    private List<Train> persistTrains(final List<Train> trains, final Long responseSourceVersion) {
+        final long previousSourceVersion = currentSourceVersion.get();
 
-        // Update currentVersion from the fira-data-version header if present
-        if (responseVersion != null) {
-            currentVersion.set(responseVersion);
-            log.info("method=persistTrains Updated currentVersion from {} to {} (from fira-data-version header)",
-                previousVersion, responseVersion);
+        // Set each train's sourceVersion from its own embedded payload version (train.version),
+        // before updateEntities overwrites train.version with the API version.
+        trains.forEach(t -> t.sourceVersion = t.version);
+
+        final long newSourceVersion;
+        if (responseSourceVersion != null) {
+            newSourceVersion = responseSourceVersion;
+            log.info("method=persistTrains advancing currentSourceVersion from {} to {} (from fira-data-version header)",
+                    previousSourceVersion, newSourceVersion);
         } else {
-            currentVersion.set(dbMaxVersion);
-            log.error("method=persistTrains fira-data-version header not present in response, updating with max value from db from {} to {}",
-                    previousVersion, dbMaxVersion);
+            newSourceVersion = trains.stream()
+                    .mapToLong(t -> t.sourceVersion)
+                    .max()
+                    .orElse(previousSourceVersion);
+            log.error("method=persistTrains fira-data-version header not present in response, advancing currentSourceVersion from {} to {} using payload max",
+                    previousSourceVersion, newSourceVersion);
         }
+
+        final List<Train> updatedEntities = trainPersistService.updateEntities(trains);
+
+        currentSourceVersion.set(newSourceVersion);
 
         lastUpdateService.update(getPrefix());
 
         return updatedEntities;
     }
 
-    private void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion, final long dbMaxVersion, final String prefix,
+    private void logUpdate(final long previousSourceVersion, final long tookMs, final long count, final long newSourceVersion, final long dbMaxApiVersion, final String prefix,
                            final long middleMs) {
-        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} dbMaxVersion={} )",
-            count, prefix, tookMs, middleMs, latestVersion, newVersion, (newVersion - latestVersion), dbMaxVersion);
+        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, previousSourceVersion={} newSourceVersion={} sourceVersionDiff={} dbMaxApiVersion={} )",
+            count, prefix, tookMs, middleMs, previousSourceVersion, newSourceVersion, (newSourceVersion - previousSourceVersion), dbMaxApiVersion);
     }
 
     @Override

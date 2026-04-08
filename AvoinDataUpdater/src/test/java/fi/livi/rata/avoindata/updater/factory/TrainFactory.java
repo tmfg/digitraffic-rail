@@ -31,6 +31,30 @@ public class TrainFactory {
         return createBaseTrain(new TrainId(51L, LocalDate.now()));
     }
 
+    /** Creates a Train with two TimeTableRows that are NOT saved to the DB. */
+    public Train createUnpersistedTrain(final long trainNumber, final LocalDate departureDate) {
+        final Train train = new Train(trainNumber, departureDate, 1, "test", 1L, 1L, "Z", true, false, 1L,
+                Train.TimetableType.REGULAR, ZonedDateTime.now());
+        train.timeTableRows = new ArrayList<>();
+
+        final ZonedDateTime now = ZonedDateTime.now()
+                .withYear(departureDate.getYear())
+                .withMonth(departureDate.getMonthValue())
+                .withDayOfMonth(departureDate.getDayOfMonth());
+
+        final TimeTableRow departure = ttrf.create(train, now.plusHours(1), null,
+                new StationEmbeddable("HKI", 1, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE);
+        departure.trainReadies = new java.util.HashSet<>();
+        departure.causes = new java.util.HashSet<>();
+
+        final TimeTableRow arrival = ttrf.create(train, now.plusHours(2), null,
+                new StationEmbeddable("TPE", 3, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL);
+        arrival.trainReadies = new java.util.HashSet<>();
+        arrival.causes = new java.util.HashSet<>();
+
+        return train;
+    }
+
     @Transactional
     public Train createBaseTrain(final TrainId id) {
         final int operatorUICCode = 1;

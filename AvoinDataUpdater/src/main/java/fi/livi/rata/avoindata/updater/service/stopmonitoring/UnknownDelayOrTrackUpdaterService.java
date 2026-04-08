@@ -56,10 +56,10 @@ public class UnknownDelayOrTrackUpdaterService {
                 final Optional<Train> train = trainRepository.findById(new TrainId(u.getTrainNumber(), u.getTrainDepartureDate()));
 
                 if (train.isPresent()) {
-                    final long maxVersion = trainRepository.getMaxVersion();
+                    final long maxApiVersion = trainRepository.getMaxApiVersion();
 
                     // update model
-                   UdotUpdater.updateUdotInformation(u, train.get(), maxVersion + 1);
+                   UdotUpdater.updateUdotInformation(u, train.get(), maxApiVersion + 1);
                 } else {
                     log.error("Could not find train {} {}", u.getTrainNumber(), u.getTrainDepartureDate());
                 }

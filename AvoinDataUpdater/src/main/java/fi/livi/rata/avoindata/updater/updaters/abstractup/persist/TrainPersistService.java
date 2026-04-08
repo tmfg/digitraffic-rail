@@ -4,22 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import fi.livi.rata.avoindata.common.dao.stopsector.StopSectorQueueItemRepository;
-import fi.livi.rata.avoindata.common.domain.stopsector.StopSectorQueueItem;
 import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import fi.livi.rata.avoindata.common.dao.cause.CauseRepository;
 import fi.livi.rata.avoindata.common.dao.train.FindByTrainIdService;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainReadyRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.common.TrainApiConstants;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -55,6 +54,23 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         this.stopSectorService = stopSectorService;
     }
 
+    /**
+     * Assigns sequential API version numbers to the given trains, splitting them into
+     * chunks of at most {@link TrainApiConstants#MAX_TRAINS_PER_VERSION} so that each
+     * version fits within one API response.
+     * Each chunk receives the next available API version number (currentDbMax + 1, +2, …).
+     * The trains are mutated in place.
+     */
+    void assignApiVersionsInChunks(final List<Train> entities) {
+        long currentMax = trainRepository.getMaxApiVersion();
+        for (final List<Train> chunk : Lists.partition(entities, TrainApiConstants.MAX_TRAINS_PER_VERSION)) {
+            currentMax++;
+            for (final Train train : chunk) {
+                train.version = currentMax;
+            }
+        }
+    }
+
     @Override
     @Transactional
     public synchronized List<Train> updateEntities(final List<Train> entities) {
@@ -62,6 +78,7 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             return entities;
         }
 
+        assignApiVersionsInChunks(entities);
 
         for (final Train entity : entities) {
             for (final TimeTableRow timeTableRow : entity.timeTableRows) {
@@ -76,17 +93,11 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             entityManager.detach(entity);
         }
 
-        final List<TrainId> trainIds = entities.stream().map(s->s.id).sorted(TrainId::compareTo).collect(Collectors.toList());
+        final List<TrainId> trainIds = entities.stream().map(s -> s.id).sorted(TrainId::compareTo).collect(Collectors.toList());
 
         bes.consume(trainIds, findByTrainIdService::removeByTrainId);
 
-        addEntities(entities);
-
-        for (final Train entity : entities) {
-            if (entity.version > maxVersion.get()) {
-                maxVersion.set(entity.version);
-            }
-        }
+        addEntitiesInternal(entities);
 
         return entities;
     }
@@ -99,6 +110,11 @@ public class TrainPersistService extends AbstractPersistService<Train> {
     @Override
     @Transactional
     public void addEntities(final List<Train> entities) {
+        assignApiVersionsInChunks(entities);
+        addEntitiesInternal(entities);
+    }
+
+    private void addEntitiesInternal(final List<Train> entities) {
         final List<TrainReady> trainReadies = new ArrayList<>();
         final List<TimeTableRow> timeTableRows = new ArrayList<>();
         final List<Cause> causes = new ArrayList<>();
@@ -132,7 +148,16 @@ public class TrainPersistService extends AbstractPersistService<Train> {
         causeRepository.persist(causes);
     }
 
+    @Override
     public Long getMaxVersion() {
-        return trainRepository.getMaxVersion();
+        return getMaxApiVersion();
+    }
+
+    public Long getMaxApiVersion() {
+        return trainRepository.getMaxApiVersion();
+    }
+
+    public Long getMaxSourceVersion() {
+        return trainRepository.getMaxSourceVersion();
     }
 }

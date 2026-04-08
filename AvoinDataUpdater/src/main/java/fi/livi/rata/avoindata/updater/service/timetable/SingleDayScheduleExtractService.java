@@ -69,7 +69,7 @@ public class SingleDayScheduleExtractService {
     }
 
     @Transactional
-    public ExtractedTrains extract(final Map<TrainId, Train> newTrainMap, final LocalDate date, final boolean shouldFakeVersions) {
+    public ExtractedTrains extract(final Map<TrainId, Train> newTrainMap, final LocalDate date) {
         log.info("Fetching existing trains for {}", date);
         final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc::apply);
 
@@ -83,7 +83,7 @@ public class SingleDayScheduleExtractService {
         //printChanges(toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Persisting trains for {}", date);
-        persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled, shouldFakeVersions);
+        persistTrains(date, toBeAdded, toBeUpdated, toBeCancelled);
 
         log.info("Extracted trains for {}. Added: {}, Updated: {}, Cancelled: {}", date,
                 toBeAdded.size(), toBeUpdated.size(), toBeCancelled.size());
@@ -204,27 +204,12 @@ public class SingleDayScheduleExtractService {
     }
 
     private void persistTrains(final LocalDate date, final List<Train> toBeAdded, final List<Train> toBeUpdated,
-                                      final List<Train> toBeCancelled, final boolean shouldFakeVersions) {
-        final long fakeVersion = trainPersistService.getMaxVersion() + 1;
-        log.info("Using fakeVersion {}", fakeVersion);
-
+                                      final List<Train> toBeCancelled) {
         if (!toBeAdded.isEmpty()) {
-            if (shouldFakeVersions) {
-                for (final Train train : toBeAdded) {
-                    train.version = fakeVersion;
-                }
-            }
-
             trainPersistService.addEntities(toBeAdded);
         }
 
         if (!toBeUpdated.isEmpty()) {
-            if (shouldFakeVersions) {
-                for (final Train train : toBeUpdated) {
-                    train.version = fakeVersion;
-                }
-            }
-
             trainPersistService.updateEntities(toBeUpdated);
         }
 
@@ -238,11 +223,6 @@ public class SingleDayScheduleExtractService {
                 }
             }
 
-            if (shouldFakeVersions) {
-                for (final Train train : toBeCancelled) {
-                    train.version = fakeVersion;
-                }
-            }
 
             trainPersistService.updateEntities(toBeCancelled);
         }
