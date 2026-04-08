@@ -256,10 +256,15 @@ jobs:
       actions: read
     runs-on: ubuntu-24.04
     environment: ${{ github.event.inputs.env }}
-    outputs:
-      revision_updater: ${{ steps.updater-revision.outputs.revision_updater }}
-      revision_server: ${{ steps.server-revision.outputs.revision_server }}
     steps:
+      - name: Checkout CI-repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
