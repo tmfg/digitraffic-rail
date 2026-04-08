@@ -307,7 +307,7 @@ jobs:
       - name: Diff and deploy
         env:
           DEPLOY_ALL_CHANGES: true
-          DIFF_ONLY: ${{ github.event.inputs.diff-only }}
+          DIFF_ONLY: ${{ github.event.inputs['diff-only'] }}
           # the value of AWS_PROFILE is only used by the stack code, local AWS profile configurations are not being set up
           AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
         working-directory: digitraffic-ci/aws/cdk/infra/scripts
