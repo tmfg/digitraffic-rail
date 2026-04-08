@@ -191,18 +191,18 @@ jobs:
             --build-arg LOGCONF_FILE=conf/avoindataupdater-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ github.sha }}-${{ github.run_id }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataupdater .
           
-          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ github.sha }}-${{ github.run_id }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
 
       - name: Put updater image tag in Parameter Store
         if: ${{ github.event.inputs.install-updater == 'true' }}
         run: |
           aws ssm put-parameter \
             --name "/rail/avoindata-updater/image-tag" \
-            --value "${{ github.sha }}-${{ github.run_id }}" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
             --type "String" \
             --overwrite
         env:
@@ -221,18 +221,18 @@ jobs:
             --build-arg LOGCONF_FILE=conf/avoindataserver-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ github.sha }}-${{ github.run_id }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataserver .
 
-          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ github.sha }}-${{ github.run_id }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
 
       - name: Put server image tag in Parameter Store
         if: ${{ github.event.inputs.install-server == 'true' }}
         run: |
           aws ssm put-parameter \
             --name "/rail/avoindata-server/image-tag" \
-            --value "${{ github.sha }}-${{ github.run_id }}" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
             --type "String" \
             --overwrite
         env:
