@@ -296,10 +296,10 @@ jobs:
             const stacks = [];
             
             if (process.env.INSTALL_SERVER === 'true') {
-              stacks.push(`AvoinDataServer{envSuffix}`);
+              stacks.push(`AvoinDataServer${envSuffix}`);
             }
             if (process.env.INSTALL_UPDATER === 'true') {
-              stacks.push(`AvoinDataUpdater{envSuffix}`);
+              stacks.push(`AvoinDataUpdater${envSuffix}`);
             }
             return stacks.join(',');
           result-encoding: string
