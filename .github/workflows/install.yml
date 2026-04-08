@@ -11,6 +11,10 @@ on:
         description: "Branch/tag/SHA of digitraffic-rail-private"
         required: true
         default: "master"
+      diff-only:
+        description: "Only run diff"
+        required: true
+        default: false
       install-server:
         description: Install avoindata-server
         required: true
@@ -186,11 +190,23 @@ jobs:
             --build-arg LOGCONF_FILE=conf/avoindataupdater-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ github.sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataupdater .
           
-          docker push ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ github.sha }}-${{ github.run_id }}
+
+      - name: Put updater image tag in Parameter Store
+        if: ${{ github.event.inputs.install-updater == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/avoindata-updater/image-tag" \
+            --value "${{ github.sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Build docker image for server
         if: github.event.inputs.install-server == 'true'
         run: |
@@ -204,11 +220,23 @@ jobs:
             --build-arg LOGCONF_FILE=conf/avoindataserver-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ github.sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataserver .
 
-          docker push ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ github.sha }}-${{ github.run_id }}
+
+      - name: Put server image tag in Parameter Store
+        if: ${{ github.event.inputs.install-server == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/avoindata-server/image-tag" \
+            --value "${{ github.sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
@@ -237,70 +265,55 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Update updater task-def
-        if: github.event.inputs.install-updater == 'true'
-        id: updater-task-def
-        uses: tmfg/digitraffic-actions@update-task-def/v2
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
         with:
-          task-def-file-name: rail-${{ github.event.inputs.env }}-avoindataupdater
-          family-name: avoindata-updater
-          image-arn: ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }}
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
-          ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
-          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-      - name: Set updater output
-        if: github.event.inputs.install-updater == 'true'
-        id: updater-revision
-        run: echo "revision_updater=${{ steps.updater-task-def.outputs.revision }}" >> $GITHUB_OUTPUT
-      - name: Update server task-def
-        if: github.event.inputs.install-server == 'true'
-        id: server-task-def
-        uses: tmfg/digitraffic-actions@update-task-def/v2
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          task-def-file-name: rail-${{ github.event.inputs.env }}-avoindataserver
-          family-name: avoindata-server
-          image-arn: ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }}
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
-          ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
-          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-      - name: Set server output
-        if: github.event.inputs.install-server == 'true'
-        id: server-revision
-        run: echo "revision_server=${{ steps.server-task-def.outputs.revision }}" >> $GITHUB_OUTPUT
-  deploy:
-    needs: [install]
-    if: ${{ always() && github.repository != 'tmfg/digitraffic-rail' && contains(needs.*.result, 'success') && !(contains(needs.*.result, 'failure')) }}
-    permissions:
-      id-token: write
-      contents: read
-      actions: read
-    runs-on: ubuntu-24.04
-    environment: ${{ github.event.inputs.env }}
-    steps:
-      - name: Update avoindata-server ECS service
-        if: github.event.inputs.install-server == 'true'
-        uses: tmfg/digitraffic-actions@ecs-service-update/v1
+          version: 10
+
+      - name: Build CI/CDK Infra project
+        working-directory: digitraffic-ci/aws/cdk/infra
+        run: |
+          pnpm install
+          pnpm build:ci
+
+      - name: Get stacks to deploy
+        uses: actions/github-script@v8
+        id: get-stacks
+        env:
+          ENV: ${{ github.event.inputs.env }}
+          INSTALL_SERVER: ${{ github.event.inputs.install-server }}
+          INSTALL_UPDATER: ${{ github.event.inputs.install-updater }}
         with:
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          task-definition: avoindata-server:${{ needs.install.outputs.revision_server }}
-          service-name: avoindata-server
-          cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
-      - name: Update avoindata-updater ECS service
-        if: github.event.inputs.install-updater == 'true'
-        uses: tmfg/digitraffic-actions@ecs-service-update/v1
-        with:
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          task-definition: avoindata-updater:${{ needs.install.outputs.revision_updater }}
-          service-name: avoindata-updater
-          cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
+          script: |
+            const envSuffix = process.env.ENV === 'prod' ? 'Prod' : 'Test';
+            const stacks = [];
+            
+            if (process.env.INSTALL_SERVER === 'true') {
+              stacks.push(`AvoinDataServer{envSuffix}`);
+            }
+            if (process.env.INSTALL_UPDATER === 'true') {
+              stacks.push(`AvoinDataUpdater{envSuffix}`);
+            }
+            return stacks.join(',');
+          result-encoding: string
+
+      - name: Diff and deploy
+        env:
+          DEPLOY_ALL_CHANGES: true
+          DIFF_ONLY: ${{ github.event.inputs.diff-only }}
+          # the value of AWS_PROFILE is only used by the stack code, local AWS profile configurations are not being set up
+          AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+        working-directory: digitraffic-ci/aws/cdk/infra/scripts
+        run: |          
+          pnpm install
+          pnpm build
+          pnpm run start:diff-and-deploy ${{steps.get-stacks.outputs.result}}      
 
       - name: Download server-SBOM
         if: github.event.inputs.install-server == 'true'
