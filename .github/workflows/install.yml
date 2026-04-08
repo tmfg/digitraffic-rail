@@ -14,6 +14,7 @@ on:
       diff-only:
         description: "Only run diff"
         required: true
+        type: boolean
         default: false
       install-server:
         description: Install avoindata-server
