@@ -187,8 +187,8 @@ jobs:
             --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=updater.jar \
-            --build-arg PROPERTY_FILE=conf/avoindataupdater-${{ github.event.inputs.env }}.properties \
-            --build-arg LOGCONF_FILE=conf/avoindataupdater-logback.xml \
+            --build-arg PROPERTY_FILE=conf/rail/avoindataupdater-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/rail/avoindataupdater-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
             --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
@@ -217,8 +217,8 @@ jobs:
             --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=server.jar \
-            --build-arg PROPERTY_FILE=conf/avoindataserver-${{ github.event.inputs.env }}.properties \
-            --build-arg LOGCONF_FILE=conf/avoindataserver-logback.xml \
+            --build-arg PROPERTY_FILE=conf/rail/avoindataserver-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/rail/avoindataserver-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
             --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
