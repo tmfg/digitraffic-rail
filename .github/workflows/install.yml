@@ -263,7 +263,7 @@ jobs:
         if: ${{ github.event.inputs.install-mqtt == 'true' }}
         run: |
           aws ssm put-parameter \
-            --name "/rail/mosquitto/image-tag" \
+            --name "/rail/mqtt/image-tag" \
             --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
             --type "String" \
             --overwrite
