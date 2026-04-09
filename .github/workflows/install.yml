@@ -26,6 +26,11 @@ on:
         required: true
         type: boolean
         default: true
+      install-mqtt:
+        description: Install Mosquitto
+        required: true
+        type: boolean
+        default: false
       config-repo-branch:
         description: "Config repo branch"
         default: master
@@ -60,8 +65,9 @@ jobs:
           echo "| env | ${{ github.event.inputs.env }} |" >> $GITHUB_STEP_SUMMARY
           echo "| ref | ${{ github.event.inputs.ref }} |" >> $GITHUB_STEP_SUMMARY
           echo "| config-repo-branch | ${{ github.event.inputs.config-repo-branch }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| install-server | ${{ github.event.inputs.install-updater }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| install-updater | ${{ github.event.inputs.install-server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-server | ${{ github.event.inputs.install-server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-updater | ${{ github.event.inputs.install-updater }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-mqtt | ${{ github.event.inputs.install-mqtt }} |" >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
       - name: Setup Java
@@ -238,6 +244,32 @@ jobs:
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
+      - name: Build mqtt image
+        run: |
+          cd digitraffic-ci/aws/mqtt
+          
+          docker buildx build \
+           --no-cache \
+           --build-arg ENVIRONMENT=rail \
+           --platform linux/arm64 \
+           --output type=docker \
+           --tag ${{ secrets.ECR_URL }}/dt-rail-mqtt-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
+           --pull=true \
+           --file=Dockerfile-rail .
+          
+          docker push ${{ secrets.ECR_URL }}/dt-rail-mqtt-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
+
+      - name: Put mqtt image tag in Parameter Store
+        if: ${{ github.event.inputs.install-mqtt == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/mosquitto/image-tag" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
@@ -295,6 +327,7 @@ jobs:
           ENV: ${{ github.event.inputs.env }}
           INSTALL_SERVER: ${{ github.event.inputs.install-server }}
           INSTALL_UPDATER: ${{ github.event.inputs.install-updater }}
+          INSTALL_MQTT: ${{ github.event.inputs.install-mqtt }}
         with:
           script: |
             const envSuffix = process.env.ENV === 'prod' ? 'Prod' : 'Test';
@@ -306,6 +339,10 @@ jobs:
             if (process.env.INSTALL_UPDATER === 'true') {
               stacks.push(`AvoindataUpdater${envSuffix}`);
             }
+            if (process.env.INSTALL_MQTT === 'true') {
+              stacks.push(`MqttService${envSuffix}`);
+            }
+
             return stacks.join(',');
           result-encoding: string
 
@@ -316,7 +353,7 @@ jobs:
           # the value of AWS_PROFILE is only used by the stack code, local AWS profile configurations are not being set up
           AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
         working-directory: digitraffic-ci/aws/cdk/infra/scripts
-        run: |          
+        run: |
           pnpm install
           pnpm build
           pnpm run start:diff-and-deploy ${{steps.get-stacks.outputs.result}}      
@@ -332,14 +369,6 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: updater-sbom.json
-
-      - name: Checkout CI-repo
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ secrets.CONFIG_REPO_NAME }}
-          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-          ref: ${{ inputs.config-repo-branch }}
-          path: digitraffic-ci
 
       - name: Read SBOM config
         id: sbom-config
