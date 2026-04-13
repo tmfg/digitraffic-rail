@@ -19,6 +19,16 @@
         <cve>CVE-2025-10543</cve>
     </suppress>
 
+    <!-- False positive. CVE-2022-31691 affects "Spring Tools 4 for Eclipse" IDE plugin, NOT spring-boot-devtools.
+         The CPE match on vmware:spring_boot_tools incorrectly maps to spring-boot-devtools.
+         Dependency: spring-boot-devtools 4.0.3
+         See: https://nvd.nist.gov/vuln/detail/CVE-2022-31691 -->
+    <suppress>
+        <notes><![CDATA[file name: spring-boot-devtools-4.0.3.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.boot/spring\-boot\-devtools@.*$</packageUrl>
+        <cve>CVE-2022-31691</cve>
+    </suppress>
+
     <!--
         Permanent suppressions
     -->
