@@ -39,10 +39,9 @@ jobs:
           LINK_TEXT: Dependency check report
       - name: Notify Slack
         if: failure()
-        uses: 8398a7/action-slack@v3
+        uses: tmfg/digitraffic-actions@slack-notify/v1
         with:
           status: failure
           text: FAILED Rail Dependency Check
           fields: repo, job, took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WARNINGS_WEBHOOK_URL }}
+          webhook-url: ${{ secrets.SLACK_WARNINGS_WEBHOOK_URL }}
