@@ -147,7 +147,7 @@ public class StopSectorUpdater {
 
         if(stopSector == null) {
             if (sectorMap.hasStation(row.station.stationShortCode)) {
-                log.info("No stop sector for {} missingSector={}", row.id, createStopSectorString(row, type, south, journeySection.wagons.size()));
+                log.info("No stop sector for {} missingSector={}", row.id, createStopSectorString(row, type, south, elementCount));
             }
         }
 
