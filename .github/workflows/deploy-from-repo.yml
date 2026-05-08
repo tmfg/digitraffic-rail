@@ -68,6 +68,25 @@ jobs:
           pnpm install
           pnpm build:ci
 
+      - name: Determine stacks to deploy
+        id: stacks
+        run: |
+          ENV_SUFFIX="${{ github.event.inputs.env == 'prod' && 'Prod' || 'Test' }}"
+          STACKS=""
+          if [ -n "${{ github.event.inputs.etj2_suffix }}" ]; then
+            STACKS="Etj2Api${ENV_SUFFIX}"
+          fi
+          if [ -n "${{ github.event.inputs.infra_suffix }}" ]; then
+            [ -n "$STACKS" ] && STACKS="${STACKS},"
+            STACKS="${STACKS}InfraApi${ENV_SUFFIX}"
+          fi
+          if [ -z "$STACKS" ]; then
+            echo "::error::At least one of etj2_suffix or infra_suffix must be provided"
+            exit 1
+          fi
+          echo "names=$STACKS" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: Diff and deploy
         env:
           DEPLOY_ALL_CHANGES: true
@@ -78,7 +97,7 @@ jobs:
         run: |
           pnpm install
           pnpm build
-          pnpm run start:diff-and-deploy EtjApi${{ github.event.inputs.env == 'prod' && 'Prod' || 'Test' }}
+          pnpm run start:diff-and-deploy ${{ steps.stacks.outputs.names }}
 
       - name: Read SBOM config
         id: sbom-config
