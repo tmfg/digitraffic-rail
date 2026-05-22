@@ -52,7 +52,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>12.2.0</version>
+                        <version>12.2.2</version>
                         <configuration>
                             <!--suppress UnresolvedMavenProperty -->
                             <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
@@ -94,6 +94,37 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- TODO: Remove Netty and Tomcat overrides when Spring Boot includes Netty ≥4.2.13 and Tomcat ≥11.0.22
+                 Added 2026-05-22 to fix CVE-2026-42581 (Netty) and CVE-2026-41293 (Tomcat).
+                 This project imports the Spring Boot BOM (not parent), so property overrides don't work —
+                 explicit entries in dependencyManagement are required to override transitive versions. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.2.13.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>11.0.22</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>11.0.22</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>11.0.22</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-annotations-api</artifactId>
+                <version>11.0.22</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
