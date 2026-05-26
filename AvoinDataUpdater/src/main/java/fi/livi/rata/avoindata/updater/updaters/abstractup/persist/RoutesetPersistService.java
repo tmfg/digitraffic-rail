@@ -1,20 +1,22 @@
 package fi.livi.rata.avoindata.updater.updaters.abstractup.persist;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesectionRepository;
 import fi.livi.rata.avoindata.common.dao.routeset.RoutesetRepository;
 import fi.livi.rata.avoindata.common.domain.routeset.Routesection;
 import fi.livi.rata.avoindata.common.domain.routeset.Routeset;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenRoutesetFilter;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class RoutesetPersistService extends AbstractPersistService<Routeset> {
+
     @Autowired
     private RoutesetRepository routesetRepository;
 
@@ -31,12 +33,10 @@ public class RoutesetPersistService extends AbstractPersistService<Routeset> {
 
         removeEntitiesById(filteredEntities);
         routesetRepository.flush();
-
         addEntities(filteredEntities);
 
         return filteredEntities;
     }
-
 
     public Long getMaxVersion() {
         return routesetRepository.getMaxVersion();
@@ -69,6 +69,5 @@ public class RoutesetPersistService extends AbstractPersistService<Routeset> {
         }
         routesectionRepository.persist(routesections);
     }
-
 
 }
