@@ -1,13 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.recentlyseen;
 
-import org.slf4j.Logger;
-
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
 
 public abstract class AbstractRecentlySeenEntityFilter<EntityType, KeyType> {
     private final Map<KeyType, ZonedDateTime> recentlySeenEntities = new HashMap<>();
@@ -47,7 +46,8 @@ public abstract class AbstractRecentlySeenEntityFilter<EntityType, KeyType> {
     private void deleteOldEntities() {
         final List<KeyType> toBeDeleted = new ArrayList<>();
         for (final KeyType key : recentlySeenEntities.keySet()) {
-            if (isTooOld(recentlySeenEntities.get(key))) {
+            final ZonedDateTime timestamp = recentlySeenEntities.get(key);
+            if (isTooOld(timestamp)) {
                 toBeDeleted.add(key);
             }
         }

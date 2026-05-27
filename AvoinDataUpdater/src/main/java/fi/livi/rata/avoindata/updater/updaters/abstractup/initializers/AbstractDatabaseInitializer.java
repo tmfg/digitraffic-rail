@@ -86,12 +86,14 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
 
     public ExecutorService initializeInLockMode() {
         log.info("method=initializeInLockMode prefix={}", getPrefix());
-        return addDataInitializeTasks(trainInitializationPeriod.lastDateInLockMode, trainInitializationPeriod.firstDateInLockMode);
+        return addDataInitializeTasks(trainInitializationPeriod.lastDateInLockMode,
+                trainInitializationPeriod.firstDateInLockMode);
     }
 
     public ExecutorService initializeInLazyMode() {
         log.info("method=initializeInLazyMode prefix={}", getPrefix());
-        return addDataInitializeTasks(trainInitializationPeriod.firstDateInLockMode, trainInitializationPeriod.endNonLockDate);
+        return addDataInitializeTasks(trainInitializationPeriod.firstDateInLockMode,
+                trainInitializationPeriod.endNonLockDate);
     }
 
     public void startUpdating(final int delay) {
@@ -119,7 +121,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
             doUpdate();
             log.debug("method=startUpdate prefix={} done tookMs={}", this.prefix, time.getDuration().toMillis());
         } catch (final Throwable t) {
-            log.error("method=startUpdate prefix={} update failed tookMs={}", this.prefix, time.getDuration().toMillis(), t);
+            log.error("method=startUpdate prefix={} update failed tookMs={}", this.prefix,
+                    time.getDuration().toMillis(), t);
         }
     }
 
@@ -129,29 +132,47 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
             log.debug("method=doUpdate prefix={} Starting data update", this.prefix);
 
             final Long latestVersion = persistService.getMaxVersion();
+            if (latestVersion == null) {
+                log.error("method=doUpdate prefix={} persistService.getMaxVersion() returned null", this.prefix);
+                return List.of();
+            }
 
-            List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(), latestVersion);
+            final List<EntityType> objects = getObjectsNewerThanVersion(this.prefix, this.getEntityCollectionClass(),
+                    latestVersion);
+            if (objects == null) {
+                log.error("method=doUpdate prefix={} getObjectsNewerThanVersion returned null", this.prefix);
+                return List.of();
+            }
+            log.info("method=doUpdate prefix={} latestVersion={} fetchedCount={}", this.prefix, latestVersion,
+                    objects.size());
 
             final long middle = time.getDuration().toMillis();
 
-            objects = modifyEntitiesBeforePersist(objects);
+            final List<EntityType> modifiedObjects = modifyEntitiesBeforePersist(objects);
 
-            final List<EntityType> updatedEntities = persistService.updateEntities(objects);
+            final List<EntityType> updatedEntities = persistService.updateEntities(modifiedObjects);
 
-            logUpdate(latestVersion, time.getDuration().toMillis(), updatedEntities.size(), persistService.getMaxVersion(), this.prefix, middle, updatedEntities);
+            final Long newMaxVersion = persistService.getMaxVersion();
+
+            logUpdate(latestVersion, time.getDuration().toMillis(), updatedEntities.size(),
+                    newMaxVersion != null ? newMaxVersion : latestVersion, this.prefix, middle, updatedEntities);
 
             lastUpdateService.update(this.prefix);
 
             return updatedEntities;
         } catch (final Throwable t) {
-            log.error("method=doUpdate prefix={} update failed {} tookMs={}", this.prefix, t.getMessage(), time.getDuration().toMillis(), t);
+            log.error("method=doUpdate prefix={} update failed {} tookMs={}", this.prefix, t.getMessage(),
+                    time.getDuration().toMillis(), t);
             throw new RuntimeException(t);
         }
     }
 
-    protected void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion, final String prefix,
-                             final long middleMs, final List<EntityType> objects) {
-        log.info("method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} )", count, prefix,
+    protected void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion,
+            final String prefix,
+            final long middleMs, final List<EntityType> objects) {
+        log.info(
+                "method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} )",
+                count, prefix,
                 tookMs, middleMs, latestVersion, newVersion,
                 (newVersion - latestVersion));
     }
@@ -160,7 +181,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
         persistService.clearEntities();
     }
 
-    public static void waitUntilTasksAreDoneAndShutDown(final ExecutorService executorService, final Logger log) throws InterruptedException {
+    public static void waitUntilTasksAreDoneAndShutDown(final ExecutorService executorService, final Logger log)
+            throws InterruptedException {
         executorService.shutdown(); // Previously submitted tasks are executed, but no new tasks will be accepted
         if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
             log.error("method=waitUntilTasksAreDone Tasks termination didn't succeed in given 20 min time limit");
@@ -171,7 +193,8 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
     public ExecutorService addDataInitializeTasks(final LocalDate startDate, final LocalDate endDate) {
         final ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_THREADS_TO_INITIALIZE_WITH);
 
-        log.info("method=addDataInitializeTasks Adding initialization tasks for prefix={} from={} to={} ", getPrefix(), startDate, endDate);
+        log.info("method=addDataInitializeTasks Adding initialization tasks for prefix={} from={} to={} ", getPrefix(),
+                startDate, endDate);
 
         for (LocalDate i = startDate; i.isAfter(endDate); i = i.minusDays(1)) {
             final LocalDate currentDate = i;
@@ -185,17 +208,25 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
         final StopWatch now = StopWatch.createStarted();
         final List<EntityType> entities = getForADay(this.prefix, date, getEntityCollectionClass());
         this.persistService.addEntities(entities);
-        log.debug(String.format("method=getAndSaveForADate Initialized %s data for %s (%d %s) in %s ms", this.prefix, date, entities.size(), this.prefix, now.getDuration().toMillis()));
+        log.debug(String.format("method=getAndSaveForADate Initialized %s data for %s (%d %s) in %s ms", this.prefix,
+                date, entities.size(), this.prefix, now.getDuration().toMillis()));
     }
 
     protected abstract Class<EntityType[]> getEntityCollectionClass();
 
-    protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType, final long latestVersion) {
+    protected List<EntityType> getObjectsNewerThanVersion(final String path, final Class<EntityType[]> responseType,
+            final long latestVersion) {
         final String targetPath = String.format("%s?version=%d", path, latestVersion);
 
         log.info("method=getObjectsNewerThanVersion Fetching prefix={} from api={}", this.prefix, targetPath);
 
-        return Arrays.asList(ripaService.getFromRipaRestTemplate(targetPath, responseType));
+        final EntityType[] result = ripaService.getFromRipaRestTemplate(targetPath, responseType);
+        if (result == null) {
+            log.warn("method=getObjectsNewerThanVersion prefix={} api={} returned null response", this.prefix,
+                    targetPath);
+            return List.of();
+        }
+        return Arrays.asList(result);
     }
 
     protected List<EntityType> getForADay(final String path, final LocalDate date, final Class<EntityType[]> type) {
@@ -216,12 +247,16 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
                 try {
                     return ripaService.getFromRipa(path, responseType);
                 } catch (final Exception e) {
-                    log.error("method=getForObjectWithRetry Requesting data from api={} failed after {} s on retry attempt {} inside retry", path, start.getDuration().toMillis() / 1000, retryCount.get(), e);
+                    log.error(
+                            "method=getForObjectWithRetry Requesting data from api={} failed after {} s on retry attempt {} inside retry",
+                            path, start.getDuration().toMillis() / 1000, retryCount.get(), e);
                     throw e;
                 }
             });
         } catch (final Exception e) {
-            log.error("method=getForObjectWithRetry Requesting data in retry from api={} failed after {} s and {} retries", path, startRetry.getDuration().toMillis() / 1000, retryCount.get(), e);
+            log.error(
+                    "method=getForObjectWithRetry Requesting data in retry from api={} failed after {} s and {} retries",
+                    path, startRetry.getDuration().toMillis() / 1000, retryCount.get(), e);
             throw new RuntimeException(e);
         }
     }

@@ -19,7 +19,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import fi.livi.digitraffic.common.util.StringUtil;
 import reactor.core.publisher.Mono;
 
-
 @Service
 public class RipaService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -32,8 +31,8 @@ public class RipaService {
     private final String kojuApiUrl;
 
     public RipaService(final WebClient ripaWebClient, final RestTemplate ripaRestTemplate,
-                       final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl,
-                       final @Value("${updater.koju-api-url}") String kojuApiUrl) {
+            final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl,
+            final @Value("${updater.koju-api-url}") String kojuApiUrl) {
         this.ripaWebClient = ripaWebClient;
         this.ripaRestTemplate = ripaRestTemplate;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
@@ -51,10 +50,13 @@ public class RipaService {
         }
     }
 
-    public <ENTITYTYPE> ENTITYTYPE getFromRipa(final String path, final Class<ENTITYTYPE> clazz, final String acceptHeader) {
-        log.info("method=getFromRipa Fetching from api={}/{} type={} acceptHeader={}", liikeInterfaceUrl, path, clazz.getSimpleName(), acceptHeader);
+    public <ENTITYTYPE> ENTITYTYPE getFromRipa(final String path, final Class<ENTITYTYPE> clazz,
+            final String acceptHeader) {
+        log.info("method=getFromRipa Fetching from api={}/{} type={} acceptHeader={}", liikeInterfaceUrl, path,
+                clazz.getSimpleName(), acceptHeader);
         try {
-            return ripaWebClient.get().uri(path).header(HttpHeaders.ACCEPT, acceptHeader).retrieve().bodyToMono(clazz).block(BLOCK_DURATION);
+            return ripaWebClient.get().uri(path).header(HttpHeaders.ACCEPT, acceptHeader).retrieve().bodyToMono(clazz)
+                    .block(BLOCK_DURATION);
         } catch (final Exception e) {
             log.error("method=getFromRipa Fetching from api={}/{} type={} acceptHeader={} failed with error {}",
                     liikeInterfaceUrl, path, clazz.getSimpleName(), acceptHeader, e.getMessage());
@@ -75,10 +77,12 @@ public class RipaService {
         }
     }
 
-    public <ENTITYTYPE> ResponseWithVersion<ENTITYTYPE> getFromRipaRestTemplateWithVersion(final String path, final Class<ENTITYTYPE> clazz) {
+    public <ENTITYTYPE> ResponseWithVersion<ENTITYTYPE> getFromRipaRestTemplateWithVersion(final String path,
+            final Class<ENTITYTYPE> clazz) {
         final String finalPath = String.format("%s/%s", liikeInterfaceUrl, path);
 
-        log.info("method=getFromRipaRestTemplateWithVersion Fetching from api={} type={}", finalPath, clazz.getSimpleName());
+        log.info("method=getFromRipaRestTemplateWithVersion Fetching from api={} type={}", finalPath,
+                clazz.getSimpleName());
         try {
             final ResponseEntity<ENTITYTYPE> response = ripaRestTemplate.getForEntity(finalPath, clazz);
             final String versionHeader = response.getHeaders().getFirst("fira-data-version");
@@ -91,15 +95,18 @@ public class RipaService {
         }
     }
 
-    public record ResponseWithVersion<T>(T body, Long version) {}
+    public record ResponseWithVersion<T>(T body, Long version) {
+    }
 
     public <ENTITYTYPE> ENTITYTYPE getFromKojuApiRestTemplate(final String path, final Class<ENTITYTYPE> clazz) {
         return getFromKojuApiRestTemplate(path, clazz, null);
     }
 
-    public <ENTITYTYPE> ENTITYTYPE getFromKojuApiRestTemplate(final String path, final Class<ENTITYTYPE> clazz, final ETagRef eTagRef) {
+    public <ENTITYTYPE> ENTITYTYPE getFromKojuApiRestTemplate(final String path, final Class<ENTITYTYPE> clazz,
+            final ETagRef eTagRef) {
         final String finalPath = StringUtil.format("{}/{}", kojuApiUrl, path);
-        log.info("method=getFromKojuApiRestTemplate Fetching from api={} type={} etag={}", finalPath, clazz.getSimpleName(), eTagRef);
+        log.info("method=getFromKojuApiRestTemplate Fetching from api={} type={} etag={}", finalPath,
+                clazz.getSimpleName(), eTagRef);
         try {
             final HttpHeaders headers = new HttpHeaders();
             if (eTagRef != null && eTagRef.getETag() != null) {
@@ -107,7 +114,8 @@ public class RipaService {
             }
             final HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-            final ResponseEntity<ENTITYTYPE> response = ripaRestTemplate.exchange(finalPath, HttpMethod.GET, requestEntity, clazz);
+            final ResponseEntity<ENTITYTYPE> response = ripaRestTemplate.exchange(finalPath, HttpMethod.GET,
+                    requestEntity, clazz);
             if (eTagRef != null) {
                 eTagRef.update(response);
             }
@@ -119,7 +127,8 @@ public class RipaService {
         }
     }
 
-    public <ENTITYTYPE> ENTITYTYPE postToRipa(final String path, final HashMap<?,?> parts, final Class<ENTITYTYPE> clazz) {
+    public <ENTITYTYPE> ENTITYTYPE postToRipa(final String path, final HashMap<?, ?> parts,
+            final Class<ENTITYTYPE> clazz) {
         return ripaWebClient.post().uri(path)
                 .body(Mono.just(parts), HashMap.class)
                 .retrieve().bodyToMono(clazz).block();
