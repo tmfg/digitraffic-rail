@@ -42,6 +42,22 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
     }
 
     @Override
+    public List<Routeset> modifyEntitiesBeforePersist(final List<Routeset> entities) {
+        final List<Routeset> valid = entities.stream()
+                .filter(r -> {
+                    if (r.messageTime == null) {
+                        log.error("method=modifyEntitiesBeforePersist Filtered routeset with null messageTime:" +
+                                " id={} version={} trainId={} routeType={} clientSystem={} messageId={}",
+                                r.id, r.version, r.trainId, r.routeType, r.clientSystem, r.messageId);
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
+        return valid;
+    }
+
+    @Override
     protected List<Routeset> doUpdate() {
         final List<Routeset> updatedEntities = super.doUpdate();
 
@@ -57,7 +73,8 @@ public class RoutesetInitializerService extends AbstractDatabaseInitializer<Rout
             for (final Routeset entity : updatedEntities) {
 
                 mqttPublishService.publishEntity(
-                        String.format("routesets/%s/%s", entity.trainId.departureDate, entity.trainId.trainNumber), entity, null);
+                        String.format("routesets/%s/%s", entity.trainId.departureDate, entity.trainId.trainNumber),
+                        entity, null);
             }
         } catch (final Exception e) {
             log.error("Error publishing routesets to MQTT", e);
