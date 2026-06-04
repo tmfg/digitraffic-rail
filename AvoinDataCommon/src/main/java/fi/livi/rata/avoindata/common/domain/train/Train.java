@@ -124,7 +124,7 @@ public class Train implements Comparable<Train> {
 
     @Override
     public String toString() {
-        return String.format("%s: %s", id.departureDate, id.trainNumber);
+        return String.format("%s: %s(%d)", id.departureDate, id.trainNumber, version);
     }
 
     private static final Comparator<Train> COMPARATOR = Comparator.comparing((Train t) -> t.id.departureDate).thenComparingLong(t -> t.id.trainNumber);

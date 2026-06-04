@@ -23,7 +23,7 @@ public class StopSectorServiceTest extends BaseTest {
     @Test
     public void addOnce() throws Exception {
         simpleTransactionManager.executeInTransaction(() -> {
-            stopSectorService.addTrains(List.of(createTrain()), "TEST");
+            stopSectorService.addFromTrains(List.of(createTrain()), "TEST");
             return null;
         });
     }
@@ -31,12 +31,12 @@ public class StopSectorServiceTest extends BaseTest {
     @Test
     public void addTwice() throws Exception {
         simpleTransactionManager.executeInTransaction(() -> {
-            stopSectorService.addTrains(List.of(createTrain()), "TEST");
+            stopSectorService.addFromTrains(List.of(createTrain()), "TEST");
             return null;
         });
 
         simpleTransactionManager.executeInTransaction(() -> {
-            stopSectorService.addTrains(List.of(createTrain()), "TEST");
+            stopSectorService.addFromTrains(List.of(createTrain()), "TEST");
             return null;
         });
     }
@@ -44,7 +44,7 @@ public class StopSectorServiceTest extends BaseTest {
     @Test
     public void twiceOnAdd() throws Exception {
         simpleTransactionManager.executeInTransaction(() -> {
-            stopSectorService.addTrains(List.of(createTrain(), createTrain()), "TEST");
+            stopSectorService.addFromTrains(List.of(createTrain(), createTrain()), "TEST");
             return null;
         });
     }

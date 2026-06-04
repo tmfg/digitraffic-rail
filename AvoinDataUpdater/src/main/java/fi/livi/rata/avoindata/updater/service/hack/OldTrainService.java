@@ -60,11 +60,6 @@ public class OldTrainService {
                     if (!trainResponse.isEmpty()) {
                         log.info("method=updateOldTrains Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
 
-                        final long maxApiVersion = trainRepository.getMaxApiVersion();
-                        for (final Train train : trainResponse) {
-                            train.version = maxApiVersion + 1;
-                        }
-
                         trainPersistService.updateEntities(trainResponse);
                     }
 
