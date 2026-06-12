@@ -6,6 +6,8 @@ jobs:
   build:
     if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-24.04
+    env:
+      AWS_REGION: eu-west-1
     services:
       dt-rail-mysql:
         image: mysql:8.0
@@ -30,7 +32,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          java-version: 21
+          java-version: 25
           distribution: corretto
           cache: maven
       - name: Compile
