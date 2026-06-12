@@ -6,6 +6,8 @@ jobs:
   build:
     if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-24.04
+    env:
+      AWS_REGION: eu-west-1
     services:
       dt-rail-mysql:
         image: mysql:8.0
