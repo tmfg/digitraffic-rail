@@ -90,6 +90,7 @@ jobs:
       - name: Diff and deploy
         env:
           DEPLOY_ALL_CHANGES: true
+          FORCE_DEPLOY: true
           AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
           ETJ2_SUFFIX: ${{ github.event.inputs.etj2_suffix }}
           INFRA_SUFFIX: ${{ github.event.inputs.infra_suffix }}
