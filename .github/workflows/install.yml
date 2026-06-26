@@ -70,7 +70,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v6.1.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
@@ -146,7 +146,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v6.1.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-image-rail-${{ github.event.inputs.env }}
@@ -216,7 +216,7 @@ jobs:
       revision_server: ${{ steps.server-revision.outputs.revision_server }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v6.1.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
@@ -318,7 +318,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT      
 
       - name: Configure AWS credentials for SBOM install
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@v6.1.1
         with:
           role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-${{ github.event.inputs.env }}
