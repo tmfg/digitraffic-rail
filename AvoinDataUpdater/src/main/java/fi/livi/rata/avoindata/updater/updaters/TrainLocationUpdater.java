@@ -27,6 +27,8 @@ import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
 
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
+
 @Service
 public class TrainLocationUpdater {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -64,6 +66,7 @@ public class TrainLocationUpdater {
             if (!Strings.isNullOrEmpty(liikeinterfaceUrl) && isKuplaEnabled) {
                 final ZonedDateTime start = DateProvider.nowInHelsinki();
                 final List<TrainLocation> trainLocations = Arrays.asList(ripaService.getFromRipa("kuplas", TrainLocation[].class));
+                final ZonedDateTime middle = DateProvider.nowInHelsinki();
                 final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations);
 
                 try {
@@ -78,8 +81,7 @@ public class TrainLocationUpdater {
 
                 final ZonedDateTime end = DateProvider.nowInHelsinki();
 
-                log.info("Updated data for {} trainLocations (total received {}) in {} ms", filteredTrainLocations.size(),
-                        trainLocations.size(), end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+                logUpdate(end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli(), "train-location", filteredTrainLocations.size(), middle.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
 
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS);
             }
