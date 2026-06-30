@@ -2,63 +2,66 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.time.LocalDate;
 
+import org.springframework.stereotype.Service;
+
 /**
  * Generates NeTEx IDs following the {Codespace}:{ElementType}:{localId} convention.
  * All IDs use the DT codespace (Digitraffic).
  */
+@Service
 public class NeTExIdGenerator {
 
     public static final String CODESPACE = "DT";
 
     public String authorityId(final String code) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":Authority:" + code;
     }
 
     public String operatorId(final String shortCode) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":Operator:" + shortCode;
     }
 
     public String lineId(final String lineIdentifier) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":Line:" + lineIdentifier;
     }
 
     public String routeId(final String lineId, final String direction, final String hash) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":Route:" + lineId + "-" + direction + "-" + hash;
     }
 
     public String routePointId(final String stationShortCode) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":RoutePoint:" + stationShortCode;
     }
 
     public String scheduledStopPointId(final String stationShortCode) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":ScheduledStopPoint:" + stationShortCode;
     }
 
     public String journeyPatternId(final String lineId, final String hash) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":JourneyPattern:" + lineId + "-" + hash;
     }
 
     public String serviceJourneyId(final long trainNumber, final long scheduleId) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":ServiceJourney:" + trainNumber + "-" + scheduleId;
     }
 
     public String serviceJourneyIdAdhoc(final long trainNumber, final LocalDate date) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":ServiceJourney:" + trainNumber + "-" + date;
     }
 
     public String dayTypeId(final String hash) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":DayType:" + hash;
     }
 
     public String operatingPeriodId(final String id) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":OperatingPeriod:" + id;
     }
 
     public String destinationDisplayId(final String stationShortCode) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":DestinationDisplay:" + stationShortCode;
     }
 
     public String networkId(final String code) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return CODESPACE + ":Network:" + code;
     }
 }
