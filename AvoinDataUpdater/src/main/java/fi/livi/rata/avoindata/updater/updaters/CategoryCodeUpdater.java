@@ -3,9 +3,11 @@ package fi.livi.rata.avoindata.updater.updaters;
 import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         final String reasonCodePath = "/v1/reason-codes/latest";
         final String reasonCategoryPath = "/v1/reason-categories/latest";
 
+        final ZonedDateTime start = DateProvider.nowInHelsinki();
         final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
         final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
 
@@ -59,7 +62,7 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
 
         log.info("Found {} categoryCodes", categoryCodes.length);
 
-        this.persist("categorycodes", this.categoryCodeService::update, categoryCodes);
+        this.persist("categorycodes", this.categoryCodeService::update, categoryCodes, start);
     }
 
     private CategoryCode[] merge(final JsonNode reasonCategoryResult, final JsonNode reasonCodeResult) {

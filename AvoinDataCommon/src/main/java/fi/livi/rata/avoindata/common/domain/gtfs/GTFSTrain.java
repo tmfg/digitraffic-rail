@@ -20,6 +20,9 @@ public class GTFSTrain {
     @Column
     public Long version;
 
+    @Column(name = "source_version")
+    public Long sourceVersion;
+
     @Column
     public long trainCategoryId;
 

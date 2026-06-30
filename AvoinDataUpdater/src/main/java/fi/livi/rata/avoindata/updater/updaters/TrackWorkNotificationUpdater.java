@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,6 +12,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.locationtech.jts.geom.GeometryCollection;
@@ -31,6 +33,8 @@ import fi.livi.rata.avoindata.updater.service.ruma.LocalRumaNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.LocalTrackWorkNotificationService;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteRumaNotificationStatus;
 import fi.livi.rata.avoindata.updater.service.ruma.RemoteTrackWorkNotificationService;
+
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
 
 @Service
 public class TrackWorkNotificationUpdater {
@@ -64,8 +68,10 @@ public class TrackWorkNotificationUpdater {
             return;
         }
 
+        final ZonedDateTime start = DateProvider.nowInHelsinki();
         final RemoteRumaNotificationStatus[] statusesResp =
                 remoteTrackWorkNotificationService.getStatuses();
+        final ZonedDateTime middle = DateProvider.nowInHelsinki();
 
         if (statusesResp != null && statusesResp.length > 0) {
             final Map<String, Long> statuses = Arrays.stream(statusesResp)
@@ -73,6 +79,10 @@ public class TrackWorkNotificationUpdater {
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
             if (statuses.isEmpty()) {
                 log.info("Received track work notifications but all were on ignore list");
+
+                final ZonedDateTime end = DateProvider.nowInHelsinki();
+                logUpdate(end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli(), "track-work-notification", 0, middle.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+
                 return;
             }
             log.info("Received {} track work notification statuses", statuses.size());
@@ -80,6 +90,9 @@ public class TrackWorkNotificationUpdater {
             addNewTrackWorkNotifications(statuses, localTrackWorkNotifications);
             updateTrackWorkNotifications(statuses, localTrackWorkNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS);
+
+            final ZonedDateTime end = DateProvider.nowInHelsinki();
+            logUpdate(end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli(), "track-work-notification", statuses.size(), middle.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
         } else {
             log.error("Error retrieving track work notification statuses or received empty response");
         }
