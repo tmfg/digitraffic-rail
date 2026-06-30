@@ -60,7 +60,7 @@ public class GTFSRealtimeService {
         } else {
             TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
                 log.info("method=getTrainsForTripUpdate Getting trains since version {}", maxVersion);
-                final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findByVersionGreaterThan(maxVersion);
+                final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findBySourceVersionGreaterThan(maxVersion);
                 log.info("method=getTrainsForTripUpdate Found {} GtfsTrains", gtfsTrains.size());
 
                 trains.addAll(gtfsTrains);
