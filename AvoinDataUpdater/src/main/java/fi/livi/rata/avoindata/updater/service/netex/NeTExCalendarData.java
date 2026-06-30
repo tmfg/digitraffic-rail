@@ -5,7 +5,8 @@ import java.util.Map;
 
 /**
  * Holds the calendar data produced by NeTExCalendarService.
- * Contains DayTypes, OperatingPeriods, and DayTypeAssignments mapped by their IDs.
+ * Contains DayTypes, OperatingPeriods, and DayTypeAssignments mapped by their
+ * IDs.
  */
 public class NeTExCalendarData {
 

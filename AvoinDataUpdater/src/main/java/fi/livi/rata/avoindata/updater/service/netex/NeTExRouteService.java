@@ -48,7 +48,8 @@ public class NeTExRouteService {
                         .collect(Collectors.toList());
 
                 final String routeId = idGenerator.routeId(lineIdentifier, "1", hash);
-                final String routeName = commercialStops.get(0) + " - " + commercialStops.get(commercialStops.size() - 1);
+                final String routeName = commercialStops.get(0) + " - "
+                        + commercialStops.get(commercialStops.size() - 1);
                 final List<String> routePointRefs = allStopCodes.stream()
                         .map(idGenerator::routePointId)
                         .collect(Collectors.toList());
@@ -69,8 +70,7 @@ public class NeTExRouteService {
                             idGenerator.scheduledStopPointId(code),
                             !isLast,
                             !isFirst,
-                            destRef
-                    ));
+                            destRef));
                 }
 
                 patternMap.put(patternId, new NeTExRouteData.NeTExJourneyPattern(patternId, routeId, stopPoints));
@@ -80,8 +80,7 @@ public class NeTExRouteService {
         return new NeTExRouteData(
                 new ArrayList<>(routeMap.values()),
                 new ArrayList<>(patternMap.values()),
-                scheduleToPatternId
-        );
+                scheduleToPatternId);
     }
 
     /**

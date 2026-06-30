@@ -33,10 +33,13 @@ public class NeTExRouteData {
         return scheduleToJourneyPatternId.get(scheduleId);
     }
 
-    public record NeTExRoute(String id, String name, String lineRef, List<String> routePointRefs) {}
+    public record NeTExRoute(String id, String name, String lineRef, List<String> routePointRefs) {
+    }
 
-    public record NeTExJourneyPattern(String id, String routeRef, List<NeTExStopPointInPattern> stopPoints) {}
+    public record NeTExJourneyPattern(String id, String routeRef, List<NeTExStopPointInPattern> stopPoints) {
+    }
 
     public record NeTExStopPointInPattern(int order, String scheduledStopPointRef, boolean forBoarding,
-                                          boolean forAlighting, String destinationDisplayRef) {}
+            boolean forAlighting, String destinationDisplayRef) {
+    }
 }

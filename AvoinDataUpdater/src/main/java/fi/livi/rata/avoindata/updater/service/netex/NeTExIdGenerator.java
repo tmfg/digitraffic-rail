@@ -5,7 +5,8 @@ import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 
 /**
- * Generates NeTEx IDs following the {Codespace}:{ElementType}:{localId} convention.
+ * Generates NeTEx IDs following the {Codespace}:{ElementType}:{localId}
+ * convention.
  * All IDs use the DT codespace (Digitraffic).
  */
 @Service

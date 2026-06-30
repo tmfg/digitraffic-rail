@@ -18,10 +18,13 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.springframework.stereotype.Service;
+
 /**
  * Serializes NeTEx domain objects to XML and produces the final ZIP output.
  * Uses Entur netex-java-model (JAXB) for type-safe marshalling.
  */
+@Service
 public class NeTExWritingService {
 
     private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
@@ -38,17 +41,18 @@ public class NeTExWritingService {
     }
 
     /**
-     * Assembles all NeTEx data into a PublicationDelivery XML document and writes it to a ZIP.
+     * Assembles all NeTEx data into a PublicationDelivery XML document and writes
+     * it to a ZIP.
      *
      * @return ZIP file content as byte array
      */
     public byte[] writeNeTExZip(final NeTExStopsData stopsData,
-                                 final NeTExRouteData routeData,
-                                 final NeTExCalendarData calendarData,
-                                 final List<NeTExEntityService.NeTExLine> lines,
-                                 final List<NeTExEntityService.NeTExOperator> operators,
-                                 final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
-                                 final ZonedDateTime generationTimestamp) {
+            final NeTExRouteData routeData,
+            final NeTExCalendarData calendarData,
+            final List<NeTExEntityService.NeTExLine> lines,
+            final List<NeTExEntityService.NeTExOperator> operators,
+            final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
+            final ZonedDateTime generationTimestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, generationTimestamp);
         final String xml = marshalToXml(delivery);
@@ -74,8 +78,7 @@ public class NeTExWritingService {
                         FACTORY.createResourceFrame(resourceFrame),
                         FACTORY.createServiceFrame(serviceFrame),
                         FACTORY.createServiceCalendarFrame(calendarFrame),
-                        FACTORY.createTimetableFrame(timetableFrame)
-                );
+                        FACTORY.createTimetableFrame(timetableFrame));
 
         return new PublicationDeliveryStructure()
                 .withVersion(VERSION)
@@ -115,8 +118,8 @@ public class NeTExWritingService {
     }
 
     private ServiceFrame buildServiceFrame(final NeTExStopsData stopsData,
-                                           final NeTExRouteData routeData,
-                                           final List<NeTExEntityService.NeTExLine> lines) {
+            final NeTExRouteData routeData,
+            final List<NeTExEntityService.NeTExLine> lines) {
         final ServiceFrame frame = new ServiceFrame()
                 .withId("DT:ServiceFrame:1")
                 .withVersion("1");
@@ -215,7 +218,8 @@ public class NeTExWritingService {
                 stops.add(spijp);
             }
             final PointsInJourneyPattern_RelStructure pointsInSequence = new PointsInJourneyPattern_RelStructure();
-            pointsInSequence.getPointInJourneyPatternOrStopPointInJourneyPatternOrTimingPointInJourneyPattern().addAll(stops);
+            pointsInSequence.getPointInJourneyPatternOrStopPointInJourneyPatternOrTimingPointInJourneyPattern()
+                    .addAll(stops);
             patternsStructure.getJourneyPattern_OrJourneyPatternView().add(
                     FACTORY.createJourneyPattern(new JourneyPattern()
                             .withId(pattern.id())
@@ -346,7 +350,7 @@ public class NeTExWritingService {
 
     private byte[] zipXml(final String xml) {
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             final ZipOutputStream zos = new ZipOutputStream(baos)) {
+                final ZipOutputStream zos = new ZipOutputStream(baos)) {
             zos.putNextEntry(new ZipEntry("FIN_rail_timetable.xml"));
             zos.write(xml.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
@@ -359,13 +363,20 @@ public class NeTExWritingService {
 
     private List<DayOfWeekEnumeration> parseDaysOfWeek(final String daysOfWeekString) {
         final List<DayOfWeekEnumeration> days = new ArrayList<>();
-        if (daysOfWeekString.contains("Monday")) days.add(DayOfWeekEnumeration.MONDAY);
-        if (daysOfWeekString.contains("Tuesday")) days.add(DayOfWeekEnumeration.TUESDAY);
-        if (daysOfWeekString.contains("Wednesday")) days.add(DayOfWeekEnumeration.WEDNESDAY);
-        if (daysOfWeekString.contains("Thursday")) days.add(DayOfWeekEnumeration.THURSDAY);
-        if (daysOfWeekString.contains("Friday")) days.add(DayOfWeekEnumeration.FRIDAY);
-        if (daysOfWeekString.contains("Saturday")) days.add(DayOfWeekEnumeration.SATURDAY);
-        if (daysOfWeekString.contains("Sunday")) days.add(DayOfWeekEnumeration.SUNDAY);
+        if (daysOfWeekString.contains("Monday"))
+            days.add(DayOfWeekEnumeration.MONDAY);
+        if (daysOfWeekString.contains("Tuesday"))
+            days.add(DayOfWeekEnumeration.TUESDAY);
+        if (daysOfWeekString.contains("Wednesday"))
+            days.add(DayOfWeekEnumeration.WEDNESDAY);
+        if (daysOfWeekString.contains("Thursday"))
+            days.add(DayOfWeekEnumeration.THURSDAY);
+        if (daysOfWeekString.contains("Friday"))
+            days.add(DayOfWeekEnumeration.FRIDAY);
+        if (daysOfWeekString.contains("Saturday"))
+            days.add(DayOfWeekEnumeration.SATURDAY);
+        if (daysOfWeekString.contains("Sunday"))
+            days.add(DayOfWeekEnumeration.SUNDAY);
         return days;
     }
 
@@ -381,5 +392,6 @@ public class NeTExWritingService {
         return new ParsedTime(LocalTime.of(hours, minutes, seconds), 0);
     }
 
-    private record ParsedTime(LocalTime time, int dayOffset) {}
+    private record ParsedTime(LocalTime time, int dayOffset) {
+    }
 }

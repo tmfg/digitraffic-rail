@@ -34,7 +34,13 @@ public class NeTExStopsData {
         return destinationDisplays;
     }
 
-    public record NeTExScheduledStopPoint(String id, String name, String privateCode, BigDecimal latitude, BigDecimal longitude) {}
-    public record NeTExRoutePoint(String id, String stationShortCode) {}
-    public record NeTExDestinationDisplay(String id, String frontText) {}
+    public record NeTExScheduledStopPoint(String id, String name, String privateCode, BigDecimal latitude,
+            BigDecimal longitude) {
+    }
+
+    public record NeTExRoutePoint(String id, String stationShortCode) {
+    }
+
+    public record NeTExDestinationDisplay(String id, String frontText) {
+    }
 }

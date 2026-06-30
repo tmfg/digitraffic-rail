@@ -3,12 +3,13 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.time.LocalDate;
 
 /**
- * Represents a NeTEx DayTypeAssignment linking a DayType to either an OperatingPeriod or a specific Date.
+ * Represents a NeTEx DayTypeAssignment linking a DayType to either an
+ * OperatingPeriod or a specific Date.
  */
 public class NeTExDayTypeAssignment {
     private final String dayTypeId;
     private final String operatingPeriodId; // null for ADHOC
-    private final LocalDate date;           // null for REGULAR
+    private final LocalDate date; // null for REGULAR
 
     /**
      * Constructor for REGULAR schedules (linked to OperatingPeriod).

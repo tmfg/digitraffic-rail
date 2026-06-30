@@ -10,8 +10,10 @@ import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
 /**
- * Converts schedule times (UTC Duration from midnight) to NeTEx Nordic local time strings.
- * NeTEx Nordic uses Europe/Helsinki local time with >24:00:00 notation for past-midnight stops.
+ * Converts schedule times (UTC Duration from midnight) to NeTEx Nordic local
+ * time strings.
+ * NeTEx Nordic uses Europe/Helsinki local time with >24:00:00 notation for
+ * past-midnight stops.
  */
 @Service
 public class NeTExTimeConverter {
@@ -38,13 +40,15 @@ public class NeTExTimeConverter {
         final int minutes = (int) ((totalSeconds % 3600) / 60);
         final int seconds = (int) (totalSeconds % 60);
 
-        final ZonedDateTime utcDateTime = ZonedDateTime.of(referenceDate, LocalTime.of(hours % 24, minutes, seconds), ZoneOffset.UTC);
+        final ZonedDateTime utcDateTime = ZonedDateTime.of(referenceDate, LocalTime.of(hours % 24, minutes, seconds),
+                ZoneOffset.UTC);
         final ZonedDateTime helsinkiDateTime = utcDateTime.withZoneSameInstant(HELSINKI_ZONE);
         return helsinkiDateTime.toLocalTime();
     }
 
     /**
-     * Formats a local time as NeTEx time string, applying >24:00:00 if past midnight.
+     * Formats a local time as NeTEx time string, applying >24:00:00 if past
+     * midnight.
      */
     public String formatNeTExTime(final LocalTime localTime, final LocalTime firstDepartureLocalTime) {
         if (localTime.equals(LocalTime.MIDNIGHT) && !firstDepartureLocalTime.equals(LocalTime.MIDNIGHT)) {

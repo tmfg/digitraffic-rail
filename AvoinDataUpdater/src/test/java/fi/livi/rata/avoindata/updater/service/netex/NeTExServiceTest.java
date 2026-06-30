@@ -37,7 +37,8 @@ class NeTExServiceTest {
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator);
         final NeTExWritingService writingService = new NeTExWritingService();
-        netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService);
+        netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
+                null, null, null);
     }
 
     // --- Filtering tests ---
@@ -189,7 +190,8 @@ class NeTExServiceTest {
         final byte[] result = netExService.generateNeTEx(List.of(), List.of(), stations);
 
         // then: graceful handling — null or empty but no exception
-        // (implementation decides: null means "no output", or returns minimal valid ZIP)
+        // (implementation decides: null means "no output", or returns minimal valid
+        // ZIP)
         // For now, just assert no exception was thrown
         assertTrue(result == null || result.length >= 0);
     }
@@ -229,7 +231,7 @@ class NeTExServiceTest {
     }
 
     private Schedule createFullSchedule(final long id, final long trainNumber, final String trainTypeName,
-                                         final String categoryName, final List<String> stationCodes) {
+            final String categoryName, final List<String> stationCodes) {
         final Schedule schedule = createSchedule(trainTypeName, categoryName, true);
         schedule.id = id;
         schedule.trainNumber = trainNumber;

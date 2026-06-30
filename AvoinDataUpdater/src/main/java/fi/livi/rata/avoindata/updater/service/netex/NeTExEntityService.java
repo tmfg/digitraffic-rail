@@ -10,9 +10,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 /**
- * Builds core NeTEx domain objects: Lines, Operators, Authority, ServiceJourneys, Network.
+ * Builds core NeTEx domain objects: Lines, Operators, Authority,
+ * ServiceJourneys, Network.
  */
+@Service
 public class NeTExEntityService {
 
     private final NeTExIdGenerator idGenerator;
@@ -62,8 +66,7 @@ public class NeTExEntityService {
                         operatorId,
                         shortCode,
                         shortCode,
-                        schedule.operator.operatorUICCode
-                ));
+                        schedule.operator.operatorUICCode));
             }
         }
         return new ArrayList<>(operatorMap.values());
@@ -73,8 +76,8 @@ public class NeTExEntityService {
      * Creates ServiceJourneys from schedules with calendar and route references.
      */
     public List<NeTExServiceJourney> createServiceJourneys(final List<Schedule> schedules,
-                                                            final NeTExCalendarData calendarData,
-                                                            final NeTExRouteData routeData) {
+            final NeTExCalendarData calendarData,
+            final NeTExRouteData routeData) {
         final List<NeTExServiceJourney> journeys = new ArrayList<>();
 
         for (final Schedule schedule : schedules) {
@@ -111,10 +114,12 @@ public class NeTExEntityService {
             if (!isCommercialStop(row)) {
                 continue;
             }
-            final String arrivalTime = row.arrival != null ?
-                    timeConverter.toNeTExTime(row.arrival.timestamp, firstDeparture) : null;
-            final String departureTime = row.departure != null ?
-                    timeConverter.toNeTExTime(row.departure.timestamp, firstDeparture) : null;
+            final String arrivalTime = row.arrival != null
+                    ? timeConverter.toNeTExTime(row.arrival.timestamp, firstDeparture)
+                    : null;
+            final String departureTime = row.departure != null
+                    ? timeConverter.toNeTExTime(row.departure.timestamp, firstDeparture)
+                    : null;
             times.add(new NeTExPassingTime(order++, arrivalTime, departureTime));
         }
 
@@ -137,11 +142,18 @@ public class NeTExEntityService {
         return row.arrival != null && row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
     }
 
-    public record NeTExLine(String id, String publicCode, String transportMode) {}
-    public record NeTExOperator(String id, String name, String privateCode, int companyNumber) {}
+    public record NeTExLine(String id, String publicCode, String transportMode) {
+    }
+
+    public record NeTExOperator(String id, String name, String privateCode, int companyNumber) {
+    }
+
     public record NeTExServiceJourney(String id, String name, String privateCode,
-                                       String journeyPatternRef, String operatorRef,
-                                       String lineRef, String dayTypeRef,
-                                       List<NeTExPassingTime> passingTimes) {}
-    public record NeTExPassingTime(int order, String arrivalTime, String departureTime) {}
+            String journeyPatternRef, String operatorRef,
+            String lineRef, String dayTypeRef,
+            List<NeTExPassingTime> passingTimes) {
+    }
+
+    public record NeTExPassingTime(int order, String arrivalTime, String departureTime) {
+    }
 }

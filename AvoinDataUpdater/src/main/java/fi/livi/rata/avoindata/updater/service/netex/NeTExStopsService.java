@@ -8,7 +8,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 /**
- * Maps station metadata to NeTEx ScheduledStopPoints, RoutePoints, and DestinationDisplays.
+ * Maps station metadata to NeTEx ScheduledStopPoints, RoutePoints, and
+ * DestinationDisplays.
  */
 public class NeTExStopsService {
 
@@ -37,18 +38,15 @@ public class NeTExStopsService {
                     station.name,
                     station.shortCode,
                     station.latitude,
-                    station.longitude
-            ));
+                    station.longitude));
 
             routePoints.add(new NeTExStopsData.NeTExRoutePoint(
                     idGenerator.routePointId(station.shortCode),
-                    station.shortCode
-            ));
+                    station.shortCode));
 
             destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
                     idGenerator.destinationDisplayId(station.shortCode),
-                    station.name
-            ));
+                    station.name));
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays);

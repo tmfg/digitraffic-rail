@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -32,7 +33,8 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
-        <!--This is used to add support for bootstrap.properties file-->
+        <!--This
+        is used to add support for bootstrap.properties file-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
@@ -45,7 +47,8 @@
             <version>4.0.2</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.springframework.integration/spring-integration-mqtt -->
+        <!--
+        https://mvnrepository.com/artifact/org.springframework.integration/spring-integration-mqtt -->
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-mqtt</artifactId>
@@ -142,7 +145,8 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
-            <!--suppress UnresolvedMavenProperty -->
+            <!--suppress
+            UnresolvedMavenProperty -->
             <version>${org.flywaydb.version}</version>
         </dependency>
         <dependency>
@@ -312,7 +316,8 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>../${project.digitraffic-common-java.directory}/src/main/java</source>
+                                <source>
+                                    ../${project.digitraffic-common-java.directory}/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -324,7 +329,8 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>../${project.digitraffic-common-java.directory}/src/test/java</source>
+                                <source>
+                                    ../${project.digitraffic-common-java.directory}/src/test/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -341,12 +347,14 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <protocArtifact>com.google.protobuf:protoc:${com.google.protobuf.version}</protocArtifact>
+                            <protocArtifact>
+                                com.google.protobuf:protoc:${com.google.protobuf.version}</protocArtifact>
                             <addProtoSources>all</addProtoSources>
                             <inputDirectories>
                                 <include>src/main/resources/schema/gtfs-realtime</include>
                             </inputDirectories>
-                            <outputDirectory>${project.build.directory}/generated-sources/gtfs-realtime-proto</outputDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-sources/gtfs-realtime-proto</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -362,7 +370,8 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/schema/koju/koju-api_v2.json</inputSpec>
+                            <inputSpec>
+                                ${project.basedir}/src/main/resources/schema/koju/koju-api_v2.json</inputSpec>
                             <generatorName>java</generatorName>
                             <generateApis>false</generateApis>
                             <generateApiTests>false</generateApiTests>

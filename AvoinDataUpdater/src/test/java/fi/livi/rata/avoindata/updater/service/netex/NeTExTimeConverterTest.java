@@ -117,7 +117,8 @@ class NeTExTimeConverterTest {
 
     @Test
     void givenDstSpringForward_whenConverting_thenNoLostHour() {
-        // given: UTC time during spring DST transition (last Sunday of March 2026 = March 29)
+        // given: UTC time during spring DST transition (last Sunday of March 2026 =
+        // March 29)
         // At 01:00 UTC, Helsinki goes from EET (UTC+2) → EEST (UTC+3)
         // So 00:30 UTC = 02:30 EET, and 01:30 UTC = 04:30 EEST (skipping 03:00-04:00)
         final Duration utcTimestamp = Duration.ofHours(1).plusMinutes(30);
@@ -132,9 +133,11 @@ class NeTExTimeConverterTest {
 
     @Test
     void givenDstFallBack_whenConverting_thenNoDuplicatedHour() {
-        // given: UTC time during autumn DST transition (last Sunday of October 2026 = October 25)
+        // given: UTC time during autumn DST transition (last Sunday of October 2026 =
+        // October 25)
         // At 01:00 UTC, Helsinki goes from EEST (UTC+3) → EET (UTC+2)
-        // 00:30 UTC = 03:30 EEST, 01:30 UTC = 03:30 EET (same local time shown twice, but UTC is unambiguous)
+        // 00:30 UTC = 03:30 EEST, 01:30 UTC = 03:30 EET (same local time shown twice,
+        // but UTC is unambiguous)
         final Duration utcTimestamp = Duration.ofHours(1).plusMinutes(30);
         final LocalDate dstDate = LocalDate.of(2026, 10, 25);
 
@@ -160,7 +163,8 @@ class NeTExTimeConverterTest {
 
     @Test
     void givenFullConversion_whenTrainSpansMidnight_thenCorrectOutput() {
-        // given: a night train departing at 21:50 UTC in summer, arriving at 22:10 UTC (next day 01:10 local)
+        // given: a night train departing at 21:50 UTC in summer, arriving at 22:10 UTC
+        // (next day 01:10 local)
         final Duration departure = Duration.ofHours(21).plusMinutes(50);
         final Duration arrival = Duration.ofHours(22).plusMinutes(10);
         final Duration firstDeparture = departure;
@@ -180,7 +184,8 @@ class NeTExTimeConverterTest {
 
     @Test
     void givenLateNightTrain_whenStopAfterMidnight_thenRollsOver() {
-        // given: train departs at 22:00 local, has a stop at 00:30 local (past midnight)
+        // given: train departs at 22:00 local, has a stop at 00:30 local (past
+        // midnight)
         final LocalTime stopTime = LocalTime.of(0, 30);
         final LocalTime firstDeparture = LocalTime.of(22, 0);
 
