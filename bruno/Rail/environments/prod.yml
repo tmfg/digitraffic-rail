@@ -1,0 +1,8 @@
+name: prod
+variables:
+  - secret: true
+    name: updater.reason.api-key
+  - name: updater.pala-api-url
+    value: https://localhost:11102/railway/pala-api
+  - name: updater.pala-api-host
+    value: integraatiot.rataliikenne.fi

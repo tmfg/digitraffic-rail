@@ -1,0 +1,8 @@
+name: qa
+variables:
+  - secret: true
+    name: updater.reason.api-key
+  - name: updater.pala-api-url
+    value: https://localhost:11101/railway/pala-api
+  - name: updater.pala-api-host
+    value: integraatiot-qa.rataliikenne.fi
