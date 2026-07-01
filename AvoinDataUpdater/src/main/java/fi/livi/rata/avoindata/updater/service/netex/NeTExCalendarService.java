@@ -46,7 +46,7 @@ public class NeTExCalendarService {
 
             scheduleToDayTypeId.put(schedule.id, dayTypeId);
 
-            if (schedule.timetableType == Train.TimetableType.ADHOC) {
+            if (schedule.timetableType == Train.TimetableType.ADHOC || schedule.endDate == null) {
                 dayTypeAssignments.add(NeTExDayTypeAssignment.forDate(dayTypeId, schedule.startDate));
             } else {
                 final String periodId = idGenerator.operatingPeriodId(schedule.startDate + "-" + schedule.endDate);
