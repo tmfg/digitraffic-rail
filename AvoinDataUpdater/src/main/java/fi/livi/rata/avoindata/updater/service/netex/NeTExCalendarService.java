@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
  * structures:
  * DayType, OperatingPeriod, and DayTypeAssignment.
  */
+@Service
 public class NeTExCalendarService {
 
     private final NeTExIdGenerator idGenerator;

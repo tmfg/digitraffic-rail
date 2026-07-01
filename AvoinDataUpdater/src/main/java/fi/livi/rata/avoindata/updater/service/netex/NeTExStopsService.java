@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
  * Maps station metadata to NeTEx ScheduledStopPoints, RoutePoints, and
  * DestinationDisplays.
  */
+@Service
 public class NeTExStopsService {
 
     private final NeTExIdGenerator idGenerator;

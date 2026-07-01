@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
  * Derives Routes and JourneyPatterns from schedule data.
  * Deduplicates patterns for trains sharing the same stop sequence.
  */
+@Service
 public class NeTExRouteService {
 
     private final NeTExIdGenerator idGenerator;
