@@ -66,6 +66,7 @@ public class NeTExService {
     @Transactional
     public void generateNeTEx() {
         log.info("method=generateNeTEx starting NeTEx generation");
+        final long startTime = System.currentTimeMillis();
 
         try {
             final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
@@ -73,7 +74,12 @@ public class NeTExService {
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
             final List<Station> stations = stationRepository.findAll();
 
+            log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
+                    adhocSchedules.size(), regularSchedules.size(), stations.size());
+
             final byte[] zip = generateNeTEx(adhocSchedules, regularSchedules, stations);
+
+            final long durationMs = System.currentTimeMillis() - startTime;
 
             if (zip != null) {
                 final GeneratedExport export = new GeneratedExport();
@@ -81,12 +87,13 @@ public class NeTExService {
                 export.created = ZonedDateTime.now();
                 export.fileName = NETEX_FILENAME;
                 generatedExportRepository.persist(List.of(export));
-                log.info("method=generateNeTEx persisted NeTEx ZIP, size={} bytes", zip.length);
+                log.info("method=generateNeTEx persisted NeTEx ZIP, size={} bytes, durationMs={}", zip.length, durationMs);
             } else {
-                log.warn("method=generateNeTEx no passenger schedules found, nothing persisted");
+                log.warn("method=generateNeTEx no passenger schedules found, nothing persisted, durationMs={}", durationMs);
             }
         } catch (final Exception e) {
-            log.error("method=generateNeTEx failed", e);
+            final long durationMs = System.currentTimeMillis() - startTime;
+            log.error("method=generateNeTEx failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx generation failed", e);
         }
     }

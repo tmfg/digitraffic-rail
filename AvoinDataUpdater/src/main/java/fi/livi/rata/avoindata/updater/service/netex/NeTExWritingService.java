@@ -30,14 +30,21 @@ public class NeTExWritingService {
     private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
     private static final ObjectFactory FACTORY = new ObjectFactory();
 
-    private final JAXBContext jaxbContext;
+    private volatile JAXBContext jaxbContext;
 
-    public NeTExWritingService() {
-        try {
-            this.jaxbContext = JAXBContext.newInstance(PublicationDeliveryStructure.class);
-        } catch (final JAXBException e) {
-            throw new RuntimeException("Failed to initialize JAXB context", e);
+    private JAXBContext getJaxbContext() {
+        if (jaxbContext == null) {
+            synchronized (this) {
+                if (jaxbContext == null) {
+                    try {
+                        jaxbContext = JAXBContext.newInstance(PublicationDeliveryStructure.class);
+                    } catch (final JAXBException e) {
+                        throw new RuntimeException("Failed to initialize JAXB context", e);
+                    }
+                }
+            }
         }
+        return jaxbContext;
     }
 
     /**
@@ -337,7 +344,7 @@ public class NeTExWritingService {
 
     private String marshalToXml(final PublicationDeliveryStructure delivery) {
         try {
-            final Marshaller marshaller = jaxbContext.createMarshaller();
+            final Marshaller marshaller = getJaxbContext().createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
             final StringWriter writer = new StringWriter();

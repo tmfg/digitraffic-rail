@@ -36,6 +36,9 @@ public class NeTExRouteService {
 
         for (final Schedule schedule : schedules) {
             final List<String> commercialStops = extractCommercialStopCodes(schedule);
+            if (commercialStops.isEmpty()) {
+                continue;
+            }
             final String hash = computeStopSequenceHash(commercialStops);
             final String lineIdentifier = deriveLineIdentifier(schedule);
             final String patternId = idGenerator.journeyPatternId(lineIdentifier, hash);
