@@ -129,15 +129,17 @@ public class NeTExService {
 
     /**
      * Filters schedules to only include passenger trains.
-     * Excludes: non-commercial, museum trains, types V/HV/MV.
+     * Matches GTFS logic: commuter trains, or commercial long-distance trains.
+     * Excludes: cargo, museum trains, types V/HV/MV/MUS.
      */
     public List<Schedule> filterPassengerTrains(final List<Schedule> schedules) {
         final List<Schedule> result = new ArrayList<>();
         for (final Schedule schedule : schedules) {
-            if (schedule.trainType == null) {
+            if (schedule.trainType == null || schedule.trainCategory == null) {
                 continue;
             }
-            if (!schedule.trainType.commercial) {
+            final String category = schedule.trainCategory.name;
+            if (!("Commuter".equals(category) || ("Long-distance".equals(category) && schedule.trainType.commercial))) {
                 continue;
             }
             if (EXCLUDED_TYPES.contains(schedule.trainType.name)) {

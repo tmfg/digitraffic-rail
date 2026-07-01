@@ -128,6 +128,30 @@ class NeTExServiceTest {
     }
 
     @Test
+    void givenCargoTrainWithCommercialStops_whenFiltering_thenExcluded() {
+        // given — cargo train type T with commercial=true should still be excluded by category
+        final Schedule schedule = createSchedule("T", "Cargo", true);
+
+        // when
+        final List<Schedule> result = netExService.filterPassengerTrains(List.of(schedule));
+
+        // then
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void givenNonCommercialLongDistanceTrain_whenFiltering_thenExcluded() {
+        // given — long-distance train that is not commercial
+        final Schedule schedule = createSchedule("IC", "Long-distance", false);
+
+        // when
+        final List<Schedule> result = netExService.filterPassengerTrains(List.of(schedule));
+
+        // then
+        assertEquals(0, result.size());
+    }
+
+    @Test
     void givenMixOfPassengerAndNonPassenger_whenFiltering_thenOnlyPassengerIncluded() {
         // given
         final Schedule passenger = createSchedule("IC", "Long-distance", true);
