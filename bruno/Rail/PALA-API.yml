@@ -11,6 +11,10 @@ http:
       value: "{{updater.reason.api-key}}"
     - name: Host
       value: "{{updater.pala-api-host}}"
+  params:
+    - name: duration
+      value: -PT6H
+      type: query
   auth: inherit
 
 settings:
