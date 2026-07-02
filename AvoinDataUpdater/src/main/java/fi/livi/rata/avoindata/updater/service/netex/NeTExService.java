@@ -87,9 +87,11 @@ public class NeTExService {
                 export.created = ZonedDateTime.now();
                 export.fileName = NETEX_FILENAME;
                 generatedExportRepository.persist(List.of(export));
-                log.info("method=generateNeTEx persisted NeTEx ZIP, size={} bytes, durationMs={}", zip.length, durationMs);
+                log.info("method=generateNeTEx persisted NeTEx ZIP, size={} bytes, durationMs={}", zip.length,
+                        durationMs);
             } else {
-                log.warn("method=generateNeTEx no passenger schedules found, nothing persisted, durationMs={}", durationMs);
+                log.warn("method=generateNeTEx no passenger schedules found, nothing persisted, durationMs={}",
+                        durationMs);
             }
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;

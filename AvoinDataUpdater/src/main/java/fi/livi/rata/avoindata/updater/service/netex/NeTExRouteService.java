@@ -51,7 +51,7 @@ public class NeTExRouteService {
                         .map(row -> row.station.stationShortCode)
                         .collect(Collectors.toList());
 
-                final String routeId = idGenerator.routeId(lineIdentifier, "1", hash);
+                final String routeId = idGenerator.routeId(lineIdentifier, hash);
                 final String routeName = commercialStops.get(0) + " - "
                         + commercialStops.get(commercialStops.size() - 1);
                 final List<String> routePointRefs = allStopCodes.stream()

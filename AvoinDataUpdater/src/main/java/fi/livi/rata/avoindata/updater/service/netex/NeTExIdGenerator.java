@@ -26,8 +26,8 @@ public class NeTExIdGenerator {
         return CODESPACE + ":Line:" + lineIdentifier;
     }
 
-    public String routeId(final String lineId, final String direction, final String hash) {
-        return CODESPACE + ":Route:" + lineId + "-" + direction + "-" + hash;
+    public String routeId(final String lineId, final String hash) {
+        return CODESPACE + ":Route:" + lineId + "-" + hash;
     }
 
     public String routePointId(final String stationShortCode) {

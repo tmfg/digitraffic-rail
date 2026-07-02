@@ -24,7 +24,7 @@ public class GtfsController {
 
     private static final int CACHE_SECONDS_FOR_RT_LOCATIONS = 10;
     private static final int CACHE_SECONDS_FOR_RT_UPDATES = 60;
-    private static final int CACHE_SECONDS_FOR_STATIC = 60*15;
+    private static final int CACHE_SECONDS_FOR_STATIC = 60 * 15;
 
     public GtfsController(final GeneratedExportRepository gtfsRepository) {
         this.gtfsRepository = gtfsRepository;
@@ -89,7 +89,8 @@ public class GtfsController {
     private byte[] getData(final HttpServletResponse response, final String fileName) {
         final GeneratedExport gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
 
-        response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
+        response.addHeader("x-is-fresh",
+                Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
         response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(gtfs.data.length));
 

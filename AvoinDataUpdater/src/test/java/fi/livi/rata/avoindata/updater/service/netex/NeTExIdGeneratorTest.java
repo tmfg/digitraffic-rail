@@ -72,14 +72,13 @@ class NeTExIdGeneratorTest {
     void givenRouteComponents_whenGeneratingRouteId_thenIncludesAllParts() {
         // given
         final String lineId = "Z";
-        final String direction = "F";
         final String hash = "a3b2";
 
         // when
-        final String result = idGenerator.routeId(lineId, direction, hash);
+        final String result = idGenerator.routeId(lineId, hash);
 
         // then
-        assertEquals("DT:Route:Z-F-a3b2", result);
+        assertEquals("DT:Route:Z-a3b2", result);
     }
 
     @Test

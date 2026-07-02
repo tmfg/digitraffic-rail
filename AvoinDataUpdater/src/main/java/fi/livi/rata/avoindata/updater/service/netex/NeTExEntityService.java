@@ -74,11 +74,16 @@ public class NeTExEntityService {
 
     /**
      * Creates ServiceJourneys from schedules with calendar and route references.
+     * Deduplicates by ID — if multiple schedules produce the same ServiceJourney ID
+     * (e.g. multiple adhoc schedules for same train+date), the highest schedule.id
+     * wins
+     * (most recent version from RIPA).
      */
     public List<NeTExServiceJourney> createServiceJourneys(final List<Schedule> schedules,
             final NeTExCalendarData calendarData,
             final NeTExRouteData routeData) {
-        final List<NeTExServiceJourney> journeys = new ArrayList<>();
+        final Map<String, NeTExServiceJourney> journeyMap = new LinkedHashMap<>();
+        final Map<String, Long> journeyScheduleIds = new LinkedHashMap<>();
 
         for (final Schedule schedule : schedules) {
             final String id;
@@ -86,6 +91,11 @@ public class NeTExEntityService {
                 id = idGenerator.serviceJourneyIdAdhoc(schedule.trainNumber, schedule.startDate);
             } else {
                 id = idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
+            }
+
+            // Keep the schedule with the highest id (most recent version)
+            if (journeyMap.containsKey(id) && journeyScheduleIds.get(id) >= schedule.id) {
+                continue;
             }
 
             final String lineIdentifier = deriveLineId(schedule);
@@ -98,11 +108,12 @@ public class NeTExEntityService {
 
             final List<NeTExPassingTime> passingTimes = buildPassingTimes(schedule);
 
-            journeys.add(new NeTExServiceJourney(id, name, privateCode,
+            journeyMap.put(id, new NeTExServiceJourney(id, name, privateCode,
                     journeyPatternRef, operatorRef, lineRef, dayTypeRef, passingTimes));
+            journeyScheduleIds.put(id, schedule.id);
         }
 
-        return journeys;
+        return new ArrayList<>(journeyMap.values());
     }
 
     private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule) {

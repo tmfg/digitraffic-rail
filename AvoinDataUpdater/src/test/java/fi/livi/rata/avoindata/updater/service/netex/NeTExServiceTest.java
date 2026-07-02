@@ -129,7 +129,8 @@ class NeTExServiceTest {
 
     @Test
     void givenCargoTrainWithCommercialStops_whenFiltering_thenExcluded() {
-        // given — cargo train type T with commercial=true should still be excluded by category
+        // given — cargo train type T with commercial=true should still be excluded by
+        // category
         final Schedule schedule = createSchedule("T", "Cargo", true);
 
         // when

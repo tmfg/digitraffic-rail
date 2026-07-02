@@ -144,6 +144,7 @@ public class NeTExWritingService {
             linesStructure.getLine_().add(FACTORY.createLine(new Line()
                     .withId(line.id())
                     .withVersion("1")
+                    .withName(new MultilingualString().withValue(line.publicCode()))
                     .withPublicCode(line.publicCode())
                     .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL)));
         }
