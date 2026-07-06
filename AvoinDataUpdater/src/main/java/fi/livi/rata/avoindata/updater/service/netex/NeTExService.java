@@ -5,6 +5,7 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
+import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +39,7 @@ public class NeTExService {
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
     private final ScheduleProviderService scheduleProviderService;
+    private final TodaysScheduleService todaysScheduleService;
     private final StationRepository stationRepository;
     private final GeneratedExportRepository generatedExportRepository;
 
@@ -46,6 +49,7 @@ public class NeTExService {
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
             final ScheduleProviderService scheduleProviderService,
+            final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository,
             final GeneratedExportRepository generatedExportRepository) {
         this.entityService = entityService;
@@ -54,6 +58,7 @@ public class NeTExService {
         this.stopsService = stopsService;
         this.writingService = writingService;
         this.scheduleProviderService = scheduleProviderService;
+        this.todaysScheduleService = todaysScheduleService;
         this.stationRepository = stationRepository;
         this.generatedExportRepository = generatedExportRepository;
     }
@@ -102,16 +107,28 @@ public class NeTExService {
 
     /**
      * Generates NeTEx Nordic ZIP from the given schedules and stations.
-     * Filters to passenger trains only, builds all NeTEx structures, writes ZIP.
+     * Resolves winning schedules per train per day (same as GTFS), then
+     * filters to passenger trains only, builds all NeTEx structures, writes ZIP.
      *
      * @return ZIP content as byte array, or null if no schedules match
      */
     public byte[] generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
+        // Resolve which schedules are "in effect" using the same logic as GTFS
+        final Set<Long> winningScheduleIds = resolveWinningScheduleIds(adhocSchedules, regularSchedules);
+
+        log.info("method=generateNeTEx resolved winningScheduleIds={} from adhoc={} regular={}",
+                winningScheduleIds.size(), adhocSchedules.size(), regularSchedules.size());
+
+        // Filter to passenger trains that won at least one day
         final List<Schedule> allFiltered = new ArrayList<>();
-        allFiltered.addAll(filterPassengerTrains(regularSchedules));
-        allFiltered.addAll(filterPassengerTrains(adhocSchedules));
+        allFiltered.addAll(filterPassengerTrains(regularSchedules).stream()
+                .filter(s -> winningScheduleIds.contains(s.id))
+                .toList());
+        allFiltered.addAll(filterPassengerTrains(adhocSchedules).stream()
+                .filter(s -> winningScheduleIds.contains(s.id))
+                .toList());
 
         if (allFiltered.isEmpty()) {
             return null;
@@ -127,6 +144,30 @@ public class NeTExService {
 
         return writingService.writeNeTExZip(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
                 ZonedDateTime.now());
+    }
+
+    /**
+     * Resolves which schedule IDs actually "win" for at least one day.
+     * Uses TodaysScheduleService (same as GTFS) to determine the schedule in effect
+     * per train per day, filtering out superseded/broken schedule versions.
+     */
+    private Set<Long> resolveWinningScheduleIds(final List<Schedule> adhocSchedules,
+            final List<Schedule> regularSchedules) {
+        final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
+        final LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
+        final Set<Long> winningIds = new HashSet<>();
+
+        for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+            final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules,
+                    regularSchedules);
+            for (final Schedule schedule : todaysSchedules) {
+                if (!schedule.changeType.equals("P") && schedule.isRunOnDay(date)) {
+                    winningIds.add(schedule.id);
+                }
+            }
+        }
+
+        return winningIds;
     }
 
     /**

@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
@@ -37,8 +38,9 @@ class NeTExServiceTest {
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator);
         final NeTExWritingService writingService = new NeTExWritingService();
+        final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
-                null, null, null);
+                null, todaysScheduleService, null, null);
     }
 
     // --- Filtering tests ---
@@ -230,6 +232,10 @@ class NeTExServiceTest {
         schedule.timetableType = Train.TimetableType.REGULAR;
         schedule.startDate = LocalDate.of(2026, 6, 15);
         schedule.endDate = LocalDate.of(2026, 12, 14);
+        schedule.effectiveFrom = LocalDate.of(2026, 6, 15);
+        schedule.changeType = "L";
+        schedule.capacityId = "cap-100";
+        schedule.typeCode = "L";
         schedule.runOnMonday = true;
         schedule.runOnTuesday = true;
         schedule.runOnWednesday = true;
@@ -260,6 +266,7 @@ class NeTExServiceTest {
         final Schedule schedule = createSchedule(trainTypeName, categoryName, true);
         schedule.id = id;
         schedule.trainNumber = trainNumber;
+        schedule.capacityId = "cap-" + trainNumber;
 
         schedule.scheduleRows = new ArrayList<>();
         long rowId = 1;

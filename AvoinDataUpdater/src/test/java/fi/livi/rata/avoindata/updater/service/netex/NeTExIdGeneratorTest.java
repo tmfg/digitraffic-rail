@@ -9,7 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for NeTExIdGenerator — NeTEx ID generation following {Codespace}:{ElementType}:{localId} convention.
+ * Tests for NeTExIdGenerator — NeTEx ID generation following
+ * {Codespace}:{ElementType}:{localId} convention.
  */
 class NeTExIdGeneratorTest {
 

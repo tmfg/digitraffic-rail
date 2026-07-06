@@ -102,6 +102,7 @@ public class NeTExEntityService {
             final String name = schedule.trainType.name + " " + schedule.trainNumber;
             final String privateCode = String.valueOf(schedule.trainNumber);
             final String journeyPatternRef = routeData.getJourneyPatternIdForSchedule(schedule.id);
+
             final String operatorRef = idGenerator.operatorId(schedule.operator.operatorShortCode);
             final String lineRef = idGenerator.lineId(lineIdentifier);
             final String dayTypeRef = calendarData.getDayTypeIdForSchedule(schedule.id);
