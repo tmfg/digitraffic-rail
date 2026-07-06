@@ -105,10 +105,14 @@ public class NeTExRouteService {
     }
 
     private boolean isCommercialStop(final ScheduleRow row) {
-        if (row.departure != null && row.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL) {
+        // First stop (no arrival) and last stop (no departure) are always commercial
+        if (row.arrival == null || row.departure == null) {
             return true;
         }
-        return row.arrival != null && row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
+        if (row.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL) {
+            return true;
+        }
+        return row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
     }
 
     private String deriveLineIdentifier(final Schedule schedule) {

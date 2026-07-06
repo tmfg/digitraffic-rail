@@ -107,26 +107,30 @@ public class NeTExService {
 
     /**
      * Generates NeTEx Nordic ZIP from the given schedules and stations.
-     * Resolves winning schedules per train per day (same as GTFS), then
-     * filters to passenger trains only, builds all NeTEx structures, writes ZIP.
+     * Filters to passenger trains first, then resolves winning schedules per
+     * train per day (same as GTFS gtfs-passenger.zip), builds all NeTEx
+     * structures, writes ZIP.
      *
      * @return ZIP content as byte array, or null if no schedules match
      */
     public byte[] generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
-        // Resolve which schedules are "in effect" using the same logic as GTFS
-        final Set<Long> winningScheduleIds = resolveWinningScheduleIds(adhocSchedules, regularSchedules);
+        // Filter to passenger trains first (matches GTFS gtfs-passenger.zip approach)
+        final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
+        final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
 
-        log.info("method=generateNeTEx resolved winningScheduleIds={} from adhoc={} regular={}",
-                winningScheduleIds.size(), adhocSchedules.size(), regularSchedules.size());
+        // Resolve which schedules are "in effect" among passenger trains only
+        final Set<Long> winningScheduleIds = resolveWinningScheduleIds(passengerAdhoc, passengerRegular);
 
-        // Filter to passenger trains that won at least one day
+        log.info("method=generateNeTEx resolved winningScheduleIds={} from passengerAdhoc={} passengerRegular={}",
+                winningScheduleIds.size(), passengerAdhoc.size(), passengerRegular.size());
+
         final List<Schedule> allFiltered = new ArrayList<>();
-        allFiltered.addAll(filterPassengerTrains(regularSchedules).stream()
+        allFiltered.addAll(passengerRegular.stream()
                 .filter(s -> winningScheduleIds.contains(s.id))
                 .toList());
-        allFiltered.addAll(filterPassengerTrains(adhocSchedules).stream()
+        allFiltered.addAll(passengerAdhoc.stream()
                 .filter(s -> winningScheduleIds.contains(s.id))
                 .toList());
 
