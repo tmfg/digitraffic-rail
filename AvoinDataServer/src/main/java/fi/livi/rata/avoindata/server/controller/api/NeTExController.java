@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class NeTExController {
 
     private static final String NETEX_FILENAME = "netex-nordic.zip";
+    private static final String COMPOSITIONS_FILENAME = "netex-nordic-compositions.zip";
     private static final int CACHE_SECONDS = 60 * 15;
 
     private final GeneratedExportRepository generatedExportRepository;
@@ -36,6 +37,26 @@ public class NeTExController {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
 
         final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(NETEX_FILENAME);
+
+        response.addHeader("x-is-fresh",
+                Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
+        response.addHeader("x-timestamp", export.created.toString());
+        response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
+
+        return export.data;
+    }
+
+    @Operation(summary = "Returns NeTEx Nordic compositions and accessibility ZIP")
+    @RequestMapping(method = RequestMethod.GET, path = "netex-nordic-compositions.zip", produces = "application/zip")
+    @Transactional(readOnly = true)
+    public byte[] getNeTExCompositions(final HttpServletResponse response) {
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
+
+        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(COMPOSITIONS_FILENAME);
+        if (export == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return new byte[0];
+        }
 
         response.addHeader("x-is-fresh",
                 Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
