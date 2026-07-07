@@ -22,6 +22,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.hack.OldTrainService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
@@ -62,6 +63,9 @@ public class ManualUpdateController {
 
     @Autowired
     private NeTExService netexService;
+
+    @Autowired
+    private NeTExCompositionService netexCompositionService;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -151,6 +155,15 @@ public class ManualUpdateController {
         logger.info("method=generateNeTEx Starting manual NeTEx generation");
         netexService.generateNeTEx();
         logger.info("method=generateNeTEx End manual NeTEx generation");
+        return true;
+    }
+
+    @RequestMapping("/netex-compositions")
+    @ResponseBody
+    public boolean generateNeTExCompositions() {
+        logger.info("method=generateNeTExCompositions Starting manual NeTEx compositions generation");
+        netexCompositionService.generateCompositions();
+        logger.info("method=generateNeTExCompositions End manual NeTEx compositions generation");
         return true;
     }
 }

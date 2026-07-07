@@ -65,4 +65,13 @@ public class NeTExIdGenerator {
     public String networkId(final String code) {
         return CODESPACE + ":Network:" + code;
     }
+
+    public String vehicleTypeId(final String typeName) {
+        return CODESPACE + ":VehicleType:" + typeName;
+    }
+
+    public String datedVehicleJourneyId(final long trainNumber, final LocalDate date, final String beginStation) {
+        final String suffix = beginStation != null ? "-" + beginStation : "";
+        return CODESPACE + ":DatedVehicleJourney:" + trainNumber + "-" + date + suffix;
+    }
 }
