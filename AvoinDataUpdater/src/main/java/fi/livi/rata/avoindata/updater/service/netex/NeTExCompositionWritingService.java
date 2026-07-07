@@ -1,182 +1,171 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.ZonedDateTime;
+import java.util.List;
+
+import org.rutebanken.netex.model.DatedServiceJourney;
+import org.rutebanken.netex.model.FareClassEnumeration;
+import org.rutebanken.netex.model.FuelTypeEnumeration;
+import org.rutebanken.netex.model.JourneysInFrame_RelStructure;
+import org.rutebanken.netex.model.MultilingualString;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.ResourceFrame;
+import org.rutebanken.netex.model.TimetableFrame;
+import org.rutebanken.netex.model.Train;
+import org.rutebanken.netex.model.TrainComponent;
+import org.rutebanken.netex.model.TrainComponents_RelStructure;
+import org.rutebanken.netex.model.TrainElement;
+import org.rutebanken.netex.model.TrainElementTypeEnumeration;
+import org.rutebanken.netex.model.TrainSizeStructure;
+import org.rutebanken.netex.model.VehicleType;
+import org.rutebanken.netex.model.VehicleTypesInFrame_RelStructure;
+import org.springframework.stereotype.Service;
+
 import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTExDatedVehicleJourney;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTExTrainComponent;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTExVehicleType;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 /**
- * Writes NeTEx Nordic compositions XML and ZIP.
- * Uses direct XML generation for simplicity and control.
+ * Builds NeTEx compositions PublicationDelivery and delegates
+ * marshalling/zipping
+ * to NeTExWritingService.
  */
+@Service
 public class NeTExCompositionWritingService {
 
     private static final String NETEX_VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
+    private static final ObjectFactory FACTORY = new ObjectFactory();
 
-    public static byte[] writeZip(final List<NeTExVehicleType> vehicleTypes,
-            final List<NeTExDatedVehicleJourney> datedJourneys,
-            final ZonedDateTime timestamp) {
-        try {
-            final String xml = writeXml(vehicleTypes, datedJourneys, timestamp);
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
-                zos.putNextEntry(new ZipEntry("FIN_rail_compositions.xml"));
-                zos.write(xml.getBytes(StandardCharsets.UTF_8));
-                zos.closeEntry();
-            }
-            return baos.toByteArray();
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to write compositions ZIP", e);
-        }
+    private final NeTExWritingService writingService;
+
+    public NeTExCompositionWritingService(final NeTExWritingService writingService) {
+        this.writingService = writingService;
     }
 
-    static String writeXml(final List<NeTExVehicleType> vehicleTypes,
+    public byte[] writeZip(final List<NeTExVehicleType> vehicleTypes,
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
-        final StringBuilder xml = new StringBuilder();
-        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.append("<PublicationDelivery version=\"").append(NETEX_VERSION).append("\"");
-        xml.append(" xmlns=\"http://www.netex.org.uk/netex\"");
-        xml.append(" xmlns:ns2=\"http://www.opengis.net/gml/3.2\"");
-        xml.append(" xmlns:ns3=\"http://www.siri.org.uk/siri\">\n");
-        xml.append("    <PublicationTimestamp>").append(timestamp.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
-                .append("</PublicationTimestamp>\n");
-        xml.append("    <ParticipantRef>DT</ParticipantRef>\n");
-        xml.append("    <Description>Finland rail composition and accessibility data</Description>\n");
-        xml.append("    <dataObjects>\n");
-
-        writeResourceFrame(xml, vehicleTypes);
-        writeTimetableFrame(xml, datedJourneys);
-
-        xml.append("    </dataObjects>\n");
-        xml.append("</PublicationDelivery>\n");
-        return xml.toString();
+        final PublicationDeliveryStructure delivery = buildPublicationDelivery(vehicleTypes, datedJourneys, timestamp);
+        return writingService.marshalAndZip(delivery, "FIN_rail_compositions.xml");
     }
 
-    private static void writeResourceFrame(final StringBuilder xml, final List<NeTExVehicleType> vehicleTypes) {
-        xml.append("        <ResourceFrame version=\"1\" id=\"DT:ResourceFrame:compositions\">\n");
-        xml.append("            <vehicleTypes>\n");
+    private PublicationDeliveryStructure buildPublicationDelivery(
+            final List<NeTExVehicleType> vehicleTypes,
+            final List<NeTExDatedVehicleJourney> datedJourneys,
+            final ZonedDateTime timestamp) {
+
+        final ResourceFrame resourceFrame = buildResourceFrame(vehicleTypes);
+        final TimetableFrame timetableFrame = buildTimetableFrame(datedJourneys);
+
+        final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
+                .withCompositeFrameOrCommonFrame(
+                        FACTORY.createResourceFrame(resourceFrame),
+                        FACTORY.createTimetableFrame(timetableFrame));
+
+        return new PublicationDeliveryStructure()
+                .withVersion(NETEX_VERSION)
+                .withPublicationTimestamp(timestamp.toLocalDateTime())
+                .withParticipantRef("DT")
+                .withDescription(new MultilingualString().withValue("Finland rail composition and accessibility data"))
+                .withDataObjects(dataObjects);
+    }
+
+    private ResourceFrame buildResourceFrame(final List<NeTExVehicleType> vehicleTypes) {
+        final VehicleTypesInFrame_RelStructure vtStruct = new VehicleTypesInFrame_RelStructure();
 
         for (final NeTExVehicleType vt : vehicleTypes) {
-            xml.append("                <VehicleType version=\"1\" id=\"").append(escapeXml(vt.id())).append("\">\n");
-            xml.append("                    <Name>").append(escapeXml(vt.name())).append("</Name>\n");
-            if (vt.selfPropelled()) {
-                xml.append("                    <SelfPropelled>true</SelfPropelled>\n");
-            }
+            final VehicleType vehicleType = new VehicleType()
+                    .withId(vt.id())
+                    .withVersion("1")
+                    .withName(new MultilingualString().withValue(vt.name()))
+                    .withSelfPropelled(vt.selfPropelled());
+
             if (vt.fuelType() != null) {
-                xml.append("                    <TypeOfFuel>").append(mapFuelType(vt.fuelType()))
-                        .append("</TypeOfFuel>\n");
-            }
-            if (vt.lengthCm() > 0) {
-                xml.append("                    <Length>").append(vt.lengthCm() / 100.0).append("</Length>\n");
+                vehicleType.withTypeOfFuel(FuelTypeEnumeration.fromValue(mapFuelType(vt.fuelType())));
             }
             if (vt.wheelchair()) {
-                xml.append("                    <LowFloor>true</LowFloor>\n");
-                xml.append("                    <HasLiftOrRamp>true</HasLiftOrRamp>\n");
+                vehicleType.withLowFloor(true);
+                vehicleType.withHasLiftOrRamp(true);
             }
-            xml.append("                </VehicleType>\n");
+            if (vt.lengthCm() > 0) {
+                vehicleType.withLength(BigDecimal.valueOf(vt.lengthCm()).movePointLeft(2));
+            }
+
+            vtStruct.getCompoundTrainOrTrainOrVehicleType().add(vehicleType);
         }
 
-        xml.append("            </vehicleTypes>\n");
-        xml.append("        </ResourceFrame>\n");
+        return new ResourceFrame()
+                .withId("DT:ResourceFrame:compositions")
+                .withVersion("1")
+                .withVehicleTypes(vtStruct);
     }
 
-    private static void writeTimetableFrame(final StringBuilder xml,
-            final List<NeTExDatedVehicleJourney> datedJourneys) {
-        xml.append("        <TimetableFrame version=\"1\" id=\"DT:TimetableFrame:compositions\">\n");
-        xml.append("            <vehicleJourneys>\n");
+    private TimetableFrame buildTimetableFrame(final List<NeTExDatedVehicleJourney> datedJourneys) {
+        final JourneysInFrame_RelStructure vehicleJourneys = new JourneysInFrame_RelStructure();
 
         for (final NeTExDatedVehicleJourney dj : datedJourneys) {
-            xml.append("                <DatedServiceJourney version=\"1\" id=\"")
-                    .append(escapeXml(dj.id())).append("\">\n");
-            xml.append("                    <DepartureDate>").append(dj.date()).append("</DepartureDate>\n");
-            xml.append("                    <ServiceJourneyRef ref=\"DT:ServiceJourney:")
-                    .append(dj.trainNumber()).append("\"/>\n");
+            final String idSuffix = dj.trainNumber() + "-" + dj.date()
+                    + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
 
-            // Train composition
-            xml.append("                    <Train version=\"1\" id=\"DT:Train:")
-                    .append(dj.trainNumber()).append("-").append(dj.date());
-            if (dj.beginStation() != null) {
-                xml.append("-").append(dj.beginStation());
-            }
-            xml.append("\">\n");
-            xml.append("                        <TrainSize>\n");
-            xml.append("                            <NumberOfCars>").append(dj.components().size())
-                    .append("</NumberOfCars>\n");
-            xml.append("                        </TrainSize>\n");
+            final TrainComponents_RelStructure components = new TrainComponents_RelStructure();
+            for (final NeTExTrainComponent comp : dj.components()) {
+                final TrainElement element = new TrainElement()
+                        .withId("DT:TrainElement:" + idSuffix + "-" + comp.order())
+                        .withVersion("1")
+                        .withTrainElementType(TrainElementTypeEnumeration.fromValue(comp.elementType()));
 
-            if (!dj.components().isEmpty()) {
-                xml.append("                        <components>\n");
-                for (final NeTExTrainComponent comp : dj.components()) {
-                    xml.append("                            <TrainComponent version=\"1\" id=\"DT:Train:")
-                            .append(dj.trainNumber()).append("-").append(dj.date()).append("-")
-                            .append(comp.order()).append("\">\n");
-                    xml.append("                                <Label>").append(escapeXml(comp.label()))
-                            .append("</Label>\n");
-                    xml.append("                                <TrainElement version=\"1\" id=\"DT:TrainElement:")
-                            .append(dj.trainNumber()).append("-").append(dj.date()).append("-")
-                            .append(comp.order()).append("\">\n");
-                    xml.append("                                    <TrainElementType>")
-                            .append(comp.elementType()).append("</TrainElementType>\n");
-                    if (comp.wheelchair()) {
-                        xml.append("                                    <PassengerCapacity version=\"1\" id=\"DT:PC:")
-                                .append(dj.trainNumber()).append("-").append(dj.date()).append("-")
-                                .append(comp.order()).append("\">\n");
-                        xml.append("                                        <WheelchairPlaceCapacity>1</WheelchairPlaceCapacity>\n");
-                        xml.append("                                    </PassengerCapacity>\n");
-                    }
-                    if (comp.catering()) {
-                        xml.append("                                    <facilities>\n");
-                        xml.append("                                        <ServiceFacilitySet version=\"1\" id=\"DT:SFS:")
-                                .append(dj.trainNumber()).append("-").append(dj.date()).append("-")
-                                .append(comp.order()).append("\">\n");
-                        xml.append("                                            <CateringFacilityList>restaurant</CateringFacilityList>\n");
-                        xml.append("                                        </ServiceFacilitySet>\n");
-                        xml.append("                                    </facilities>\n");
-                    }
-                    xml.append("                                </TrainElement>\n");
-                    xml.append("                            </TrainComponent>\n");
+                if (comp.fareClass() != null) {
+                    element.withFareClasses(mapFareClassEnum(comp.fareClass()));
                 }
-                xml.append("                        </components>\n");
+
+                final TrainComponent trainComponent = new TrainComponent()
+                        .withId("DT:TrainComponent:" + idSuffix + "-" + comp.order())
+                        .withVersion("1")
+                        .withOrder(BigInteger.valueOf(comp.order()))
+                        .withLabel(new MultilingualString().withValue(comp.label()))
+                        .withTrainElement(element);
+
+                components.getTrainComponentRefOrTrainComponent().add(trainComponent);
             }
 
-            xml.append("                    </Train>\n");
+            final Train train = new Train()
+                    .withId("DT:Train:" + idSuffix)
+                    .withVersion("1")
+                    .withTrainSize(new TrainSizeStructure()
+                            .withNumberOfCars(BigInteger.valueOf(dj.components().size())))
+                    .withComponents(components);
 
-            // Accessibility summary
-            if (dj.hasWheelchair()) {
-                xml.append("                    <AccessibilityAssessment version=\"1\" id=\"DT:AA:")
-                        .append(dj.trainNumber()).append("-").append(dj.date()).append("\">\n");
-                xml.append("                        <MobilityImpairedAccess>true</MobilityImpairedAccess>\n");
-                xml.append("                    </AccessibilityAssessment>\n");
-            }
+            final DatedServiceJourney dsj = new DatedServiceJourney()
+                    .withId(dj.id())
+                    .withVersion("1");
 
-            xml.append("                </DatedServiceJourney>\n");
+            vehicleJourneys.getVehicleJourneyOrDatedVehicleJourneyOrNormalDatedVehicleJourney().add(dsj);
         }
 
-        xml.append("            </vehicleJourneys>\n");
-        xml.append("        </TimetableFrame>\n");
+        return new TimetableFrame()
+                .withId("DT:TimetableFrame:compositions")
+                .withVersion("1")
+                .withVehicleJourneys(vehicleJourneys);
     }
 
     private static String mapFuelType(final String powerType) {
-        if (powerType == null) return "other";
+        if (powerType == null)
+            return "other";
         return switch (powerType.toLowerCase()) {
-            case "electric", "s" -> "electricity";
+            case "electricity", "electric", "s" -> "electricity";
             case "diesel", "d" -> "diesel";
             default -> "other";
         };
     }
 
-    private static String escapeXml(final String value) {
-        if (value == null) return "";
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                .replace("\"", "&quot;");
+    private static FareClassEnumeration mapFareClassEnum(final String fareClass) {
+        return switch (fareClass) {
+            case "firstClass" -> FareClassEnumeration.FIRST_CLASS;
+            case "standardClass" -> FareClassEnumeration.STANDARD_CLASS;
+            default -> FareClassEnumeration.ANY;
+        };
     }
 }

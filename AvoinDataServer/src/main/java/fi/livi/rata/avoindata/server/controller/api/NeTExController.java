@@ -52,7 +52,8 @@ public class NeTExController {
     public byte[] getNeTExCompositions(final HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
 
-        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(COMPOSITIONS_FILENAME);
+        final GeneratedExport export = generatedExportRepository
+                .findFirstByFileNameOrderByIdDesc(COMPOSITIONS_FILENAME);
         if (export == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return new byte[0];

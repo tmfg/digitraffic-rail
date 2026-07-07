@@ -1,5 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
@@ -9,19 +23,60 @@ import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+/**
+ * Finnish rolling stock series code to NeTEx TrainElementType mapping.
+ * Based on Finnish series code system (fi.wikipedia.org/wiki/Sarjatunnus).
+ * NeTEx enum: [buffetCar, carriage, engine, carTransporter, sleeperCarriage,
+ * luggageVan, restaurantCarriage, other]
+ */
+class FinnishRollingStock {
+    private FinnishRollingStock() {
+    }
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+    static String mapWagonElementType(final String wagonType) {
+        if (wagonType == null)
+            return "carriage";
+        return switch (wagonType) {
+            // Restaurant/buffet cars (R = ravintolavaunu)
+            case "ERd", "Rx", "Rk", "Rkt", "Rbkt", "Rbnqss" -> "restaurantCarriage";
+            // Sleeping cars (m = makuuvaunu)
+            case "Edm", "CEmt", "CEm", "Em" -> "sleeperCarriage";
+            // Car transporters (G = tavaravaunut for cars)
+            case "Gfot", "Gd", "Gb", "Gbl", "Gbln", "Ggk" -> "carTransporter";
+            // Luggage/mail vans (F = konduktööri/matkatavara, P = posti)
+            case "Fo", "Fots", "Fey", "Foek", "Fh", "F", "Po", "Pot" -> "luggageVan";
+            // Generator/power cars, service vehicles, non-passenger rolling stock
+            case "De", "Nom", "A", "M", "MT", "TT", "TTC", "Ttv",
+                    "BXT", "BT", "BH", "BHpy", "BG", "BXG", "BXE",
+                    "Hdk", "Hkb", "Hkba", "Hbr",
+                    "Kas", "Tk3", "Tka7", "Tve1", "Uad", "Mas", "Gloss",
+                    "CM", "CMH", "IM1", "IM2" ->
+                "other";
+            // All passenger carriages (E/C prefix, Sm/Dm EMU/DMU cars, Ex IC single-deck)
+            default -> "carriage";
+        };
+    }
+
+    static String mapFareClass(final String wagonType) {
+        if (wagonType == null)
+            return null;
+        if (wagonType.startsWith("C"))
+            return "firstClass";
+        if (wagonType.startsWith("E"))
+            return "standardClass";
+        return null;
+    }
+
+    static String mapLocoPowerType(final String locomotiveType) {
+        if (locomotiveType == null)
+            return "other";
+        if (locomotiveType.startsWith("S"))
+            return "electricity";
+        if (locomotiveType.startsWith("D"))
+            return "diesel";
+        return "other";
+    }
+}
 
 /**
  * Generates a NeTEx Nordic compositions package containing train composition
@@ -37,13 +92,16 @@ public class NeTExCompositionService {
     private final CompositionRepository compositionRepository;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExIdGenerator idGenerator;
+    private final NeTExCompositionWritingService compositionWritingService;
 
     public NeTExCompositionService(final CompositionRepository compositionRepository,
             final GeneratedExportRepository generatedExportRepository,
-            final NeTExIdGenerator idGenerator) {
+            final NeTExIdGenerator idGenerator,
+            final NeTExCompositionWritingService compositionWritingService) {
         this.compositionRepository = compositionRepository;
         this.generatedExportRepository = generatedExportRepository;
         this.idGenerator = idGenerator;
+        this.compositionWritingService = compositionWritingService;
     }
 
     @Transactional
@@ -101,7 +159,7 @@ public class NeTExCompositionService {
         final List<NeTExVehicleType> vehicleTypes = buildVehicleTypes(compositions, vehicleTypeIds);
         final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(compositions, vehicleTypeIds);
 
-        return NeTExCompositionWritingService.writeZip(vehicleTypes, datedJourneys, ZonedDateTime.now());
+        return compositionWritingService.writeZip(vehicleTypes, datedJourneys, ZonedDateTime.now());
     }
 
     private List<NeTExVehicleType> buildVehicleTypes(final List<Composition> compositions,
@@ -116,7 +174,7 @@ public class NeTExCompositionService {
                         typeMap.put(typeId, new NeTExVehicleType(
                                 typeId,
                                 loco.locomotiveType,
-                                loco.powerType != null ? loco.powerType : "unknown",
+                                FinnishRollingStock.mapLocoPowerType(loco.locomotiveType),
                                 true,
                                 0,
                                 false,
@@ -131,7 +189,7 @@ public class NeTExCompositionService {
                                 typeId,
                                 wagon.wagonType,
                                 null,
-                                false,
+                                FinnishRollingStock.mapWagonElementType(wagon.wagonType).equals("motorCar"),
                                 wagon.length,
                                 hasDisabled,
                                 Boolean.TRUE.equals(wagon.catering)));
@@ -165,29 +223,33 @@ public class NeTExCompositionService {
                 for (final Locomotive loco : section.locomotives) {
                     components.add(new NeTExTrainComponent(
                             order++,
-                            "locomotive",
+                            "engine",
                             idGenerator.vehicleTypeId(loco.locomotiveType),
                             loco.locomotiveType,
                             0,
                             false,
-                            false));
+                            false,
+                            null));
                 }
 
                 for (final Wagon wagon : section.wagons) {
                     components.add(new NeTExTrainComponent(
                             order++,
-                            "carriage",
+                            FinnishRollingStock.mapWagonElementType(wagon.wagonType),
                             idGenerator.vehicleTypeId(wagon.wagonType),
                             wagon.wagonType + " #" + wagon.salesNumber,
                             wagon.length,
                             Boolean.TRUE.equals(wagon.disabled),
-                            Boolean.TRUE.equals(wagon.catering)));
+                            Boolean.TRUE.equals(wagon.catering),
+                            FinnishRollingStock.mapFareClass(wagon.wagonType)));
                 }
 
                 final String beginStation = section.beginTimeTableRow != null
-                        ? section.beginTimeTableRow.station.stationShortCode : null;
+                        ? section.beginTimeTableRow.station.stationShortCode
+                        : null;
                 final String endStation = section.endTimeTableRow != null
-                        ? section.endTimeTableRow.station.stationShortCode : null;
+                        ? section.endTimeTableRow.station.stationShortCode
+                        : null;
 
                 final String journeyId = idGenerator.datedVehicleJourneyId(trainNumber, date, beginStation);
 
@@ -227,7 +289,8 @@ public class NeTExCompositionService {
             String label,
             int lengthCm,
             boolean wheelchair,
-            boolean catering) {
+            boolean catering,
+            String fareClass) {
     }
 
     public record NeTExDatedVehicleJourney(

@@ -1,14 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import org.rutebanken.netex.model.*;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
@@ -18,7 +12,67 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
+import org.rutebanken.netex.model.Codespace;
+import org.rutebanken.netex.model.Codespaces_RelStructure;
+import org.rutebanken.netex.model.DayOfWeekEnumeration;
+import org.rutebanken.netex.model.DayType;
+import org.rutebanken.netex.model.DayTypeAssignment;
+import org.rutebanken.netex.model.DayTypeAssignmentsInFrame_RelStructure;
+import org.rutebanken.netex.model.DayTypeRefStructure;
+import org.rutebanken.netex.model.DayTypeRefs_RelStructure;
+import org.rutebanken.netex.model.DayTypesInFrame_RelStructure;
+import org.rutebanken.netex.model.DestinationDisplay;
+import org.rutebanken.netex.model.DestinationDisplayRefStructure;
+import org.rutebanken.netex.model.DestinationDisplaysInFrame_RelStructure;
+import org.rutebanken.netex.model.JourneyPattern;
+import org.rutebanken.netex.model.JourneyPatternRefStructure;
+import org.rutebanken.netex.model.JourneyPatternsInFrame_RelStructure;
+import org.rutebanken.netex.model.JourneysInFrame_RelStructure;
+import org.rutebanken.netex.model.Line;
+import org.rutebanken.netex.model.LineRefStructure;
+import org.rutebanken.netex.model.LinesInFrame_RelStructure;
+import org.rutebanken.netex.model.LocaleStructure;
+import org.rutebanken.netex.model.LocationStructure;
+import org.rutebanken.netex.model.MultilingualString;
+import org.rutebanken.netex.model.Network;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.OperatingPeriod;
+import org.rutebanken.netex.model.OperatingPeriodRefStructure;
+import org.rutebanken.netex.model.OperatingPeriodsInFrame_RelStructure;
+import org.rutebanken.netex.model.Operator;
+import org.rutebanken.netex.model.OperatorRefStructure;
+import org.rutebanken.netex.model.OrganisationsInFrame_RelStructure;
+import org.rutebanken.netex.model.PointOnRoute;
+import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
+import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
+import org.rutebanken.netex.model.PrivateCodeStructure;
+import org.rutebanken.netex.model.PropertiesOfDay_RelStructure;
+import org.rutebanken.netex.model.PropertyOfDay;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.ResourceFrame;
+import org.rutebanken.netex.model.Route;
+import org.rutebanken.netex.model.RoutePoint;
+import org.rutebanken.netex.model.RoutePointRefStructure;
+import org.rutebanken.netex.model.RoutePointsInFrame_RelStructure;
+import org.rutebanken.netex.model.RouteRefStructure;
+import org.rutebanken.netex.model.RoutesInFrame_RelStructure;
+import org.rutebanken.netex.model.ScheduledStopPoint;
+import org.rutebanken.netex.model.ScheduledStopPointRefStructure;
+import org.rutebanken.netex.model.ScheduledStopPointsInFrame_RelStructure;
+import org.rutebanken.netex.model.ServiceCalendarFrame;
+import org.rutebanken.netex.model.ServiceFrame;
+import org.rutebanken.netex.model.ServiceJourney;
+import org.rutebanken.netex.model.StopPointInJourneyPattern;
+import org.rutebanken.netex.model.TimetableFrame;
+import org.rutebanken.netex.model.TimetabledPassingTime;
+import org.rutebanken.netex.model.TimetabledPassingTimes_RelStructure;
+import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.springframework.stereotype.Service;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 
 /**
  * Serializes NeTEx domain objects to XML and produces the final ZIP output.
@@ -62,8 +116,17 @@ public class NeTExWritingService {
             final ZonedDateTime generationTimestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, generationTimestamp);
+        return marshalAndZip(delivery, "FIN_rail_timetable.xml");
+    }
+
+    /**
+     * Marshals a PublicationDelivery to XML and wraps in a ZIP with the given
+     * filename.
+     * Shared by timetable and composition writing.
+     */
+    public byte[] marshalAndZip(final PublicationDeliveryStructure delivery, final String xmlFileName) {
         final String xml = marshalToXml(delivery);
-        return zipXml(xml);
+        return zipXml(xml, xmlFileName);
     }
 
     private PublicationDeliveryStructure buildPublicationDelivery(
@@ -356,10 +419,10 @@ public class NeTExWritingService {
         }
     }
 
-    private byte[] zipXml(final String xml) {
+    private byte[] zipXml(final String xml, final String fileName) {
         try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final ZipOutputStream zos = new ZipOutputStream(baos)) {
-            zos.putNextEntry(new ZipEntry("FIN_rail_timetable.xml"));
+            zos.putNextEntry(new ZipEntry(fileName));
             zos.write(xml.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
             zos.finish();
