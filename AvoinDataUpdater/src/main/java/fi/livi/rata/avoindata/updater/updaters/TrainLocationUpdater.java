@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -91,9 +92,7 @@ public class TrainLocationUpdater {
     private List<TrainLocation> filterTrains(final List<TrainLocation> trainLocations) {
         final List<TrainLocation> recentlySeenTrackLocations = recentlySeenTrainLocationFilter.filter(trainLocations);
         final Iterable<TrainLocation> filterIPLocations = Iterables.filter(recentlySeenTrackLocations, t -> {
-            final String yLocation = IP_LOCATION_FILTER_PRECISION.format(t.location.getY());
-            final boolean isIPLocation = (yLocation.equals("60,170799") || yLocation.equals("60,170800")) && IP_LOCATION_FILTER_PRECISION.format(
-                    t.location.getX()).equals("24,937500");
+            final boolean isIPLocation = isIpFallbackLocation(t.location);
 
             if (isIPLocation) {
                 log.info("Found IP location for {} ({} / {})", t, t.location, t.liikeLocation);
@@ -107,5 +106,20 @@ public class TrainLocationUpdater {
 
         final ArrayList<TrainLocation> result = Lists.newArrayList(filterLocationsOutsideTracks);
         return result;
+    }
+
+    /**
+     * Detects the IP-based geolocation fallback coordinate (Helsinki default). When a GPS device fails it can fall back
+     * to IP-based geolocation, returning Helsinki default coordinates. Extracted from the {@link #filterTrains} lambda
+     * so it can be tested against the real production logic.
+     *
+     * <p>Note: {@link #IP_LOCATION_FILTER_PRECISION} uses the default JVM locale and the comparison strings use a comma
+     * decimal separator, so this only matches under a comma-locale JVM (e.g. fi_FI). This locale sensitivity is a known
+     * finding to revisit during the PALA migration.
+     */
+    static boolean isIpFallbackLocation(final Point wgs84Location) {
+        final String yLocation = IP_LOCATION_FILTER_PRECISION.format(wgs84Location.getY());
+        final String xLocation = IP_LOCATION_FILTER_PRECISION.format(wgs84Location.getX());
+        return (yLocation.equals("60,170799") || yLocation.equals("60,170800")) && xLocation.equals("24,937500");
     }
 }
