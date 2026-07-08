@@ -3,22 +3,27 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.DatedServiceJourney;
 import org.rutebanken.netex.model.FareClassEnumeration;
 import org.rutebanken.netex.model.FuelTypeEnumeration;
 import org.rutebanken.netex.model.JourneysInFrame_RelStructure;
+import org.rutebanken.netex.model.LimitationStatusEnumeration;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.ResourceFrame;
+import org.rutebanken.netex.model.ServiceJourneyRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.Train;
 import org.rutebanken.netex.model.TrainComponent;
 import org.rutebanken.netex.model.TrainComponents_RelStructure;
 import org.rutebanken.netex.model.TrainElement;
 import org.rutebanken.netex.model.TrainElementTypeEnumeration;
+import org.rutebanken.netex.model.TrainRefStructure;
 import org.rutebanken.netex.model.TrainSizeStructure;
 import org.rutebanken.netex.model.VehicleType;
 import org.rutebanken.netex.model.VehicleTypesInFrame_RelStructure;
@@ -57,7 +62,8 @@ public class NeTExCompositionWritingService {
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
 
-        final ResourceFrame resourceFrame = buildResourceFrame(vehicleTypes);
+        final List<Train> trains = buildTrains(datedJourneys);
+        final ResourceFrame resourceFrame = buildResourceFrame(vehicleTypes, trains);
         final TimetableFrame timetableFrame = buildTimetableFrame(datedJourneys);
 
         final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
@@ -73,7 +79,7 @@ public class NeTExCompositionWritingService {
                 .withDataObjects(dataObjects);
     }
 
-    private ResourceFrame buildResourceFrame(final List<NeTExVehicleType> vehicleTypes) {
+    private ResourceFrame buildResourceFrame(final List<NeTExVehicleType> vehicleTypes, final List<Train> trains) {
         final VehicleTypesInFrame_RelStructure vtStruct = new VehicleTypesInFrame_RelStructure();
 
         for (final NeTExVehicleType vt : vehicleTypes) {
@@ -97,18 +103,23 @@ public class NeTExCompositionWritingService {
             vtStruct.getCompoundTrainOrTrainOrVehicleType().add(vehicleType);
         }
 
+        for (final Train train : trains) {
+            vtStruct.getCompoundTrainOrTrainOrVehicleType().add(train);
+        }
+
         return new ResourceFrame()
                 .withId("DT:ResourceFrame:compositions")
                 .withVersion("1")
                 .withVehicleTypes(vtStruct);
     }
 
-    private TimetableFrame buildTimetableFrame(final List<NeTExDatedVehicleJourney> datedJourneys) {
-        final JourneysInFrame_RelStructure vehicleJourneys = new JourneysInFrame_RelStructure();
+    private List<Train> buildTrains(final List<NeTExDatedVehicleJourney> datedJourneys) {
+        final List<Train> trains = new ArrayList<>();
 
         for (final NeTExDatedVehicleJourney dj : datedJourneys) {
             final String idSuffix = dj.trainNumber() + "-" + dj.date()
                     + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
+            final String trainId = "DT:Train:" + idSuffix;
 
             final TrainComponents_RelStructure components = new TrainComponents_RelStructure();
             for (final NeTExTrainComponent comp : dj.components()) {
@@ -131,16 +142,45 @@ public class NeTExCompositionWritingService {
                 components.getTrainComponentRefOrTrainComponent().add(trainComponent);
             }
 
-            final Train train = new Train()
-                    .withId("DT:Train:" + idSuffix)
+            trains.add(new Train()
+                    .withId(trainId)
                     .withVersion("1")
                     .withTrainSize(new TrainSizeStructure()
                             .withNumberOfCars(BigInteger.valueOf(dj.components().size())))
-                    .withComponents(components);
+                    .withComponents(components));
+        }
+
+        return trains;
+    }
+
+    private TimetableFrame buildTimetableFrame(final List<NeTExDatedVehicleJourney> datedJourneys) {
+        final JourneysInFrame_RelStructure vehicleJourneys = new JourneysInFrame_RelStructure();
+
+        for (final NeTExDatedVehicleJourney dj : datedJourneys) {
+            final String idSuffix = dj.trainNumber() + "-" + dj.date()
+                    + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
+            final String trainId = "DT:Train:" + idSuffix;
+
+            final TrainRefStructure trainRef = new TrainRefStructure();
+            trainRef.setRef(trainId);
+
+            final ServiceJourneyRefStructure serviceJourneyRef = new ServiceJourneyRefStructure();
+            serviceJourneyRef.setRef("DT:ServiceJourney:" + dj.trainNumber());
 
             final DatedServiceJourney dsj = new DatedServiceJourney()
                     .withId(dj.id())
-                    .withVersion("1");
+                    .withVersion("1")
+                    .withJourneyRef(FACTORY.createServiceJourneyRef(serviceJourneyRef))
+                    .withVehicleTypeRef(FACTORY.createTrainRef(trainRef))
+                    .withTrainSize(new TrainSizeStructure()
+                            .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
+
+            if (dj.hasWheelchair()) {
+                dsj.withAccessibilityAssessment(new AccessibilityAssessment()
+                        .withId("DT:AA:" + idSuffix)
+                        .withVersion("1")
+                        .withMobilityImpairedAccess(LimitationStatusEnumeration.TRUE));
+            }
 
             vehicleJourneys.getVehicleJourneyOrDatedVehicleJourneyOrNormalDatedVehicleJourney().add(dsj);
         }
