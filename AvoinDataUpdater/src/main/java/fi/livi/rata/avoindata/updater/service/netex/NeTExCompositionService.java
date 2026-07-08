@@ -16,11 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.dao.train.ExtractedScheduleRepository;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.train.ExtractedSchedule;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 /**
@@ -91,15 +93,18 @@ public class NeTExCompositionService {
 
     private final CompositionRepository compositionRepository;
     private final GeneratedExportRepository generatedExportRepository;
+    private final ExtractedScheduleRepository extractedScheduleRepository;
     private final NeTExIdGenerator idGenerator;
     private final NeTExCompositionWritingService compositionWritingService;
 
     public NeTExCompositionService(final CompositionRepository compositionRepository,
             final GeneratedExportRepository generatedExportRepository,
+            final ExtractedScheduleRepository extractedScheduleRepository,
             final NeTExIdGenerator idGenerator,
             final NeTExCompositionWritingService compositionWritingService) {
         this.compositionRepository = compositionRepository;
         this.generatedExportRepository = generatedExportRepository;
+        this.extractedScheduleRepository = extractedScheduleRepository;
         this.idGenerator = idGenerator;
         this.compositionWritingService = compositionWritingService;
     }
@@ -157,9 +162,36 @@ public class NeTExCompositionService {
     public byte[] buildCompositionsZip(final List<Composition> compositions) {
         final Set<String> vehicleTypeIds = new LinkedHashSet<>();
         final List<NeTExVehicleType> vehicleTypes = buildVehicleTypes(compositions, vehicleTypeIds);
-        final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(compositions, vehicleTypeIds);
+
+        // Build (trainNumber, departureDate) → scheduleId lookup from extracted_schedule
+        final Map<String, Long> scheduleIdLookup = buildScheduleIdLookup(compositions);
+
+        final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(compositions, vehicleTypeIds, scheduleIdLookup);
 
         return compositionWritingService.writeZip(vehicleTypes, datedJourneys, ZonedDateTime.now());
+    }
+
+    private Map<String, Long> buildScheduleIdLookup(final List<Composition> compositions) {
+        if (compositions.isEmpty()) {
+            return Map.of();
+        }
+        final LocalDate minDate = compositions.stream()
+                .map(c -> c.id.departureDate)
+                .min(LocalDate::compareTo).orElseThrow();
+        final LocalDate maxDate = compositions.stream()
+                .map(c -> c.id.departureDate)
+                .max(LocalDate::compareTo).orElseThrow();
+
+        final List<ExtractedSchedule> extractedSchedules =
+                extractedScheduleRepository.findByDepartureDateBetween(minDate, maxDate);
+
+        final Map<String, Long> lookup = new LinkedHashMap<>();
+        for (final ExtractedSchedule es : extractedSchedules) {
+            final String key = es.trainId.trainNumber + "-" + es.trainId.departureDate;
+            // Keep highest scheduleId (most recent version)
+            lookup.merge(key, es.scheduleId, Math::max);
+        }
+        return lookup;
     }
 
     private List<NeTExVehicleType> buildVehicleTypes(final List<Composition> compositions,
@@ -204,12 +236,20 @@ public class NeTExCompositionService {
 
     private List<NeTExDatedVehicleJourney> buildDatedVehicleJourneys(
             final List<Composition> compositions,
-            final Set<String> vehicleTypeIds) {
+            final Set<String> vehicleTypeIds,
+            final Map<String, Long> scheduleIdLookup) {
         final List<NeTExDatedVehicleJourney> journeys = new ArrayList<>();
 
         for (final Composition composition : compositions) {
             final long trainNumber = composition.id.trainNumber;
             final LocalDate date = composition.id.departureDate;
+
+            // Resolve the ServiceJourney ID that matches the timetable package
+            final String lookupKey = trainNumber + "-" + date;
+            final Long scheduleId = scheduleIdLookup.get(lookupKey);
+            final String serviceJourneyRef = scheduleId != null
+                    ? idGenerator.serviceJourneyId(trainNumber, scheduleId)
+                    : null;
 
             for (final JourneySection section : composition.journeySections) {
                 final boolean hasWheelchair = section.wagons.stream()
@@ -263,6 +303,7 @@ public class NeTExCompositionService {
                         section.maximumSpeed,
                         hasWheelchair,
                         hasCatering,
+                        serviceJourneyRef,
                         components));
             }
         }
@@ -303,6 +344,7 @@ public class NeTExCompositionService {
             int maximumSpeed,
             boolean hasWheelchair,
             boolean hasCatering,
+            String serviceJourneyRef,
             List<NeTExTrainComponent> components) {
     }
 }

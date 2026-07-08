@@ -164,16 +164,18 @@ public class NeTExCompositionWritingService {
             final TrainRefStructure trainRef = new TrainRefStructure();
             trainRef.setRef(trainId);
 
-            final ServiceJourneyRefStructure serviceJourneyRef = new ServiceJourneyRefStructure();
-            serviceJourneyRef.setRef("DT:ServiceJourney:" + dj.trainNumber());
-
             final DatedServiceJourney dsj = new DatedServiceJourney()
                     .withId(dj.id())
                     .withVersion("1")
-                    .withJourneyRef(FACTORY.createServiceJourneyRef(serviceJourneyRef))
                     .withVehicleTypeRef(FACTORY.createTrainRef(trainRef))
                     .withTrainSize(new TrainSizeStructure()
                             .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
+
+            if (dj.serviceJourneyRef() != null) {
+                final ServiceJourneyRefStructure sjRef = new ServiceJourneyRefStructure();
+                sjRef.setRef(dj.serviceJourneyRef());
+                dsj.withJourneyRef(FACTORY.createServiceJourneyRef(sjRef));
+            }
 
             if (dj.hasWheelchair()) {
                 dsj.withAccessibilityAssessment(new AccessibilityAssessment()
