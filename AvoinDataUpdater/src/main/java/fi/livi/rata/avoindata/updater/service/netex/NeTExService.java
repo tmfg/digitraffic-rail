@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
@@ -17,8 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -172,6 +175,34 @@ public class NeTExService {
         }
 
         return winningIds;
+    }
+
+    /**
+     * Resolves the NeTEx ServiceJourney id in effect for each (trainNumber, date)
+     * within the given range, using the exact same passenger filter and
+     * winning-schedule resolution as the timetable generation. Compositions use
+     * this so their ServiceJourneyRefs point at ids that actually exist in the
+     * timetable ServiceJourney set.
+     */
+    public Map<TrainId, String> resolveServiceJourneyIds(final List<Schedule> adhocSchedules,
+            final List<Schedule> regularSchedules,
+            final LocalDate start,
+            final LocalDate end) {
+        final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
+        final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
+
+        final Map<TrainId, String> result = new HashMap<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, passengerAdhoc,
+                    passengerRegular);
+            for (final Schedule schedule : todaysSchedules) {
+                if (!schedule.changeType.equals("P") && schedule.isRunOnDay(date)) {
+                    result.put(new TrainId(schedule.trainNumber, date), entityService.serviceJourneyIdFor(schedule));
+                }
+            }
+        }
+
+        return result;
     }
 
     /**

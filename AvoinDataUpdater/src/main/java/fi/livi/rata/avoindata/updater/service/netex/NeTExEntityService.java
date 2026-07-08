@@ -86,12 +86,7 @@ public class NeTExEntityService {
         final Map<String, Long> journeyScheduleIds = new LinkedHashMap<>();
 
         for (final Schedule schedule : schedules) {
-            final String id;
-            if (schedule.timetableType == Train.TimetableType.ADHOC) {
-                id = idGenerator.serviceJourneyIdAdhoc(schedule.trainNumber, schedule.startDate);
-            } else {
-                id = idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
-            }
+            final String id = serviceJourneyIdFor(schedule);
 
             // Keep the schedule with the highest id (most recent version)
             if (journeyMap.containsKey(id) && journeyScheduleIds.get(id) >= schedule.id) {
@@ -115,6 +110,18 @@ public class NeTExEntityService {
         }
 
         return new ArrayList<>(journeyMap.values());
+    }
+
+    /**
+     * Computes the NeTEx ServiceJourney id for a schedule, matching the ids used
+     * when building the timetable ServiceJourneys. ADHOC schedules are keyed by
+     * departure date, REGULAR schedules by their schedule id.
+     */
+    public String serviceJourneyIdFor(final Schedule schedule) {
+        if (schedule.timetableType == Train.TimetableType.ADHOC) {
+            return idGenerator.serviceJourneyIdAdhoc(schedule.trainNumber, schedule.startDate);
+        }
+        return idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
     }
 
     private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule) {
