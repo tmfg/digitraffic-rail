@@ -25,7 +25,7 @@ public class NeTExScheduler {
         this.neTExCompositionService = neTExCompositionService;
     }
 
-    @Scheduled(cron = "${updater.netex.cron}", zone = "UTC")
+    @Scheduled(cron = "${updater.netex.cron:0 0 4 * * *}", zone = "UTC")
     public void generateNeTExPackages() {
         log.info("method=generateNeTExPackages Starting scheduled NeTEx generation (timetables + compositions)");
         neTExService.generateNeTEx();
