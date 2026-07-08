@@ -206,4 +206,57 @@ class NeTExIdGeneratorTest {
         assertTrue(operatorId.startsWith("DT:"));
         assertTrue(lineId.startsWith("DT:"));
     }
+
+    // --- Composition-related IDs ---
+
+    @Test
+    void givenTypeName_whenGeneratingVehicleTypeId_thenFollowsConvention() {
+        // given
+        final String typeName = "Sr2";
+
+        // when
+        final String result = idGenerator.vehicleTypeId(typeName);
+
+        // then
+        assertEquals("DT:VehicleType:Sr2", result);
+    }
+
+    @Test
+    void givenWagonTypeName_whenGeneratingVehicleTypeId_thenFollowsConvention() {
+        // given
+        final String typeName = "Ed";
+
+        // when
+        final String result = idGenerator.vehicleTypeId(typeName);
+
+        // then
+        assertEquals("DT:VehicleType:Ed", result);
+    }
+
+    @Test
+    void givenTrainWithBeginStation_whenGeneratingDatedVehicleJourneyId_thenIncludesStation() {
+        // given
+        final long trainNumber = 59;
+        final LocalDate date = LocalDate.of(2026, 7, 7);
+        final String beginStation = "HKI";
+
+        // when
+        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, beginStation);
+
+        // then
+        assertEquals("DT:DatedVehicleJourney:59-2026-07-07-HKI", result);
+    }
+
+    @Test
+    void givenTrainWithoutBeginStation_whenGeneratingDatedVehicleJourneyId_thenOmitsStation() {
+        // given
+        final long trainNumber = 59;
+        final LocalDate date = LocalDate.of(2026, 7, 7);
+
+        // when
+        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, null);
+
+        // then
+        assertEquals("DT:DatedVehicleJourney:59-2026-07-07", result);
+    }
 }
