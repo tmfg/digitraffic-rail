@@ -1,5 +1,24 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.ByteArrayInputStream;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
@@ -9,21 +28,6 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayInputStream;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for NeTExCompositionService — end-to-end through buildCompositionsZip,
@@ -38,8 +42,10 @@ class NeTExCompositionServiceTest {
     void setUp() {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExWritingService writingService = new NeTExWritingService();
-        final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(writingService);
-        compositionService = new NeTExCompositionService(null, null, null, null, idGenerator, compositionWritingService);
+        final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(
+                writingService);
+        compositionService = new NeTExCompositionService(null, null, null, null, idGenerator,
+                compositionWritingService);
     }
 
     // --- VehicleType in XML ---
@@ -320,7 +326,7 @@ class NeTExCompositionServiceTest {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
             final ZipEntry entry = zis.getNextEntry();
             assertNotNull(entry);
-            assertEquals("FIN_rail_compositions.xml", entry.getName());
+            assertEquals("DT_rail_compositions.xml", entry.getName());
         } catch (final Exception e) {
             fail("ZIP parsing failed: " + e.getMessage());
         }

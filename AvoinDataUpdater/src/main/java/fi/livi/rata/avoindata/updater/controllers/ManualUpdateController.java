@@ -152,9 +152,19 @@ public class ManualUpdateController {
     @RequestMapping("/netex")
     @ResponseBody
     public boolean generateNeTEx() {
-        logger.info("method=generateNeTEx Starting manual NeTEx generation");
+        logger.info("method=generateNeTEx Starting manual NeTEx generation (timetables + compositions)");
         netexService.generateNeTEx();
-        logger.info("method=generateNeTEx End manual NeTEx generation");
+        netexCompositionService.generateCompositions();
+        logger.info("method=generateNeTEx End manual NeTEx generation (timetables + compositions)");
+        return true;
+    }
+
+    @RequestMapping("/netex-timetables")
+    @ResponseBody
+    public boolean generateNeTExTimetables() {
+        logger.info("method=generateNeTExTimetables Starting manual NeTEx timetables generation");
+        netexService.generateNeTEx();
+        logger.info("method=generateNeTExTimetables End manual NeTEx timetables generation");
         return true;
     }
 

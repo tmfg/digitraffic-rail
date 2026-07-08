@@ -138,8 +138,8 @@ public class NeTExCompositionService {
             final LocalDate scheduleStart = today.minusDays(7);
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(scheduleStart);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(scheduleStart);
-            final Map<TrainId, String> serviceJourneyRefs =
-                    neTExService.resolveServiceJourneyIds(adhocSchedules, regularSchedules, start, end);
+            final Map<TrainId, String> serviceJourneyRefs = neTExService.resolveServiceJourneyIds(adhocSchedules,
+                    regularSchedules, start, end);
 
             final byte[] zip = buildCompositionsZip(allCompositions, serviceJourneyRefs);
 
@@ -178,8 +178,8 @@ public class NeTExCompositionService {
         final Set<String> vehicleTypeIds = new LinkedHashSet<>();
         final List<NeTExVehicleType> vehicleTypes = buildVehicleTypes(compositions, vehicleTypeIds);
 
-        final List<NeTExDatedVehicleJourney> datedJourneys =
-                buildDatedVehicleJourneys(compositions, vehicleTypeIds, serviceJourneyRefs);
+        final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(compositions, vehicleTypeIds,
+                serviceJourneyRefs);
 
         return compositionWritingService.writeZip(vehicleTypes, datedJourneys, ZonedDateTime.now());
     }

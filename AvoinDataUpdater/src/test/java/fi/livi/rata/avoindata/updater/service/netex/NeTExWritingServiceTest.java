@@ -39,14 +39,14 @@ class NeTExWritingServiceTest {
                 testData.lines, testData.operators, testData.serviceJourneys,
                 testData.timestamp);
 
-        // then: valid ZIP containing FIN_rail_timetable.xml
+        // then: valid ZIP containing DT_rail_timetables.xml
         assertNotNull(zip);
         assertTrue(zip.length > 0);
 
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
             final ZipEntry entry = zis.getNextEntry();
             assertNotNull(entry);
-            assertEquals("FIN_rail_timetable.xml", entry.getName());
+            assertEquals("DT_rail_timetables.xml", entry.getName());
             assertNull(zis.getNextEntry()); // only one file
         }
     }

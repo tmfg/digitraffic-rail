@@ -116,7 +116,7 @@ public class NeTExWritingService {
             final ZonedDateTime generationTimestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, generationTimestamp);
-        return marshalAndZip(delivery, "FIN_rail_timetable.xml");
+        return marshalAndZip(delivery, "DT_rail_timetables.xml");
     }
 
     /**

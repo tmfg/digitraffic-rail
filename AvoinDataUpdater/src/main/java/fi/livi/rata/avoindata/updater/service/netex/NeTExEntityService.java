@@ -1,9 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
  * Builds core NeTEx domain objects: Lines, Operators, Authority,

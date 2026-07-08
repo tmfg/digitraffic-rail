@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for FinnishRollingStock — wagon type to NeTEx enum mappings.

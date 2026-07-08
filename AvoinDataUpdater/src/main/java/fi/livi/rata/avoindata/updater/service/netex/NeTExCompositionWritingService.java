@@ -54,7 +54,7 @@ public class NeTExCompositionWritingService {
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(vehicleTypes, datedJourneys, timestamp);
-        return writingService.marshalAndZip(delivery, "FIN_rail_compositions.xml");
+        return writingService.marshalAndZip(delivery, "DT_rail_compositions.xml");
     }
 
     private PublicationDeliveryStructure buildPublicationDelivery(

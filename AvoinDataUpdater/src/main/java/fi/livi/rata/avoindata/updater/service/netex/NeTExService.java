@@ -1,20 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
-import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
-import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
-import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -23,6 +8,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
+import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 /**
  * Orchestrates NeTEx generation: fetches data, invokes sub-services, persists
@@ -33,7 +33,7 @@ import java.util.Set;
 public class NeTExService {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExService.class);
-    private static final String NETEX_FILENAME = "netex-nordic.zip";
+    private static final String NETEX_FILENAME = "netex-nordic-timetables.zip";
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
 
     private final NeTExEntityService entityService;

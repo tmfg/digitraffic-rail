@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class NeTExController {
 
-    private static final String NETEX_FILENAME = "netex-nordic.zip";
+    private static final String NETEX_FILENAME = "netex-nordic-timetables.zip";
     private static final String COMPOSITIONS_FILENAME = "netex-nordic-compositions.zip";
     private static final int CACHE_SECONDS = 60 * 15;
 
@@ -31,7 +31,7 @@ public class NeTExController {
     }
 
     @Operation(summary = "Returns NeTEx Nordic static timetable ZIP")
-    @RequestMapping(method = RequestMethod.GET, path = "netex-nordic.zip", produces = "application/zip")
+    @RequestMapping(method = RequestMethod.GET, path = "netex-nordic-timetables.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTExNordic(final HttpServletResponse response) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
