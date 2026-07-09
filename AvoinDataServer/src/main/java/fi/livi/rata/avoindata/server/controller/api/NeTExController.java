@@ -15,12 +15,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 
-@Tag(name = "netex", description = "Returns trains in NeTEx Nordic format)")
+@Tag(name = "netex", description = "Returns data in NeTEx Nordic format")
 @RestController
-@RequestMapping(WebConfig.CONTEXT_PATH + "trains")
+@RequestMapping(WebConfig.CONTEXT_PATH + "netex")
 public class NeTExController {
 
-    private static final String NETEX_FILENAME = "netex-nordic-timetables.zip";
+    private static final String TIMETABLES_FILENAME = "netex-nordic-timetables.zip";
     private static final String COMPOSITIONS_FILENAME = "netex-nordic-compositions.zip";
     private static final int CACHE_SECONDS = 60 * 15;
 
@@ -31,29 +31,23 @@ public class NeTExController {
     }
 
     @Operation(summary = "Returns NeTEx Nordic static timetable ZIP")
-    @RequestMapping(method = RequestMethod.GET, path = "netex-nordic-timetables.zip", produces = "application/zip")
+    @RequestMapping(method = RequestMethod.GET, path = "timetables.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getNeTExNordic(final HttpServletResponse response) {
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
-
-        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(NETEX_FILENAME);
-
-        response.addHeader("x-is-fresh",
-                Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
-        response.addHeader("x-timestamp", export.created.toString());
-        response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
-
-        return export.data;
+    public byte[] getNeTExTimetables(final HttpServletResponse response) {
+        return getExport(response, TIMETABLES_FILENAME);
     }
 
     @Operation(summary = "Returns NeTEx Nordic compositions and accessibility ZIP")
-    @RequestMapping(method = RequestMethod.GET, path = "netex-nordic-compositions.zip", produces = "application/zip")
+    @RequestMapping(method = RequestMethod.GET, path = "compositions.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTExCompositions(final HttpServletResponse response) {
+        return getExport(response, COMPOSITIONS_FILENAME);
+    }
+
+    private byte[] getExport(final HttpServletResponse response, final String fileName) {
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
 
-        final GeneratedExport export = generatedExportRepository
-                .findFirstByFileNameOrderByIdDesc(COMPOSITIONS_FILENAME);
+        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(fileName);
         if (export == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return new byte[0];
