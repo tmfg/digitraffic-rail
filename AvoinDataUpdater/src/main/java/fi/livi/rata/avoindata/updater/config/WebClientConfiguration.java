@@ -107,4 +107,14 @@ public class WebClientConfiguration {
                 .defaultHeader("API-KEY", apiKey)
                 .build();
     }
+
+    @Bean
+    public WebClient palaWebClient(final WebClient webClient,
+                                   final @Value("${updater.reason.api-key}") String apiKey,
+                                   final @Value("${updater.pala-api-url:}") String palaApiUrl) {
+        return webClient.mutate()
+                .baseUrl(palaApiUrl + "/")
+                .defaultHeader("API-KEY", apiKey)
+                .build();
+    }
 }

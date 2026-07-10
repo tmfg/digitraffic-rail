@@ -33,11 +33,17 @@ public class TrainLocationFactory {
     }
 
     public TrainLocation createTrainLocation(final TrainLocationId trainLocationId, final Integer speed, final Integer accuracy) {
+        return createTrainLocation(trainLocationId, speed, accuracy, true);
+    }
+
+    public TrainLocation createTrainLocation(final TrainLocationId trainLocationId, final Integer speed, final Integer accuracy,
+                                             final boolean isGpsLocation) {
         final TrainLocation trainLocation = new TrainLocation();
         trainLocation.location = geometryFactory.createPoint(new Coordinate(20.3, 10.1));
         trainLocation.trainLocationId = trainLocationId;
         trainLocation.speed = speed;
         trainLocation.accuracy = accuracy;
+        trainLocation.isGpsLocation = isGpsLocation;
 
         return trainLocationRepository.save(trainLocation);
     }

@@ -56,6 +56,8 @@ public class TrainLocationIngestionE2ETest extends BaseTest {
         // Enable the trainLocation() guard on just this bean (updater.liikeinterface-url must be non-empty).
         final TrainLocationUpdater target = AopTestUtils.getUltimateTargetObject(trainLocationUpdater);
         ReflectionTestUtils.setField(target, "liikeinterfaceUrl", "http://mock-ripa");
+        ReflectionTestUtils.setField(target, "isKuplaEnabled", true);
+        ReflectionTestUtils.setField(target, "isPalaEnabled", false);
 
         trainLocationUpdater.trainLocation();
 

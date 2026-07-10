@@ -64,7 +64,7 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
 
         getGeoJson("/train-locations.geojson/latest")
                 .andExpect(jsonPath("$.features.length()").value(1))
-                .andExpect(jsonPath("$.features[0].properties.length()").value(4))
+                .andExpect(jsonPath("$.features[0].properties.length()").value(5))
                 .andExpect(jsonPath("$.features[0].properties['trainNumber']").value(1))
                 .andExpect(jsonPath("$.features[0].properties['departureDate']").value(DateProvider.dateInHelsinki().toString()))
                 .andExpect(jsonPath("$.features[0].properties['speed']").value(100))
@@ -180,5 +180,59 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
 
         getGeoJson("/train-locations.geojson/latest")
                 .andExpect(jsonPath("$.features[0].properties['accuracy']").doesNotExist());
+    }
+
+    // --- Test 13: isGpsLocation in REST V1 JSON response ---
+
+    @Test
+    public void isGpsLocationTrueShouldAppearInJsonResponse() throws Exception {
+        // given — entity with isGpsLocation = true
+        trainLocationFactory.createTrainLocation(recentId(1L), 100, 5, true);
+
+        // when/then — V1 JSON response should contain isGpsLocation: true
+        getJson("/train-locations/latest")
+                .andExpect(jsonPath("$[0].isGpsLocation").value(true));
+    }
+
+    @Test
+    public void isGpsLocationFalseShouldAppearInJsonResponse() throws Exception {
+        // given — entity with isGpsLocation = false
+        trainLocationFactory.createTrainLocation(recentId(1L), 100, null, false);
+
+        // when/then — V1 JSON response should contain isGpsLocation: false
+        getJson("/train-locations/latest")
+                .andExpect(jsonPath("$[0].isGpsLocation").value(false));
+    }
+
+    @Test
+    public void isGpsLocationShouldAlwaysBePresent() throws Exception {
+        // given — default entity (isGpsLocation defaults to true)
+        trainLocationFactory.createTrainLocation();
+
+        // when/then — field is always present (NOT NULL), never absent
+        getJson("/train-locations/latest")
+                .andExpect(jsonPath("$[0].isGpsLocation").exists());
+    }
+
+    // --- Test 14: isGpsLocation in GeoJSON properties ---
+
+    @Test
+    public void geoJsonPropertiesShouldContainIsGpsLocation() throws Exception {
+        // given
+        trainLocationFactory.createTrainLocation(recentId(1L), 100, 5, true);
+
+        // when/then — GeoJSON properties should include isGpsLocation
+        getGeoJson("/train-locations.geojson/latest")
+                .andExpect(jsonPath("$.features[0].properties['isGpsLocation']").value(true));
+    }
+
+    @Test
+    public void geoJsonPropertiesShouldContainIsGpsLocationFalse() throws Exception {
+        // given
+        trainLocationFactory.createTrainLocation(recentId(1L), 100, null, false);
+
+        // when/then
+        getGeoJson("/train-locations.geojson/latest")
+                .andExpect(jsonPath("$.features[0].properties['isGpsLocation']").value(false));
     }
 }

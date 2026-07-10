@@ -75,4 +75,46 @@ public class RecentlySeenTrainLocationFilterTest extends BaseTest {
         final List<TrainLocation> second = recentlySeenTrainLocationFilter.filter(List.of(location(104L, oldTimestamp)));
         Assertions.assertEquals(1, second.size());
     }
+
+    // --- Test 12: PALA timestamps (no milliseconds) ---
+
+    @Test
+    public void shouldAcceptPalaTimestampFormat() {
+        // given — PALA timestamp without milliseconds (e.g., "2026-07-06T08:34:29Z")
+        final ZonedDateTime palaTimestamp = ZonedDateTime.parse("2026-07-06T08:34:29Z");
+
+        // when
+        final List<TrainLocation> result = recentlySeenTrainLocationFilter.filter(
+                List.of(location(201L, palaTimestamp)));
+
+        // then — accepted (first time seen)
+        Assertions.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void shouldDeduplicateIdenticalPalaTimestamps() {
+        // given — two locations with the same PALA-format timestamp
+        final ZonedDateTime palaTimestamp = ZonedDateTime.parse("2026-07-06T08:35:00Z");
+
+        // when
+        final List<TrainLocation> result = recentlySeenTrainLocationFilter.filter(
+                List.of(location(202L, palaTimestamp), location(202L, palaTimestamp)));
+
+        // then — deduplicated to one
+        Assertions.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void shouldAcceptDifferentPalaTimestamps() {
+        // given — two locations with different PALA-format timestamps
+        final ZonedDateTime ts1 = ZonedDateTime.parse("2026-07-06T08:36:00Z");
+        final ZonedDateTime ts2 = ZonedDateTime.parse("2026-07-06T08:36:01Z");
+
+        // when
+        final List<TrainLocation> result = recentlySeenTrainLocationFilter.filter(
+                List.of(location(203L, ts1), location(203L, ts2)));
+
+        // then — both accepted (different keys)
+        Assertions.assertEquals(2, result.size());
+    }
 }

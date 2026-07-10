@@ -52,4 +52,28 @@ public class TrainLocationV2ControllerTest extends MockMvcBaseTest {
         getJson("/train-locations/latest", "v2")
                 .andExpect(jsonPath("$[0].accuracy").doesNotExist());
     }
+
+    // --- Test 15: isGpsLocation in V2 response ---
+
+    @Test
+    public void isGpsLocationShouldBeInV2Response() throws Exception {
+        // given
+        trainLocationFactory.createTrainLocation(
+                new TrainLocationId(1L, DateProvider.dateInHelsinki(), DateProvider.nowInHelsinki()), 100, 5, true);
+
+        // when/then — V2 response should include isGpsLocation
+        getJson("/train-locations/latest", "v2")
+                .andExpect(jsonPath("$[0].isGpsLocation").value(true));
+    }
+
+    @Test
+    public void isGpsLocationFalseShouldBeInV2Response() throws Exception {
+        // given
+        trainLocationFactory.createTrainLocation(
+                new TrainLocationId(1L, DateProvider.dateInHelsinki(), DateProvider.nowInHelsinki()), 100, null, false);
+
+        // when/then
+        getJson("/train-locations/latest", "v2")
+                .andExpect(jsonPath("$[0].isGpsLocation").value(false));
+    }
 }

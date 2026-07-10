@@ -85,6 +85,37 @@ public class TrainLocationMqttPublishServiceTest extends BaseTest {
         Assertions.assertEquals("train-locations/2026-01-01/1", message.getHeaders().get(MqttHeaders.TOPIC));
     }
 
+    // --- Test 17: isGpsLocation in MQTT payload ---
+
+    @Test
+    public void mqttPayloadShouldContainIsGpsLocation() throws ExecutionException, InterruptedException {
+        // given — entity with isGpsLocation = true (default)
+        final TrainLocation tl = trainLocation();
+
+        // when
+        final Message<String> message = mqttPublishService.publishEntity("train-locations/2026-01-01/1", tl, null).get();
+        final DocumentContext json = JsonPath.parse(message.getPayload());
+
+        // then — isGpsLocation should be present as boolean
+        Assertions.assertTrue((Boolean) json.read("$['isGpsLocation']"),
+                "MQTT payload should contain isGpsLocation=true");
+    }
+
+    @Test
+    public void mqttPayloadShouldContainIsGpsLocationFalse() throws ExecutionException, InterruptedException {
+        // given — entity with isGpsLocation = false
+        final TrainLocation tl = trainLocation();
+        tl.isGpsLocation = false;
+
+        // when
+        final Message<String> message = mqttPublishService.publishEntity("train-locations/2026-01-01/1", tl, null).get();
+        final DocumentContext json = JsonPath.parse(message.getPayload());
+
+        // then — key name must match REST convention (isGpsLocation, not is_gps_location)
+        Assertions.assertFalse((Boolean) json.read("$['isGpsLocation']"),
+                "MQTT payload should contain isGpsLocation=false");
+    }
+
     private static void assertPathNotPresent(final DocumentContext json, final String path) {
         try {
             json.read(path);
