@@ -74,7 +74,7 @@ public class TrainController extends ADataController {
             Long version,
             final HttpServletResponse response) {
         if (version == null) {
-            version = allTrainsRepository.getMaxVersion() - 1;
+            version = trainRepository.getMaxApiVersion() - 1;
         }
 
         final List<AllTrainsRepository.FindByVersionQueryResult> results =

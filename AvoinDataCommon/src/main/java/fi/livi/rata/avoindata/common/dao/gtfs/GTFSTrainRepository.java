@@ -14,11 +14,11 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 @Repository
 public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, TrainId> {
     @Query("select train from GTFSTrain train" +
-            " where train.version > ?1" +
+            " where train.sourceVersion > ?1" +
             // category must be Commuter or Long-distance and traintype must not be V, HV or MV
             " and train.trainCategoryId in (1, 2) and train.trainTypeId not in (81, 52, 53)" +
             " and train.id.departureDate in (current_date, (current_date - 1 day))")
-    List<GTFSTrain> findByVersionGreaterThan(final long version);
+    List<GTFSTrain> findBySourceVersionGreaterThan(final long version);
 
     /// generate (next) stop_id from the first commercial, not cancelled row
     /// that does not have actual_time yet and the estimate is in the future

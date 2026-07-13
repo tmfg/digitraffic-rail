@@ -31,7 +31,4 @@ public interface AllTrainsRepository extends CustomGeneralRepository<Train, Trai
     @Query(nativeQuery = true,
            value = "select train_number, departure_date, version from train where version > ?1 order by version limit ?2")
     List<FindByVersionQueryResult> findByVersionGreaterThanRawSql(Long version, int limit);
-
-    @Query("select coalesce(max(train.version),0) from Train train")
-    long getMaxVersion();
 }

@@ -30,6 +30,8 @@ import fi.livi.rata.avoindata.updater.updaters.abstractup.AbstractPersistService
 import fi.livi.rata.avoindata.updater.updaters.abstractup.InitializationPeriod;
 import jakarta.annotation.PostConstruct;
 
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
+
 @Service
 public abstract class AbstractDatabaseInitializer<EntityType> implements DisposableBean {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -155,7 +157,7 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
             final Long newMaxVersion = persistService.getMaxVersion();
 
             logUpdate(latestVersion, time.getDuration().toMillis(), updatedEntities.size(),
-                    newMaxVersion != null ? newMaxVersion : latestVersion, this.prefix, middle, updatedEntities);
+                    newMaxVersion != null ? newMaxVersion : latestVersion, this.prefix, middle);
 
             lastUpdateService.update(this.prefix);
 
@@ -165,16 +167,6 @@ public abstract class AbstractDatabaseInitializer<EntityType> implements Disposa
                     time.getDuration().toMillis(), t);
             throw new RuntimeException(t);
         }
-    }
-
-    protected void logUpdate(final long latestVersion, final long tookMs, final long count, final long newVersion,
-            final String prefix,
-            final long middleMs, final List<EntityType> objects) {
-        log.info(
-                "method=logUpdate Updated data for count={} prefix={} in tookMs={} ms total ( json retrieve {} ms, oldVersion={} newVersion={} versionDiff={} )",
-                count, prefix,
-                tookMs, middleMs, latestVersion, newVersion,
-                (newVersion - latestVersion));
     }
 
     public void clearEntities() {

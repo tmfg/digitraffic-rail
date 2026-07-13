@@ -68,7 +68,6 @@ public class SingleDayScheduleExtractService {
         return Pair.of(newTrains, Maps.uniqueIndex(newTrains.keySet(), idFunc::apply));
     }
 
-    @Transactional
     public ExtractedTrains extract(final Map<TrainId, Train> newTrainMap, final LocalDate date) {
         log.info("Fetching existing trains for {}", date);
         final Map<TrainId, Train> oldTrainMap = Maps.uniqueIndex(trainRepository.findByDepartureDateFull(date), idFunc::apply);

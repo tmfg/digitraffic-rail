@@ -78,8 +78,6 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             return entities;
         }
 
-        assignApiVersionsInChunks(entities);
-
         for (final Train entity : entities) {
             for (final TimeTableRow timeTableRow : entity.timeTableRows) {
                 for (final Cause cause : timeTableRow.causes) {
@@ -92,6 +90,8 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             }
             entityManager.detach(entity);
         }
+
+        assignApiVersionsInChunks(entities);
 
         final List<TrainId> trainIds = entities.stream().map(s -> s.id).sorted(TrainId::compareTo).collect(Collectors.toList());
 
@@ -140,7 +140,7 @@ public class TrainPersistService extends AbstractPersistService<Train> {
             }
         }
 
-        stopSectorService.addTrains(entities, "Train");
+        stopSectorService.addFromTrains(entities, "Train");
 
         trainRepository.persist(entities);
         timeTableRowRepository.persist(timeTableRows);

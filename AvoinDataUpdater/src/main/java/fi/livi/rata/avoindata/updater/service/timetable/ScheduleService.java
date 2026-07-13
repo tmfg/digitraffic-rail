@@ -101,7 +101,7 @@ public class ScheduleService {
 
         final Pair<Map<Train, Schedule>, Map<TrainId, Train>> trains = singleDayScheduleExtractService.extractTrains(adhocSchedules, regularSchedules, date);
 
-        final SingleDayScheduleExtractService.ExtractedTrains extractedTrains = trainLockExecutor.executeInLock("ScheduleForDate",
+        final SingleDayScheduleExtractService.ExtractedTrains extractedTrains = trainLockExecutor.executeInTransactionLock("ScheduleForDate",
                 () -> singleDayScheduleExtractService.extract(trains.getRight(), date));
 
         log.info("Creating ExtractedSchedules for {}", date);

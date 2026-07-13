@@ -49,7 +49,7 @@ public class StopSectorService {
                 && (train.trainTypeId != 81 && train.trainTypeId != 52 && train.trainTypeId != 53);
     }
 
-    public void addTrains(final List<Train> trains, final String source) {
+    public void addFromTrains(final List<Train> trains, final String source) {
         stopSectorQueueItemRepository.saveAll(trains.stream()
                 .filter(t -> !t.cancelled)
                 .filter(this::isPassengerTrain)

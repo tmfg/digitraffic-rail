@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.apache.commons.lang3.ObjectUtils;
 import org.locationtech.jts.geom.GeometryCollection;
 import fi.livi.rata.avoindata.common.domain.trackwork.IdentifierRange;
@@ -18,9 +19,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
 
 @Service
 public class TrafficRestrictionNotificationUpdater {
@@ -52,17 +56,24 @@ public class TrafficRestrictionNotificationUpdater {
             return;
         }
 
+        final ZonedDateTime start = DateProvider.nowInHelsinki();
         final RemoteRumaNotificationStatus[] statusesResp = remoteTrafficRestrictionNotificationService.getStatuses();
         log.info("Received {} traffic restriction notification statuses", statusesResp.length);
 
-        if (statusesResp != null && statusesResp.length > 0) {
+        if (statusesResp.length > 0) {
             final Map<String, Long> statuses = Arrays.stream(statusesResp)
                     .collect(Collectors.toMap(RemoteRumaNotificationStatus::getId, RemoteRumaNotificationStatus::getVersion));
+            final ZonedDateTime middle = DateProvider.nowInHelsinki();
+
             log.info("Received {} traffic restriction notification statuses", statuses.size());
+
             final List<LocalRumaNotificationStatus> localTrafficRestrictionNotifications = localTrafficRestrictionNotificationService.getLocalTrafficRestrictionNotifications(statuses.keySet());
             addNewTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             updateTrafficRestrictionNotifications(statuses, localTrafficRestrictionNotifications);
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS);
+
+            final ZonedDateTime end = DateProvider.nowInHelsinki();
+            logUpdate(end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli(), "traffic-restriction-notification", statuses.size(), middle.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
         } else {
             log.error("Error retrieving traffic restriction notification statuses or received empty response");
         }
@@ -77,6 +88,7 @@ public class TrafficRestrictionNotificationUpdater {
                 updateTrafficRestrictionNotification(e.getKey(), new TreeSet<>(LongStream.rangeClosed(1, e.getValue()).boxed().collect(Collectors.toList())));
             }
         }
+
         log.info("Added {} new traffic restriction notifications", newTrafficRestrictionNotifications.size());
     }
 
