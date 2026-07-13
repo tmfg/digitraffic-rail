@@ -1,9 +1,11 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.locationtech.jts.geom.Point;
@@ -22,6 +24,8 @@ import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
+
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
 
 @Service
 public class TrainLocationUpdater {
@@ -58,14 +62,20 @@ public class TrainLocationUpdater {
         final IngestionMetrics metrics = new IngestionMetrics();
 
         try {
+            final ZonedDateTime start = DateProvider.nowInHelsinki();
             final String responseBody = fetchFromPala(metrics);
             final List<TrainLocation> trainLocations = deserialize(responseBody, metrics);
+            final ZonedDateTime middle = DateProvider.nowInHelsinki();
             countPositionTypes(trainLocations, metrics);
 
             final List<TrainLocation> filteredTrainLocations = filterTrains(trainLocations, metrics);
 
             publishToMqtt(filteredTrainLocations, metrics);
             trainLocationRepository.persist(filteredTrainLocations);
+
+            final ZonedDateTime end = DateProvider.nowInHelsinki();
+            logUpdate(end.toInstant().toEpochMilli() - start.toInstant().toEpochMilli(), "train-location", filteredTrainLocations.size(), middle.toInstant().toEpochMilli() - start.toInstant().toEpochMilli());
+
             metrics.recordsPersisted = filteredTrainLocations.size();
             lastUpdateService.update(LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS);
         } catch (final Exception e) {
