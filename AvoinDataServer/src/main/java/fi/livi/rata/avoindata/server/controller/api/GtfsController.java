@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
@@ -20,13 +20,13 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "trains")
 public class GtfsController {
-    private final GTFSRepository gtfsRepository;
+    private final GeneratedExportRepository gtfsRepository;
 
     private static final int CACHE_SECONDS_FOR_RT_LOCATIONS = 10;
     private static final int CACHE_SECONDS_FOR_RT_UPDATES = 60;
-    private static final int CACHE_SECONDS_FOR_STATIC = 60*15;
+    private static final int CACHE_SECONDS_FOR_STATIC = 60 * 15;
 
-    public GtfsController(final GTFSRepository gtfsRepository) {
+    public GtfsController(final GeneratedExportRepository gtfsRepository) {
         this.gtfsRepository = gtfsRepository;
     }
 
@@ -87,9 +87,10 @@ public class GtfsController {
     }
 
     private byte[] getData(final HttpServletResponse response, final String fileName) {
-        final GTFS gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
+        final GeneratedExport gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
 
-        response.addHeader("x-is-fresh", Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
+        response.addHeader("x-is-fresh",
+                Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
         response.addHeader("x-timestamp", gtfs.created.toString());
         response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(gtfs.data.length));
 

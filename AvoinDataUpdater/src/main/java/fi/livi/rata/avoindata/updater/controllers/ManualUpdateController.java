@@ -22,6 +22,8 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.hack.OldTrainService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -59,11 +61,18 @@ public class ManualUpdateController {
     @Autowired
     private OldTrainService oldTrainService;
 
+    @Autowired
+    private NeTExService netexService;
+
+    @Autowired
+    private NeTExCompositionService netexCompositionService;
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/reinitialize")
     @ResponseBody
-    public boolean reinitializeTrainsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
+    public boolean reinitializeTrainsOnADate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
         trainLockExecutor.executeInLock("manualReinitialize", () -> {
             logger.info("method=reinitializeTrainsOnADate Starting manual train update for day {}", date);
 
@@ -82,7 +91,8 @@ public class ManualUpdateController {
 
     @RequestMapping("/reinitialize-compositions")
     @ResponseBody
-    public boolean reinitializeCompositionsOnADate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
+    public boolean reinitializeCompositionsOnADate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date) {
         logger.info("method=reinitializeCompositionsOnADate Starting manual composition update for day {}", date);
 
         compositionRepository.removeByDepartureDate(date);
@@ -122,7 +132,10 @@ public class ManualUpdateController {
 
         final Predicate<Schedule> lambda = s -> true;
 
-        gtfsService.createGtfs(scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()), scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),"gtfs-test.zip",true);
+        gtfsService.createGtfs(
+                scheduleProviderService.getAdhocSchedules(start).stream().filter(lambda).collect(Collectors.toList()),
+                scheduleProviderService.getRegularSchedules(start).stream().filter(lambda).collect(Collectors.toList()),
+                "gtfs-test.zip", true);
         logger.info("method=generateDevGTFS End manual gtfs");
         return true;
     }
@@ -133,6 +146,34 @@ public class ManualUpdateController {
         logger.info("method=updateOldTrains Starting manual update");
         oldTrainService.updateOldTrains();
         logger.info("method=updateOldTrains End manual update");
+        return true;
+    }
+
+    @RequestMapping("/netex")
+    @ResponseBody
+    public boolean generateNeTEx() {
+        logger.info("method=generateNeTEx Starting manual NeTEx generation (timetables + compositions)");
+        netexService.generateNeTEx();
+        netexCompositionService.generateCompositions();
+        logger.info("method=generateNeTEx End manual NeTEx generation (timetables + compositions)");
+        return true;
+    }
+
+    @RequestMapping("/netex-timetables")
+    @ResponseBody
+    public boolean generateNeTExTimetables() {
+        logger.info("method=generateNeTExTimetables Starting manual NeTEx timetables generation");
+        netexService.generateNeTEx();
+        logger.info("method=generateNeTExTimetables End manual NeTEx timetables generation");
+        return true;
+    }
+
+    @RequestMapping("/netex-compositions")
+    @ResponseBody
+    public boolean generateNeTExCompositions() {
+        logger.info("method=generateNeTExCompositions Starting manual NeTEx compositions generation");
+        netexCompositionService.generateCompositions();
+        logger.info("method=generateNeTExCompositions End manual NeTEx compositions generation");
         return true;
     }
 }

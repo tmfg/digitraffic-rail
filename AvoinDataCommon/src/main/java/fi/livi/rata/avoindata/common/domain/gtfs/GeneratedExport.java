@@ -8,9 +8,10 @@ import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
-public class GTFS {
+@Table(name = "gtfs")
+public class GeneratedExport {
     @Lob
-    @Column(length=1024*1024*100)
+    @Column(length = 1024 * 1024 * 100)
     public byte[] data;
 
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
