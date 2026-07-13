@@ -33,6 +33,9 @@ import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 public class PalaYksikkoDeserializer {
     public static final int MAX_ACCURACY = 32000;
 
+    /** Cap for the offending-unit JSON snippet included in {@link PalaDeserializationException} (~2 KB). */
+    private static final int MAX_SAMPLE_JSON_LENGTH = 2048;
+
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -68,8 +71,11 @@ public class PalaYksikkoDeserializer {
                 continue;
             }
 
-            final TrainLocation trainLocation = deserializeUnit(node, koordinaatti);
-            result.add(trainLocation);
+            try {
+                result.add(deserializeUnit(node, koordinaatti));
+            } catch (final Exception e) {
+                throw new PalaDeserializationException(entry.getKey(), truncate(node.toString()), e);
+            }
         }
 
         return result;
@@ -116,6 +122,13 @@ public class PalaYksikkoDeserializer {
         }
 
         return trainLocation;
+    }
+
+    private static String truncate(final String json) {
+        if (json == null || json.length() <= MAX_SAMPLE_JSON_LENGTH) {
+            return json;
+        }
+        return json.substring(0, MAX_SAMPLE_JSON_LENGTH);
     }
 
     private static boolean hasLahdeKuplaWithKoordinaatti(final JsonNode lahdeKupla) {

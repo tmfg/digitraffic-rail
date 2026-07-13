@@ -183,8 +183,7 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
     @Test
     public void shouldConvertEpsg3067ToWgs84() throws Exception {
         // given — GPS fixture uses EPSG:3067 coordinates [380012.416714, 6736100.100908]
-        //         which are the same as the existing KUPLA test data and should produce the
-        //         same WGS84 result (verified in TrainLocationDeserializerTest)
+        //         which convert to a known WGS84 point via Wgs84ConversionService
         final String json = loadFixture("pala-yksikko-gps.json");
 
         // when
