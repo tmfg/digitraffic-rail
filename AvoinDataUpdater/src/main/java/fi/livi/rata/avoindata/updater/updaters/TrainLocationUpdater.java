@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.slf4j.Logger;
@@ -214,7 +215,7 @@ public class TrainLocationUpdater {
                     m.droppedOffTrack,
                     m.droppedTotal(),
                     m.positionsGps, m.positionsCalculated,
-                    String.format("%.2f", m.calculatedRatio()),
+                    String.format(Locale.ROOT, "%.2f", m.calculatedRatio()),
                     m.httpStatus, m.responseSizeBytes,
                     m.httpLatencyMs,
                     m.mqttSuccess, m.mqttLatencyMs);
