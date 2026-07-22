@@ -2,14 +2,16 @@ package fi.livi.rata.avoindata.updater.service.netex.peti;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Default PetiStopSource returning an empty list.
- * This is the Pass-2 bean — NeTEx generation works with zero PETI data.
- * Pass 3 replaces this with a real HTTP-backed source.
+ * Fallback PetiStopSource returning an empty list.
+ * Active when {@code updater.netex.peti.enabled=false} (local dev / test profiles
+ * that don't want HTTP calls). Otherwise CachingPetiStopSource is active by default.
  */
 @Component
+@ConditionalOnProperty(name = "updater.netex.peti.enabled", havingValue = "false")
 public class EmptyPetiStopSource implements PetiStopSource {
 
     @Override
