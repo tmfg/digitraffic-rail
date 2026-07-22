@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    version="1.0">
+  <PublicationTimestamp>2025-01-15T10:00:00Z</PublicationTimestamp>
+  <ParticipantRef>FSR</ParticipantRef>
+  <dataObjects>
+    <CompositeFrame id="FSR:CompositeFrame:1" version="1">
+      <frames>
+        <SiteFrame id="FSR:SiteFrame:1" version="1">
+          <stopPlaces>
+
+            <!-- StopPlace 1: Tervola (parent, uicCode 1000361, 2 quays with full accessibility) -->
+            <StopPlace id="FSR:StopPlace:1" version="1">
+              <Name>Tervola</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>uicCode</Key>
+                  <Value>1000361</Value>
+                </KeyValue>
+                <KeyValue>
+                  <Key>IS_PARENT_STOP_PLACE</Key>
+                  <Value>true</Value>
+                </KeyValue>
+                <KeyValue>
+                  <Key>peti_numeric_id</Key>
+                  <Value>42</Value>
+                </KeyValue>
+              </keyList>
+              <AccessibilityAssessment id="FSR:AccessibilityAssessment:1" version="1">
+                <limitations>
+                  <AccessibilityLimitation>
+                    <WheelchairAccess>true</WheelchairAccess>
+                    <StepFreeAccess>true</StepFreeAccess>
+                    <EscalatorFreeAccess>true</EscalatorFreeAccess>
+                    <LiftFreeAccess>true</LiftFreeAccess>
+                    <AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+                    <VisualSignsAvailable>true</VisualSignsAvailable>
+                  </AccessibilityLimitation>
+                </limitations>
+              </AccessibilityAssessment>
+              <quays>
+                <Quay id="FSR:Quay:7" version="1">
+                  <PublicCode>1</PublicCode>
+                  <AccessibilityAssessment id="FSR:AccessibilityAssessment:Q7" version="1">
+                    <limitations>
+                      <AccessibilityLimitation>
+                        <WheelchairAccess>true</WheelchairAccess>
+                        <StepFreeAccess>true</StepFreeAccess>
+                        <EscalatorFreeAccess>true</EscalatorFreeAccess>
+                        <LiftFreeAccess>true</LiftFreeAccess>
+                        <AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+                        <VisualSignsAvailable>true</VisualSignsAvailable>
+                      </AccessibilityLimitation>
+                    </limitations>
+                  </AccessibilityAssessment>
+                </Quay>
+                <Quay id="FSR:Quay:10" version="1">
+                  <PublicCode>2</PublicCode>
+                  <AccessibilityAssessment id="FSR:AccessibilityAssessment:Q10" version="1">
+                    <limitations>
+                      <AccessibilityLimitation>
+                        <WheelchairAccess>true</WheelchairAccess>
+                        <StepFreeAccess>true</StepFreeAccess>
+                        <EscalatorFreeAccess>true</EscalatorFreeAccess>
+                        <LiftFreeAccess>true</LiftFreeAccess>
+                        <AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+                        <VisualSignsAvailable>true</VisualSignsAvailable>
+                      </AccessibilityLimitation>
+                    </limitations>
+                  </AccessibilityAssessment>
+                </Quay>
+              </quays>
+            </StopPlace>
+
+            <!-- StopPlace 2: Child of Tervola (shares uicCode 1000361, not parent) -->
+            <StopPlace id="FSR:StopPlace:2" version="1">
+              <Name>Tervola laituri</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>uicCode</Key>
+                  <Value>1000361</Value>
+                </KeyValue>
+              </keyList>
+              <quays>
+                <Quay id="FSR:Quay:20" version="1">
+                  <PublicCode>1</PublicCode>
+                </Quay>
+              </quays>
+            </StopPlace>
+
+            <!-- StopPlace 3: No quays (uicCode 1000500) -->
+            <StopPlace id="FSR:StopPlace:99" version="1">
+              <Name>Testilä</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>uicCode</Key>
+                  <Value>1000500</Value>
+                </KeyValue>
+                <KeyValue>
+                  <Key>IS_PARENT_STOP_PLACE</Key>
+                  <Value>true</Value>
+                </KeyValue>
+              </keyList>
+            </StopPlace>
+
+            <!-- StopPlace 4: Mixed accessibility (uicCode 1000123) -->
+            <StopPlace id="FSR:StopPlace:50" version="1">
+              <Name>Sekalainen</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>uicCode</Key>
+                  <Value>1000123</Value>
+                </KeyValue>
+                <KeyValue>
+                  <Key>IS_PARENT_STOP_PLACE</Key>
+                  <Value>true</Value>
+                </KeyValue>
+              </keyList>
+              <AccessibilityAssessment id="FSR:AccessibilityAssessment:50" version="1">
+                <limitations>
+                  <AccessibilityLimitation>
+                    <WheelchairAccess>true</WheelchairAccess>
+                    <StepFreeAccess>false</StepFreeAccess>
+                    <EscalatorFreeAccess>true</EscalatorFreeAccess>
+                    <LiftFreeAccess>unknown</LiftFreeAccess>
+                    <AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+                    <VisualSignsAvailable>false</VisualSignsAvailable>
+                  </AccessibilityLimitation>
+                </limitations>
+              </AccessibilityAssessment>
+              <quays>
+                <Quay id="FSR:Quay:51" version="1">
+                  <PublicCode>1</PublicCode>
+                  <AccessibilityAssessment id="FSR:AccessibilityAssessment:Q51" version="1">
+                    <limitations>
+                      <AccessibilityLimitation>
+                        <WheelchairAccess>true</WheelchairAccess>
+                        <StepFreeAccess>false</StepFreeAccess>
+                        <EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+                        <LiftFreeAccess>unknown</LiftFreeAccess>
+                        <AudibleSignalsAvailable>false</AudibleSignalsAvailable>
+                        <VisualSignsAvailable>true</VisualSignsAvailable>
+                      </AccessibilityLimitation>
+                    </limitations>
+                  </AccessibilityAssessment>
+                </Quay>
+              </quays>
+            </StopPlace>
+
+            <!-- StopPlace 5: Malformed uicCode (should be skipped) -->
+            <StopPlace id="FSR:StopPlace:BAD" version="1">
+              <Name>Virheellinen</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>uicCode</Key>
+                  <Value>INVALID</Value>
+                </KeyValue>
+              </keyList>
+              <quays>
+                <Quay id="FSR:Quay:BAD1" version="1">
+                  <PublicCode>1</PublicCode>
+                </Quay>
+              </quays>
+            </StopPlace>
+
+            <!-- StopPlace 6: Missing uicCode entirely (should be skipped) -->
+            <StopPlace id="FSR:StopPlace:NOUIC" version="1">
+              <Name>Ei UIC-koodia</Name>
+              <keyList>
+                <KeyValue>
+                  <Key>someOtherKey</Key>
+                  <Value>someValue</Value>
+                </KeyValue>
+              </keyList>
+              <quays>
+                <Quay id="FSR:Quay:NOUIC1" version="1">
+                  <PublicCode>1</PublicCode>
+                </Quay>
+              </quays>
+            </StopPlace>
+
+          </stopPlaces>
+        </SiteFrame>
+      </frames>
+    </CompositeFrame>
+  </dataObjects>
+</PublicationDelivery>
