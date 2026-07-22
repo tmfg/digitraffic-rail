@@ -259,4 +259,18 @@ class NeTExIdGeneratorTest {
         // then
         assertEquals("DT:DatedVehicleJourney:59-2026-07-07", result);
     }
+
+    // --- Pass 2: PassengerStopAssignment ID ---
+
+    @Test
+    void givenStationShortCode_whenGeneratingPassengerStopAssignmentId_thenFollowsConvention() {
+        // given
+        final String stationShortCode = "HKI";
+
+        // when
+        final String result = idGenerator.passengerStopAssignmentId(stationShortCode);
+
+        // then
+        assertEquals("DT:PassengerStopAssignment:HKI", result);
+    }
 }

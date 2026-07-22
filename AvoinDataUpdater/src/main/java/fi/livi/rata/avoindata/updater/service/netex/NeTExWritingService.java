@@ -43,6 +43,7 @@ import org.rutebanken.netex.model.OperatingPeriodsInFrame_RelStructure;
 import org.rutebanken.netex.model.Operator;
 import org.rutebanken.netex.model.OperatorRefStructure;
 import org.rutebanken.netex.model.OrganisationsInFrame_RelStructure;
+import org.rutebanken.netex.model.PassengerStopAssignment;
 import org.rutebanken.netex.model.PointOnRoute;
 import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
 import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
@@ -63,6 +64,8 @@ import org.rutebanken.netex.model.ScheduledStopPointsInFrame_RelStructure;
 import org.rutebanken.netex.model.ServiceCalendarFrame;
 import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.ServiceJourney;
+import org.rutebanken.netex.model.StopAssignmentsInFrame_RelStructure;
+import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPointInJourneyPattern;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.TimetabledPassingTime;
@@ -176,10 +179,16 @@ public class NeTExWritingService {
                 .withId("DT:ResourceFrame:1")
                 .withVersion("1")
                 .withCodespaces(new Codespaces_RelStructure()
-                        .withCodespaceRefOrCodespace(new Codespace()
-                                .withId("dt")
-                                .withXmlns("DT")
-                                .withXmlnsUrl("https://rata.digitraffic.fi")))
+                        .withCodespaceRefOrCodespace(
+                                new Codespace()
+                                        .withId("dt")
+                                        .withXmlns("DT")
+                                        .withXmlnsUrl("https://rata.digitraffic.fi"),
+                                // FSR is PETI's/Fintraffic's codespace; we only reference it. PETI's own
+                                // NeTEx export declares no XmlnsUrl for FSR.
+                                new Codespace()
+                                        .withId("fsr")
+                                        .withXmlns("FSR")))
                 .withFrameDefaults(new VersionFrameDefaultsStructure()
                         .withDefaultLocale(new LocaleStructure()
                                 .withTimeZone("Europe/Helsinki")
@@ -299,6 +308,22 @@ public class NeTExWritingService {
                             .withPointsInSequence(pointsInSequence)));
         }
         frame.withJourneyPatterns(patternsStructure);
+
+        // Passenger stop assignments (PETI station linkage)
+        if (!stopsData.getStopAssignments().isEmpty()) {
+            final StopAssignmentsInFrame_RelStructure assignments = new StopAssignmentsInFrame_RelStructure();
+            for (final NeTExStopsData.NeTExStopAssignment a : stopsData.getStopAssignments()) {
+                assignments.getStopAssignment().add(FACTORY.createPassengerStopAssignment(
+                        new PassengerStopAssignment()
+                                .withId(a.id())
+                                .withVersion("1")
+                                .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
+                                        new ScheduledStopPointRefStructure().withRef(a.scheduledStopPointRef())))
+                                .withStopPlaceRef(FACTORY.createStopPlaceRef(
+                                        new StopPlaceRefStructure().withRef(a.stopPlaceRef())))));
+            }
+            frame.withStopAssignments(assignments);
+        }
 
         return frame;
     }

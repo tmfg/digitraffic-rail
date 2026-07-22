@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,9 @@ public class NeTExService {
     private static final Logger log = LoggerFactory.getLogger(NeTExService.class);
     private static final String NETEX_FILENAME = "netex-nordic-timetables.zip";
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
+
+    @Value("${updater.netex.peti.min-match-rate:0.95}")
+    private double minMatchRate = 0.95;
 
     private final NeTExEntityService entityService;
     private final NeTExCalendarService calendarService;
@@ -85,24 +89,33 @@ public class NeTExService {
             log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size());
 
-            final byte[] zip = generateNeTEx(adhocSchedules, regularSchedules, stations);
+            final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations);
 
             final long durationMs = System.currentTimeMillis() - startTime;
 
-            if (zip != null) {
+            if (result != null) {
                 final GeneratedExport export = new GeneratedExport();
-                export.data = zip;
+                export.data = result.zip();
                 export.created = ZonedDateTime.now();
                 export.fileName = NETEX_FILENAME;
                 generatedExportRepository.persist(List.of(export));
-                log.info("method=generateNeTEx persisted NeTEx ZIP, size={} bytes, durationMs={}", zip.length,
-                        durationMs);
+
+                final int petiTotal = result.matchedCount() + result.unmatchedCount();
+                final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
+                log.info("event=rail.netex.generation outcome=success duration_ms={} "
+                        + "scheduled_stop_points={} routes={} lines={} service_journeys={} "
+                        + "peti_stations_total={} peti_stations_matched={} peti_stations_unmatched={} "
+                        + "peti_match_rate={}",
+                        durationMs,
+                        result.scheduledStopPoints(), result.routes(), result.lines(), result.serviceJourneys(),
+                        petiTotal, result.matchedCount(), result.unmatchedCount(),
+                        String.format("%.4f", matchRate));
             } else {
-                log.warn("method=generateNeTEx no passenger schedules found, nothing persisted, durationMs={}",
-                        durationMs);
+                log.info("event=rail.netex.generation outcome=no_data duration_ms={}", durationMs);
             }
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
+            log.info("event=rail.netex.generation outcome=failed duration_ms={}", durationMs);
             log.error("method=generateNeTEx failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx generation failed", e);
         }
@@ -114,9 +127,9 @@ public class NeTExService {
      * train per day (same as GTFS gtfs-passenger.zip), builds all NeTEx
      * structures, writes ZIP.
      *
-     * @return ZIP content as byte array, or null if no schedules match
+     * @return generation result with ZIP and telemetry counts, or null if no schedules match
      */
-    public byte[] generateNeTEx(final List<Schedule> adhocSchedules,
+    public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
         // Filter to passenger trains first (matches GTFS gtfs-passenger.zip approach)
@@ -142,6 +155,17 @@ public class NeTExService {
         }
 
         final NeTExStopsData stopsData = stopsService.createStopsData(stations);
+
+        // Min-match-rate guard: only enforced when PETI source is non-empty
+        final int total = stopsData.matchedCount() + stopsData.unmatchedCount();
+        if (total > 0) {
+            final double rate = (double) stopsData.matchedCount() / total;
+            if (rate < minMatchRate) {
+                throw new IllegalStateException(
+                        "PETI match rate %.2f below threshold %.2f".formatted(rate, minMatchRate));
+            }
+        }
+
         final NeTExCalendarData calendarData = calendarService.createCalendarData(allFiltered);
         final NeTExRouteData routeData = routeService.createRouteData(allFiltered);
 
@@ -149,8 +173,12 @@ public class NeTExService {
         final var operators = entityService.createOperators(allFiltered);
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, calendarData, routeData);
 
-        return writingService.writeNeTExZip(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
-                ZonedDateTime.now());
+        final byte[] zip = writingService.writeNeTExZip(stopsData, routeData, calendarData, lines, operators,
+                serviceJourneys, ZonedDateTime.now());
+        return new NeTExGenerationResult(zip,
+                stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
+                lines.size(), serviceJourneys.size(),
+                stopsData.matchedCount(), stopsData.unmatchedCount());
     }
 
     /**
@@ -227,4 +255,10 @@ public class NeTExService {
         }
         return result;
     }
+
+    /**
+     * Holds the generation output and telemetry counts for the wide-event.
+     */
+    record NeTExGenerationResult(byte[] zip, int scheduledStopPoints, int routes, int lines,
+                                  int serviceJourneys, int matchedCount, int unmatchedCount) {}
 }

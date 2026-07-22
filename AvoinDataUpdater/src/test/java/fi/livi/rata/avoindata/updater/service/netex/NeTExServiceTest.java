@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -36,7 +37,7 @@ class NeTExServiceTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator);
+        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, new EmptyPetiStopSource());
         final NeTExWritingService writingService = new NeTExWritingService();
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
@@ -178,11 +179,11 @@ class NeTExServiceTest {
         final List<Station> stations = createStations(List.of("HKI", "TPE", "OL"));
 
         // when
-        final byte[] result = netExService.generateNeTEx(List.of(), List.of(schedule), stations);
+        final var result = netExService.generateNeTEx(List.of(), List.of(schedule), stations);
 
         // then
         assertNotNull(result);
-        assertTrue(result.length > 0);
+        assertTrue(result.zip().length > 0);
     }
 
     @Test
@@ -201,11 +202,11 @@ class NeTExServiceTest {
         final List<Station> stations = createStations(List.of("HKI", "TPE", "OL"));
 
         // when
-        final byte[] result = netExService.generateNeTEx(List.of(adhoc), List.of(regular), stations);
+        final var result = netExService.generateNeTEx(List.of(adhoc), List.of(regular), stations);
 
         // then: output should contain both ServiceJourneys
         assertNotNull(result);
-        assertTrue(result.length > 0);
+        assertTrue(result.zip().length > 0);
     }
 
     @Test
@@ -214,13 +215,13 @@ class NeTExServiceTest {
         final List<Station> stations = createStations(List.of("HKI"));
 
         // when
-        final byte[] result = netExService.generateNeTEx(List.of(), List.of(), stations);
+        final var result = netExService.generateNeTEx(List.of(), List.of(), stations);
 
         // then: graceful handling — null or empty but no exception
         // (implementation decides: null means "no output", or returns minimal valid
         // ZIP)
         // For now, just assert no exception was thrown
-        assertTrue(result == null || result.length >= 0);
+        assertTrue(result == null || result.zip().length >= 0);
     }
 
     // --- Helpers ---

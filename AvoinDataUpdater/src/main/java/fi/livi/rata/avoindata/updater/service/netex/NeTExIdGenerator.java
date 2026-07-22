@@ -74,4 +74,8 @@ public class NeTExIdGenerator {
         final String suffix = beginStation != null ? "-" + beginStation : "";
         return CODESPACE + ":DatedVehicleJourney:" + trainNumber + "-" + date + suffix;
     }
+
+    public String passengerStopAssignmentId(final String stationShortCode) {
+        return CODESPACE + ":PassengerStopAssignment:" + stationShortCode;
+    }
 }
