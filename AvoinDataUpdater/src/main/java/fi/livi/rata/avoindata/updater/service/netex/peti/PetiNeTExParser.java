@@ -22,7 +22,7 @@ import org.w3c.dom.NodeList;
  *   <li><b>Document-level failure</b> (malformed/truncated XML) throws {@link PetiParseException}, so the
  *       caller keeps the last-good snapshot rather than persisting partial/empty data.</li>
  *   <li><b>Individual StopPlace</b> with a missing or non-numeric uicCode is skipped (and left out of the
- *       result) rather than failing the whole parse, per TICKET-01 §8.</li>
+ *       result) rather than failing the whole parse</li>
  * </ul>
  */
 public class PetiNeTExParser {

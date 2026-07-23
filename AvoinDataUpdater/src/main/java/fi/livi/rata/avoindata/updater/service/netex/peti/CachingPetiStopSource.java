@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -35,6 +36,9 @@ public class CachingPetiStopSource implements PetiStopSource {
 
     private static final Logger log = LoggerFactory.getLogger(CachingPetiStopSource.class);
     private static final String STOPS_XML_ENTRY = "stops.xml";
+
+    /** Upper bound on decompressed stops.xml size — defence-in-depth against zip bombs (~170× real data). */
+    private static final long MAX_DECOMPRESSED_BYTES = 50L * 1024 * 1024;
 
     private final WebClient webClient;
     private final PetiNeTExParser parser;
@@ -91,10 +95,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             final List<PetiStop> parsed = parseZipBytes(zipBytes);
             final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
 
-            if (!parsed.isEmpty()) {
-                lastGood = List.copyOf(parsed);
-                lastSuccessfulFetch = Instant.now();
-            }
+            applySnapshot(parsed);
 
             final int quayCount = parsed.stream().mapToInt(s -> s.quays().size()).sum();
             lastFetchResult = PetiFetchResult.success(httpStatus, durationMs,
@@ -124,26 +125,22 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
-     * Parse a zip byte array: extract stops.xml entry and parse with PetiNeTExParser.
-     * On successful non-empty parse, atomically updates the lastGood snapshot.
-     * Package-private seam for unit testing without HTTP.
+     * Parse a zip byte array: extract stops.xml, guard its decompressed size, and parse
+     * with PetiNeTExParser. Pure function — does not mutate the cached snapshot; callers
+     * swap results in via {@link #applySnapshot(List)}. Package-private seam for unit
+     * testing without HTTP.
      *
      * @param zipBytes raw zip file content
      * @return parsed list of PetiStop records
-     * @throws PetiParseException if stops.xml cannot be parsed or is not found
+     * @throws PetiParseException if stops.xml is missing, unparseable, or exceeds the size cap
      */
     List<PetiStop> parseZipBytes(final byte[] zipBytes) {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (STOPS_XML_ENTRY.equals(entry.getName())) {
-                    final InputStream nonClosingStream = new NonClosingInputStream(zis);
-                    final List<PetiStop> parsed = parser.parse(nonClosingStream);
-                    if (!parsed.isEmpty()) {
-                        lastGood = List.copyOf(parsed);
-                        lastSuccessfulFetch = Instant.now();
-                    }
-                    return parsed;
+                    final byte[] xmlBytes = readWithSizeCap(zis);
+                    return parser.parse(new ByteArrayInputStream(xmlBytes));
                 }
             }
         } catch (final PetiParseException e) {
@@ -153,6 +150,39 @@ public class CachingPetiStopSource implements PetiStopSource {
         }
         throw new PetiParseException("stops.xml entry not found in zip",
                 new IllegalStateException("no stops.xml entry"));
+    }
+
+    /**
+     * Atomically swaps in a newly-parsed snapshot. Empty results are ignored so a failed
+     * or empty fetch never clobbers the last-good data. Package-private seam so tests can
+     * pre-load a snapshot without HTTP.
+     */
+    void applySnapshot(final List<PetiStop> parsed) {
+        if (!parsed.isEmpty()) {
+            lastGood = List.copyOf(parsed);
+            lastSuccessfulFetch = Instant.now();
+        }
+    }
+
+    /**
+     * Reads a zip entry fully into memory, aborting if the decompressed size exceeds
+     * {@link #MAX_DECOMPRESSED_BYTES} — defence-in-depth against zip bombs.
+     */
+    private static byte[] readWithSizeCap(final InputStream in) throws IOException {
+        final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        final byte[] chunk = new byte[8192];
+        long total = 0;
+        int read;
+        while ((read = in.read(chunk)) != -1) {
+            total += read;
+            if (total > MAX_DECOMPRESSED_BYTES) {
+                throw new PetiParseException(
+                        "Decompressed stops.xml exceeds size cap of " + MAX_DECOMPRESSED_BYTES + " bytes",
+                        new IllegalStateException("decompressed size cap exceeded"));
+            }
+            buffer.write(chunk, 0, read);
+        }
+        return buffer.toByteArray();
     }
 
     /**
@@ -176,32 +206,5 @@ public class CachingPetiStopSource implements PetiStopSource {
     /** Visible for testing. */
     String getPetiUrl() {
         return petiUrl;
-    }
-
-    /**
-     * InputStream wrapper that prevents ZipInputStream from being closed
-     * when the XML parser calls close() on the stream it was given.
-     */
-    private static final class NonClosingInputStream extends InputStream {
-        private final InputStream delegate;
-
-        NonClosingInputStream(final InputStream delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public int read() throws IOException {
-            return delegate.read();
-        }
-
-        @Override
-        public int read(final byte[] b, final int off, final int len) throws IOException {
-            return delegate.read(b, off, len);
-        }
-
-        @Override
-        public void close() {
-            // intentionally empty — do not close the underlying ZipInputStream
-        }
     }
 }

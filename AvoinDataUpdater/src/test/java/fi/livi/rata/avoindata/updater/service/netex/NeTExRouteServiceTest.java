@@ -40,7 +40,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         assertEquals(1, routeData.getRoutes().size());
@@ -57,7 +57,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: name is "{first} - {last}" station short codes (or names if available)
         final String routeName = routeData.getRoutes().get(0).name();
@@ -72,7 +72,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         assertTrue(routeData.getRoutes().get(0).id().startsWith("DT:Route:"));
@@ -85,7 +85,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         assertEquals("DT:Line:IC", routeData.getRoutes().get(0).lineRef());
@@ -97,7 +97,7 @@ class NeTExRouteServiceTest {
         final Schedule schedule = createScheduleWithMixedStops(1L, 59L, "IC", "Long-distance");
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: JourneyPattern has only commercial stops (3)
         assertEquals(1, routeData.getJourneyPatterns().size());
@@ -111,7 +111,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         assertTrue(routeData.getJourneyPatterns().get(0).id().startsWith("DT:JourneyPattern:"));
@@ -124,7 +124,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         final String routeId = routeData.getRoutes().get(0).id();
@@ -138,7 +138,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: first stop — cannot alight (it's the origin)
         final var firstStop = routeData.getJourneyPatterns().get(0).stopPoints().get(0);
@@ -152,7 +152,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: last stop — cannot board (it's the terminus)
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
@@ -167,7 +167,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: middle stop allows both
         final var middleStop = routeData.getJourneyPatterns().get(0).stopPoints().get(1);
@@ -182,7 +182,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then: first stop shows destination
         final var firstStop = routeData.getJourneyPatterns().get(0).stopPoints().get(0);
@@ -196,7 +196,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
@@ -212,7 +212,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
@@ -230,7 +230,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "OL"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule1, schedule2));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule1, schedule2));
 
         // then: only one JourneyPattern
         assertEquals(1, routeData.getJourneyPatterns().size());
@@ -246,7 +246,7 @@ class NeTExRouteServiceTest {
                 List.of("HKI", "TPE", "JY"));
 
         // when
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule1, schedule2));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule1, schedule2));
 
         // then
         assertEquals(2, routeData.getJourneyPatterns().size());

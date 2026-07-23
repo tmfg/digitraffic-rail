@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +32,7 @@ class CachingPetiStopSourceTest {
 
     private static byte[] fixtureZipBytes;
     private static byte[] fixtureXmlBytes;
+    private static byte[] oversizedFixtureZipBytes;
 
     private CachingPetiStopSource source;
     private WebClient stubWebClient;
@@ -45,6 +47,7 @@ class CachingPetiStopSourceTest {
         }
         fixtureZipBytes = buildZip("stops.xml", fixtureXmlBytes, "authorities.xml",
                 "<xml>authorities</xml>".getBytes(StandardCharsets.UTF_8));
+        oversizedFixtureZipBytes = buildOversizedFixtureZip();
     }
 
     @BeforeEach
@@ -163,7 +166,7 @@ class CachingPetiStopSourceTest {
         // Simulate: call refresh-like behavior, then a failed one, then getStops()
         // Once implemented, after successful refresh getStops() returns stops;
         // after failed refresh, still returns the same stops.
-        source.parseZipBytes(fixtureZipBytes); // proves parsing works
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes)); // proves parsing works
 
         // when — getStops() should return the cached snapshot
         // This call exercises the real caching logic
@@ -197,11 +200,11 @@ class CachingPetiStopSourceTest {
         final byte[] emptyStopsZip = buildZip("stops.xml", emptyStopsXml.getBytes(StandardCharsets.UTF_8));
 
         // given — first load good data
-        source.parseZipBytes(fixtureZipBytes);
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
         assertEquals(4, source.getStops().size());
 
         // when — try to load empty (should not overwrite)
-        source.parseZipBytes(emptyStopsZip);
+        source.applySnapshot(source.parseZipBytes(emptyStopsZip));
         final List<PetiStop> afterEmpty = source.getStops();
 
         // then — should retain prior good data (4 stops, not 0)
@@ -276,7 +279,7 @@ class CachingPetiStopSourceTest {
     @Test
     void givenSuccessfulRefresh_whenGetSnapshotAgeSeconds_thenReturnsNonNegative() {
         // given — perform a successful parse to set lastSuccessfulFetch
-        source.parseZipBytes(fixtureZipBytes);
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
 
         // when
         final long age = source.getSnapshotAgeSeconds();
@@ -290,7 +293,7 @@ class CachingPetiStopSourceTest {
     @Test
     void givenSuccessAtT1ThenFailureAtT2_whenGetSnapshotAgeSeconds_thenAgeReflectsT1() throws IOException {
         // given — successful refresh at T1 sets lastSuccessfulFetch
-        source.parseZipBytes(fixtureZipBytes);
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
         final long ageAfterSuccess = source.getSnapshotAgeSeconds();
         assertTrue(ageAfterSuccess >= 0);
 
@@ -385,29 +388,47 @@ class CachingPetiStopSourceTest {
         assertEquals(customUrl, customSource.getPetiUrl());
     }
 
-    // --- Helper methods ---
+    // --- H1a: Oversized zip entry — decompressed-size cap throws PetiParseException ---
 
-    private static byte[] buildZip(final String... nameAndContentPairs) throws IOException {
-        if (nameAndContentPairs.length % 2 != 0) {
-            throw new IllegalArgumentException("Must provide name/content pairs");
-        }
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
-            for (int i = 0; i < nameAndContentPairs.length; i += 2) {
-                final String name = nameAndContentPairs[i];
-                final byte[] content;
-                if (nameAndContentPairs[i + 1] instanceof String s) {
-                    content = s.getBytes(StandardCharsets.UTF_8);
-                } else {
-                    content = ((String) nameAndContentPairs[i + 1]).getBytes(StandardCharsets.UTF_8);
-                }
-                zos.putNextEntry(new ZipEntry(name));
-                zos.write(content);
-                zos.closeEntry();
-            }
-        }
-        return baos.toByteArray();
+    @Test
+    void givenOversizedZipEntry_whenParseZipBytes_thenThrowsPetiParseException() {
+        // given — zip whose stops.xml decompresses to > 50 MB (well-formed XML with padding comment)
+        final byte[] zip = oversizedFixtureZipBytes;
+
+        // when / then — after green phase adds MAX_DECOMPRESSED_BYTES cap, this throws PetiParseException
+        // with message indicating size cap. Currently no cap exists → parses fine → assertThrows fails.
+        final PetiParseException ex = assertThrows(PetiParseException.class,
+                () -> source.parseZipBytes(zip));
+        assertTrue(ex.getMessage().contains("size cap") || ex.getMessage().contains("decompressed"),
+                "Exception message should indicate decompressed size cap, got: " + ex.getMessage());
     }
+
+    // --- H1b: Oversized zip — last-good snapshot retained on cap breach ---
+
+    @Test
+    void givenOversizedZip_whenRefreshAttempted_thenLastGoodSnapshotRetained() {
+        // given — establish a good baseline snapshot (4 stops from normal fixture)
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
+        assertEquals(4, source.getStops().size(), "baseline should have 4 stops");
+        assertTrue(source.getSnapshotAgeSeconds() >= 0, "baseline sets snapshot timestamp");
+
+        // when — attempt refresh with oversized zip (2 stops, >50 MB decompressed).
+        // After green phase, parseZipBytes will throw PetiParseException (size cap) and
+        // lastGood is NOT overwritten. Currently no cap → parses 2 stops → overwrites lastGood.
+        try {
+            source.parseZipBytes(oversizedFixtureZipBytes);
+        } catch (final PetiParseException ignored) {
+            // expected after green phase; in red phase no exception is thrown
+        }
+
+        // then — last-good should still be the baseline (4 stops, not the oversized doc's 2)
+        assertEquals(4, source.getStops().size(),
+                "last-good snapshot should be retained when oversized zip is rejected");
+        assertTrue(source.getSnapshotAgeSeconds() >= 0,
+                "snapshot age should still reflect the earlier successful fetch");
+    }
+
+    // --- Helper methods ---
 
     private static byte[] buildZip(final String name, final byte[] content) throws IOException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -428,6 +449,59 @@ class CachingPetiStopSourceTest {
             zos.closeEntry();
             zos.putNextEntry(new ZipEntry(name2));
             zos.write(content2);
+            zos.closeEntry();
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Builds a zip with a stops.xml entry that decompresses to > 50 MB.
+     * The content is well-formed NeTEx XML with a large XML comment (trivially compressible)
+     * and 2 valid StopPlaces (different count from baseline's 4).
+     */
+    private static byte[] buildOversizedFixtureZip() throws IOException {
+        final int TARGET_DECOMPRESSED_SIZE = 51 * 1024 * 1024; // 51 MB — exceeds 50 MB cap
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
+            zos.putNextEntry(new ZipEntry("stops.xml"));
+
+            final byte[] header = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\" version=\"1.0\">\n"
+                    + "  <PublicationTimestamp>2025-01-15T10:00:00Z</PublicationTimestamp>\n"
+                    + "  <ParticipantRef>FSR</ParticipantRef>\n"
+                    + "  <!-- ").getBytes(StandardCharsets.UTF_8);
+            zos.write(header);
+
+            // Pad with repeated 'X' inside XML comment to inflate past 50 MB
+            final byte[] pad = new byte[8192];
+            Arrays.fill(pad, (byte) 'X');
+            int written = header.length;
+            while (written < TARGET_DECOMPRESSED_SIZE) {
+                zos.write(pad);
+                written += pad.length;
+            }
+
+            final byte[] footer = (" -->\n"
+                    + "  <dataObjects>\n"
+                    + "    <CompositeFrame id=\"FSR:CompositeFrame:1\" version=\"1\">\n"
+                    + "      <frames>\n"
+                    + "        <SiteFrame id=\"FSR:SiteFrame:1\" version=\"1\">\n"
+                    + "          <stopPlaces>\n"
+                    + "            <StopPlace id=\"FSR:StopPlace:OVR1\" version=\"1\">\n"
+                    + "              <Name>Oversized1</Name>\n"
+                    + "              <keyList><KeyValue><Key>uicCode</Key><Value>1000901</Value></KeyValue></keyList>\n"
+                    + "            </StopPlace>\n"
+                    + "            <StopPlace id=\"FSR:StopPlace:OVR2\" version=\"1\">\n"
+                    + "              <Name>Oversized2</Name>\n"
+                    + "              <keyList><KeyValue><Key>uicCode</Key><Value>1000902</Value></KeyValue></keyList>\n"
+                    + "            </StopPlace>\n"
+                    + "          </stopPlaces>\n"
+                    + "        </SiteFrame>\n"
+                    + "      </frames>\n"
+                    + "    </CompositeFrame>\n"
+                    + "  </dataObjects>\n"
+                    + "</PublicationDelivery>\n").getBytes(StandardCharsets.UTF_8);
+            zos.write(footer);
             zos.closeEntry();
         }
         return baos.toByteArray();

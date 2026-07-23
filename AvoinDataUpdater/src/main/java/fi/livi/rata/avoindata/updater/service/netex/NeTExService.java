@@ -106,7 +106,8 @@ public class NeTExService {
                 final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
                 log.info("event=rail.netex.generation outcome=success duration_ms={} "
                         + "scheduled_stop_points={} routes={} lines={} service_journeys={} "
-                        + "peti_stations_total={} peti_stations_matched={} peti_stations_unmatched={} "
+                        + "peti_stop_assignments_total={} peti_stop_assignments_matched={} "
+                        + "peti_stop_assignments_unmatched={} "
                         + "peti_match_rate={} "
                         + "quay_matched_count={} quay_unmatched_count={} quay_no_track_count={}",
                         durationMs,

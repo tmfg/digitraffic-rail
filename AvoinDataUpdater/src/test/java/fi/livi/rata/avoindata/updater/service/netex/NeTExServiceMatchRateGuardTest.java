@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
@@ -9,11 +11,18 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -24,6 +33,10 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for NeTExService match-rate guard logic.
@@ -127,6 +140,50 @@ class NeTExServiceMatchRateGuardTest {
         final double matchRate = (double) stopsData.matchedCount() /
                 (stopsData.matchedCount() + stopsData.unmatchedCount());
         assertEquals(0.8, matchRate, 0.001);
+    }
+
+    // --- B5: Telemetry field names use stop-assignment unit ---
+
+    @Test
+    void givenSuccessfulGeneration_whenLogEmitted_thenFieldNamesUseStopAssignmentUnit() throws Exception {
+        // given — wire a full NeTExService with mocked schedule/station/export repos
+        final List<PetiStop> petiStops = List.of(
+                new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()),
+                new PetiStop("FSR:StopPlace:2", 1_000_101, "TPE station", true, null, List.of()));
+        final NeTExService service = createServiceWithMockedRepos(() -> petiStops, 0.0,
+                List.of("HKI", "TPE"));
+
+        // given — attach Logback ListAppender to capture log output
+        final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logbackLogger.addAppender(appender);
+
+        try {
+            // when — trigger the no-arg generateNeTEx() which emits the wide event
+            service.generateNeTEx();
+
+            // then — find the rail.netex.generation event in captured log
+            final String generationLog = appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .filter(msg -> msg.contains("event=rail.netex.generation") && msg.contains("outcome=success"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError(
+                            "Expected rail.netex.generation success event in log, got: " + appender.list));
+
+            // then — green phase renames fields from "peti_stations_*" to "peti_stop_assignments_*"
+            // Currently the log uses peti_stations_total → this assertion FAILS in red phase
+            assertTrue(generationLog.contains("peti_stop_assignments_total="),
+                    "Log should contain 'peti_stop_assignments_total=' but was: " + generationLog);
+            assertTrue(generationLog.contains("peti_stop_assignments_matched="),
+                    "Log should contain 'peti_stop_assignments_matched=' but was: " + generationLog);
+            assertTrue(generationLog.contains("peti_stop_assignments_unmatched="),
+                    "Log should contain 'peti_stop_assignments_unmatched=' but was: " + generationLog);
+            assertFalse(generationLog.contains("peti_stations_total="),
+                    "Log should NOT contain legacy 'peti_stations_total=' but was: " + generationLog);
+        } finally {
+            logbackLogger.detachAppender(appender);
+        }
     }
 
     // --- Helpers ---
@@ -242,5 +299,47 @@ class NeTExServiceMatchRateGuardTest {
         }
 
         return schedule;
+    }
+
+    /**
+     * Creates a NeTExService wired with mocked ScheduleProviderService, StationRepository,
+     * and GeneratedExportRepository — suitable for testing the no-arg generateNeTEx()
+     * which emits the wide-event log.
+     */
+    @SuppressWarnings("unchecked")
+    private NeTExService createServiceWithMockedRepos(final PetiStopSource petiSource,
+            final double threshold, final List<String> stationCodes) throws Exception {
+        final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+        final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
+        final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
+        final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
+        final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
+        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
+        final NeTExWritingService writingService = new NeTExWritingService();
+        final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
+
+        final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
+        final StationRepository stationRepository = mock(StationRepository.class);
+        final GeneratedExportRepository generatedExportRepository = mock(GeneratedExportRepository.class);
+
+        // Set up schedule provider to return a single regular schedule spanning today
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", stationCodes);
+        when(scheduleProviderService.getAdhocSchedules(any())).thenReturn(List.of());
+        when(scheduleProviderService.getRegularSchedules(any())).thenReturn(List.of(schedule));
+
+        // Set up station repository to return matching stations
+        final List<Station> stations = createStations(stationCodes);
+        when(stationRepository.findAll()).thenReturn(stations);
+
+        final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
+                writingService, scheduleProviderService, todaysScheduleService, stationRepository,
+                generatedExportRepository);
+
+        // Set minMatchRate via reflection
+        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
+        field.setAccessible(true);
+        field.setDouble(service, threshold);
+
+        return service;
     }
 }

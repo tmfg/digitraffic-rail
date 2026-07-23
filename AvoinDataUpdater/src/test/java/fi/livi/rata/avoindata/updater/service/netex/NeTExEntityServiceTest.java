@@ -162,7 +162,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(12345L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -178,7 +178,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createAdhocSchedule(200L, 59L, "IC", LocalDate.of(2026, 6, 25));
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -194,7 +194,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -209,7 +209,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -224,7 +224,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -240,7 +240,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -255,7 +255,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -270,7 +270,7 @@ class NeTExEntityServiceTest {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -289,7 +289,7 @@ class NeTExEntityServiceTest {
         schedule.endDate = LocalDate.of(2026, 12, 14);
 
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -307,7 +307,7 @@ class NeTExEntityServiceTest {
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         setTracksOnSchedule(schedule, List.of("4", "1", "2"));
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -329,7 +329,7 @@ class NeTExEntityServiceTest {
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         setTracksOnSchedule(schedule, Arrays.asList("4", null, "2"));
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =
@@ -347,7 +347,7 @@ class NeTExEntityServiceTest {
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         setTracksOnSchedule(schedule, List.of("4", "1", "2"));
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
         final List<NeTExEntityService.NeTExServiceJourney> journeys =

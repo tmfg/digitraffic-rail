@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -104,8 +103,14 @@ class PetiStopSourceBeanWiringTest {
     /**
      * Minimal test configuration providing the beans needed for CachingPetiStopSource
      * without starting the full application context.
+     *
+     * <p>Deliberately NOT annotated with {@code @Configuration}/{@code @TestConfiguration}:
+     * {@code DatabaseUpdaterApplication} declares an explicit {@code @ComponentScan} that does
+     * not carry the {@code TypeExcludeFilter}, so any stereotype-annotated nested config in the
+     * scanned package leaks into every {@code @SpringBootTest} context (a {@code webClient} bean
+     * clash). As a plain class it is invisible to component scanning while still being processed
+     * as a lite configuration by {@code ApplicationContextRunner.withUserConfiguration(...)}.
      */
-    @Configuration
     @Import({CachingPetiStopSource.class, EmptyPetiStopSource.class})
     static class TestConfig {
 

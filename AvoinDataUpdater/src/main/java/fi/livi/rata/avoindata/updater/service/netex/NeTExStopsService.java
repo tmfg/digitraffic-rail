@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,44 +70,26 @@ public class NeTExStopsService {
                 continue;
             }
 
-            final String track = pair.commercialTrack();
-            final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), track);
-
-            stopPoints.add(new NeTExStopsData.NeTExScheduledStopPoint(
-                    sspId, station.name, station.shortCode, station.latitude, station.longitude));
-
-            if (seenStations.add(pair.stationShortCode())) {
-                routePoints.add(new NeTExStopsData.NeTExRoutePoint(
-                        idGenerator.routePointId(station.shortCode), station.shortCode));
-                destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
-                        idGenerator.destinationDisplayId(station.shortCode), station.name));
-            }
+            stopPoints.add(buildScheduledStopPoint(pair, station));
+            addStationLevelArtifacts(station, seenStations, routePoints, destinationDisplays);
 
             if (!petiSourceEmpty) {
-                final Optional<PetiStop> petiMatch = matcher.match(station.uicCode);
-                if (petiMatch.isPresent()) {
-                    matchedCount++;
-                    final PetiStop matched = petiMatch.get();
-                    final String assignmentId = idGenerator.passengerStopAssignmentId(pair.stationShortCode(), track);
-
-                    if (track == null || track.isBlank()) {
-                        quayNoTrackCount++;
-                        stopAssignments.add(new NeTExStopsData.NeTExStopAssignment(
-                                assignmentId, sspId, matched.stopPlaceId(), null));
-                    } else {
-                        final Optional<PetiQuay> quay = matched.resolveQuay(track);
-                        if (quay.isPresent()) {
-                            quayMatchedCount++;
-                            stopAssignments.add(new NeTExStopsData.NeTExStopAssignment(
-                                    assignmentId, sspId, matched.stopPlaceId(), quay.get().quayId()));
-                        } else {
-                            quayUnmatchedCount++;
-                            stopAssignments.add(new NeTExStopsData.NeTExStopAssignment(
-                                    assignmentId, sspId, matched.stopPlaceId(), null));
-                        }
+                final AssignmentResult result = buildAssignment(pair, station, matcher);
+                result.assignment().ifPresent(stopAssignments::add);
+                switch (result.outcome()) {
+                    case MATCHED_QUAY -> {
+                        matchedCount++;
+                        quayMatchedCount++;
                     }
-                } else {
-                    unmatchedCount++;
+                    case MATCHED_NO_QUAY -> {
+                        matchedCount++;
+                        quayUnmatchedCount++;
+                    }
+                    case MATCHED_NO_TRACK -> {
+                        matchedCount++;
+                        quayNoTrackCount++;
+                    }
+                    case UNMATCHED -> unmatchedCount++;
                 }
             }
         }
@@ -114,6 +97,62 @@ public class NeTExStopsService {
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,
                 stopAssignments, matchedCount, unmatchedCount,
                 quayMatchedCount, quayUnmatchedCount, quayNoTrackCount);
+    }
+
+    private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
+            final Station station) {
+        final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), pair.commercialTrack());
+        return new NeTExStopsData.NeTExScheduledStopPoint(
+                sspId, station.name, station.shortCode, station.latitude, station.longitude);
+    }
+
+    private void addStationLevelArtifacts(final Station station, final Set<String> seenStations,
+            final List<NeTExStopsData.NeTExRoutePoint> routePoints,
+            final List<NeTExStopsData.NeTExDestinationDisplay> destinationDisplays) {
+        if (seenStations.add(station.shortCode)) {
+            routePoints.add(new NeTExStopsData.NeTExRoutePoint(
+                    idGenerator.routePointId(station.shortCode), station.shortCode));
+            destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
+                    idGenerator.destinationDisplayId(station.shortCode), station.name));
+        }
+    }
+
+    private AssignmentResult buildAssignment(final StationTrackPair pair, final Station station,
+            final PetiUicMatcher matcher) {
+        final Optional<PetiStop> petiMatch = matcher.match(station.uicCode);
+        if (petiMatch.isEmpty()) {
+            return new AssignmentResult(Optional.empty(), MatchOutcome.UNMATCHED);
+        }
+
+        final PetiStop matched = petiMatch.get();
+        final String track = pair.commercialTrack();
+        final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), track);
+        final String assignmentId = idGenerator.passengerStopAssignmentId(pair.stationShortCode(), track);
+
+        if (track == null || track.isBlank()) {
+            return new AssignmentResult(
+                    Optional.of(new NeTExStopsData.NeTExStopAssignment(
+                            assignmentId, sspId, matched.stopPlaceId(), null)),
+                    MatchOutcome.MATCHED_NO_TRACK);
+        }
+
+        final Optional<PetiQuay> quay = matched.resolveQuay(track);
+        if (quay.isPresent()) {
+            return new AssignmentResult(
+                    Optional.of(new NeTExStopsData.NeTExStopAssignment(
+                            assignmentId, sspId, matched.stopPlaceId(), quay.get().quayId())),
+                    MatchOutcome.MATCHED_QUAY);
+        }
+
+        return new AssignmentResult(
+                Optional.of(new NeTExStopsData.NeTExStopAssignment(
+                        assignmentId, sspId, matched.stopPlaceId(), null)),
+                MatchOutcome.MATCHED_NO_QUAY);
+    }
+
+    private enum MatchOutcome { MATCHED_QUAY, MATCHED_NO_QUAY, MATCHED_NO_TRACK, UNMATCHED }
+
+    private record AssignmentResult(Optional<NeTExStopsData.NeTExStopAssignment> assignment, MatchOutcome outcome) {
     }
 
     /**
