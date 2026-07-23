@@ -267,14 +267,14 @@ public class NeTExWritingService {
                         .withVersion("1")
                         .withOrder(BigInteger.valueOf(order))
                         .withPointRef(FACTORY.createRoutePointRef(
-                                new RoutePointRefStructure().withRef(ref))));
+                                new RoutePointRefStructure().withRef(ref).withVersion("1"))));
                 order++;
             }
             routesStructure.getRoute_().add(FACTORY.createRoute(new Route()
                     .withId(route.id())
                     .withVersion("1")
                     .withName(new MultilingualString().withValue(route.name()))
-                    .withLineRef(FACTORY.createLineRef(new LineRefStructure().withRef(route.lineRef())))
+                    .withLineRef(FACTORY.createLineRef(new LineRefStructure().withRef(route.lineRef()).withVersion("1")))
                     .withPointsInSequence(new PointsOnRoute_RelStructure().withPointOnRoute(points))));
         }
         frame.withRoutes(routesStructure);
@@ -289,12 +289,12 @@ public class NeTExWritingService {
                         .withVersion("1")
                         .withOrder(BigInteger.valueOf(sp.order()))
                         .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
-                                new ScheduledStopPointRefStructure().withRef(sp.scheduledStopPointRef())))
+                                new ScheduledStopPointRefStructure().withRef(sp.scheduledStopPointRef()).withVersion("1")))
                         .withForBoarding(sp.forBoarding())
                         .withForAlighting(sp.forAlighting());
                 if (sp.destinationDisplayRef() != null) {
                     spijp.withDestinationDisplayRef(
-                            new DestinationDisplayRefStructure().withRef(sp.destinationDisplayRef()));
+                            new DestinationDisplayRefStructure().withRef(sp.destinationDisplayRef()).withVersion("1"));
                 }
                 stops.add(spijp);
             }
@@ -305,7 +305,7 @@ public class NeTExWritingService {
                     FACTORY.createJourneyPattern(new JourneyPattern()
                             .withId(pattern.id())
                             .withVersion("1")
-                            .withRouteRef(new RouteRefStructure().withRef(pattern.routeRef()))
+                            .withRouteRef(new RouteRefStructure().withRef(pattern.routeRef()).withVersion("1"))
                             .withPointsInSequence(pointsInSequence)));
         }
         frame.withJourneyPatterns(patternsStructure);
@@ -318,7 +318,7 @@ public class NeTExWritingService {
                         .withId(a.id())
                         .withVersion("1")
                         .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
-                                new ScheduledStopPointRefStructure().withRef(a.scheduledStopPointRef())))
+                                new ScheduledStopPointRefStructure().withRef(a.scheduledStopPointRef()).withVersion("1")))
                         .withStopPlaceRef(FACTORY.createStopPlaceRef(
                                 new StopPlaceRefStructure().withRef(a.stopPlaceRef())));
                 if (a.quayRef() != null) {
@@ -364,10 +364,10 @@ public class NeTExWritingService {
                     .withVersion("1")
                     .withOrder(BigInteger.valueOf(assignmentOrder))
                     .withDayTypeRef(FACTORY.createDayTypeRef(
-                            new DayTypeRefStructure().withRef(dta.getDayTypeId())));
+                            new DayTypeRefStructure().withRef(dta.getDayTypeId()).withVersion("1")));
             if (dta.getOperatingPeriodId() != null) {
                 assignment.withOperatingPeriodRef(FACTORY.createOperatingPeriodRef(
-                        new OperatingPeriodRefStructure().withRef(dta.getOperatingPeriodId())));
+                        new OperatingPeriodRefStructure().withRef(dta.getOperatingPeriodId()).withVersion("1")));
             }
             if (dta.getDate() != null) {
                 assignment.withDate(dta.getDate().atStartOfDay());
@@ -427,11 +427,11 @@ public class NeTExWritingService {
                 .withPrivateCode(new PrivateCodeStructure().withValue(sj.privateCode()))
                 .withDayTypes(new DayTypeRefs_RelStructure()
                         .withDayTypeRef(FACTORY.createDayTypeRef(
-                                new DayTypeRefStructure().withRef(sj.dayTypeRef()))))
+                                new DayTypeRefStructure().withRef(sj.dayTypeRef()).withVersion("1"))))
                 .withJourneyPatternRef(FACTORY.createJourneyPatternRef(
-                        new JourneyPatternRefStructure().withRef(sj.journeyPatternRef())))
-                .withOperatorRef(new OperatorRefStructure().withRef(sj.operatorRef()))
-                .withLineRef(FACTORY.createLineRef(new LineRefStructure().withRef(sj.lineRef())))
+                        new JourneyPatternRefStructure().withRef(sj.journeyPatternRef()).withVersion("1")))
+                .withOperatorRef(new OperatorRefStructure().withRef(sj.operatorRef()).withVersion("1"))
+                .withLineRef(FACTORY.createLineRef(new LineRefStructure().withRef(sj.lineRef()).withVersion("1")))
                 .withPassingTimes(new TimetabledPassingTimes_RelStructure()
                         .withTimetabledPassingTime(passingTimes));
     }
