@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -252,6 +253,88 @@ class NeTExRouteServiceTest {
         assertNotEquals(routeData.getJourneyPatternIdForSchedule(1L), routeData.getJourneyPatternIdForSchedule(2L));
     }
 
+    // --- Pass 2b: Track-qualified journey pattern scenarios ---
+
+    @Test
+    void givenScheduleWithTracks_whenCreatingTrackAwareRouteData_thenStopRefsAreTrackQualified() {
+        // given — schedule with stops HKI (track "4"), TPE (track "1"), OL (track "2")
+        final Schedule schedule = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then — journey pattern stop refs are track-qualified
+        final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
+        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("DT:ScheduledStopPoint:TPE-1", stops.get(1).scheduledStopPointRef());
+        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+    }
+
+    @Test
+    void givenScheduleWithNullTrack_whenCreatingTrackAwareRouteData_thenFallsBackToStationLevel() {
+        // given — HKI track "4", TPE track null, OL track "2"
+        final Schedule schedule = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), Arrays.asList("4", null, "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then — TPE falls back to station-level SSP
+        final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
+        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("DT:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
+        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+    }
+
+    @Test
+    void givenTwoTrainsSameStationsDifferentTracks_whenCreatingTrackAwareRouteData_thenSeparatePatterns() {
+        // given — same stations, different tracks at HKI
+        final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("6", "1", "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule1, schedule2));
+
+        // then — two distinct journey patterns (hash differs due to track at HKI)
+        assertEquals(2, routeData.getJourneyPatterns().size());
+        assertNotEquals(routeData.getJourneyPatternIdForSchedule(1L), routeData.getJourneyPatternIdForSchedule(2L));
+    }
+
+    @Test
+    void givenTwoTrainsSameStationsAndTracks_whenCreatingTrackAwareRouteData_thenSharePattern() {
+        // given — same stations AND same tracks
+        final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule1, schedule2));
+
+        // then — they share one journey pattern
+        assertEquals(1, routeData.getJourneyPatterns().size());
+        assertEquals(routeData.getJourneyPatternIdForSchedule(1L), routeData.getJourneyPatternIdForSchedule(2L));
+    }
+
+    @Test
+    void givenTrackedSchedule_whenCreatingTrackAwareRouteData_thenRoutePointsRemainStationLevel() {
+        // given — schedule with track-qualified stops
+        final Schedule schedule = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then — route points are STILL station-level (not track-qualified)
+        final var routePointRefs = routeData.getRoutes().get(0).routePointRefs();
+        assertEquals("DT:RoutePoint:HKI", routePointRefs.get(0));
+        assertEquals("DT:RoutePoint:TPE", routePointRefs.get(1));
+        assertEquals("DT:RoutePoint:OL", routePointRefs.get(2));
+    }
+
     // --- Helpers ---
 
     private Schedule createScheduleWithStops(final long id, final long trainNumber, final String trainTypeName,
@@ -328,6 +411,17 @@ class NeTExRouteServiceTest {
             pslRow.departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
         }
 
+        return schedule;
+    }
+
+    private Schedule createScheduleWithTrackedStops(final long id, final long trainNumber,
+                                                     final String trainTypeName, final String categoryName,
+                                                     final List<String> stationCodes, final List<String> tracks) {
+        final Schedule schedule = createScheduleWithStops(id, trainNumber, trainTypeName, categoryName, stationCodes);
+        // Assign commercial tracks to each ScheduleRow
+        for (int i = 0; i < schedule.scheduleRows.size(); i++) {
+            schedule.scheduleRows.get(i).commercialTrack = tracks.get(i);
+        }
         return schedule;
     }
 }

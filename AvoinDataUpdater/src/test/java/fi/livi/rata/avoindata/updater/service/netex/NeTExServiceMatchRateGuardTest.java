@@ -118,7 +118,7 @@ class NeTExServiceMatchRateGuardTest {
         }
 
         // when
-        final NeTExStopsData stopsData = stopsService.createStopsData(stations);
+        final NeTExStopsData stopsData = stopsService.createStopsData(stations, nullTrackPairs(stations));
 
         // then
         assertEquals(8, stopsData.matchedCount());
@@ -130,6 +130,12 @@ class NeTExServiceMatchRateGuardTest {
     }
 
     // --- Helpers ---
+
+    private static List<NeTExStopsService.StationTrackPair> nullTrackPairs(final List<Station> stations) {
+        return stations.stream()
+                .map(s -> new NeTExStopsService.StationTrackPair(s.shortCode, null))
+                .toList();
+    }
 
     private NeTExService createServiceWithPetiSource(final PetiStopSource petiSource, final double threshold) {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();

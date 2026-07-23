@@ -5,6 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
  * Orchestrates NeTEx generation: fetches data, invokes sub-services, persists
@@ -105,11 +107,13 @@ public class NeTExService {
                 log.info("event=rail.netex.generation outcome=success duration_ms={} "
                         + "scheduled_stop_points={} routes={} lines={} service_journeys={} "
                         + "peti_stations_total={} peti_stations_matched={} peti_stations_unmatched={} "
-                        + "peti_match_rate={}",
+                        + "peti_match_rate={} "
+                        + "quay_matched_count={} quay_unmatched_count={} quay_no_track_count={}",
                         durationMs,
                         result.scheduledStopPoints(), result.routes(), result.lines(), result.serviceJourneys(),
                         petiTotal, result.matchedCount(), result.unmatchedCount(),
-                        String.format("%.4f", matchRate));
+                        String.format("%.4f", matchRate),
+                        result.quayMatchedCount(), result.quayUnmatchedCount(), result.quayNoTrackCount());
             } else {
                 log.info("event=rail.netex.generation outcome=no_data duration_ms={}", durationMs);
             }
@@ -154,7 +158,8 @@ public class NeTExService {
             return null;
         }
 
-        final NeTExStopsData stopsData = stopsService.createStopsData(stations);
+        final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
+        final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
 
         // Min-match-rate guard: only enforced when PETI source is non-empty
         final int total = stopsData.matchedCount() + stopsData.unmatchedCount();
@@ -167,7 +172,7 @@ public class NeTExService {
         }
 
         final NeTExCalendarData calendarData = calendarService.createCalendarData(allFiltered);
-        final NeTExRouteData routeData = routeService.createRouteData(allFiltered);
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(allFiltered);
 
         final var lines = entityService.createLines(allFiltered);
         final var operators = entityService.createOperators(allFiltered);
@@ -178,7 +183,8 @@ public class NeTExService {
         return new NeTExGenerationResult(zip,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
                 lines.size(), serviceJourneys.size(),
-                stopsData.matchedCount(), stopsData.unmatchedCount());
+                stopsData.matchedCount(), stopsData.unmatchedCount(),
+                stopsData.quayMatchedCount(), stopsData.quayUnmatchedCount(), stopsData.quayNoTrackCount());
     }
 
     /**
@@ -257,8 +263,24 @@ public class NeTExService {
     }
 
     /**
+     * Extracts unique (stationShortCode, commercialTrack) pairs from schedule rows.
+     */
+    private List<NeTExStopsService.StationTrackPair> extractStationTrackPairs(final List<Schedule> schedules) {
+        final var seen = new LinkedHashSet<NeTExStopsService.StationTrackPair>();
+        for (final Schedule schedule : schedules) {
+            for (final ScheduleRow row : schedule.scheduleRows) {
+                seen.add(new NeTExStopsService.StationTrackPair(
+                        row.station.stationShortCode, row.commercialTrack));
+            }
+        }
+        return new ArrayList<>(seen);
+    }
+
+    /**
      * Holds the generation output and telemetry counts for the wide-event.
      */
     record NeTExGenerationResult(byte[] zip, int scheduledStopPoints, int routes, int lines,
-                                  int serviceJourneys, int matchedCount, int unmatchedCount) {}
+                                  int serviceJourneys, int matchedCount, int unmatchedCount,
+                                  int quayMatchedCount, int quayUnmatchedCount, int quayNoTrackCount) {
+    }
 }

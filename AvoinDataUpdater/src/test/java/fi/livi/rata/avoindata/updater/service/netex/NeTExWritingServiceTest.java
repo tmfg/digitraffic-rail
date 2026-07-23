@@ -305,7 +305,7 @@ class NeTExWritingServiceTest {
                 "DT:ServiceJourney:59-12345", "IC 59", "59",
                 "DT:JourneyPattern:IC-abc", "DT:Operator:vr", "DT:Line:IC",
                 "DT:DayType:MoTuWeThFr-20260615-20261214",
-                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00"))));
+                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null))));
 
         return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));

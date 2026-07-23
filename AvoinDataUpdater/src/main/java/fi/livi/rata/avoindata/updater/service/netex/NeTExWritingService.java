@@ -51,6 +51,7 @@ import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PropertiesOfDay_RelStructure;
 import org.rutebanken.netex.model.PropertyOfDay;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.QuayRefStructure;
 import org.rutebanken.netex.model.ResourceFrame;
 import org.rutebanken.netex.model.Route;
 import org.rutebanken.netex.model.RoutePoint;
@@ -313,14 +314,18 @@ public class NeTExWritingService {
         if (!stopsData.getStopAssignments().isEmpty()) {
             final StopAssignmentsInFrame_RelStructure assignments = new StopAssignmentsInFrame_RelStructure();
             for (final NeTExStopsData.NeTExStopAssignment a : stopsData.getStopAssignments()) {
-                assignments.getStopAssignment().add(FACTORY.createPassengerStopAssignment(
-                        new PassengerStopAssignment()
-                                .withId(a.id())
-                                .withVersion("1")
-                                .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
-                                        new ScheduledStopPointRefStructure().withRef(a.scheduledStopPointRef())))
-                                .withStopPlaceRef(FACTORY.createStopPlaceRef(
-                                        new StopPlaceRefStructure().withRef(a.stopPlaceRef())))));
+                final PassengerStopAssignment psa = new PassengerStopAssignment()
+                        .withId(a.id())
+                        .withVersion("1")
+                        .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
+                                new ScheduledStopPointRefStructure().withRef(a.scheduledStopPointRef())))
+                        .withStopPlaceRef(FACTORY.createStopPlaceRef(
+                                new StopPlaceRefStructure().withRef(a.stopPlaceRef())));
+                if (a.quayRef() != null) {
+                    psa.withQuayRef(FACTORY.createQuayRef(
+                            new QuayRefStructure().withRef(a.quayRef())));
+                }
+                assignments.getStopAssignment().add(FACTORY.createPassengerStopAssignment(psa));
             }
             frame.withStopAssignments(assignments);
         }

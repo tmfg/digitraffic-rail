@@ -38,6 +38,17 @@ public class NeTExIdGenerator {
         return CODESPACE + ":ScheduledStopPoint:" + stationShortCode;
     }
 
+    /**
+     * Track-qualified SSP ID: DT:ScheduledStopPoint:{shortCode}-{track}.
+     * Falls back to station-level when track is null or blank.
+     */
+    public String scheduledStopPointId(final String stationShortCode, final String track) {
+        if (track == null || track.isBlank()) {
+            return scheduledStopPointId(stationShortCode);
+        }
+        return CODESPACE + ":ScheduledStopPoint:" + stationShortCode + "-" + track;
+    }
+
     public String journeyPatternId(final String lineId, final String hash) {
         return CODESPACE + ":JourneyPattern:" + lineId + "-" + hash;
     }
@@ -77,5 +88,16 @@ public class NeTExIdGenerator {
 
     public String passengerStopAssignmentId(final String stationShortCode) {
         return CODESPACE + ":PassengerStopAssignment:" + stationShortCode;
+    }
+
+    /**
+     * Track-qualified PassengerStopAssignment ID.
+     * Falls back to station-level when track is null or blank.
+     */
+    public String passengerStopAssignmentId(final String stationShortCode, final String track) {
+        if (track == null || track.isBlank()) {
+            return passengerStopAssignmentId(stationShortCode);
+        }
+        return CODESPACE + ":PassengerStopAssignment:" + stationShortCode + "-" + track;
     }
 }

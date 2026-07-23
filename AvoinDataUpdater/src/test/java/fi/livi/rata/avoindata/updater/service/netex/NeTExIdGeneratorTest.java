@@ -273,4 +273,56 @@ class NeTExIdGeneratorTest {
         // then
         assertEquals("DT:PassengerStopAssignment:HKI", result);
     }
+
+    // --- Pass 2b: Track-qualified IDs ---
+
+    @Test
+    void givenStationAndTrack_whenGeneratingScheduledStopPointId_thenReturnsTrackQualifiedId() {
+        // given
+        final String shortCode = "HKI";
+        final String track = "4";
+
+        // when
+        final String result = idGenerator.scheduledStopPointId(shortCode, track);
+
+        // then
+        assertEquals("DT:ScheduledStopPoint:HKI-4", result);
+    }
+
+    @Test
+    void givenStationAndNullTrack_whenGeneratingScheduledStopPointId_thenReturnsStationLevelId() {
+        // given
+        final String shortCode = "HKI";
+
+        // when
+        final String result = idGenerator.scheduledStopPointId(shortCode, null);
+
+        // then
+        assertEquals("DT:ScheduledStopPoint:HKI", result);
+    }
+
+    @Test
+    void givenStationAndBlankTrack_whenGeneratingScheduledStopPointId_thenReturnsStationLevelId() {
+        // given
+        final String shortCode = "HKI";
+
+        // when
+        final String result = idGenerator.scheduledStopPointId(shortCode, "");
+
+        // then
+        assertEquals("DT:ScheduledStopPoint:HKI", result);
+    }
+
+    @Test
+    void givenStationAndTrack_whenGeneratingPassengerStopAssignmentId_thenReturnsTrackQualifiedId() {
+        // given
+        final String shortCode = "TPE";
+        final String track = "1";
+
+        // when
+        final String result = idGenerator.passengerStopAssignmentId(shortCode, track);
+
+        // then
+        assertEquals("DT:PassengerStopAssignment:TPE-1", result);
+    }
 }

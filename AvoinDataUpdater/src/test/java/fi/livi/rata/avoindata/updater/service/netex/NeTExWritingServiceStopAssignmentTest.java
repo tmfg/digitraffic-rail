@@ -31,7 +31,7 @@ class NeTExWritingServiceStopAssignmentTest {
         // given
         final var testData = createTestDataWithAssignments(List.of(
                 new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
-                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1")));
+                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -86,9 +86,9 @@ class NeTExWritingServiceStopAssignmentTest {
         // given
         final var testData = createTestDataWithAssignments(List.of(
                 new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
-                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1"),
+                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
                 new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TPE",
-                        "DT:ScheduledStopPoint:TPE", "FSR:StopPlace:2")));
+                        "DT:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -107,6 +107,65 @@ class NeTExWritingServiceStopAssignmentTest {
         assertDoesNotThrow(() -> {
             factory.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
         });
+    }
+
+    // --- Pass 2b: QuayRef emission tests ---
+
+    @Test
+    void givenAssignmentWithQuayRef_whenWritingZip_thenXmlContainsQuayRefElement() throws Exception {
+        // given — assignment with quayRef set
+        final var testData = createTestDataWithAssignments(List.of(
+                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TRV-2",
+                        "DT:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+
+        // when
+        final byte[] zip = writingService.writeNeTExZip(
+                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                testData.timestamp());
+
+        // then — XML contains QuayRef element with the correct ref
+        final String xml = extractXmlFromZip(zip);
+        assertTrue(xml.contains("FSR:Quay:10"), "Should contain QuayRef value FSR:Quay:10");
+        assertTrue(xml.contains("QuayRef"), "Should contain QuayRef element");
+    }
+
+    @Test
+    void givenAssignmentWithNullQuayRef_whenWritingZip_thenXmlDoesNotContainQuayRef() throws Exception {
+        // given — assignment with quayRef null (station-level only)
+        final var testData = createTestDataWithAssignments(List.of(
+                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
+                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+
+        // when
+        final byte[] zip = writingService.writeNeTExZip(
+                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                testData.timestamp());
+
+        // then — XML does NOT contain QuayRef but still has StopPlaceRef
+        final String xml = extractXmlFromZip(zip);
+        assertFalse(xml.contains("QuayRef"), "Should NOT contain QuayRef when quayRef is null");
+        assertTrue(xml.contains("FSR:StopPlace:1"), "Should still contain StopPlaceRef");
+    }
+
+    @Test
+    void givenAssignmentsWithQuayRefs_whenWritingZip_thenBothCodespacesPresent() throws Exception {
+        // given — assignment with FSR StopPlaceRef and FSR QuayRef
+        final var testData = createTestDataWithAssignments(List.of(
+                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TRV-2",
+                        "DT:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+
+        // when
+        final byte[] zip = writingService.writeNeTExZip(
+                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                testData.timestamp());
+
+        // then — both DT and FSR codespaces are declared
+        final String xml = extractXmlFromZip(zip);
+        assertTrue(xml.contains("<Xmlns>DT</Xmlns>"), "Should contain DT codespace");
+        assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
     }
 
     // --- Helpers ---
@@ -150,7 +209,7 @@ class NeTExWritingServiceStopAssignmentTest {
                 "DT:ServiceJourney:59-12345", "IC 59", "59",
                 "DT:JourneyPattern:IC-abc", "DT:Operator:vr", "DT:Line:IC",
                 "DT:DayType:MoTuWeThFr-20260615-20261214",
-                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00"))));
+                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null))));
 
         return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -298,6 +299,65 @@ class NeTExEntityServiceTest {
         assertEquals(1, journeys.size());
     }
 
+    // --- Pass 2b: Passing times carry station and track context ---
+
+    @Test
+    void givenScheduleWithTracks_whenCreatingServiceJourneys_thenPassingTimesCarryStationAndTrack() {
+        // given — schedule with HKI (track "4"), TPE (track "1"), OL (track "2")
+        final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
+        setTracksOnSchedule(schedule, List.of("4", "1", "2"));
+        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+
+        // when
+        final List<NeTExEntityService.NeTExServiceJourney> journeys =
+                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+
+        // then — passing times carry station short code and commercial track
+        final var passingTimes = journeys.get(0).passingTimes();
+        assertEquals("HKI", passingTimes.get(0).stationShortCode());
+        assertEquals("4", passingTimes.get(0).commercialTrack());
+        assertEquals("TPE", passingTimes.get(1).stationShortCode());
+        assertEquals("1", passingTimes.get(1).commercialTrack());
+        assertEquals("OL", passingTimes.get(2).stationShortCode());
+        assertEquals("2", passingTimes.get(2).commercialTrack());
+    }
+
+    @Test
+    void givenScheduleWithNullTrack_whenCreatingServiceJourneys_thenPassingTimeHasNullTrack() {
+        // given — schedule where TPE has commercialTrack = null
+        final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
+        setTracksOnSchedule(schedule, Arrays.asList("4", null, "2"));
+        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+
+        // when
+        final List<NeTExEntityService.NeTExServiceJourney> journeys =
+                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+
+        // then — TPE's passing time has null commercialTrack
+        final var passingTimes = journeys.get(0).passingTimes();
+        assertNull(passingTimes.get(1).commercialTrack(), "TPE should have null commercialTrack");
+        assertEquals("TPE", passingTimes.get(1).stationShortCode());
+    }
+
+    @Test
+    void givenScheduleWithTracks_whenCreatingServiceJourneys_thenStillReferencesJourneyPattern() {
+        // given — schedule with track data
+        final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
+        setTracksOnSchedule(schedule, List.of("4", "1", "2"));
+        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final NeTExRouteData routeData = routeService.createRouteData(List.of(schedule));
+
+        // when
+        final List<NeTExEntityService.NeTExServiceJourney> journeys =
+                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+
+        // then — journey pattern ref is still set correctly
+        assertNotNull(journeys.get(0).journeyPatternRef());
+        assertTrue(journeys.get(0).journeyPatternRef().startsWith("DT:JourneyPattern:"));
+    }
+
     // --- Helpers ---
 
     private Schedule createCommuterSchedule(final long id, final long trainNumber, final String commuterLineId) {
@@ -382,5 +442,11 @@ class NeTExEntityServiceTest {
             rows.add(row);
         }
         return rows;
+    }
+
+    private void setTracksOnSchedule(final Schedule schedule, final List<String> tracks) {
+        for (int i = 0; i < schedule.scheduleRows.size(); i++) {
+            schedule.scheduleRows.get(i).commercialTrack = tracks.get(i);
+        }
     }
 }

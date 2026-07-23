@@ -94,6 +94,95 @@ public class NeTExRouteService {
         return String.join("-", stationShortCodes);
     }
 
+    /**
+     * Computes a track-qualified hash from station+track tuples.
+     * Format: "HKI:4-TPE:1-OL:2" (station:track). When track is null, station only.
+     */
+    public String computeTrackQualifiedHash(final List<StopWithTrack> stopsWithTrack) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < stopsWithTrack.size(); i++) {
+            if (i > 0) {
+                sb.append("-");
+            }
+            final StopWithTrack s = stopsWithTrack.get(i);
+            sb.append(s.stationShortCode());
+            if (s.commercialTrack() != null && !s.commercialTrack().isBlank()) {
+                sb.append(":").append(s.commercialTrack());
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Creates routes and journey patterns with track-qualified SSP references.
+     * Trains with identical (station+track) sequences share a JourneyPattern.
+     * Route points remain station-level (not track-qualified).
+     */
+    public NeTExRouteData createRouteDataTrackAware(final List<Schedule> schedules) {
+        final Map<String, NeTExRouteData.NeTExRoute> routeMap = new LinkedHashMap<>();
+        final Map<String, NeTExRouteData.NeTExJourneyPattern> patternMap = new LinkedHashMap<>();
+        final Map<Long, String> scheduleToPatternId = new HashMap<>();
+
+        for (final Schedule schedule : schedules) {
+            final List<StopWithTrack> commercialStopsWithTrack = extractCommercialStopsWithTrack(schedule);
+            if (commercialStopsWithTrack.isEmpty()) {
+                continue;
+            }
+            final String hash = computeTrackQualifiedHash(commercialStopsWithTrack);
+            final String lineIdentifier = deriveLineIdentifier(schedule);
+            final String patternId = idGenerator.journeyPatternId(lineIdentifier, hash);
+
+            scheduleToPatternId.put(schedule.id, patternId);
+
+            if (!patternMap.containsKey(patternId)) {
+                final String lineRef = idGenerator.lineId(lineIdentifier);
+                final List<String> allStopCodes = schedule.scheduleRows.stream()
+                        .map(row -> row.station.stationShortCode)
+                        .collect(Collectors.toList());
+
+                final String routeId = idGenerator.routeId(lineIdentifier, hash);
+                final List<String> stationCodes = commercialStopsWithTrack.stream()
+                        .map(StopWithTrack::stationShortCode)
+                        .toList();
+                final String routeName = stationCodes.get(0) + " - "
+                        + stationCodes.get(stationCodes.size() - 1);
+                final List<String> routePointRefs = allStopCodes.stream()
+                        .map(idGenerator::routePointId)
+                        .collect(Collectors.toList());
+
+                routeMap.put(routeId, new NeTExRouteData.NeTExRoute(routeId, routeName, lineRef, routePointRefs));
+
+                final List<NeTExRouteData.NeTExStopPointInPattern> stopPoints = new ArrayList<>();
+                final String lastStopCode = stationCodes.get(stationCodes.size() - 1);
+
+                for (int i = 0; i < commercialStopsWithTrack.size(); i++) {
+                    final StopWithTrack swt = commercialStopsWithTrack.get(i);
+                    final boolean isFirst = (i == 0);
+                    final boolean isLast = (i == commercialStopsWithTrack.size() - 1);
+                    final String destRef = isFirst ? idGenerator.destinationDisplayId(lastStopCode) : null;
+                    final String sspRef = idGenerator.scheduledStopPointId(
+                            swt.stationShortCode(), swt.commercialTrack());
+
+                    stopPoints.add(new NeTExRouteData.NeTExStopPointInPattern(
+                            i + 1, sspRef, !isLast, !isFirst, destRef));
+                }
+
+                patternMap.put(patternId, new NeTExRouteData.NeTExJourneyPattern(patternId, routeId, stopPoints));
+            }
+        }
+
+        return new NeTExRouteData(
+                new ArrayList<>(routeMap.values()),
+                new ArrayList<>(patternMap.values()),
+                scheduleToPatternId);
+    }
+
+    /**
+     * A (station, track) pair for journey pattern hash computation.
+     */
+    public record StopWithTrack(String stationShortCode, String commercialTrack) {
+    }
+
     private List<String> extractCommercialStopCodes(final Schedule schedule) {
         final List<String> codes = new ArrayList<>();
         for (final ScheduleRow row : schedule.scheduleRows) {
@@ -102,6 +191,16 @@ public class NeTExRouteService {
             }
         }
         return codes;
+    }
+
+    private List<StopWithTrack> extractCommercialStopsWithTrack(final Schedule schedule) {
+        final List<StopWithTrack> stops = new ArrayList<>();
+        for (final ScheduleRow row : schedule.scheduleRows) {
+            if (isCommercialStop(row)) {
+                stops.add(new StopWithTrack(row.station.stationShortCode, row.commercialTrack));
+            }
+        }
+        return stops;
     }
 
     private boolean isCommercialStop(final ScheduleRow row) {

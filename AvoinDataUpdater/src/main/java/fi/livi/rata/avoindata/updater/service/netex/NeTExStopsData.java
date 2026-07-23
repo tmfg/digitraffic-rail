@@ -15,12 +15,15 @@ public class NeTExStopsData {
     private final List<NeTExStopAssignment> stopAssignments;
     private final int matchedCount;
     private final int unmatchedCount;
+    private final int quayMatchedCount;
+    private final int quayUnmatchedCount;
+    private final int quayNoTrackCount;
 
     public NeTExStopsData(
             final List<NeTExScheduledStopPoint> scheduledStopPoints,
             final List<NeTExRoutePoint> routePoints,
             final List<NeTExDestinationDisplay> destinationDisplays) {
-        this(scheduledStopPoints, routePoints, destinationDisplays, List.of(), 0, 0);
+        this(scheduledStopPoints, routePoints, destinationDisplays, List.of(), 0, 0, 0, 0, 0);
     }
 
     public NeTExStopsData(
@@ -30,12 +33,29 @@ public class NeTExStopsData {
             final List<NeTExStopAssignment> stopAssignments,
             final int matchedCount,
             final int unmatchedCount) {
+        this(scheduledStopPoints, routePoints, destinationDisplays, stopAssignments,
+                matchedCount, unmatchedCount, 0, 0, 0);
+    }
+
+    public NeTExStopsData(
+            final List<NeTExScheduledStopPoint> scheduledStopPoints,
+            final List<NeTExRoutePoint> routePoints,
+            final List<NeTExDestinationDisplay> destinationDisplays,
+            final List<NeTExStopAssignment> stopAssignments,
+            final int matchedCount,
+            final int unmatchedCount,
+            final int quayMatchedCount,
+            final int quayUnmatchedCount,
+            final int quayNoTrackCount) {
         this.scheduledStopPoints = scheduledStopPoints;
         this.routePoints = routePoints;
         this.destinationDisplays = destinationDisplays;
         this.stopAssignments = stopAssignments;
         this.matchedCount = matchedCount;
         this.unmatchedCount = unmatchedCount;
+        this.quayMatchedCount = quayMatchedCount;
+        this.quayUnmatchedCount = quayUnmatchedCount;
+        this.quayNoTrackCount = quayNoTrackCount;
     }
 
     public List<NeTExScheduledStopPoint> getScheduledStopPoints() {
@@ -62,6 +82,18 @@ public class NeTExStopsData {
         return unmatchedCount;
     }
 
+    public int quayMatchedCount() {
+        return quayMatchedCount;
+    }
+
+    public int quayUnmatchedCount() {
+        return quayUnmatchedCount;
+    }
+
+    public int quayNoTrackCount() {
+        return quayNoTrackCount;
+    }
+
     public record NeTExScheduledStopPoint(String id, String name, String privateCode, BigDecimal latitude,
             BigDecimal longitude) {
     }
@@ -72,6 +104,7 @@ public class NeTExStopsData {
     public record NeTExDestinationDisplay(String id, String frontText) {
     }
 
-    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String stopPlaceRef) {
+    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String stopPlaceRef,
+            String quayRef) {
     }
 }

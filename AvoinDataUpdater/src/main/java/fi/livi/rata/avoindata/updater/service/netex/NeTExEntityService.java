@@ -139,7 +139,8 @@ public class NeTExEntityService {
             final String departureTime = row.departure != null
                     ? timeConverter.toNeTExTime(row.departure.timestamp, firstDeparture)
                     : null;
-            times.add(new NeTExPassingTime(order++, arrivalTime, departureTime));
+            times.add(new NeTExPassingTime(order++, arrivalTime, departureTime,
+                    row.station.stationShortCode, row.commercialTrack));
         }
 
         return times;
@@ -177,6 +178,7 @@ public class NeTExEntityService {
             List<NeTExPassingTime> passingTimes) {
     }
 
-    public record NeTExPassingTime(int order, String arrivalTime, String departureTime) {
+    public record NeTExPassingTime(int order, String arrivalTime, String departureTime,
+            String stationShortCode, String commercialTrack) {
     }
 }
