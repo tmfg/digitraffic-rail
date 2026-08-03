@@ -53,7 +53,7 @@ jobs:
           environment-value: ${{ github.event.inputs.suffix }}
 
       - name: Checkout CI-repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
