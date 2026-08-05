@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>25</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>4.0.6</spring.boot.version>
+        <spring.boot.version>4.0.7</spring.boot.version>
         <spring.cloud.version>5.0.1</spring.cloud.version>
         <com.google.guava.version>33.5.0-jre</com.google.guava.version>
         <aws.advanced.jdbc.wrapper.version>3.2.0</aws.advanced.jdbc.wrapper.version>
@@ -94,36 +94,38 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- TODO: Remove Netty and Tomcat overrides when Spring Boot includes Netty ≥4.2.13 and Tomcat ≥11.0.22
+            <!-- TODO: Remove Netty and Tomcat overrides when Spring Boot includes Netty ≥4.2.16 and Tomcat ≥11.0.24
                  Added 2026-05-22 to fix CVE-2026-42581 (Netty) and CVE-2026-41293 (Tomcat).
+                 Updated 2026-08-05 to fix a lot of new CVEs
+
                  This project imports the Spring Boot BOM (not parent), so property overrides don't work —
                  explicit entries in dependencyManagement are required to override transitive versions. -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.2.13.Final</version>
+                <version>4.2.16.Final</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
-                <version>11.0.22</version>
+                <version>11.0.24</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-el</artifactId>
-                <version>11.0.22</version>
+                <version>11.0.24</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-websocket</artifactId>
-                <version>11.0.22</version>
+                <version>11.0.24</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-annotations-api</artifactId>
-                <version>11.0.22</version>
+                <version>11.0.24</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -149,7 +151,7 @@
             <plugin>
                 <groupId>org.cyclonedx</groupId>
                 <artifactId>cyclonedx-maven-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>2.9.2</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
