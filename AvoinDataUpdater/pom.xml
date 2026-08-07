@@ -17,7 +17,7 @@
         <start-class>fi.livi.rata.avoindata.updater.DatabaseUpdaterApplication</start-class>
         <proj4j.version>1.4.1</proj4j.version>
         <!-- https://mvnrepository.com/artifact/com.google.protobuf/protoc -->
-        <com.google.protobuf.version>4.34.1</com.google.protobuf.version>
+        <com.google.protobuf.version>4.35.1</com.google.protobuf.version>
     </properties>
 
     <dependencies>
