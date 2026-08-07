@@ -16,7 +16,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>4.0.7</spring.boot.version>
         <spring.cloud.version>5.0.1</spring.cloud.version>
-        <com.google.guava.version>33.5.0-jre</com.google.guava.version>
+        <com.google.guava.version>33.6.0-jre</com.google.guava.version>
         <aws.advanced.jdbc.wrapper.version>3.2.0</aws.advanced.jdbc.wrapper.version>
         <com.mysql.mysql-connector-j>9.6.0</com.mysql.mysql-connector-j>
         <org.flywaydb.version>11.20.3</org.flywaydb.version>
