@@ -201,7 +201,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService();
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
                 writingService, null, todaysScheduleService, null, null);
@@ -315,7 +315,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService();
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);

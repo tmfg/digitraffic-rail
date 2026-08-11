@@ -102,7 +102,7 @@ public class NeTExEntityService {
             final String lineRef = idGenerator.lineId(lineIdentifier);
             final String dayTypeRef = calendarData.getDayTypeIdForSchedule(schedule.id);
 
-            final List<NeTExPassingTime> passingTimes = buildPassingTimes(schedule);
+            final List<NeTExPassingTime> passingTimes = buildPassingTimes(schedule, journeyPatternRef);
 
             journeyMap.put(id, new NeTExServiceJourney(id, name, privateCode,
                     journeyPatternRef, operatorRef, lineRef, dayTypeRef, passingTimes));
@@ -124,7 +124,7 @@ public class NeTExEntityService {
         return idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
     }
 
-    private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule) {
+    private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule, final String journeyPatternRef) {
         final List<NeTExPassingTime> times = new ArrayList<>();
         final Duration firstDeparture = findFirstDeparture(schedule);
         int order = 1;
@@ -139,8 +139,9 @@ public class NeTExEntityService {
             final String departureTime = row.departure != null
                     ? timeConverter.toNeTExTime(row.departure.timestamp, firstDeparture)
                     : null;
+            final String stopPointRef = idGenerator.stopPointInJourneyPatternId(journeyPatternRef, order);
             times.add(new NeTExPassingTime(order++, arrivalTime, departureTime,
-                    row.station.stationShortCode, row.commercialTrack));
+                    row.station.stationShortCode, row.commercialTrack, stopPointRef));
         }
 
         return times;
@@ -179,6 +180,6 @@ public class NeTExEntityService {
     }
 
     public record NeTExPassingTime(int order, String arrivalTime, String departureTime,
-            String stationShortCode, String commercialTrack) {
+            String stationShortCode, String commercialTrack, String stopPointInJourneyPatternRef) {
     }
 }

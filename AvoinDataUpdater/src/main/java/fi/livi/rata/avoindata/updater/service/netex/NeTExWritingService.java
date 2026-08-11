@@ -68,6 +68,7 @@ import org.rutebanken.netex.model.ServiceJourney;
 import org.rutebanken.netex.model.StopAssignmentsInFrame_RelStructure;
 import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPointInJourneyPattern;
+import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.TimetabledPassingTime;
 import org.rutebanken.netex.model.TimetabledPassingTimes_RelStructure;
@@ -87,6 +88,12 @@ public class NeTExWritingService {
 
     private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
     private static final ObjectFactory FACTORY = new ObjectFactory();
+
+    private final NeTExIdGenerator idGenerator;
+
+    public NeTExWritingService(final NeTExIdGenerator idGenerator) {
+        this.idGenerator = idGenerator;
+    }
 
     private volatile JAXBContext jaxbContext;
 
@@ -285,7 +292,7 @@ public class NeTExWritingService {
             final List<StopPointInJourneyPattern> stops = new ArrayList<>();
             for (final var sp : pattern.stopPoints()) {
                 final StopPointInJourneyPattern spijp = new StopPointInJourneyPattern()
-                        .withId(pattern.id() + "-" + sp.order())
+                        .withId(idGenerator.stopPointInJourneyPatternId(pattern.id(), sp.order()))
                         .withVersion("1")
                         .withOrder(BigInteger.valueOf(sp.order()))
                         .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
@@ -401,7 +408,13 @@ public class NeTExWritingService {
     private ServiceJourney buildServiceJourney(final NeTExEntityService.NeTExServiceJourney sj) {
         final List<TimetabledPassingTime> passingTimes = sj.passingTimes().stream()
                 .map(pt -> {
-                    final TimetabledPassingTime tpt = new TimetabledPassingTime();
+                    final TimetabledPassingTime tpt = new TimetabledPassingTime()
+                            .withId(sj.id() + "-" + pt.order())
+                            .withVersion("1")
+                            .withPointInJourneyPatternRef(FACTORY.createStopPointInJourneyPatternRef(
+                                    new StopPointInJourneyPatternRefStructure()
+                                            .withRef(pt.stopPointInJourneyPatternRef())
+                                            .withVersion("1")));
                     if (pt.arrivalTime() != null) {
                         final ParsedTime arrival = parseNeTExTime(pt.arrivalTime());
                         tpt.withArrivalTime(arrival.time);

@@ -53,6 +53,10 @@ public class NeTExIdGenerator {
         return CODESPACE + ":JourneyPattern:" + lineId + "-" + hash;
     }
 
+    public String stopPointInJourneyPatternId(final String journeyPatternId, final int order) {
+        return journeyPatternId + "-" + order;
+    }
+
     public String serviceJourneyId(final long trainNumber, final long scheduleId) {
         return CODESPACE + ":ServiceJourney:" + trainNumber + "-" + scheduleId;
     }

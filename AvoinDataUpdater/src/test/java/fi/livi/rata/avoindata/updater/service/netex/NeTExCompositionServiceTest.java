@@ -41,7 +41,7 @@ class NeTExCompositionServiceTest {
     @BeforeEach
     void setUp() {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
-        final NeTExWritingService writingService = new NeTExWritingService();
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(
                 writingService);
         compositionService = new NeTExCompositionService(null, null, null, null, idGenerator,

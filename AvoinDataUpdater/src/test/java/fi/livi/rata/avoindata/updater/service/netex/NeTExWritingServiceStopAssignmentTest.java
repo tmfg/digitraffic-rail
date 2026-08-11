@@ -23,7 +23,7 @@ class NeTExWritingServiceStopAssignmentTest {
 
     @BeforeEach
     void setUp() {
-        writingService = new NeTExWritingService();
+        writingService = new NeTExWritingService(new NeTExIdGenerator());
     }
 
     @Test
@@ -209,7 +209,8 @@ class NeTExWritingServiceStopAssignmentTest {
                 "DT:ServiceJourney:59-12345", "IC 59", "59",
                 "DT:JourneyPattern:IC-abc", "DT:Operator:vr", "DT:Line:IC",
                 "DT:DayType:MoTuWeThFr-20260615-20261214",
-                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null))));
+                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
+                        "DT:JourneyPattern:IC-abc-1"))));
 
         return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));
