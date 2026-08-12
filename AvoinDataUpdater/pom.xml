@@ -237,6 +237,13 @@
             <version>2.0.16</version>
         </dependency>
 
+        <!-- SIRI 2.1 XML model (JAXB classes from SIRI XSD, sibling of netex-java-model) -->
+        <dependency>
+            <groupId>org.entur</groupId>
+            <artifactId>siri-java-model</artifactId>
+            <version>2.0.5</version>
+        </dependency>
+
     </dependencies>
 
     <build>
