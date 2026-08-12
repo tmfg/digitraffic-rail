@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class SiriTimeConverter {
 
-    static final ZoneId HELSINKI_ZONE = ZoneId.of("Europe/Helsinki");
+    public static final ZoneId HELSINKI_ZONE = ZoneId.of("Europe/Helsinki");
 
     public String toSiriDateTime(final ZonedDateTime instant) {
         if (instant == null) {

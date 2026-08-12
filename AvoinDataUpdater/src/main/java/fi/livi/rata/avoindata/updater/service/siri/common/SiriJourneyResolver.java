@@ -26,6 +26,10 @@ public class SiriJourneyResolver {
         } else {
             serviceJourneyId = idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
         }
-        return new ResolvedJourney(serviceJourneyId, departureDate.toString());
+        final String lineIdentifier = (schedule.commuterLineId != null && !schedule.commuterLineId.isBlank())
+                ? schedule.commuterLineId
+                : schedule.trainType.name;
+        final String lineId = idGenerator.lineId(lineIdentifier);
+        return new ResolvedJourney(serviceJourneyId, departureDate.toString(), lineId);
     }
 }
