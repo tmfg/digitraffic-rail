@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 import java.time.LocalDate;
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -10,6 +12,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 /**
  * Maps a live train schedule to the published NeTEx ServiceJourney id and DataFrameRef.
  */
+@Service
 public class SiriJourneyResolver {
 
     private final NeTExIdGenerator idGenerator;

@@ -12,13 +12,24 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 public class SiriStopResolver {
 
     private final PetiStopSource petiStopSource;
+    private final PetiUicMatcher prebuiltMatcher;
 
     public SiriStopResolver(final PetiStopSource petiStopSource) {
         this.petiStopSource = petiStopSource;
+        this.prebuiltMatcher = null;
+    }
+
+    public SiriStopResolver(final PetiUicMatcher matcher) {
+        this.petiStopSource = null;
+        this.prebuiltMatcher = matcher;
+    }
+
+    private PetiUicMatcher getMatcher() {
+        return prebuiltMatcher != null ? prebuiltMatcher : petiStopSource.getMatcher();
     }
 
     public Optional<String> resolveQuayId(final int stationUicCode, final String commercialTrack) {
-        final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        final PetiUicMatcher matcher = getMatcher();
         final Optional<PetiStop> stop = matcher.match(stationUicCode);
         if (stop.isEmpty()) {
             return Optional.empty();
@@ -32,7 +43,7 @@ public class SiriStopResolver {
     }
 
     public Optional<String> resolveStopPlaceId(final int stationUicCode) {
-        final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        final PetiUicMatcher matcher = getMatcher();
         return matcher.match(stationUicCode).map(PetiStop::stopPlaceId);
     }
 }

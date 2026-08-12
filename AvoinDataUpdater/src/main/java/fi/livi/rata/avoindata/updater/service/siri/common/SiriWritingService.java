@@ -11,6 +11,8 @@ import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 
+import org.springframework.stereotype.Service;
+
 import uk.org.siri.siri21.RequestorRef;
 import uk.org.siri.siri21.ServiceDelivery;
 import uk.org.siri.siri21.Siri;
@@ -18,6 +20,7 @@ import uk.org.siri.siri21.Siri;
 /**
  * Marshals SIRI 2.1 envelopes to XML and structurally validates them.
  */
+@Service
 public class SiriWritingService {
 
     private volatile JAXBContext jaxbContext;
