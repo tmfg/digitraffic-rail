@@ -37,11 +37,12 @@ class NeTExServiceTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, new EmptyPetiStopSource());
+        final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
+        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
-                null, todaysScheduleService, null, null);
+                petiStopSource, null, todaysScheduleService, null, null);
     }
 
     // --- Filtering tests ---

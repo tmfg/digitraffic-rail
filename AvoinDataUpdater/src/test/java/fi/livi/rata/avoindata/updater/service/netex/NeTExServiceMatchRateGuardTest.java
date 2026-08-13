@@ -55,6 +55,30 @@ class NeTExServiceMatchRateGuardTest {
     }
 
     @Test
+    void givenPetiSourceThatFailsToLoad_whenGenerating_thenPropagates() {
+        // given — a live feed that cannot supply data fails in ensureLoaded(); generation must not swallow it
+        final PetiStopSource failing = new PetiStopSource() {
+            @Override
+            public List<PetiStop> getStops() {
+                return List.of();
+            }
+
+            @Override
+            public void ensureLoaded() {
+                throw new IllegalStateException("PETI stop source returned no stops");
+            }
+        };
+        final NeTExService service = createServiceWithPetiSource(failing, 0.95);
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
+        final List<Station> stations = createStations(List.of("HKI", "TPE"));
+
+        // when/then
+        final IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
+        assertTrue(ex.getMessage().contains("PETI"), "Message should mention PETI");
+    }
+
+    @Test
     void givenMatchRateAboveThreshold_whenGenerating_thenGuardDoesNotThrow() {
         // given — 2 stations, both matched (rate 1.0 > 0.95)
         final List<PetiStop> petiStops = List.of(
@@ -204,7 +228,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
-                writingService, null, todaysScheduleService, null, null);
+                writingService, petiSource, null, todaysScheduleService, null, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -332,7 +356,7 @@ class NeTExServiceMatchRateGuardTest {
         when(stationRepository.findAll()).thenReturn(stations);
 
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
-                writingService, scheduleProviderService, todaysScheduleService, stationRepository,
+                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
                 generatedExportRepository);
 
         // Set minMatchRate via reflection

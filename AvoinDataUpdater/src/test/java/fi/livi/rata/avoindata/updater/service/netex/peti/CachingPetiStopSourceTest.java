@@ -225,6 +225,26 @@ class CachingPetiStopSourceTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    void givenLoadedSnapshot_whenEnsureLoaded_thenDoesNotThrow() {
+        // given — snapshot already present
+        source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
+
+        // when/then — no fetch, no failure
+        assertDoesNotThrow(() -> source.ensureLoaded());
+        assertEquals(4, source.getStops().size());
+    }
+
+    @Test
+    void givenEmptySnapshotAndUnavailableFeed_whenEnsureLoaded_thenThrows() {
+        // given — empty snapshot; stub WebClient returns Mono.empty() so refresh cannot populate it
+
+        // when/then — a live feed with no data fails rather than yielding an empty result
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () -> source.ensureLoaded());
+        assertTrue(ex.getMessage().contains("PETI"), "Message should mention PETI");
+        assertTrue(source.getStops().isEmpty());
+    }
+
     // --- A11: Volatile immutable-swap — snapshot is an immutable list ---
 
     @Test

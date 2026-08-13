@@ -66,6 +66,24 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
+     * Loads the snapshot on demand when empty, so generation never depends on the daily
+     * warm-up having run in this JVM (e.g. after a restart or an early manual run). Fails
+     * when a live feed still has no data, rather than silently producing a package with no
+     * stop assignments.
+     */
+    @Override
+    public void ensureLoaded() {
+        if (lastGood.isEmpty()) {
+            log.info("rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
+            refresh();
+        }
+        if (lastGood.isEmpty()) {
+            throw new IllegalStateException(
+                    "PETI stop source returned no stops; refusing to generate NeTEx without stop assignments");
+        }
+    }
+
+    /**
      * Scheduled warm-up: refresh the PETI snapshot ahead of NeTEx generation.
      * Fetches the zip via HTTP, parses stops.xml, and atomically swaps the snapshot
      * on success. On any failure, keeps the last-good snapshot and records the error.

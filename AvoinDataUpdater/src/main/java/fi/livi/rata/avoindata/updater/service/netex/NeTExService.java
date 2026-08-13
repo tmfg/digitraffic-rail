@@ -22,6 +22,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -47,6 +48,7 @@ public class NeTExService {
     private final NeTExRouteService routeService;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
+    private final PetiStopSource petiStopSource;
     private final ScheduleProviderService scheduleProviderService;
     private final TodaysScheduleService todaysScheduleService;
     private final StationRepository stationRepository;
@@ -57,6 +59,7 @@ public class NeTExService {
             final NeTExRouteService routeService,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
+            final PetiStopSource petiStopSource,
             final ScheduleProviderService scheduleProviderService,
             final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository,
@@ -66,6 +69,7 @@ public class NeTExService {
         this.routeService = routeService;
         this.stopsService = stopsService;
         this.writingService = writingService;
+        this.petiStopSource = petiStopSource;
         this.scheduleProviderService = scheduleProviderService;
         this.todaysScheduleService = todaysScheduleService;
         this.stationRepository = stationRepository;
@@ -158,6 +162,10 @@ public class NeTExService {
         if (allFiltered.isEmpty()) {
             return null;
         }
+
+        // Load PETI on demand so generation never depends on the daily warm-up having run first.
+        // A live feed with no data fails here rather than silently shipping a package without assignments.
+        petiStopSource.ensureLoaded();
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
