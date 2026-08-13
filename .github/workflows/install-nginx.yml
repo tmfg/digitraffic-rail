@@ -93,14 +93,16 @@ jobs:
               --pull=true \
               --file=Dockerfile .
           docker push ${{ secrets.ECR_URL }}/rata-nginx:latest
+
       - name: Generate SBOM
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 #v0.24.0
+        env:
+          SYFT_FILE_METADATA_SELECTION: "none"
         with:
-          version: v0.72.0
-          scan-type: image
-          image-ref: ${{ secrets.ECR_URL }}/rata-nginx:latest
-          format: cyclonedx
-          output: nginx-sbom.json
+          image: ${{ secrets.ECR_URL }}/rata-nginx:latest
+          format: cyclonedx-json
+          output-file: nginx-sbom.json
+
       - name: Update nginx task-def
         id: update
         uses: tmfg/digitraffic-actions@update-task-def/v2
