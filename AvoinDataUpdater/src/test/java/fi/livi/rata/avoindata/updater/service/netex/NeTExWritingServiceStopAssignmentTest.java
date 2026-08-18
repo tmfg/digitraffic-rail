@@ -30,8 +30,8 @@ class NeTExWritingServiceStopAssignmentTest {
     void givenStopsDataWithOneAssignment_whenWritingZip_thenXmlContainsPassengerStopAssignment() throws Exception {
         // given
         final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
-                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -42,8 +42,8 @@ class NeTExWritingServiceStopAssignmentTest {
         // then
         final String xml = extractXmlFromZip(zip);
         assertTrue(xml.contains("<PassengerStopAssignment"), "Should contain PassengerStopAssignment element");
-        assertTrue(xml.contains("DT:PassengerStopAssignment:HKI"), "Should contain assignment ID");
-        assertTrue(xml.contains("DT:ScheduledStopPoint:HKI"), "Should contain ScheduledStopPointRef");
+        assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain assignment ID");
+        assertTrue(xml.contains("FTR:ScheduledStopPoint:HKI"), "Should contain ScheduledStopPointRef");
         assertTrue(xml.contains("FSR:StopPlace:1"), "Should contain StopPlaceRef");
     }
 
@@ -77,7 +77,7 @@ class NeTExWritingServiceStopAssignmentTest {
 
         // then
         final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("<Xmlns>DT</Xmlns>"), "Should contain DT codespace");
+        assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
         assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
     }
 
@@ -85,10 +85,10 @@ class NeTExWritingServiceStopAssignmentTest {
     void givenMultipleAssignments_whenWritingZip_thenAllAppearAndXmlIsWellFormed() throws Exception {
         // given
         final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
-                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TPE",
-                        "DT:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
+                        "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -98,8 +98,8 @@ class NeTExWritingServiceStopAssignmentTest {
 
         // then — both assignments are present
         final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("DT:PassengerStopAssignment:HKI"), "Should contain first assignment");
-        assertTrue(xml.contains("DT:PassengerStopAssignment:TPE"), "Should contain second assignment");
+        assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain first assignment");
+        assertTrue(xml.contains("FTR:PassengerStopAssignment:TPE"), "Should contain second assignment");
 
         // and the XML is well-formed
         final javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
@@ -115,8 +115,8 @@ class NeTExWritingServiceStopAssignmentTest {
     void givenAssignmentWithQuayRef_whenWritingZip_thenXmlContainsQuayRefElement() throws Exception {
         // given — assignment with quayRef set
         final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TRV-2",
-                        "DT:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
+                        "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -134,8 +134,8 @@ class NeTExWritingServiceStopAssignmentTest {
     void givenAssignmentWithNullQuayRef_whenWritingZip_thenXmlDoesNotContainQuayRef() throws Exception {
         // given — assignment with quayRef null (station-level only)
         final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:HKI",
-                        "DT:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -153,8 +153,8 @@ class NeTExWritingServiceStopAssignmentTest {
     void givenAssignmentsWithQuayRefs_whenWritingZip_thenBothCodespacesPresent() throws Exception {
         // given — assignment with FSR StopPlaceRef and FSR QuayRef
         final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("DT:PassengerStopAssignment:TRV-2",
-                        "DT:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
+                        "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
 
         // when
         final byte[] zip = writingService.writeNeTExZip(
@@ -164,7 +164,7 @@ class NeTExWritingServiceStopAssignmentTest {
 
         // then — both DT and FSR codespaces are declared
         final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("<Xmlns>DT</Xmlns>"), "Should contain DT codespace");
+        assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
         assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
     }
 
@@ -179,38 +179,38 @@ class NeTExWritingServiceStopAssignmentTest {
 
     private TestData createTestDataWithAssignments(final List<NeTExStopsData.NeTExStopAssignment> assignments) {
         final NeTExStopsData stopsData = new NeTExStopsData(
-                List.of(new NeTExStopsData.NeTExScheduledStopPoint("DT:ScheduledStopPoint:HKI", "Helsinki", "HKI",
+                List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI", "Helsinki", "HKI",
                         new BigDecimal("60.172133"), new BigDecimal("24.941662"))),
-                List.of(new NeTExStopsData.NeTExRoutePoint("DT:RoutePoint:HKI", "HKI")),
-                List.of(new NeTExStopsData.NeTExDestinationDisplay("DT:DestinationDisplay:HKI", "Helsinki")),
+                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI")),
+                List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI", "Helsinki")),
                 assignments,
                 assignments.size(),
                 0);
 
         final NeTExRouteData routeData = new NeTExRouteData(
-                List.of(new NeTExRouteData.NeTExRoute("DT:Route:IC-F-abc", "Helsinki - Helsinki", "DT:Line:IC",
-                        List.of("DT:RoutePoint:HKI"))),
-                List.of(new NeTExRouteData.NeTExJourneyPattern("DT:JourneyPattern:IC-abc", "DT:Route:IC-F-abc",
-                        List.of(new NeTExRouteData.NeTExStopPointInPattern(1, "DT:ScheduledStopPoint:HKI",
-                                true, false, "DT:DestinationDisplay:HKI")))),
-                Map.of(1L, "DT:JourneyPattern:IC-abc"));
+                List.of(new NeTExRouteData.NeTExRoute("FTR:Route:IC-F-abc", "Helsinki - Helsinki", "FTR:Line:IC",
+                        List.of("FTR:RoutePoint:HKI"))),
+                List.of(new NeTExRouteData.NeTExJourneyPattern("FTR:JourneyPattern:IC-abc", "FTR:Route:IC-F-abc",
+                        List.of(new NeTExRouteData.NeTExStopPointInPattern(1, "FTR:ScheduledStopPoint:HKI",
+                                true, false, "FTR:DestinationDisplay:HKI")))),
+                Map.of(1L, "FTR:JourneyPattern:IC-abc"));
 
         final NeTExCalendarData calendarData = new NeTExCalendarData(
-                List.of(new NeTExDayType("DT:DayType:MoTuWeThFr-20260615-20261214", "Monday Tuesday Wednesday Thursday Friday")),
-                List.of(new NeTExOperatingPeriod("DT:OperatingPeriod:20260615-20261214",
+                List.of(new NeTExDayType("FTR:DayType:MoTuWeThFr-20260615-20261214", "Monday Tuesday Wednesday Thursday Friday")),
+                List.of(new NeTExOperatingPeriod("FTR:OperatingPeriod:20260615-20261214",
                         LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14))),
-                List.of(NeTExDayTypeAssignment.forOperatingPeriod("DT:DayType:MoTuWeThFr-20260615-20261214",
-                        "DT:OperatingPeriod:20260615-20261214")),
-                Map.of(1L, "DT:DayType:MoTuWeThFr-20260615-20261214"));
+                List.of(NeTExDayTypeAssignment.forOperatingPeriod("FTR:DayType:MoTuWeThFr-20260615-20261214",
+                        "FTR:OperatingPeriod:20260615-20261214")),
+                Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
 
-        final var lines = List.of(new NeTExEntityService.NeTExLine("DT:Line:IC", "IC", "rail"));
-        final var operators = List.of(new NeTExEntityService.NeTExOperator("DT:Operator:vr", "VR", "vr", 10));
+        final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "IC", "rail"));
+        final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
         final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
-                "DT:ServiceJourney:59-12345", "IC 59", "59",
-                "DT:JourneyPattern:IC-abc", "DT:Operator:vr", "DT:Line:IC",
-                "DT:DayType:MoTuWeThFr-20260615-20261214",
+                "FTR:ServiceJourney:59-12345", "IC 59", "59",
+                "FTR:JourneyPattern:IC-abc", "FTR:Operator:vr", "FTR:Line:IC",
+                "FTR:DayType:MoTuWeThFr-20260615-20261214",
                 List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
-                        "DT:JourneyPattern:IC-abc-1"))));
+                        "FTR:JourneyPattern:IC-abc-1"))));
 
         return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));

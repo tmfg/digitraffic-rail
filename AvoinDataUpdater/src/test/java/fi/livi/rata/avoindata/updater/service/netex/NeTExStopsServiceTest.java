@@ -39,7 +39,7 @@ class NeTExStopsServiceTest {
 
         // then
         assertEquals(1, stopsData.getScheduledStopPoints().size());
-        assertEquals("DT:ScheduledStopPoint:HKI", stopsData.getScheduledStopPoints().get(0).id());
+        assertEquals("FTR:ScheduledStopPoint:HKI", stopsData.getScheduledStopPoints().get(0).id());
     }
 
     @Test
@@ -93,7 +93,7 @@ class NeTExStopsServiceTest {
 
         // then
         assertEquals(1, stopsData.getRoutePoints().size());
-        assertEquals("DT:RoutePoint:HKI", stopsData.getRoutePoints().get(0).id());
+        assertEquals("FTR:RoutePoint:HKI", stopsData.getRoutePoints().get(0).id());
     }
 
     @Test
@@ -107,7 +107,7 @@ class NeTExStopsServiceTest {
 
         // then
         assertEquals(1, stopsData.getDestinationDisplays().size());
-        assertEquals("DT:DestinationDisplay:TPE", stopsData.getDestinationDisplays().get(0).id());
+        assertEquals("FTR:DestinationDisplay:TPE", stopsData.getDestinationDisplays().get(0).id());
         assertEquals("Tampere", stopsData.getDestinationDisplays().get(0).frontText());
     }
 
@@ -124,7 +124,7 @@ class NeTExStopsServiceTest {
 
         // then: only the passenger station is included
         assertEquals(1, stopsData.getScheduledStopPoints().size());
-        assertEquals("DT:ScheduledStopPoint:HKI", stopsData.getScheduledStopPoints().get(0).id());
+        assertEquals("FTR:ScheduledStopPoint:HKI", stopsData.getScheduledStopPoints().get(0).id());
     }
 
     // --- Pass 2: PassengerStopAssignment wiring scenarios ---
@@ -158,7 +158,7 @@ class NeTExStopsServiceTest {
         // then
         assertEquals(1, stopsData.getStopAssignments().size());
         final var assignment = stopsData.getStopAssignments().get(0);
-        assertEquals("DT:ScheduledStopPoint:HKI", assignment.scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI", assignment.scheduledStopPointRef());
         assertEquals("FSR:StopPlace:1", assignment.stopPlaceRef());
     }
 
@@ -242,9 +242,9 @@ class NeTExStopsServiceTest {
         // when
         final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station), nullTrackPairs(List.of(station)));
 
-        // then — assignment ID follows DT:PassengerStopAssignment:{shortCode}
+        // then — assignment ID follows FTR:PassengerStopAssignment:{shortCode}
         assertEquals(1, stopsData.getStopAssignments().size());
-        assertEquals("DT:PassengerStopAssignment:HKI", stopsData.getStopAssignments().get(0).id());
+        assertEquals("FTR:PassengerStopAssignment:HKI", stopsData.getStopAssignments().get(0).id());
     }
 
     // --- Pass 2b: Track-qualified ScheduledStopPoints and QuayRef scenarios ---
@@ -264,8 +264,8 @@ class NeTExStopsServiceTest {
 
         // then — SSP must be track-qualified
         final boolean hasTrackQualifiedSsp = stopsData.getScheduledStopPoints().stream()
-                .anyMatch(ssp -> "DT:ScheduledStopPoint:HKI-4".equals(ssp.id()));
-        assertTrue(hasTrackQualifiedSsp, "Expected track-qualified SSP 'DT:ScheduledStopPoint:HKI-4'");
+                .anyMatch(ssp -> "FTR:ScheduledStopPoint:HKI-4".equals(ssp.id()));
+        assertTrue(hasTrackQualifiedSsp, "Expected track-qualified SSP 'FTR:ScheduledStopPoint:HKI-4'");
     }
 
     @Test
@@ -313,7 +313,7 @@ class NeTExStopsServiceTest {
         assertNull(assignment.get().quayRef(), "QuayRef should be null when no matching quay");
         // SSP should still be track-qualified
         final boolean hasTrackSsp = stopsData.getScheduledStopPoints().stream()
-                .anyMatch(ssp -> "DT:ScheduledStopPoint:TPE-3".equals(ssp.id()));
+                .anyMatch(ssp -> "FTR:ScheduledStopPoint:TPE-3".equals(ssp.id()));
         assertTrue(hasTrackSsp, "Expected track-qualified SSP even without quay match");
     }
 
@@ -331,8 +331,8 @@ class NeTExStopsServiceTest {
 
         // then — SSP must be station-level (no track suffix)
         final boolean hasStationLevelSsp = stopsData.getScheduledStopPoints().stream()
-                .anyMatch(ssp -> "DT:ScheduledStopPoint:OL".equals(ssp.id()));
-        assertTrue(hasStationLevelSsp, "Expected station-level SSP 'DT:ScheduledStopPoint:OL'");
+                .anyMatch(ssp -> "FTR:ScheduledStopPoint:OL".equals(ssp.id()));
+        assertTrue(hasStationLevelSsp, "Expected station-level SSP 'FTR:ScheduledStopPoint:OL'");
         // assignment (if present) should have no QuayRef
         stopsData.getStopAssignments().stream()
                 .filter(a -> a.scheduledStopPointRef().contains("OL"))
@@ -374,7 +374,7 @@ class NeTExStopsServiceTest {
 
         // then — SSP produced with track-qualified ID, but no assignment
         final boolean hasSsp = stopsData.getScheduledStopPoints().stream()
-                .anyMatch(ssp -> "DT:ScheduledStopPoint:ABC-2".equals(ssp.id()));
+                .anyMatch(ssp -> "FTR:ScheduledStopPoint:ABC-2".equals(ssp.id()));
         assertTrue(hasSsp, "Expected track-qualified SSP for unmatched station");
         final boolean hasAssignment = stopsData.getStopAssignments().stream()
                 .anyMatch(a -> a.scheduledStopPointRef().contains("ABC"));
@@ -399,8 +399,8 @@ class NeTExStopsServiceTest {
 
         // then — two track-qualified SSPs
         final long trackSspCount = stopsData.getScheduledStopPoints().stream()
-                .filter(ssp -> ssp.id().equals("DT:ScheduledStopPoint:HKI-4") ||
-                               ssp.id().equals("DT:ScheduledStopPoint:HKI-6"))
+                .filter(ssp -> ssp.id().equals("FTR:ScheduledStopPoint:HKI-4") ||
+                               ssp.id().equals("FTR:ScheduledStopPoint:HKI-6"))
                 .count();
         assertEquals(2, trackSspCount, "Expected 2 track-qualified SSPs for HKI");
     }

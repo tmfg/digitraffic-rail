@@ -99,7 +99,7 @@ class NeTExEntityServiceTest {
         final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule));
 
         // then
-        assertEquals("DT:Line:Z", lines.get(0).id());
+        assertEquals("FTR:Line:Z", lines.get(0).id());
         assertEquals("Z", lines.get(0).publicCode());
     }
 
@@ -128,7 +128,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, operators.size());
-        assertEquals("DT:Operator:vr", operators.get(0).id());
+        assertEquals("FTR:Operator:vr", operators.get(0).id());
     }
 
     @Test
@@ -170,7 +170,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, journeys.size());
-        assertEquals("DT:ServiceJourney:59-12345", journeys.get(0).id());
+        assertEquals("FTR:ServiceJourney:59-12345", journeys.get(0).id());
     }
 
     @Test
@@ -186,7 +186,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, journeys.size());
-        assertEquals("DT:ServiceJourney:59-2026-06-25", journeys.get(0).id());
+        assertEquals("FTR:ServiceJourney:59-2026-06-25", journeys.get(0).id());
     }
 
     @Test
@@ -232,7 +232,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertNotNull(journeys.get(0).journeyPatternRef());
-        assertTrue(journeys.get(0).journeyPatternRef().startsWith("DT:JourneyPattern:"));
+        assertTrue(journeys.get(0).journeyPatternRef().startsWith("FTR:JourneyPattern:"));
     }
 
     @Test
@@ -247,7 +247,7 @@ class NeTExEntityServiceTest {
                 entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
-        assertEquals("DT:Operator:vr", journeys.get(0).operatorRef());
+        assertEquals("FTR:Operator:vr", journeys.get(0).operatorRef());
     }
 
     @Test
@@ -262,7 +262,7 @@ class NeTExEntityServiceTest {
                 entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
-        assertEquals("DT:Line:IC", journeys.get(0).lineRef());
+        assertEquals("FTR:Line:IC", journeys.get(0).lineRef());
     }
 
     @Test
@@ -278,7 +278,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertNotNull(journeys.get(0).dayTypeRef());
-        assertTrue(journeys.get(0).dayTypeRef().startsWith("DT:DayType:"));
+        assertTrue(journeys.get(0).dayTypeRef().startsWith("FTR:DayType:"));
     }
 
     @Test
@@ -355,7 +355,7 @@ class NeTExEntityServiceTest {
 
         // then — journey pattern ref is still set correctly
         assertNotNull(journeys.get(0).journeyPatternRef());
-        assertTrue(journeys.get(0).journeyPatternRef().startsWith("DT:JourneyPattern:"));
+        assertTrue(journeys.get(0).journeyPatternRef().startsWith("FTR:JourneyPattern:"));
     }
 
     // --- Helpers ---

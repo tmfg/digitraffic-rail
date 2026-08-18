@@ -61,7 +61,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:VehicleType:Sr2\""));
+        assertTrue(xml.contains("id=\"FTR:VehicleType:Sr2\""));
         assertTrue(xml.contains("<TypeOfFuel>electricity</TypeOfFuel>"));
     }
 
@@ -76,7 +76,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:VehicleType:Dr19\""));
+        assertTrue(xml.contains("id=\"FTR:VehicleType:Dr19\""));
         assertTrue(xml.contains("<TypeOfFuel>diesel</TypeOfFuel>"));
     }
 
@@ -91,7 +91,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:VehicleType:Ed\""));
+        assertTrue(xml.contains("id=\"FTR:VehicleType:Ed\""));
         assertTrue(xml.contains("<Length>26.40</Length>"));
     }
 
@@ -123,8 +123,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        final int first = xml.indexOf("id=\"DT:VehicleType:Ed\"");
-        final int second = xml.indexOf("id=\"DT:VehicleType:Ed\"", first + 1);
+        final int first = xml.indexOf("id=\"FTR:VehicleType:Ed\"");
+        final int second = xml.indexOf("id=\"FTR:VehicleType:Ed\"", first + 1);
         assertTrue(first > 0);
         assertEquals(-1, second, "Should not have duplicate VehicleType:Ed");
     }
@@ -142,7 +142,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:DatedVehicleJourney:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:59-2026-07-07-HKI\""));
     }
 
     @Test
@@ -154,8 +154,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:DatedVehicleJourney:9-2026-07-07-HKI\""));
-        assertTrue(xml.contains("id=\"DT:DatedVehicleJourney:9-2026-07-07-KV\""));
+        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:9-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:9-2026-07-07-KV\""));
     }
 
     @Test
@@ -257,7 +257,7 @@ class NeTExCompositionServiceTest {
 
         // then
         assertTrue(xml.contains("<MobilityImpairedAccess>true</MobilityImpairedAccess>"));
-        assertTrue(xml.contains("id=\"DT:AA:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:AA:59-2026-07-07-HKI\""));
     }
 
     @Test
@@ -283,13 +283,13 @@ class NeTExCompositionServiceTest {
         final Composition c = composition(59, "2026-07-07", "HKI", "OL");
         loco(c, "Sr2");
         wagon(c, "Ed", 1, 2640, false);
-        final Map<TrainId, String> refs = Map.of(new TrainId(59, date), "DT:ServiceJourney:59-4118175");
+        final Map<TrainId, String> refs = Map.of(new TrainId(59, date), "FTR:ServiceJourney:59-4118175");
 
         // when
         final String xml = buildXml(c, refs);
 
         // then
-        assertTrue(xml.contains("ref=\"DT:ServiceJourney:59-4118175\""));
+        assertTrue(xml.contains("ref=\"FTR:ServiceJourney:59-4118175\""));
     }
 
     @Test
@@ -299,7 +299,7 @@ class NeTExCompositionServiceTest {
         final Composition c = composition(9999, "2026-07-07", "HKI", "OL");
         loco(c, "Sr2");
         wagon(c, "Ed", 1, 2640, false);
-        final Map<TrainId, String> refs = Map.of(new TrainId(59, date), "DT:ServiceJourney:59-4118175");
+        final Map<TrainId, String> refs = Map.of(new TrainId(59, date), "FTR:ServiceJourney:59-4118175");
 
         // when
         final String xml = buildXml(c, refs);
@@ -326,7 +326,7 @@ class NeTExCompositionServiceTest {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
             final ZipEntry entry = zis.getNextEntry();
             assertNotNull(entry);
-            assertEquals("DT_rail_compositions.xml", entry.getName());
+            assertEquals("FTR_rail_compositions.xml", entry.getName());
         } catch (final Exception e) {
             fail("ZIP parsing failed: " + e.getMessage());
         }
@@ -357,7 +357,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("<ParticipantRef>DT</ParticipantRef>"));
+        assertTrue(xml.contains("<ParticipantRef>FTR</ParticipantRef>"));
     }
 
     @Test
@@ -371,8 +371,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:ResourceFrame:compositions\""));
-        assertTrue(xml.contains("id=\"DT:TimetableFrame:compositions\""));
+        assertTrue(xml.contains("id=\"FTR:ResourceFrame:compositions\""));
+        assertTrue(xml.contains("id=\"FTR:TimetableFrame:compositions\""));
     }
 
     @Test
@@ -386,8 +386,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"DT:Train:59-2026-07-07-HKI\""));
-        assertTrue(xml.contains("ref=\"DT:Train:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:Train:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("ref=\"FTR:Train:59-2026-07-07-HKI\""));
     }
 
     @Test

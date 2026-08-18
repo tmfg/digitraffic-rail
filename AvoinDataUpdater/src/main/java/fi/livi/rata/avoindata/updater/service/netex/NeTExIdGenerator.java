@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 /**
  * Generates NeTEx IDs following the {Codespace}:{ElementType}:{localId}
  * convention.
- * All IDs use the DT codespace (Digitraffic).
+ * All IDs use the FTR codespace (Fintraffic).
  */
 @Service
 public class NeTExIdGenerator {
 
-    public static final String CODESPACE = "DT";
+    public static final String CODESPACE = "FTR";
 
     public String authorityId(final String code) {
         return CODESPACE + ":Authority:" + code;

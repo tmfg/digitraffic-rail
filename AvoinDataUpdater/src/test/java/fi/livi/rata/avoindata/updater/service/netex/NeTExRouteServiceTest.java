@@ -45,9 +45,9 @@ class NeTExRouteServiceTest {
         // then
         assertEquals(1, routeData.getRoutes().size());
         assertEquals(3, routeData.getRoutes().get(0).routePointRefs().size());
-        assertEquals("DT:RoutePoint:HKI", routeData.getRoutes().get(0).routePointRefs().get(0));
-        assertEquals("DT:RoutePoint:TPE", routeData.getRoutes().get(0).routePointRefs().get(1));
-        assertEquals("DT:RoutePoint:OL", routeData.getRoutes().get(0).routePointRefs().get(2));
+        assertEquals("FTR:RoutePoint:HKI", routeData.getRoutes().get(0).routePointRefs().get(0));
+        assertEquals("FTR:RoutePoint:TPE", routeData.getRoutes().get(0).routePointRefs().get(1));
+        assertEquals("FTR:RoutePoint:OL", routeData.getRoutes().get(0).routePointRefs().get(2));
     }
 
     @Test
@@ -75,7 +75,7 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertTrue(routeData.getRoutes().get(0).id().startsWith("DT:Route:"));
+        assertTrue(routeData.getRoutes().get(0).id().startsWith("FTR:Route:"));
     }
 
     @Test
@@ -88,7 +88,7 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertEquals("DT:Line:IC", routeData.getRoutes().get(0).lineRef());
+        assertEquals("FTR:Line:IC", routeData.getRoutes().get(0).lineRef());
     }
 
     @Test
@@ -114,7 +114,7 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertTrue(routeData.getJourneyPatterns().get(0).id().startsWith("DT:JourneyPattern:"));
+        assertTrue(routeData.getJourneyPatterns().get(0).id().startsWith("FTR:JourneyPattern:"));
     }
 
     @Test
@@ -186,7 +186,7 @@ class NeTExRouteServiceTest {
 
         // then: first stop shows destination
         final var firstStop = routeData.getJourneyPatterns().get(0).stopPoints().get(0);
-        assertEquals("DT:DestinationDisplay:OL", firstStop.destinationDisplayRef());
+        assertEquals("FTR:DestinationDisplay:OL", firstStop.destinationDisplayRef());
     }
 
     @Test
@@ -216,9 +216,9 @@ class NeTExRouteServiceTest {
 
         // then
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
@@ -266,9 +266,9 @@ class NeTExRouteServiceTest {
 
         // then — journey pattern stop refs are track-qualified
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE-1", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE-1", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
@@ -282,9 +282,9 @@ class NeTExRouteServiceTest {
 
         // then — TPE falls back to station-level SSP
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
@@ -330,9 +330,9 @@ class NeTExRouteServiceTest {
 
         // then — route points are STILL station-level (not track-qualified)
         final var routePointRefs = routeData.getRoutes().get(0).routePointRefs();
-        assertEquals("DT:RoutePoint:HKI", routePointRefs.get(0));
-        assertEquals("DT:RoutePoint:TPE", routePointRefs.get(1));
-        assertEquals("DT:RoutePoint:OL", routePointRefs.get(2));
+        assertEquals("FTR:RoutePoint:HKI", routePointRefs.get(0));
+        assertEquals("FTR:RoutePoint:TPE", routePointRefs.get(1));
+        assertEquals("FTR:RoutePoint:OL", routePointRefs.get(2));
     }
 
     // --- Helpers ---

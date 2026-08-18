@@ -54,7 +54,7 @@ public class NeTExCompositionWritingService {
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(vehicleTypes, datedJourneys, timestamp);
-        return writingService.marshalAndZip(delivery, "DT_rail_compositions.xml");
+        return writingService.marshalAndZip(delivery, "FTR_rail_compositions.xml");
     }
 
     private PublicationDeliveryStructure buildPublicationDelivery(
@@ -74,7 +74,7 @@ public class NeTExCompositionWritingService {
         return new PublicationDeliveryStructure()
                 .withVersion(NETEX_VERSION)
                 .withPublicationTimestamp(timestamp.toLocalDateTime())
-                .withParticipantRef("DT")
+                .withParticipantRef("FTR")
                 .withDescription(new MultilingualString().withValue("Finland rail composition and accessibility data"))
                 .withDataObjects(dataObjects);
     }
@@ -108,7 +108,7 @@ public class NeTExCompositionWritingService {
         }
 
         return new ResourceFrame()
-                .withId("DT:ResourceFrame:compositions")
+                .withId("FTR:ResourceFrame:compositions")
                 .withVersion("1")
                 .withVehicleTypes(vtStruct);
     }
@@ -119,12 +119,12 @@ public class NeTExCompositionWritingService {
         for (final NeTExDatedVehicleJourney dj : datedJourneys) {
             final String idSuffix = dj.trainNumber() + "-" + dj.date()
                     + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
-            final String trainId = "DT:Train:" + idSuffix;
+            final String trainId = "FTR:Train:" + idSuffix;
 
             final TrainComponents_RelStructure components = new TrainComponents_RelStructure();
             for (final NeTExTrainComponent comp : dj.components()) {
                 final TrainElement element = new TrainElement()
-                        .withId("DT:TrainElement:" + idSuffix + "-" + comp.order())
+                        .withId("FTR:TrainElement:" + idSuffix + "-" + comp.order())
                         .withVersion("1")
                         .withTrainElementType(TrainElementTypeEnumeration.fromValue(comp.elementType()));
 
@@ -133,7 +133,7 @@ public class NeTExCompositionWritingService {
                 }
 
                 final TrainComponent trainComponent = new TrainComponent()
-                        .withId("DT:TrainComponent:" + idSuffix + "-" + comp.order())
+                        .withId("FTR:TrainComponent:" + idSuffix + "-" + comp.order())
                         .withVersion("1")
                         .withOrder(BigInteger.valueOf(comp.order()))
                         .withLabel(new MultilingualString().withValue(comp.label()))
@@ -159,7 +159,7 @@ public class NeTExCompositionWritingService {
         for (final NeTExDatedVehicleJourney dj : datedJourneys) {
             final String idSuffix = dj.trainNumber() + "-" + dj.date()
                     + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
-            final String trainId = "DT:Train:" + idSuffix;
+            final String trainId = "FTR:Train:" + idSuffix;
 
             final TrainRefStructure trainRef = new TrainRefStructure();
             trainRef.setRef(trainId);
@@ -179,7 +179,7 @@ public class NeTExCompositionWritingService {
 
             if (dj.hasWheelchair()) {
                 dsj.withAccessibilityAssessment(new AccessibilityAssessment()
-                        .withId("DT:AA:" + idSuffix)
+                        .withId("FTR:AA:" + idSuffix)
                         .withVersion("1")
                         .withMobilityImpairedAccess(LimitationStatusEnumeration.TRUE));
             }
@@ -188,7 +188,7 @@ public class NeTExCompositionWritingService {
         }
 
         return new TimetableFrame()
-                .withId("DT:TimetableFrame:compositions")
+                .withId("FTR:TimetableFrame:compositions")
                 .withVersion("1")
                 .withVehicleJourneys(vehicleJourneys);
     }

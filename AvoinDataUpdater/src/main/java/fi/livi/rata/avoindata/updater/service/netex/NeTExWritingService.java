@@ -127,7 +127,7 @@ public class NeTExWritingService {
             final ZonedDateTime generationTimestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, generationTimestamp);
-        return marshalAndZip(delivery, "DT_rail_timetables.xml");
+        return marshalAndZip(delivery, "FTR_rail_timetables.xml");
     }
 
     /**
@@ -164,7 +164,7 @@ public class NeTExWritingService {
         return new PublicationDeliveryStructure()
                 .withVersion(VERSION)
                 .withPublicationTimestamp(generationTimestamp.toLocalDateTime())
-                .withParticipantRef("DT")
+                .withParticipantRef("FTR")
                 .withDataObjects(dataObjects);
     }
 
@@ -184,13 +184,13 @@ public class NeTExWritingService {
         }
 
         return new ResourceFrame()
-                .withId("DT:ResourceFrame:1")
+                .withId("FTR:ResourceFrame:1")
                 .withVersion("1")
                 .withCodespaces(new Codespaces_RelStructure()
                         .withCodespaceRefOrCodespace(
                                 new Codespace()
-                                        .withId("dt")
-                                        .withXmlns("DT")
+                                        .withId("ftr")
+                                        .withXmlns("FTR")
                                         .withXmlnsUrl("https://rata.digitraffic.fi"),
                                 // FSR is PETI's/Fintraffic's codespace; we only reference it. PETI's own
                                 // NeTEx export declares no XmlnsUrl for FSR.
@@ -208,12 +208,12 @@ public class NeTExWritingService {
             final NeTExRouteData routeData,
             final List<NeTExEntityService.NeTExLine> lines) {
         final ServiceFrame frame = new ServiceFrame()
-                .withId("DT:ServiceFrame:1")
+                .withId("FTR:ServiceFrame:1")
                 .withVersion("1");
 
         // Network
         frame.withNetwork(new Network()
-                .withId("DT:Network:FIN")
+                .withId("FTR:Network:FIN")
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("Finnish Railways"))
                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL));
@@ -367,7 +367,7 @@ public class NeTExWritingService {
         int assignmentOrder = 1;
         for (final var dta : calendarData.getDayTypeAssignments()) {
             final DayTypeAssignment assignment = new DayTypeAssignment()
-                    .withId("DT:DayTypeAssignment:" + assignmentOrder)
+                    .withId("FTR:DayTypeAssignment:" + assignmentOrder)
                     .withVersion("1")
                     .withOrder(BigInteger.valueOf(assignmentOrder))
                     .withDayTypeRef(FACTORY.createDayTypeRef(
@@ -384,7 +384,7 @@ public class NeTExWritingService {
         }
 
         return new ServiceCalendarFrame()
-                .withId("DT:ServiceCalendarFrame:1")
+                .withId("FTR:ServiceCalendarFrame:1")
                 .withVersion("1")
                 .withDayTypes(dayTypesStructure)
                 .withOperatingPeriods(periodsStructure)
@@ -400,7 +400,7 @@ public class NeTExWritingService {
         vehicleJourneys.getVehicleJourneyOrDatedVehicleJourneyOrNormalDatedVehicleJourney().addAll(journeys);
 
         return new TimetableFrame()
-                .withId("DT:TimetableFrame:1")
+                .withId("FTR:TimetableFrame:1")
                 .withVersion("1")
                 .withVehicleJourneys(vehicleJourneys);
     }

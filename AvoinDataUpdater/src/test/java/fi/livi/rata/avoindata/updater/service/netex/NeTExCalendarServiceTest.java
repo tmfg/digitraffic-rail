@@ -223,7 +223,7 @@ class NeTExCalendarServiceTest {
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
 
         // then
-        assertTrue(calendarData.getDayTypes().get(0).getId().startsWith("DT:DayType:"));
+        assertTrue(calendarData.getDayTypes().get(0).getId().startsWith("FTR:DayType:"));
     }
 
     @Test
@@ -237,7 +237,7 @@ class NeTExCalendarServiceTest {
         final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
 
         // then
-        assertTrue(calendarData.getOperatingPeriods().get(0).getId().startsWith("DT:OperatingPeriod:"));
+        assertTrue(calendarData.getOperatingPeriods().get(0).getId().startsWith("FTR:OperatingPeriod:"));
     }
 
     // --- Hash generation ---
