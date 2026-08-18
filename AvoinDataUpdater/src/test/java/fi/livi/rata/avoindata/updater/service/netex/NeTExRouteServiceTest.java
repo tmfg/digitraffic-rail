@@ -1,15 +1,10 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
-import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
-import fi.livi.rata.avoindata.common.domain.localization.TrainType;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,10 +13,21 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * Tests for NeTExRouteService — Route and JourneyPattern derivation from schedules.
+ * Tests for NeTExRouteService — Route and JourneyPattern derivation from
+ * schedules.
  */
 class NeTExRouteServiceTest {
 
@@ -88,12 +94,13 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertEquals("FTR:Line:IC", routeData.getRoutes().get(0).lineRef());
+        assertEquals("FTR:Line:IC-59", routeData.getRoutes().get(0).lineRef());
     }
 
     @Test
     void givenScheduleWithCommercialStops_whenCreatingRouteData_thenJourneyPatternContainsOnlyCommercialStops() {
-        // given: HKI (commercial) → PSL (non-commercial, pass-through) → TPE (commercial) → OL (commercial)
+        // given: HKI (commercial) → PSL (non-commercial, pass-through) → TPE
+        // (commercial) → OL (commercial)
         final Schedule schedule = createScheduleWithMixedStops(1L, 59L, "IC", "Long-distance");
 
         // when
@@ -223,10 +230,10 @@ class NeTExRouteServiceTest {
 
     @Test
     void givenTwoTrainsWithSameStopSequence_whenCreatingRouteData_thenShareJourneyPattern() {
-        // given
+        // given — same line (train number) and stops
         final Schedule schedule1 = createScheduleWithStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"));
-        final Schedule schedule2 = createScheduleWithStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"));
 
         // when
@@ -292,7 +299,7 @@ class NeTExRouteServiceTest {
         // given — same stations, different tracks at HKI
         final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
-        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("6", "1", "2"));
 
         // when
@@ -308,7 +315,7 @@ class NeTExRouteServiceTest {
         // given — same stations AND same tracks
         final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
-        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
 
         // when
@@ -338,7 +345,7 @@ class NeTExRouteServiceTest {
     // --- Helpers ---
 
     private Schedule createScheduleWithStops(final long id, final long trainNumber, final String trainTypeName,
-                                              final String categoryName, final List<String> stationCodes) {
+            final String categoryName, final List<String> stationCodes) {
         final Schedule schedule = new Schedule();
         schedule.id = id;
         schedule.trainNumber = trainNumber;
@@ -398,7 +405,7 @@ class NeTExRouteServiceTest {
     }
 
     private Schedule createScheduleWithMixedStops(final long id, final long trainNumber,
-                                                   final String trainTypeName, final String categoryName) {
+            final String trainTypeName, final String categoryName) {
         final Schedule schedule = createScheduleWithStops(id, trainNumber, trainTypeName, categoryName,
                 List.of("HKI", "PSL", "TPE", "OL"));
 
@@ -415,8 +422,8 @@ class NeTExRouteServiceTest {
     }
 
     private Schedule createScheduleWithTrackedStops(final long id, final long trainNumber,
-                                                     final String trainTypeName, final String categoryName,
-                                                     final List<String> stationCodes, final List<String> tracks) {
+            final String trainTypeName, final String categoryName,
+            final List<String> stationCodes, final List<String> tracks) {
         final Schedule schedule = createScheduleWithStops(id, trainNumber, trainTypeName, categoryName, stationCodes);
         // Assign commercial tracks to each ScheduleRow
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {

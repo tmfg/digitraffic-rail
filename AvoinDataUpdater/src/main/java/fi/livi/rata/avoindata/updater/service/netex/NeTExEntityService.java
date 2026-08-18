@@ -28,14 +28,25 @@ public class NeTExEntityService {
     }
 
     /**
-     * Derives the Line identifier for a schedule.
-     * Commuter trains use commuterLineId, long-distance trains use trainType name.
+     * Derives the id-safe Line identifier for a schedule. Commuter trains use
+     * commuterLineId;
+     * long-distance trains use trainType + train number (e.g. "IC-59"), since "IC"
+     * alone is
+     * not a line but each numbered service is.
      */
     public String deriveLineId(final Schedule schedule) {
         if (schedule.commuterLineId != null && !schedule.commuterLineId.isEmpty()) {
             return schedule.commuterLineId;
         }
-        return schedule.trainType.name;
+        return schedule.trainType.name + "-" + schedule.trainNumber;
+    }
+
+    /** Human-readable line code: commuter line id, or "IC 59" for long-distance. */
+    private String deriveLinePublicCode(final Schedule schedule) {
+        if (schedule.commuterLineId != null && !schedule.commuterLineId.isEmpty()) {
+            return schedule.commuterLineId;
+        }
+        return schedule.trainType.name + " " + schedule.trainNumber;
     }
 
     /**
@@ -44,10 +55,9 @@ public class NeTExEntityService {
     public List<NeTExLine> createLines(final List<Schedule> schedules) {
         final Map<String, NeTExLine> lineMap = new LinkedHashMap<>();
         for (final Schedule schedule : schedules) {
-            final String lineIdentifier = deriveLineId(schedule);
-            final String lineId = idGenerator.lineId(lineIdentifier);
+            final String lineId = idGenerator.lineId(deriveLineId(schedule));
             if (!lineMap.containsKey(lineId)) {
-                lineMap.put(lineId, new NeTExLine(lineId, lineIdentifier, "rail"));
+                lineMap.put(lineId, new NeTExLine(lineId, deriveLinePublicCode(schedule), "rail"));
             }
         }
         return new ArrayList<>(lineMap.values());

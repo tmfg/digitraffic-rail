@@ -1,8 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -11,6 +8,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
  * Derives Routes and JourneyPatterns from schedule data.
@@ -98,8 +98,8 @@ public class NeTExRouteService {
     private NeTExRouteData.NeTExJourneyPattern buildJourneyPattern(final String patternId, final String routeId,
             final List<StopWithTrack> commercialStopsWithTrack) {
         final List<NeTExRouteData.NeTExStopPointInPattern> stopPoints = new ArrayList<>();
-        final String lastStopCode =
-                commercialStopsWithTrack.get(commercialStopsWithTrack.size() - 1).stationShortCode();
+        final String lastStopCode = commercialStopsWithTrack.get(commercialStopsWithTrack.size() - 1)
+                .stationShortCode();
         for (int i = 0; i < commercialStopsWithTrack.size(); i++) {
             final StopWithTrack swt = commercialStopsWithTrack.get(i);
             final boolean isFirst = (i == 0);
@@ -142,6 +142,6 @@ public class NeTExRouteService {
         if (schedule.commuterLineId != null && !schedule.commuterLineId.isEmpty()) {
             return schedule.commuterLineId;
         }
-        return schedule.trainType.name;
+        return schedule.trainType.name + "-" + schedule.trainNumber;
     }
 }

@@ -1,15 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
-import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
-import fi.livi.rata.avoindata.common.domain.localization.TrainType;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,7 +12,17 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
  * Tests for NeTExEntityService — Lines, Operators, ServiceJourneys creation.
@@ -54,7 +58,7 @@ class NeTExEntityServiceTest {
     }
 
     @Test
-    void givenLongDistanceTrainWithoutLineId_whenDerivingLine_thenUsesTrainType() {
+    void givenLongDistanceTrainWithoutLineId_whenDerivingLine_thenUsesTrainTypeAndNumber() {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
 
@@ -62,11 +66,11 @@ class NeTExEntityServiceTest {
         final String lineId = entityService.deriveLineId(schedule);
 
         // then
-        assertEquals("IC", lineId);
+        assertEquals("IC-59", lineId);
     }
 
     @Test
-    void givenPendolino_whenDerivingLine_thenUsesS() {
+    void givenPendolino_whenDerivingLine_thenUsesTrainTypeAndNumber() {
         // given
         final Schedule schedule = createLongDistanceSchedule(1L, 9L, "S");
 
@@ -74,7 +78,7 @@ class NeTExEntityServiceTest {
         final String lineId = entityService.deriveLineId(schedule);
 
         // then
-        assertEquals("S", lineId);
+        assertEquals("S-9", lineId);
     }
 
     @Test
@@ -165,8 +169,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertEquals(1, journeys.size());
@@ -181,8 +185,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertEquals(1, journeys.size());
@@ -197,8 +201,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertEquals("IC 59", journeys.get(0).name());
@@ -212,8 +216,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertEquals("59", journeys.get(0).privateCode());
@@ -227,8 +231,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertNotNull(journeys.get(0).journeyPatternRef());
@@ -243,8 +247,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertEquals("FTR:Operator:vr", journeys.get(0).operatorRef());
@@ -258,11 +262,11 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
-        assertEquals("FTR:Line:IC", journeys.get(0).lineRef());
+        assertEquals("FTR:Line:IC-59", journeys.get(0).lineRef());
     }
 
     @Test
@@ -273,8 +277,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then
         assertNotNull(journeys.get(0).dayTypeRef());
@@ -292,8 +296,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then: exactly one ServiceJourney (not 180!)
         assertEquals(1, journeys.size());
@@ -310,8 +314,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then — passing times carry station short code and commercial track
         final var passingTimes = journeys.get(0).passingTimes();
@@ -332,8 +336,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then — TPE's passing time has null commercialTrack
         final var passingTimes = journeys.get(0).passingTimes();
@@ -350,8 +354,8 @@ class NeTExEntityServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
-        final List<NeTExEntityService.NeTExServiceJourney> journeys =
-                entityService.createServiceJourneys(List.of(schedule), calendarData, routeData);
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), calendarData, routeData);
 
         // then — journey pattern ref is still set correctly
         assertNotNull(journeys.get(0).journeyPatternRef());
@@ -370,7 +374,8 @@ class NeTExEntityServiceTest {
         return createBaseSchedule(id, trainNumber, trainTypeName, "Long-distance");
     }
 
-    private Schedule createAdhocSchedule(final long id, final long trainNumber, final String trainTypeName, final LocalDate date) {
+    private Schedule createAdhocSchedule(final long id, final long trainNumber, final String trainTypeName,
+            final LocalDate date) {
         final Schedule schedule = createBaseSchedule(id, trainNumber, trainTypeName, "Long-distance");
         schedule.timetableType = Train.TimetableType.ADHOC;
         schedule.startDate = date;
@@ -379,7 +384,7 @@ class NeTExEntityServiceTest {
     }
 
     private Schedule createBaseSchedule(final long id, final long trainNumber,
-                                         final String trainTypeName, final String categoryName) {
+            final String trainTypeName, final String categoryName) {
         final Schedule schedule = new Schedule();
         schedule.id = id;
         schedule.trainNumber = trainNumber;
@@ -415,7 +420,7 @@ class NeTExEntityServiceTest {
 
     private List<ScheduleRow> createDefaultStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
-        final String[] stations = {"HKI", "TPE", "OL"};
+        final String[] stations = { "HKI", "TPE", "OL" };
 
         for (int i = 0; i < stations.length; i++) {
             final ScheduleRow row = new ScheduleRow();
