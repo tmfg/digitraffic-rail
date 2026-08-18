@@ -71,6 +71,15 @@ jobs:
           cat digitraffic-ci/aws/sbom/config.json >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT      
 
+      - name: Extract ECR registry ID
+        id: ecr
+        run: echo "registry-id=$(echo '${{ secrets.FIRA_ECR_URL }}' | cut -d. -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: ${{ steps.ecr.outputs.registry-id }}
+
       - name: Generate SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 #v0.24.0
         env:
