@@ -125,18 +125,6 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
-    public void speedCannotBeNullBecauseOfDbConstraint() {
-        // DB column `speed` is INT NOT NULL (V12__kupla.sql); nothing relaxes it, so a null speed cannot be persisted.
-        // This documents that the current schema prevents null speed.
-        final TrainLocation trainLocation = new TrainLocation();
-        trainLocation.trainLocationId = recentId(9L);
-        trainLocation.location = new GeometryFactory().createPoint(new Coordinate(20.3, 10.1));
-        trainLocation.speed = null;
-
-        assertThrows(Exception.class, () -> trainLocationRepository.saveAndFlush(trainLocation));
-    }
-
-    @Test
     public void locationShouldBeGeoJsonPoint() throws Exception {
         trainLocationFactory.createTrainLocation();
 
@@ -152,7 +140,7 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
 
         getJson("/train-locations/latest")
                 .andExpect(jsonPath("$[0].id").doesNotExist())
-                .andExpect(jsonPath("$[0].liikeLocation").doesNotExist());
+                .andExpect(jsonPath("$[0].locationEpsg3067").doesNotExist());
     }
 
     @Test

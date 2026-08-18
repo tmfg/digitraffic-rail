@@ -37,7 +37,7 @@ public class TrainLocation {
 
     @Transient
     @JsonIgnore
-    public Point liikeLocation;
+    public Point locationEpsg3067;
 
     @Override
     public String toString() {
