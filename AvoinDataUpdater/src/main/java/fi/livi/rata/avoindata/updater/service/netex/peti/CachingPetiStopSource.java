@@ -27,7 +27,8 @@ import reactor.core.Exceptions;
  * extracts stops.xml, parses it with PetiNeTExParser, and caches the result
  * as a last-good snapshot. Refreshes on schedule (03:30 UTC).
  *
- * <p>On fetch/parse failure, the last-good snapshot is preserved — generation
+ * <p>
+ * On fetch/parse failure, the last-good snapshot is preserved — generation
  * continues with stale but valid data rather than empty/partial.
  */
 @Component
@@ -37,7 +38,10 @@ public class CachingPetiStopSource implements PetiStopSource {
     private static final Logger log = LoggerFactory.getLogger(CachingPetiStopSource.class);
     private static final String STOPS_XML_ENTRY = "stops.xml";
 
-    /** Upper bound on decompressed stops.xml size — defence-in-depth against zip bombs (~170× real data). */
+    /**
+     * Upper bound on decompressed stops.xml size — defence-in-depth against zip
+     * bombs (~170× real data).
+     */
     private static final long MAX_DECOMPRESSED_BYTES = 50L * 1024 * 1024;
 
     private final WebClient webClient;
@@ -66,10 +70,13 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
-     * Loads the snapshot on demand when empty, so generation never depends on the daily
-     * warm-up having run in this JVM (e.g. after a restart or an early manual run). Fails
-     * when a live feed still has no data, rather than silently producing a package with no
-     * stop assignments.
+     * Loads the snapshot on demand when empty, so generation never depends on the
+     * daily
+     * warm-up having run in this JVM (e.g. after a restart or an early manual run).
+     * When the
+     * feed is unavailable, generation degrades to a package without stop
+     * assignments rather
+     * than failing outright.
      */
     @Override
     public void ensureLoaded() {
@@ -78,15 +85,16 @@ public class CachingPetiStopSource implements PetiStopSource {
             refresh();
         }
         if (lastGood.isEmpty()) {
-            throw new IllegalStateException(
-                    "PETI stop source returned no stops; refusing to generate NeTEx without stop assignments");
+            log.warn("rail.upstream.peti operation=ensureLoaded outcome=empty "
+                    + "detail=generating_without_stop_assignments");
         }
     }
 
     /**
      * Scheduled warm-up: refresh the PETI snapshot ahead of NeTEx generation.
      * Fetches the zip via HTTP, parses stops.xml, and atomically swaps the snapshot
-     * on success. On any failure, keeps the last-good snapshot and records the error.
+     * on success. On any failure, keeps the last-good snapshot and records the
+     * error.
      */
     @Scheduled(cron = "${updater.netex.peti.cron:0 30 3 * * *}", zone = "UTC")
     public void refresh() {
@@ -143,14 +151,18 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
-     * Parse a zip byte array: extract stops.xml, guard its decompressed size, and parse
-     * with PetiNeTExParser. Pure function — does not mutate the cached snapshot; callers
-     * swap results in via {@link #applySnapshot(List)}. Package-private seam for unit
+     * Parse a zip byte array: extract stops.xml, guard its decompressed size, and
+     * parse
+     * with PetiNeTExParser. Pure function — does not mutate the cached snapshot;
+     * callers
+     * swap results in via {@link #applySnapshot(List)}. Package-private seam for
+     * unit
      * testing without HTTP.
      *
      * @param zipBytes raw zip file content
      * @return parsed list of PetiStop records
-     * @throws PetiParseException if stops.xml is missing, unparseable, or exceeds the size cap
+     * @throws PetiParseException if stops.xml is missing, unparseable, or exceeds
+     *                            the size cap
      */
     List<PetiStop> parseZipBytes(final byte[] zipBytes) {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
@@ -171,8 +183,10 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
-     * Atomically swaps in a newly-parsed snapshot. Empty results are ignored so a failed
-     * or empty fetch never clobbers the last-good data. Package-private seam so tests can
+     * Atomically swaps in a newly-parsed snapshot. Empty results are ignored so a
+     * failed
+     * or empty fetch never clobbers the last-good data. Package-private seam so
+     * tests can
      * pre-load a snapshot without HTTP.
      */
     void applySnapshot(final List<PetiStop> parsed) {
@@ -183,7 +197,8 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     /**
-     * Reads a zip entry fully into memory, aborting if the decompressed size exceeds
+     * Reads a zip entry fully into memory, aborting if the decompressed size
+     * exceeds
      * {@link #MAX_DECOMPRESSED_BYTES} — defence-in-depth against zip bombs.
      */
     private static byte[] readWithSizeCap(final InputStream in) throws IOException {

@@ -1,5 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
@@ -11,17 +25,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for NeTExService — orchestration and filtering logic.

@@ -13,9 +13,12 @@ public interface PetiStopSource {
     List<PetiStop> getStops();
 
     /**
-     * Ensure stop data is available before generation. Static/disabled sources are a no-op
-     * (an empty result is intentional); a live feed loads on demand and fails if it cannot
-     * supply data, so generation never silently ships a package without stop assignments.
+     * Ensure stop data is available before generation. Static/disabled sources are
+     * a no-op
+     * (an empty result is intentional); a live feed loads on demand and fails if it
+     * cannot
+     * supply data, so generation never silently ships a package without stop
+     * assignments.
      */
     default void ensureLoaded() {
     }

@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service;
 
-import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
-
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -32,22 +31,29 @@ public class RipaService {
     private final String kojuApiUrl;
     private final String palaApiUrl;
 
-    public RipaService(final WebClient ripaWebClient, final WebClient palaWebClient, final RestTemplate ripaRestTemplate,
+    // Reactive block timeout for RIPA responses; must exceed the slowest per-day
+    // payload (full-day trains ~2 min).
+    private final Duration blockDuration;
+
+    public RipaService(final WebClient ripaWebClient, final WebClient palaWebClient,
+            final RestTemplate ripaRestTemplate,
             final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl,
             final @Value("${updater.koju-api-url}") String kojuApiUrl,
-            final @Value("${updater.pala-api-url:}") String palaApiUrl) {
+            final @Value("${updater.pala-api-url:}") String palaApiUrl,
+            final @Value("${updater.http.initTimeoutMillis:180000}") long blockTimeoutMillis) {
         this.ripaWebClient = ripaWebClient;
         this.palaWebClient = palaWebClient;
         this.ripaRestTemplate = ripaRestTemplate;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
         this.kojuApiUrl = kojuApiUrl;
         this.palaApiUrl = palaApiUrl;
+        this.blockDuration = Duration.ofMillis(blockTimeoutMillis);
     }
 
     public <ENTITYTYPE> ENTITYTYPE getFromRipa(final String path, final Class<ENTITYTYPE> clazz) {
         log.info("method=getFromRipa Fetching from api={}/{} type={}", liikeInterfaceUrl, path, clazz.getSimpleName());
         try {
-            return ripaWebClient.get().uri(path).retrieve().bodyToMono(clazz).block(BLOCK_DURATION);
+            return ripaWebClient.get().uri(path).retrieve().bodyToMono(clazz).block(blockDuration);
         } catch (final Exception e) {
             log.error("method=getFromRipa Fetching from api={}/{} type={} failed with error {}",
                     liikeInterfaceUrl, path, clazz.getSimpleName(), e.getMessage());
@@ -61,7 +67,7 @@ public class RipaService {
                 clazz.getSimpleName(), acceptHeader);
         try {
             return ripaWebClient.get().uri(path).header(HttpHeaders.ACCEPT, acceptHeader).retrieve().bodyToMono(clazz)
-                    .block(BLOCK_DURATION);
+                    .block(blockDuration);
         } catch (final Exception e) {
             log.error("method=getFromRipa Fetching from api={}/{} type={} acceptHeader={} failed with error {}",
                     liikeInterfaceUrl, path, clazz.getSimpleName(), acceptHeader, e.getMessage());
@@ -149,7 +155,7 @@ public class RipaService {
     public String getFromPalaAsString(final String path) {
         log.info("method=getFromPalaAsString Fetching from api={}/{} type=String", palaApiUrl, path);
         try {
-            return palaWebClient.get().uri(path).retrieve().bodyToMono(String.class).block(BLOCK_DURATION);
+            return palaWebClient.get().uri(path).retrieve().bodyToMono(String.class).block(blockDuration);
         } catch (final Exception e) {
             log.error("method=getFromPalaAsString Fetching from api={}/{} failed with error {}",
                     palaApiUrl, path, e.getMessage());

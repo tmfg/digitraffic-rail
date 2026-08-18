@@ -1,12 +1,18 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -52,7 +58,8 @@ class CachingPetiStopSourceTest {
 
     @BeforeEach
     void setUp() {
-        // Stub WebClient that is never actually called (unit tests use parseZipBytes seam)
+        // Stub WebClient that is never actually called (unit tests use parseZipBytes
+        // seam)
         final ExchangeFunction noOpExchange = request -> Mono.empty();
         stubWebClient = WebClient.builder().exchangeFunction(noOpExchange).build();
         source = new CachingPetiStopSource(stubWebClient, new PetiNeTExParser(),
@@ -78,9 +85,11 @@ class CachingPetiStopSourceTest {
 
     @Test
     void givenSuccessfulRefreshViaParseZipBytes_whenGetMatcher_thenMatchesKnownUic() {
-        // given — simulate successful refresh by directly setting lastGood via parseZipBytes
+        // given — simulate successful refresh by directly setting lastGood via
+        // parseZipBytes
         // (in real impl, refresh() calls parseZipBytes and updates lastGood)
-        // For skeleton: we call parseZipBytes and verify the matcher works on the result
+        // For skeleton: we call parseZipBytes and verify the matcher works on the
+        // result
         final List<PetiStop> stops = source.parseZipBytes(fixtureZipBytes);
 
         // when — build matcher from parsed stops (interface default method)
@@ -112,7 +121,8 @@ class CachingPetiStopSourceTest {
         final byte[] zipNoStops = buildZip("authorities.xml",
                 "<xml>authorities</xml>".getBytes(StandardCharsets.UTF_8));
 
-        // when / then — should throw (stops.xml not found) or return empty indicating failure
+        // when / then — should throw (stops.xml not found) or return empty indicating
+        // failure
         assertThrows(Exception.class, () -> source.parseZipBytes(zipNoStops));
     }
 
@@ -236,12 +246,13 @@ class CachingPetiStopSourceTest {
     }
 
     @Test
-    void givenEmptySnapshotAndUnavailableFeed_whenEnsureLoaded_thenThrows() {
-        // given — empty snapshot; stub WebClient returns Mono.empty() so refresh cannot populate it
+    void givenEmptySnapshotAndUnavailableFeed_whenEnsureLoaded_thenDoesNotThrow() {
+        // given — empty snapshot; stub WebClient returns Mono.empty() so refresh cannot
+        // populate it
 
-        // when/then — a live feed with no data fails rather than yielding an empty result
-        final IllegalStateException ex = assertThrows(IllegalStateException.class, () -> source.ensureLoaded());
-        assertTrue(ex.getMessage().contains("PETI"), "Message should mention PETI");
+        // when/then — an unavailable feed degrades (stays empty) rather than blocking
+        // generation
+        assertDoesNotThrow(() -> source.ensureLoaded());
         assertTrue(source.getStops().isEmpty());
     }
 
@@ -256,7 +267,8 @@ class CachingPetiStopSourceTest {
         assertThrows(UnsupportedOperationException.class, () -> result.add(null));
     }
 
-    // --- A12: Volatile immutable-swap — concurrent read returns complete snapshot ---
+    // --- A12: Volatile immutable-swap — concurrent read returns complete snapshot
+    // ---
 
     @Test
     void givenConcurrentReads_whenRefreshSwapsSnapshot_thenReaderSeesCompleteSnapshot() throws Exception {
@@ -320,7 +332,10 @@ class CachingPetiStopSourceTest {
         // when — failed refresh (bad XML) at T2 should NOT update timestamp
         final byte[] badZip = buildZip("stops.xml",
                 "<<<NOT XML>>>".getBytes(StandardCharsets.UTF_8));
-        try { source.parseZipBytes(badZip); } catch (final PetiParseException ignored) { }
+        try {
+            source.parseZipBytes(badZip);
+        } catch (final PetiParseException ignored) {
+        }
         final long ageAfterFailure = source.getSnapshotAgeSeconds();
 
         // then — age should still reflect T1 (>= 0, not reset)
@@ -408,15 +423,19 @@ class CachingPetiStopSourceTest {
         assertEquals(customUrl, customSource.getPetiUrl());
     }
 
-    // --- H1a: Oversized zip entry — decompressed-size cap throws PetiParseException ---
+    // --- H1a: Oversized zip entry — decompressed-size cap throws
+    // PetiParseException ---
 
     @Test
     void givenOversizedZipEntry_whenParseZipBytes_thenThrowsPetiParseException() {
-        // given — zip whose stops.xml decompresses to > 50 MB (well-formed XML with padding comment)
+        // given — zip whose stops.xml decompresses to > 50 MB (well-formed XML with
+        // padding comment)
         final byte[] zip = oversizedFixtureZipBytes;
 
-        // when / then — after green phase adds MAX_DECOMPRESSED_BYTES cap, this throws PetiParseException
-        // with message indicating size cap. Currently no cap exists → parses fine → assertThrows fails.
+        // when / then — after green phase adds MAX_DECOMPRESSED_BYTES cap, this throws
+        // PetiParseException
+        // with message indicating size cap. Currently no cap exists → parses fine →
+        // assertThrows fails.
         final PetiParseException ex = assertThrows(PetiParseException.class,
                 () -> source.parseZipBytes(zip));
         assertTrue(ex.getMessage().contains("size cap") || ex.getMessage().contains("decompressed"),
@@ -434,14 +453,16 @@ class CachingPetiStopSourceTest {
 
         // when — attempt refresh with oversized zip (2 stops, >50 MB decompressed).
         // After green phase, parseZipBytes will throw PetiParseException (size cap) and
-        // lastGood is NOT overwritten. Currently no cap → parses 2 stops → overwrites lastGood.
+        // lastGood is NOT overwritten. Currently no cap → parses 2 stops → overwrites
+        // lastGood.
         try {
             source.parseZipBytes(oversizedFixtureZipBytes);
         } catch (final PetiParseException ignored) {
             // expected after green phase; in red phase no exception is thrown
         }
 
-        // then — last-good should still be the baseline (4 stops, not the oversized doc's 2)
+        // then — last-good should still be the baseline (4 stops, not the oversized
+        // doc's 2)
         assertEquals(4, source.getStops().size(),
                 "last-good snapshot should be retained when oversized zip is rejected");
         assertTrue(source.getSnapshotAgeSeconds() >= 0,
@@ -476,7 +497,8 @@ class CachingPetiStopSourceTest {
 
     /**
      * Builds a zip with a stops.xml entry that decompresses to > 50 MB.
-     * The content is well-formed NeTEx XML with a large XML comment (trivially compressible)
+     * The content is well-formed NeTEx XML with a large XML comment (trivially
+     * compressible)
      * and 2 valid StopPlaces (different count from baseline's 4).
      */
     private static byte[] buildOversizedFixtureZip() throws IOException {

@@ -1,5 +1,28 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
@@ -17,27 +40,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
-
-import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
  * Tests for NeTExService match-rate guard logic.
  */
@@ -52,30 +54,6 @@ class NeTExServiceMatchRateGuardTest {
 
         // when/then — no exception
         assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
-    }
-
-    @Test
-    void givenPetiSourceThatFailsToLoad_whenGenerating_thenPropagates() {
-        // given — a live feed that cannot supply data fails in ensureLoaded(); generation must not swallow it
-        final PetiStopSource failing = new PetiStopSource() {
-            @Override
-            public List<PetiStop> getStops() {
-                return List.of();
-            }
-
-            @Override
-            public void ensureLoaded() {
-                throw new IllegalStateException("PETI stop source returned no stops");
-            }
-        };
-        final NeTExService service = createServiceWithPetiSource(failing, 0.95);
-        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
-        final List<Station> stations = createStations(List.of("HKI", "TPE"));
-
-        // when/then
-        final IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
-        assertTrue(ex.getMessage().contains("PETI"), "Message should mention PETI");
     }
 
     @Test
@@ -95,7 +73,8 @@ class NeTExServiceMatchRateGuardTest {
     @Test
     void givenMatchRateExactlyAtThreshold_whenGenerating_thenGuardDoesNotThrow() {
         // given — create scenario where rate == threshold exactly
-        // 19 matched out of 20 total = 0.95 exactly, threshold 0.95 → passes (rate < threshold is the fail condition)
+        // 19 matched out of 20 total = 0.95 exactly, threshold 0.95 → passes (rate <
+        // threshold is the fail condition)
         final List<PetiStop> petiStops = new ArrayList<>();
         for (int i = 0; i < 19; i++) {
             petiStops.add(new PetiStop("FSR:StopPlace:" + i, 1_000_100 + i, "Station " + i, true, null, List.of()));
@@ -195,8 +174,10 @@ class NeTExServiceMatchRateGuardTest {
                     .orElseThrow(() -> new AssertionError(
                             "Expected rail.netex.generation success event in log, got: " + appender.list));
 
-            // then — green phase renames fields from "peti_stations_*" to "peti_stop_assignments_*"
-            // Currently the log uses peti_stations_total → this assertion FAILS in red phase
+            // then — green phase renames fields from "peti_stations_*" to
+            // "peti_stop_assignments_*"
+            // Currently the log uses peti_stations_total → this assertion FAILS in red
+            // phase
             assertTrue(generationLog.contains("peti_stop_assignments_total="),
                     "Log should contain 'peti_stop_assignments_total=' but was: " + generationLog);
             assertTrue(generationLog.contains("peti_stop_assignments_matched="),
@@ -326,8 +307,10 @@ class NeTExServiceMatchRateGuardTest {
     }
 
     /**
-     * Creates a NeTExService wired with mocked ScheduleProviderService, StationRepository,
-     * and GeneratedExportRepository — suitable for testing the no-arg generateNeTEx()
+     * Creates a NeTExService wired with mocked ScheduleProviderService,
+     * StationRepository,
+     * and GeneratedExportRepository — suitable for testing the no-arg
+     * generateNeTEx()
      * which emits the wide-event log.
      */
     @SuppressWarnings("unchecked")

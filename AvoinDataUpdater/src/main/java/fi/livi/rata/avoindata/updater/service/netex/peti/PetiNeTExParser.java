@@ -10,7 +10,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -18,12 +17,16 @@ import org.w3c.dom.NodeList;
 /**
  * Parses a PETI rail NeTEx stops.xml into a list of {@link PetiStop} records.
  *
- * <p>Two distinct error levels:
+ * <p>
+ * Two distinct error levels:
  * <ul>
- *   <li><b>Document-level failure</b> (malformed/truncated XML) throws {@link PetiParseException}, so the
- *       caller keeps the last-good snapshot rather than persisting partial/empty data.</li>
- *   <li><b>Individual StopPlace</b> with a missing or non-numeric uicCode is skipped (and left out of the
- *       result) rather than failing the whole parse</li>
+ * <li><b>Document-level failure</b> (malformed/truncated XML) throws
+ * {@link PetiParseException}, so the
+ * caller keeps the last-good snapshot rather than persisting partial/empty
+ * data.</li>
+ * <li><b>Individual StopPlace</b> with a missing or non-numeric uicCode is
+ * skipped (and left out of the
+ * result) rather than failing the whole parse</li>
  * </ul>
  */
 @Component
@@ -36,8 +39,10 @@ public class PetiNeTExParser {
      * Parse stops from a PETI NeTEx stops.xml InputStream.
      *
      * @param stopsXml InputStream of stops.xml content
-     * @return list of successfully parsed PetiStop records (StopPlaces with missing/malformed uicCode omitted)
-     * @throws PetiParseException if the document cannot be parsed (malformed/truncated XML)
+     * @return list of successfully parsed PetiStop records (StopPlaces with
+     *         missing/malformed uicCode omitted)
+     * @throws PetiParseException if the document cannot be parsed
+     *                            (malformed/truncated XML)
      */
     public List<PetiStop> parse(final InputStream stopsXml) {
         final List<PetiStop> result = new ArrayList<>();
@@ -58,7 +63,8 @@ public class PetiNeTExParser {
                 }
             }
         } catch (final Exception e) {
-            // Document-level failure: do not return partial/empty data — fail fast so the caller
+            // Document-level failure: do not return partial/empty data — fail fast so the
+            // caller
             // keeps the last-good PETI snapshot instead of persisting a degraded state.
             log.error("Failed to parse PETI stops.xml", e);
             throw new PetiParseException("Failed to parse PETI stops.xml", e);
@@ -146,8 +152,7 @@ public class PetiNeTExParser {
                 parseLimitationStatus(getDirectChildText(limitationEl, "LiftFreeAccess")),
                 parseLimitationStatus(getDirectChildText(limitationEl, "EscalatorFreeAccess")),
                 parseLimitationStatus(getDirectChildText(limitationEl, "AudibleSignalsAvailable")),
-                parseLimitationStatus(getDirectChildText(limitationEl, "VisualSignsAvailable"))
-        );
+                parseLimitationStatus(getDirectChildText(limitationEl, "VisualSignsAvailable")));
     }
 
     private PetiLimitationStatus parseLimitationStatus(final String value) {

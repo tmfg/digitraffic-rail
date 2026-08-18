@@ -136,7 +136,8 @@ public class NeTExService {
      * train per day (same as GTFS gtfs-passenger.zip), builds all NeTEx
      * structures, writes ZIP.
      *
-     * @return generation result with ZIP and telemetry counts, or null if no schedules match
+     * @return generation result with ZIP and telemetry counts, or null if no
+     *         schedules match
      */
     public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
@@ -163,8 +164,10 @@ public class NeTExService {
             return null;
         }
 
-        // Load PETI on demand so generation never depends on the daily warm-up having run first.
-        // A live feed with no data fails here rather than silently shipping a package without assignments.
+        // Load PETI on demand so generation never depends on the daily warm-up having
+        // run first.
+        // A live feed with no data fails here rather than silently shipping a package
+        // without assignments.
         petiStopSource.ensureLoaded();
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
@@ -289,7 +292,7 @@ public class NeTExService {
      * Holds the generation output and telemetry counts for the wide-event.
      */
     record NeTExGenerationResult(byte[] zip, int scheduledStopPoints, int routes, int lines,
-                                  int serviceJourneys, int matchedCount, int unmatchedCount,
-                                  int quayMatchedCount, int quayUnmatchedCount, int quayNoTrackCount) {
+            int serviceJourneys, int matchedCount, int unmatchedCount,
+            int quayMatchedCount, int quayUnmatchedCount, int quayNoTrackCount) {
     }
 }

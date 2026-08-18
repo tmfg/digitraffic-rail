@@ -30,14 +30,14 @@ public class NeTExController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(summary = "Returns NeTEx Nordic static timetable ZIP")
+    @Operation(summary = "Returns train timetables in NeTEx Nordic")
     @RequestMapping(method = RequestMethod.GET, path = "timetables.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTExTimetables(final HttpServletResponse response) {
         return getExport(response, TIMETABLES_FILENAME);
     }
 
-    @Operation(summary = "Returns NeTEx Nordic compositions and accessibility ZIP")
+    @Operation(summary = "Returns compositions in NeTEx Nordic")
     @RequestMapping(method = RequestMethod.GET, path = "compositions.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTExCompositions(final HttpServletResponse response) {

@@ -1,13 +1,11 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
-import static fi.livi.rata.avoindata.updater.config.WebClientConfiguration.BLOCK_DURATION;
-
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +14,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.rata.avoindata.common.domain.cause.CategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.DetailedCategoryCode;
 import fi.livi.rata.avoindata.common.domain.cause.ThirdCategoryCode;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.CategoryCodeService;
+import tools.jackson.databind.JsonNode;
 
 @Service
 public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
@@ -35,13 +34,17 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
 
     private final WebClient webClient;
 
+    private final Duration blockDuration;
+
     public CategoryCodeUpdater(final WebClient ripaWebClient,
-                               final @Value("${updater.reason.syykoodisto-api-path}") String syykoodiApiPath) {
+            final @Value("${updater.reason.syykoodisto-api-path}") String syykoodiApiPath,
+            final @Value("${updater.http.initTimeoutMillis:180000}") long blockTimeoutMillis) {
         this.syykoodiApiPath = syykoodiApiPath;
         this.webClient = ripaWebClient.mutate().baseUrl(syykoodiApiPath).build();
+        this.blockDuration = Duration.ofMillis(blockTimeoutMillis);
     }
 
-    //Every day 11:01
+    // Every day 11:01
     @Override
     @Scheduled(cron = "0 1 11 * * ?")
     protected void update() {
@@ -55,8 +58,10 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         final String reasonCategoryPath = "/v1/reason-categories/latest";
 
         final ZonedDateTime start = DateProvider.nowInHelsinki();
-        final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
-        final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class).block(BLOCK_DURATION);
+        final JsonNode reasonCategoryEntity = webClient.get().uri(reasonCategoryPath).retrieve()
+                .bodyToMono(JsonNode.class).block(blockDuration);
+        final JsonNode reasonCodeEntity = webClient.get().uri(reasonCodePath).retrieve().bodyToMono(JsonNode.class)
+                .block(blockDuration);
 
         final CategoryCode[] categoryCodes = this.merge(reasonCategoryEntity, reasonCodeEntity);
 
@@ -100,7 +105,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         categoryCode.categoryCode = categoryCodeElement.get("code").textValue();
         categoryCode.categoryName = categoryCodeElement.get("name").textValue();
         categoryCode.validFrom = LocalDate.parse(categoryCodeElement.get("validFromDate").textValue());
-        categoryCode.validTo = categoryCodeElement.get("validUntilDate").isNull() ? null : LocalDate.parse(categoryCodeElement.get("validUntilDate").textValue());
+        categoryCode.validTo = categoryCodeElement.get("validUntilDate").isNull() ? null
+                : LocalDate.parse(categoryCodeElement.get("validUntilDate").textValue());
         categoryCode.oid = categoryCodeElement.get("oid").asText();
         return categoryCode;
     }
@@ -110,7 +116,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         thirdCategoryCode.thirdCategoryCode = thirdCategoryElement.get("code").textValue();
         thirdCategoryCode.thirdCategoryName = thirdCategoryElement.get("name").textValue();
         thirdCategoryCode.validFrom = LocalDate.parse(thirdCategoryElement.get("validFromDate").textValue());
-        thirdCategoryCode.validTo = thirdCategoryElement.get("validUntilDate").isNull() ? null : LocalDate.parse(thirdCategoryElement.get("validUntilDate").textValue());
+        thirdCategoryCode.validTo = thirdCategoryElement.get("validUntilDate").isNull() ? null
+                : LocalDate.parse(thirdCategoryElement.get("validUntilDate").textValue());
         thirdCategoryCode.oid = thirdCategoryElement.get("oid").asText();
         return thirdCategoryCode;
     }
@@ -120,7 +127,8 @@ public class CategoryCodeUpdater extends AEntityUpdater<CategoryCode[]> {
         detailedCategoryCode.detailedCategoryCode = detailedCategoryElement.get("code").textValue();
         detailedCategoryCode.detailedCategoryName = detailedCategoryElement.get("name").textValue();
         detailedCategoryCode.validFrom = LocalDate.parse(detailedCategoryElement.get("validFromDate").textValue());
-        detailedCategoryCode.validTo = detailedCategoryElement.get("validUntilDate").isNull() ? null : LocalDate.parse(detailedCategoryElement.get("validUntilDate").textValue());
+        detailedCategoryCode.validTo = detailedCategoryElement.get("validUntilDate").isNull() ? null
+                : LocalDate.parse(detailedCategoryElement.get("validUntilDate").textValue());
         detailedCategoryCode.oid = detailedCategoryElement.get("oid").asText();
         return detailedCategoryCode;
     }
