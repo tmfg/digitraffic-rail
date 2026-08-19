@@ -164,11 +164,13 @@ public class NeTExService {
             return null;
         }
 
-        // Load PETI on demand so generation never depends on the daily warm-up having
-        // run first.
-        // A live feed with no data fails here rather than silently shipping a package
-        // without assignments.
+        // Load PETI on demand so generation never depends on the daily warm-up having run first.
+        // When the feed is unavailable, generation degrades (no stop assignments) rather than failing.
         petiStopSource.ensureLoaded();
+        final int petiStopPlaces = petiStopSource.getStops().size();
+        final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
+        log.info("method=generateNeTEx peti_fetch_outcome={} peti_stop_places={} peti_quays={}",
+                petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
