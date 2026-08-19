@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -22,6 +24,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
+import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
@@ -102,12 +105,34 @@ public class TrainLocationUpdaterErrorHandlingTest {
     @Test
     public void successfulFetchShouldRecordStatus200() {
         when(ripaService.getFromPalaAsString(anyString())).thenReturn("{}");
-        when(deserializer.deserialize(anyString())).thenReturn(List.of());
+        when(deserializer.deserializeWithStats(anyString()))
+                .thenReturn(new PalaDeserializationResult(List.of(), 0, 0, 0, 0, null, null));
         when(recentlySeenFilter.filter(anyList())).thenReturn(List.of());
 
         updater.trainLocation();
 
         assertWideLogContains("outcome=success", "rail.upstream.pala.http_status=200");
+    }
+
+    @Test
+    public void httpErrorShouldActivateBackoff() {
+        when(ripaService.getFromPalaAsString(anyString()))
+                .thenThrow(new WebClientResponseException(503, "Service Unavailable", HttpHeaders.EMPTY, null, null));
+
+        updater.trainLocation();
+
+        assertWideLogContains("outcome=error", "rail.upstream.pala.backoff_active=true");
+    }
+
+    @Test
+    public void cyclesDuringBackoffShouldSkipTheUpstreamCall() {
+        when(ripaService.getFromPalaAsString(anyString()))
+                .thenThrow(new WebClientResponseException(503, "Service Unavailable", HttpHeaders.EMPTY, null, null));
+
+        updater.trainLocation(); // fails → backs off for ~1s
+        updater.trainLocation(); // immediately after → skipped, PALA is not called again
+
+        verify(ripaService, times(1)).getFromPalaAsString(anyString());
     }
 
     private void assertWideLogContains(final String... expectedSubstrings) {

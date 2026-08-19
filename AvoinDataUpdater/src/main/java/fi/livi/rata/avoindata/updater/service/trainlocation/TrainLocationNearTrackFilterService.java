@@ -21,11 +21,11 @@ public class TrainLocationNearTrackFilterService {
     public boolean isTrainLocationNearTrack(final TrainLocation trainLocation) {
             final RTree<TrainBoundary, Geometry> tree = trackBoundingBoxesService.getBoundingBoxes();
 
-            if (isTrackLocationNearTrack(trainLocation.liikeLocation.getX(), trainLocation.liikeLocation.getY(), tree)) {
+            if (isTrackLocationNearTrack(trainLocation.locationEpsg3067.getX(), trainLocation.locationEpsg3067.getY(), tree)) {
                 return true;
             } else {
                 log.info("Point {},{} ({}, {}) not in proximity of Tracks. TrainLocation: {}", trainLocation.location.getY(),
-                        trainLocation.location.getX(), trainLocation.liikeLocation.getX(), trainLocation.liikeLocation.getY(),
+                        trainLocation.location.getX(), trainLocation.locationEpsg3067.getX(), trainLocation.locationEpsg3067.getY(),
                         trainLocation.trainLocationId);
                 return false;
             }
