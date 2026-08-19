@@ -39,14 +39,14 @@ class NeTExWritingServiceTest {
                 testData.lines, testData.operators, testData.serviceJourneys,
                 testData.timestamp);
 
-        // then: valid ZIP containing FTR_rail_timetables.xml
+        // then: valid ZIP containing FTR_timetables.xml
         assertNotNull(zip);
         assertTrue(zip.length > 0);
 
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
             final ZipEntry entry = zis.getNextEntry();
             assertNotNull(entry);
-            assertEquals("FTR_rail_timetables.xml", entry.getName());
+            assertEquals("FTR_timetables.xml", entry.getName());
             assertNull(zis.getNextEntry()); // only one file
         }
     }

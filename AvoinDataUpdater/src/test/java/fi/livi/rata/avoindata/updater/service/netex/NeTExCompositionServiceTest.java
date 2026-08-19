@@ -11,8 +11,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -43,7 +45,7 @@ class NeTExCompositionServiceTest {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(
-                writingService);
+                writingService, idGenerator);
         compositionService = new NeTExCompositionService(null, null, null, null, idGenerator,
                 compositionWritingService);
     }
@@ -143,6 +145,38 @@ class NeTExCompositionServiceTest {
 
         // then
         assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:59-2026-07-07-HKI\""));
+    }
+
+    @Test
+    void givenComposition_whenBuildingZip_thenDatedServiceJourneyHasOperatingDayRef() {
+        // given
+        final Composition c = composition(59, "2026-07-07", "HKI", "OL");
+        loco(c, "Sr2");
+        wagon(c, "Ed", 1, 2640, false);
+
+        // when
+        final String xml = buildXml(c);
+
+        // then
+        assertTrue(xml.contains("<OperatingDayRef ref=\"FTR:OperatingDay:2026-07-07\""),
+                "DatedServiceJourney must reference an OperatingDay");
+    }
+
+    @Test
+    void givenComposition_whenBuildingZip_thenSharedDataDefinesOperatingDay() {
+        // given
+        final Composition c = composition(59, "2026-07-07", "HKI", "OL");
+        loco(c, "Sr2");
+        wagon(c, "Ed", 1, 2640, false);
+
+        // when
+        final byte[] zip = compositionService.buildCompositionsZip(List.of(c), Map.of());
+        final String shared = extractXml(zip, "_FTR_shared_data.xml");
+
+        // then
+        assertTrue(shared.contains("<ServiceCalendarFrame"), "shared data must contain a ServiceCalendarFrame");
+        assertTrue(shared.contains("id=\"FTR:OperatingDay:2026-07-07\""), "shared data must define the OperatingDay");
+        assertTrue(shared.contains("<CalendarDate>2026-07-07</CalendarDate>"), "OperatingDay must carry its CalendarDate");
     }
 
     @Test
@@ -323,13 +357,17 @@ class NeTExCompositionServiceTest {
         // then
         assertNotNull(zip);
         assertTrue(zip.length > 0);
+        final Set<String> names = new HashSet<>();
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
-            final ZipEntry entry = zis.getNextEntry();
-            assertNotNull(entry);
-            assertEquals("FTR_rail_compositions.xml", entry.getName());
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                names.add(entry.getName());
+            }
         } catch (final Exception e) {
             fail("ZIP parsing failed: " + e.getMessage());
         }
+        assertTrue(names.contains("FTR_compositions.xml"), "missing compositions file");
+        assertTrue(names.contains("_FTR_shared_data.xml"), "missing shared data file");
     }
 
     @Test
@@ -412,9 +450,18 @@ class NeTExCompositionServiceTest {
     }
 
     private String extractXml(final byte[] zipBytes) {
+        return extractXml(zipBytes, "FTR_compositions.xml");
+    }
+
+    private String extractXml(final byte[] zipBytes, final String fileName) {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
-            zis.getNextEntry();
-            return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(fileName)) {
+                    return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+            }
+            throw new RuntimeException("ZIP entry not found: " + fileName);
         } catch (final Exception e) {
             throw new RuntimeException("Failed to extract XML from ZIP", e);
         }

@@ -69,6 +69,10 @@ public class NeTExIdGenerator {
         return CODESPACE + ":DayType:" + hash;
     }
 
+    public String operatingDayId(final LocalDate date) {
+        return CODESPACE + ":OperatingDay:" + date;
+    }
+
     public String operatingPeriodId(final String id) {
         return CODESPACE + ":OperatingPeriod:" + id;
     }

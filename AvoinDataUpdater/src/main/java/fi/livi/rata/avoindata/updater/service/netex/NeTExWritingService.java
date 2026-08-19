@@ -8,7 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -127,7 +129,7 @@ public class NeTExWritingService {
             final ZonedDateTime generationTimestamp) {
         final PublicationDeliveryStructure delivery = buildPublicationDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, generationTimestamp);
-        return marshalAndZip(delivery, "FTR_rail_timetables.xml");
+        return marshalAndZip(delivery, "FTR_timetables.xml");
     }
 
     /**
@@ -138,6 +140,16 @@ public class NeTExWritingService {
     public byte[] marshalAndZip(final PublicationDeliveryStructure delivery, final String xmlFileName) {
         final String xml = marshalToXml(delivery);
         return zipXml(xml, xmlFileName);
+    }
+
+    /**
+     * Marshals multiple PublicationDeliveries into a single ZIP, one XML entry per
+     * map key. Iteration order is preserved, so pass a LinkedHashMap.
+     */
+    public byte[] marshalAndZip(final Map<String, PublicationDeliveryStructure> deliveriesByFileName) {
+        final Map<String, String> xmlByFileName = new LinkedHashMap<>();
+        deliveriesByFileName.forEach((fileName, delivery) -> xmlByFileName.put(fileName, marshalToXml(delivery)));
+        return zipXmlFiles(xmlByFileName);
     }
 
     private PublicationDeliveryStructure buildPublicationDelivery(
@@ -459,6 +471,21 @@ public class NeTExWritingService {
             return writer.toString();
         } catch (final JAXBException e) {
             throw new RuntimeException("Failed to marshal NeTEx XML", e);
+        }
+    }
+
+    private byte[] zipXmlFiles(final Map<String, String> xmlByFileName) {
+        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                final ZipOutputStream zos = new ZipOutputStream(baos)) {
+            for (final Map.Entry<String, String> entry : xmlByFileName.entrySet()) {
+                zos.putNextEntry(new ZipEntry(entry.getKey()));
+                zos.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
+            zos.finish();
+            return baos.toByteArray();
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to create NeTEx ZIP", e);
         }
     }
 
