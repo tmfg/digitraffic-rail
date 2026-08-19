@@ -277,7 +277,7 @@ public class NeTExCompositionService {
                         ? section.endTimeTableRow.station.stationShortCode
                         : null;
 
-                final String journeyId = idGenerator.datedVehicleJourneyId(trainNumber, date, beginStation);
+                final String journeyId = idGenerator.datedServiceJourneyId(trainNumber, date, beginStation);
 
                 journeys.add(new NeTExDatedVehicleJourney(
                         journeyId,

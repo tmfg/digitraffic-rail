@@ -164,8 +164,10 @@ public class NeTExService {
             return null;
         }
 
-        // Load PETI on demand so generation never depends on the daily warm-up having run first.
-        // When the feed is unavailable, generation degrades (no stop assignments) rather than failing.
+        // Load PETI on demand so generation never depends on the daily warm-up having
+        // run first.
+        // When the feed is unavailable, generation degrades (no stop assignments)
+        // rather than failing.
         petiStopSource.ensureLoaded();
         final int petiStopPlaces = petiStopSource.getStops().size();
         final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
@@ -192,8 +194,15 @@ public class NeTExService {
         final var operators = entityService.createOperators(allFiltered);
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, calendarData, routeData);
 
+        // Dated production journeys for the operational window (matches compositions):
+        // one DatedServiceJourney per (train, day) with ServiceJourneyRef + OperatingDayRef.
+        final LocalDate today = DateProvider.dateInHelsinki();
+        final Map<TrainId, String> datedRefs = resolveServiceJourneyIds(adhocSchedules, regularSchedules,
+                today.minusDays(1), today.plusDays(30));
+        final var datedServiceJourneys = entityService.createDatedServiceJourneys(datedRefs);
+
         final byte[] zip = writingService.writeNeTExZip(stopsData, routeData, calendarData, lines, operators,
-                serviceJourneys, ZonedDateTime.now());
+                serviceJourneys, datedServiceJourneys, ZonedDateTime.now());
         return new NeTExGenerationResult(zip,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
                 lines.size(), serviceJourneys.size(),

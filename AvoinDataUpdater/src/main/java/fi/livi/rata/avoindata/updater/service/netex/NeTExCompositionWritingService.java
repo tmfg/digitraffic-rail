@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.DatedServiceJourney;
@@ -19,13 +17,9 @@ import org.rutebanken.netex.model.JourneysInFrame_RelStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.OperatingDay;
 import org.rutebanken.netex.model.OperatingDayRefStructure;
-import org.rutebanken.netex.model.OperatingDaysInFrame_RelStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.ResourceFrame;
-import org.rutebanken.netex.model.ServiceCalendarFrame;
-import org.rutebanken.netex.model.ServiceJourneyRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.Train;
 import org.rutebanken.netex.model.TrainComponent;
@@ -34,6 +28,7 @@ import org.rutebanken.netex.model.TrainElement;
 import org.rutebanken.netex.model.TrainElementTypeEnumeration;
 import org.rutebanken.netex.model.TrainRefStructure;
 import org.rutebanken.netex.model.TrainSizeStructure;
+import org.rutebanken.netex.model.VehicleJourneyRefStructure;
 import org.rutebanken.netex.model.VehicleType;
 import org.rutebanken.netex.model.VehicleTypesInFrame_RelStructure;
 import org.springframework.stereotype.Service;
@@ -67,8 +62,11 @@ public class NeTExCompositionWritingService {
     public byte[] writeZip(final List<NeTExVehicleType> vehicleTypes,
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
+        final List<LocalDate> operatingDays = datedJourneys.stream()
+                .map(NeTExDatedVehicleJourney::date)
+                .toList();
         final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
-        files.put(SHARED_DATA_XML, buildSharedData(datedJourneys, timestamp));
+        files.put(SHARED_DATA_XML, writingService.buildOperatingDaySharedData(operatingDays, timestamp));
         files.put(COMPOSITIONS_XML, buildPublicationDelivery(vehicleTypes, datedJourneys, timestamp));
         return writingService.marshalAndZip(files);
     }
@@ -92,42 +90,6 @@ public class NeTExCompositionWritingService {
                 .withPublicationTimestamp(timestamp.toLocalDateTime())
                 .withParticipantRef("FTR")
                 .withDescription(new MultilingualString().withValue("Finland rail composition and accessibility data"))
-                .withDataObjects(dataObjects);
-    }
-
-    /**
-     * Builds the shared-data delivery: a ServiceCalendarFrame of OperatingDays that
-     * the compositions' DatedServiceJourneys reference via OperatingDayRef. Kept in
-     * a separate _FTR_shared_data.xml, mirroring the Nordic reference datasets.
-     */
-    private PublicationDeliveryStructure buildSharedData(final List<NeTExDatedVehicleJourney> datedJourneys,
-            final ZonedDateTime timestamp) {
-        final Set<LocalDate> dates = new TreeSet<>();
-        for (final NeTExDatedVehicleJourney dj : datedJourneys) {
-            dates.add(dj.date());
-        }
-
-        final OperatingDaysInFrame_RelStructure operatingDays = new OperatingDaysInFrame_RelStructure();
-        for (final LocalDate date : dates) {
-            operatingDays.getOperatingDay().add(new OperatingDay()
-                    .withId(idGenerator.operatingDayId(date))
-                    .withVersion("1")
-                    .withCalendarDate(date.atStartOfDay()));
-        }
-
-        final ServiceCalendarFrame calendarFrame = new ServiceCalendarFrame()
-                .withId("FTR:ServiceCalendarFrame:compositions")
-                .withVersion("1")
-                .withOperatingDays(operatingDays);
-
-        final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
-                .withCompositeFrameOrCommonFrame(FACTORY.createServiceCalendarFrame(calendarFrame));
-
-        return new PublicationDeliveryStructure()
-                .withVersion(NETEX_VERSION)
-                .withPublicationTimestamp(timestamp.toLocalDateTime())
-                .withParticipantRef("FTR")
-                .withDescription(new MultilingualString().withValue("Finland rail shared data (operating days)"))
                 .withDataObjects(dataObjects);
     }
 
@@ -225,10 +187,12 @@ public class NeTExCompositionWritingService {
                     .withTrainSize(new TrainSizeStructure()
                             .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
 
+            // Link to the canonical dated journey in the timetables package (which in turn
+            // carries the ServiceJourneyRef); present only when that (train, day) runs there.
             if (dj.serviceJourneyRef() != null) {
-                final ServiceJourneyRefStructure sjRef = new ServiceJourneyRefStructure();
-                sjRef.setRef(dj.serviceJourneyRef());
-                dsj.withJourneyRef(FACTORY.createServiceJourneyRef(sjRef));
+                final VehicleJourneyRefStructure datedRef = new VehicleJourneyRefStructure()
+                        .withRef(idGenerator.datedServiceJourneyId(dj.trainNumber(), dj.date()));
+                dsj.withJourneyRef(FACTORY.createDatedVehicleJourneyRef(datedRef));
             }
 
             if (dj.hasWheelchair()) {

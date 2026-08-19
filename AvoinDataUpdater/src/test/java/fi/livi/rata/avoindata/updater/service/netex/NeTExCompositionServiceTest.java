@@ -144,7 +144,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:59-2026-07-07-HKI\""));
     }
 
     @Test
@@ -176,7 +176,8 @@ class NeTExCompositionServiceTest {
         // then
         assertTrue(shared.contains("<ServiceCalendarFrame"), "shared data must contain a ServiceCalendarFrame");
         assertTrue(shared.contains("id=\"FTR:OperatingDay:2026-07-07\""), "shared data must define the OperatingDay");
-        assertTrue(shared.contains("<CalendarDate>2026-07-07</CalendarDate>"), "OperatingDay must carry its CalendarDate");
+        assertTrue(shared.contains("<CalendarDate>2026-07-07</CalendarDate>"),
+                "OperatingDay must carry its CalendarDate");
     }
 
     @Test
@@ -188,8 +189,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:9-2026-07-07-HKI\""));
-        assertTrue(xml.contains("id=\"FTR:DatedVehicleJourney:9-2026-07-07-KV\""));
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:9-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:9-2026-07-07-KV\""));
     }
 
     @Test
@@ -308,10 +309,10 @@ class NeTExCompositionServiceTest {
         assertFalse(xml.contains("MobilityImpairedAccess"));
     }
 
-    // --- ServiceJourneyRef ---
+    // --- Dated journey cross-reference ---
 
     @Test
-    void givenMatchingRef_whenBuildingZip_thenServiceJourneyRefInXml() {
+    void givenMatchingRef_whenBuildingZip_thenDatedVehicleJourneyRefToTimetableInXml() {
         // given
         final LocalDate date = LocalDate.of(2026, 7, 7);
         final Composition c = composition(59, "2026-07-07", "HKI", "OL");
@@ -322,12 +323,12 @@ class NeTExCompositionServiceTest {
         // when
         final String xml = buildXml(c, refs);
 
-        // then
-        assertTrue(xml.contains("ref=\"FTR:ServiceJourney:59-4118175\""));
+        // then: links to the canonical dated journey in the timetables package
+        assertTrue(xml.contains("<DatedVehicleJourneyRef ref=\"FTR:DatedServiceJourney:59-2026-07-07\""));
     }
 
     @Test
-    void givenNoMatchingRef_whenBuildingZip_thenNoServiceJourneyRefInXml() {
+    void givenNoMatchingRef_whenBuildingZip_thenNoDatedVehicleJourneyRefInXml() {
         // given
         final LocalDate date = LocalDate.of(2026, 7, 7);
         final Composition c = composition(9999, "2026-07-07", "HKI", "OL");
@@ -339,7 +340,7 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c, refs);
 
         // then
-        assertFalse(xml.contains("ServiceJourneyRef"));
+        assertFalse(xml.contains("DatedVehicleJourneyRef"));
     }
 
     // --- ZIP structure ---

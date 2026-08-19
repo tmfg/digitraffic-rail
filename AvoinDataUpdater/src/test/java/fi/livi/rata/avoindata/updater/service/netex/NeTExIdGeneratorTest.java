@@ -234,30 +234,30 @@ class NeTExIdGeneratorTest {
     }
 
     @Test
-    void givenTrainWithBeginStation_whenGeneratingDatedVehicleJourneyId_thenIncludesStation() {
+    void givenTrainWithBeginStation_whenGeneratingDatedServiceJourneyId_thenIncludesStation() {
         // given
         final long trainNumber = 59;
         final LocalDate date = LocalDate.of(2026, 7, 7);
         final String beginStation = "HKI";
 
         // when
-        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, beginStation);
+        final String result = idGenerator.datedServiceJourneyId(trainNumber, date, beginStation);
 
         // then
-        assertEquals("FTR:DatedVehicleJourney:59-2026-07-07-HKI", result);
+        assertEquals("FTR:DatedServiceJourney:59-2026-07-07-HKI", result);
     }
 
     @Test
-    void givenTrainWithoutBeginStation_whenGeneratingDatedVehicleJourneyId_thenOmitsStation() {
+    void givenTrainWithoutBeginStation_whenGeneratingDatedServiceJourneyId_thenOmitsStation() {
         // given
         final long trainNumber = 59;
         final LocalDate date = LocalDate.of(2026, 7, 7);
 
         // when
-        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, null);
+        final String result = idGenerator.datedServiceJourneyId(trainNumber, date, null);
 
         // then
-        assertEquals("FTR:DatedVehicleJourney:59-2026-07-07", result);
+        assertEquals("FTR:DatedServiceJourney:59-2026-07-07", result);
     }
 
     // --- Pass 2: PassengerStopAssignment ID ---

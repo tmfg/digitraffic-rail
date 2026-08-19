@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -172,8 +173,13 @@ class NeTExWritingServiceStopAssignmentTest {
 
     private String extractXmlFromZip(final byte[] zip) throws Exception {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
-            zis.getNextEntry();
-            return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals("FTR_timetables.xml")) {
+                    return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+            }
+            throw new IllegalStateException("FTR_timetables.xml not found in ZIP");
         }
     }
 
