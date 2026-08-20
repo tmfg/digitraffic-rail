@@ -16,160 +16,162 @@ import java.util.zip.ZipInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for NeTExWritingService — PassengerStopAssignment XML output and FSR codespace.
+ * Tests for NeTExWritingService — PassengerStopAssignment XML output and FSR
+ * codespace.
  */
 class NeTExWritingServiceStopAssignmentTest {
 
-    private NeTExWritingService writingService;
+        private NeTExWritingService writingService;
 
-    @BeforeEach
-    void setUp() {
-        writingService = new NeTExWritingService(new NeTExIdGenerator());
-    }
+        @BeforeEach
+        void setUp() {
+                writingService = new NeTExWritingService(new NeTExIdGenerator());
+        }
 
-    @Test
-    void givenStopsDataWithOneAssignment_whenWritingZip_thenXmlContainsPassengerStopAssignment() throws Exception {
-        // given
-        final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+        @Test
+        void givenStopsDataWithOneAssignment_whenWritingZip_thenXmlContainsPassengerStopAssignment() throws Exception {
+                // given
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then
-        final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("<PassengerStopAssignment"), "Should contain PassengerStopAssignment element");
-        assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain assignment ID");
-        assertTrue(xml.contains("FTR:ScheduledStopPoint:HKI"), "Should contain ScheduledStopPointRef");
-        assertTrue(xml.contains("FSR:StopPlace:1"), "Should contain StopPlaceRef");
-    }
+                // then
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<PassengerStopAssignment"), "Should contain PassengerStopAssignment element");
+                assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain assignment ID");
+                assertTrue(xml.contains("FTR:ScheduledStopPoint:HKI"), "Should contain ScheduledStopPointRef");
+                assertTrue(xml.contains("FSR:StopPlace:1"), "Should contain StopPlaceRef");
+        }
 
-    @Test
-    void givenStopsDataWithEmptyAssignments_whenWritingZip_thenXmlDoesNotContainStopAssignments() throws Exception {
-        // given
-        final var testData = createTestDataWithAssignments(List.of());
+        @Test
+        void givenStopsDataWithEmptyAssignments_whenWritingZip_thenXmlDoesNotContainStopAssignments() throws Exception {
+                // given
+                final var testData = createTestDataWithAssignments(List.of());
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then
-        final String xml = extractXmlFromZip(zip);
-        assertFalse(xml.contains("<PassengerStopAssignment"), "Should NOT contain PassengerStopAssignment");
-        assertFalse(xml.contains("<stopAssignments>"), "Should NOT contain empty stopAssignments wrapper");
-    }
+                // then
+                final String xml = extractXmlFromZip(zip);
+                assertFalse(xml.contains("<PassengerStopAssignment"), "Should NOT contain PassengerStopAssignment");
+                assertFalse(xml.contains("<stopAssignments>"), "Should NOT contain empty stopAssignments wrapper");
+        }
 
-    @Test
-    void givenAnyData_whenWritingZip_thenXmlContainsBothDtAndFsrCodespaces() throws Exception {
-        // given
-        final var testData = createTestDataWithAssignments(List.of());
+        @Test
+        void givenAnyData_whenWritingZip_thenXmlContainsBothDtAndFsrCodespaces() throws Exception {
+                // given
+                final var testData = createTestDataWithAssignments(List.of());
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then
-        final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
-        assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
-    }
+                // then
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
+                assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
+        }
 
-    @Test
-    void givenMultipleAssignments_whenWritingZip_thenAllAppearAndXmlIsWellFormed() throws Exception {
-        // given
-        final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
-                        "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
+        @Test
+        void givenMultipleAssignments_whenWritingZip_thenAllAppearAndXmlIsWellFormed() throws Exception {
+                // given
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
+                                                "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then — both assignments are present
-        final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain first assignment");
-        assertTrue(xml.contains("FTR:PassengerStopAssignment:TPE"), "Should contain second assignment");
+                // then — both assignments are present
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain first assignment");
+                assertTrue(xml.contains("FTR:PassengerStopAssignment:TPE"), "Should contain second assignment");
 
-        // and the XML is well-formed
-        final javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        assertDoesNotThrow(() -> {
-            factory.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
-        });
-    }
+                // and the XML is well-formed
+                final javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory
+                                .newInstance();
+                factory.setNamespaceAware(true);
+                assertDoesNotThrow(() -> {
+                        factory.newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
+                });
+        }
 
-    // --- Pass 2b: QuayRef emission tests ---
+        // --- Pass 2b: QuayRef emission tests ---
 
-    @Test
-    void givenAssignmentWithQuayRef_whenWritingZip_thenXmlContainsQuayRefElement() throws Exception {
-        // given — assignment with quayRef set
-        final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
-                        "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+        @Test
+        void givenAssignmentWithQuayRef_whenWritingZip_thenXmlContainsQuayRefElement() throws Exception {
+                // given — assignment with quayRef set
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
+                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then — XML contains QuayRef element with the correct ref
-        final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("FSR:Quay:10"), "Should contain QuayRef value FSR:Quay:10");
-        assertTrue(xml.contains("QuayRef"), "Should contain QuayRef element");
-    }
+                // then — XML contains QuayRef element with the correct ref
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("FSR:Quay:10"), "Should contain QuayRef value FSR:Quay:10");
+                assertTrue(xml.contains("QuayRef"), "Should contain QuayRef element");
+        }
 
-    @Test
-    void givenAssignmentWithNullQuayRef_whenWritingZip_thenXmlDoesNotContainQuayRef() throws Exception {
-        // given — assignment with quayRef null (station-level only)
-        final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                        "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+        @Test
+        void givenAssignmentWithNullQuayRef_whenWritingZip_thenXmlDoesNotContainQuayRef() throws Exception {
+                // given — assignment with quayRef null (station-level only)
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then — XML does NOT contain QuayRef but still has StopPlaceRef
-        final String xml = extractXmlFromZip(zip);
-        assertFalse(xml.contains("QuayRef"), "Should NOT contain QuayRef when quayRef is null");
-        assertTrue(xml.contains("FSR:StopPlace:1"), "Should still contain StopPlaceRef");
-    }
+                // then — XML does NOT contain QuayRef but still has StopPlaceRef
+                final String xml = extractXmlFromZip(zip);
+                assertFalse(xml.contains("QuayRef"), "Should NOT contain QuayRef when quayRef is null");
+                assertTrue(xml.contains("FSR:StopPlace:1"), "Should still contain StopPlaceRef");
+        }
 
-    @Test
-    void givenAssignmentsWithQuayRefs_whenWritingZip_thenBothCodespacesPresent() throws Exception {
-        // given — assignment with FSR StopPlaceRef and FSR QuayRef
-        final var testData = createTestDataWithAssignments(List.of(
-                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
-                        "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+        @Test
+        void givenAssignmentsWithQuayRefs_whenWritingZip_thenBothCodespacesPresent() throws Exception {
+                // given — assignment with FSR StopPlaceRef and FSR QuayRef
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
+                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
 
-        // when
-        final byte[] zip = writingService.writeNeTExZip(
-                testData.stopsData(), testData.routeData(), testData.calendarData(),
-                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                testData.timestamp());
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(), testData.calendarData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
 
-        // then — both DT and FSR codespaces are declared
-        final String xml = extractXmlFromZip(zip);
-        assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
-        assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
-    }
+                // then — both DT and FSR codespaces are declared
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
+                assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
+        }
 
-    // --- Helpers ---
+        // --- Helpers ---
 
     private String extractXmlFromZip(final byte[] zip) throws Exception {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {

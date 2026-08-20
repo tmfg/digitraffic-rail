@@ -148,7 +148,7 @@ public class NeTExWritingService {
             final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
             final List<NeTExEntityService.NeTExDatedServiceJourney> datedServiceJourneys,
             final ZonedDateTime generationTimestamp) {
-        final PublicationDeliveryStructure timetable = buildPublicationDelivery(
+        final PublicationDeliveryStructure timetable = buildTimetableDelivery(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, datedServiceJourneys,
                 generationTimestamp);
         final List<LocalDate> operatingDays = datedServiceJourneys.stream()
@@ -180,7 +180,7 @@ public class NeTExWritingService {
         return zipXmlFiles(xmlByFileName);
     }
 
-    private PublicationDeliveryStructure buildPublicationDelivery(
+    public PublicationDeliveryStructure buildTimetableDelivery(
             final NeTExStopsData stopsData,
             final NeTExRouteData routeData,
             final NeTExCalendarData calendarData,
@@ -449,7 +449,10 @@ public class NeTExWritingService {
                 .withVehicleJourneys(vehicleJourneys);
     }
 
-    /** Dated production journey: the recurring ServiceJourney materialized for one OperatingDay. */
+    /**
+     * Dated production journey: the recurring ServiceJourney materialized for one
+     * OperatingDay.
+     */
     private DatedServiceJourney buildDatedServiceJourney(final NeTExEntityService.NeTExDatedServiceJourney dsj) {
         return new DatedServiceJourney()
                 .withId(dsj.id())
@@ -461,9 +464,9 @@ public class NeTExWritingService {
     }
 
     /**
-     * Builds the shared-data delivery: a ServiceCalendarFrame of OperatingDays that
-     * both the timetables and compositions reference via OperatingDayRef. Emitted as
-     * _FTR_shared_data.xml in each package, mirroring the Nordic reference datasets.
+     * Builds the _FTR_shared_data.xml delivery: a ServiceCalendarFrame of
+     * OperatingDays that the timetables and compositions reference via
+     * OperatingDayRef.
      */
     public PublicationDeliveryStructure buildOperatingDaySharedData(final Collection<LocalDate> dates,
             final ZonedDateTime timestamp) {

@@ -9,19 +9,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.composition.CompositionRepository;
-import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.composition.Locomotive;
 import fi.livi.rata.avoindata.common.domain.composition.Wagon;
-import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -82,31 +81,27 @@ class FinnishRollingStock {
 }
 
 /**
- * Generates a NeTEx Nordic compositions package containing train composition
- * and accessibility data per departure date.
- * Served as a separate ZIP (netex-nordic-compositions.zip).
+ * Builds the NeTEx Nordic compositions delivery (train composition and
+ * accessibility data per departure date). The delivery is packaged into the
+ * combined dataset ZIP by {@link NeTExPackageService}.
  */
 @Service
 public class NeTExCompositionService {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExCompositionService.class);
-    private static final String COMPOSITIONS_FILENAME = "netex-nordic-compositions.zip";
 
     private final CompositionRepository compositionRepository;
-    private final GeneratedExportRepository generatedExportRepository;
     private final NeTExService neTExService;
     private final ScheduleProviderService scheduleProviderService;
     private final NeTExIdGenerator idGenerator;
     private final NeTExCompositionWritingService compositionWritingService;
 
     public NeTExCompositionService(final CompositionRepository compositionRepository,
-            final GeneratedExportRepository generatedExportRepository,
             final NeTExService neTExService,
             final ScheduleProviderService scheduleProviderService,
             final NeTExIdGenerator idGenerator,
             final NeTExCompositionWritingService compositionWritingService) {
         this.compositionRepository = compositionRepository;
-        this.generatedExportRepository = generatedExportRepository;
         this.neTExService = neTExService;
         this.scheduleProviderService = scheduleProviderService;
         this.idGenerator = idGenerator;
@@ -114,8 +109,8 @@ public class NeTExCompositionService {
     }
 
     @Transactional
-    public void generateCompositions() {
-        log.info("method=generateCompositions starting");
+    public CompositionDelivery buildCompositionDelivery() {
+        log.info("method=buildCompositionDelivery starting");
         final long startTime = System.currentTimeMillis();
 
         try {
@@ -124,37 +119,41 @@ public class NeTExCompositionService {
             final LocalDate end = today.plusDays(30);
 
             final List<Composition> allCompositions = fetchCompositionsForRange(start, end);
-
-            log.info("method=generateCompositions fetched {} compositions for range {} to {}",
+            log.info("method=buildCompositionDelivery fetched {} compositions for range {} to {}",
                     allCompositions.size(), start, end);
 
             if (allCompositions.isEmpty()) {
-                log.warn("method=generateCompositions no compositions found");
-                return;
+                log.warn("method=buildCompositionDelivery no compositions found");
+                return null;
             }
 
             // Resolve ServiceJourney refs the same way the timetable does, so the
-            // compositions reference ServiceJourney ids that exist in the timetable.
+            // compositions reference dated journeys/service journeys that exist there.
             final LocalDate scheduleStart = today.minusDays(7);
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(scheduleStart);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(scheduleStart);
             final Map<TrainId, String> serviceJourneyRefs = neTExService.resolveServiceJourneyIds(adhocSchedules,
                     regularSchedules, start, end);
 
-            final byte[] zip = buildCompositionsZip(allCompositions, serviceJourneyRefs);
+            final Set<String> vehicleTypeIds = new LinkedHashSet<>();
+            final List<NeTExVehicleType> vehicleTypes = buildVehicleTypes(allCompositions, vehicleTypeIds);
+            final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(allCompositions,
+                    vehicleTypeIds, serviceJourneyRefs);
 
-            final GeneratedExport export = new GeneratedExport();
-            export.data = zip;
-            export.created = ZonedDateTime.now();
-            export.fileName = COMPOSITIONS_FILENAME;
-            generatedExportRepository.persist(List.of(export));
+            final PublicationDeliveryStructure delivery = compositionWritingService.buildCompositionDelivery(
+                    vehicleTypes, datedJourneys, ZonedDateTime.now());
+            final List<LocalDate> operatingDays = datedJourneys.stream()
+                    .map(NeTExDatedVehicleJourney::date)
+                    .distinct()
+                    .toList();
 
             final long durationMs = System.currentTimeMillis() - startTime;
-            log.info("method=generateCompositions persisted ZIP, size={} bytes, compositions={}, durationMs={}",
-                    zip.length, allCompositions.size(), durationMs);
+            log.info("method=buildCompositionDelivery built delivery, compositions={}, dated_journeys={}, "
+                    + "durationMs={}", allCompositions.size(), datedJourneys.size(), durationMs);
+            return new CompositionDelivery(delivery, operatingDays);
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
-            log.error("method=generateCompositions failed, durationMs={}", durationMs, e);
+            log.error("method=buildCompositionDelivery failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx compositions generation failed", e);
         }
     }
@@ -298,6 +297,9 @@ public class NeTExCompositionService {
     }
 
     // --- DTOs ---
+
+    public record CompositionDelivery(PublicationDeliveryStructure delivery, List<LocalDate> operatingDays) {
+    }
 
     public record NeTExVehicleType(
             String id,

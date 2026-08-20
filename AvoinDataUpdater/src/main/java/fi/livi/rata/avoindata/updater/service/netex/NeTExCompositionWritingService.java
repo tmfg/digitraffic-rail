@@ -67,11 +67,11 @@ public class NeTExCompositionWritingService {
                 .toList();
         final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
         files.put(SHARED_DATA_XML, writingService.buildOperatingDaySharedData(operatingDays, timestamp));
-        files.put(COMPOSITIONS_XML, buildPublicationDelivery(vehicleTypes, datedJourneys, timestamp));
+        files.put(COMPOSITIONS_XML, buildCompositionDelivery(vehicleTypes, datedJourneys, timestamp));
         return writingService.marshalAndZip(files);
     }
 
-    private PublicationDeliveryStructure buildPublicationDelivery(
+    public PublicationDeliveryStructure buildCompositionDelivery(
             final List<NeTExVehicleType> vehicleTypes,
             final List<NeTExDatedVehicleJourney> datedJourneys,
             final ZonedDateTime timestamp) {
@@ -187,7 +187,7 @@ public class NeTExCompositionWritingService {
                     .withTrainSize(new TrainSizeStructure()
                             .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
 
-            // Link to the canonical dated journey in the timetables package (which in turn
+            // Link to the canonical dated journey in FTR_timetables.xml (which in turn
             // carries the ServiceJourneyRef); present only when that (train, day) runs there.
             if (dj.serviceJourneyRef() != null) {
                 final VehicleJourneyRefStructure datedRef = new VehicleJourneyRefStructure()

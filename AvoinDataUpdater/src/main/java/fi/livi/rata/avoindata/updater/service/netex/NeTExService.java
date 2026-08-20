@@ -5,21 +5,21 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -29,15 +29,14 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
- * Orchestrates NeTEx generation: fetches data, invokes sub-services, persists
- * the result.
- * Analogous to GTFSService.
+ * Builds the NeTEx timetable delivery from schedule + station data. Packaging of
+ * the combined dataset ZIP and persistence is handled by
+ * {@link NeTExPackageService}.
  */
 @Service
 public class NeTExService {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExService.class);
-    private static final String NETEX_FILENAME = "netex-nordic-timetables.zip";
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
 
     @Value("${updater.netex.peti.min-match-rate:0.95}")
@@ -52,7 +51,6 @@ public class NeTExService {
     private final ScheduleProviderService scheduleProviderService;
     private final TodaysScheduleService todaysScheduleService;
     private final StationRepository stationRepository;
-    private final GeneratedExportRepository generatedExportRepository;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
@@ -62,8 +60,7 @@ public class NeTExService {
             final PetiStopSource petiStopSource,
             final ScheduleProviderService scheduleProviderService,
             final TodaysScheduleService todaysScheduleService,
-            final StationRepository stationRepository,
-            final GeneratedExportRepository generatedExportRepository) {
+            final StationRepository stationRepository) {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
@@ -73,16 +70,16 @@ public class NeTExService {
         this.scheduleProviderService = scheduleProviderService;
         this.todaysScheduleService = todaysScheduleService;
         this.stationRepository = stationRepository;
-        this.generatedExportRepository = generatedExportRepository;
     }
 
     /**
-     * Fetches schedule and station data, generates NeTEx Nordic ZIP, and persists
-     * it.
-     * Called manually via ManualUpdateController.
+     * Fetches schedule and station data and builds the timetable delivery, logging
+     * the generation wide-event. Returns the built package (or null when there is no
+     * data); persistence and packaging into the combined ZIP is done by
+     * {@link NeTExPackageService}.
      */
     @Transactional
-    public void generateNeTEx() {
+    public NeTExGenerationResult generateNeTEx() {
         log.info("method=generateNeTEx starting NeTEx generation");
         final long startTime = System.currentTimeMillis();
 
@@ -100,12 +97,6 @@ public class NeTExService {
             final long durationMs = System.currentTimeMillis() - startTime;
 
             if (result != null) {
-                final GeneratedExport export = new GeneratedExport();
-                export.data = result.zip();
-                export.created = ZonedDateTime.now();
-                export.fileName = NETEX_FILENAME;
-                generatedExportRepository.persist(List.of(export));
-
                 final int petiTotal = result.matchedCount() + result.unmatchedCount();
                 final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
                 log.info("event=rail.netex.generation outcome=success duration_ms={} "
@@ -122,6 +113,7 @@ public class NeTExService {
             } else {
                 log.info("event=rail.netex.generation outcome=no_data duration_ms={}", durationMs);
             }
+            return result;
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
             log.info("event=rail.netex.generation outcome=failed duration_ms={}", durationMs);
@@ -195,15 +187,27 @@ public class NeTExService {
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, calendarData, routeData);
 
         // Dated production journeys for the operational window (matches compositions):
-        // one DatedServiceJourney per (train, day) with ServiceJourneyRef + OperatingDayRef.
+        // one DatedServiceJourney per (train, day) with ServiceJourneyRef +
+        // OperatingDayRef.
         final LocalDate today = DateProvider.dateInHelsinki();
         final Map<TrainId, String> datedRefs = resolveServiceJourneyIds(adhocSchedules, regularSchedules,
                 today.minusDays(1), today.plusDays(30));
         final var datedServiceJourneys = entityService.createDatedServiceJourneys(datedRefs);
 
-        final byte[] zip = writingService.writeNeTExZip(stopsData, routeData, calendarData, lines, operators,
-                serviceJourneys, datedServiceJourneys, ZonedDateTime.now());
-        return new NeTExGenerationResult(zip,
+        final ZonedDateTime timestamp = ZonedDateTime.now();
+        final PublicationDeliveryStructure timetableDelivery = writingService.buildTimetableDelivery(
+                stopsData, routeData, calendarData, lines, operators, serviceJourneys, datedServiceJourneys,
+                timestamp);
+        final List<LocalDate> operatingDays = datedServiceJourneys.stream()
+                .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
+                .toList();
+
+        final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
+        files.put("_FTR_shared_data.xml", writingService.buildOperatingDaySharedData(operatingDays, timestamp));
+        files.put("FTR_timetables.xml", timetableDelivery);
+        final byte[] zip = writingService.marshalAndZip(files);
+
+        return new NeTExGenerationResult(zip, timetableDelivery, operatingDays,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
                 lines.size(), serviceJourneys.size(),
                 stopsData.matchedCount(), stopsData.unmatchedCount(),
@@ -302,7 +306,9 @@ public class NeTExService {
     /**
      * Holds the generation output and telemetry counts for the wide-event.
      */
-    record NeTExGenerationResult(byte[] zip, int scheduledStopPoints, int routes, int lines,
+    record NeTExGenerationResult(byte[] zip,
+            PublicationDeliveryStructure timetableDelivery, List<LocalDate> operatingDays,
+            int scheduledStopPoints, int routes, int lines,
             int serviceJourneys, int matchedCount, int unmatchedCount,
             int quayMatchedCount, int quayUnmatchedCount, int quayNoTrackCount) {
     }

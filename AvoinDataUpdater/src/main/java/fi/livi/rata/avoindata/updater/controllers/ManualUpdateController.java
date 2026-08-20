@@ -22,8 +22,7 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
 import fi.livi.rata.avoindata.updater.service.gtfs.GTFSService;
 import fi.livi.rata.avoindata.updater.service.hack.OldTrainService;
-import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService;
-import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExPackageService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -62,10 +61,7 @@ public class ManualUpdateController {
     private OldTrainService oldTrainService;
 
     @Autowired
-    private NeTExService netexService;
-
-    @Autowired
-    private NeTExCompositionService netexCompositionService;
+    private NeTExPackageService netexPackageService;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -152,28 +148,9 @@ public class ManualUpdateController {
     @RequestMapping("/netex")
     @ResponseBody
     public boolean generateNeTEx() {
-        logger.info("method=generateNeTEx Starting manual NeTEx generation (timetables + compositions)");
-        netexService.generateNeTEx();
-        netexCompositionService.generateCompositions();
-        logger.info("method=generateNeTEx End manual NeTEx generation (timetables + compositions)");
-        return true;
-    }
-
-    @RequestMapping("/netex-timetables")
-    @ResponseBody
-    public boolean generateNeTExTimetables() {
-        logger.info("method=generateNeTExTimetables Starting manual NeTEx timetables generation");
-        netexService.generateNeTEx();
-        logger.info("method=generateNeTExTimetables End manual NeTEx timetables generation");
-        return true;
-    }
-
-    @RequestMapping("/netex-compositions")
-    @ResponseBody
-    public boolean generateNeTExCompositions() {
-        logger.info("method=generateNeTExCompositions Starting manual NeTEx compositions generation");
-        netexCompositionService.generateCompositions();
-        logger.info("method=generateNeTExCompositions End manual NeTEx compositions generation");
+        logger.info("method=generateNeTEx Starting manual NeTEx dataset generation");
+        netexPackageService.generatePackage();
+        logger.info("method=generateNeTEx End manual NeTEx dataset generation");
         return true;
     }
 }

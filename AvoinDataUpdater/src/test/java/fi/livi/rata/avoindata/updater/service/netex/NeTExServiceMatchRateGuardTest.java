@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
@@ -209,7 +208,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
-                writingService, petiSource, null, todaysScheduleService, null, null);
+                writingService, petiSource, null, todaysScheduleService, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -313,7 +312,6 @@ class NeTExServiceMatchRateGuardTest {
      * generateNeTEx()
      * which emits the wide-event log.
      */
-    @SuppressWarnings("unchecked")
     private NeTExService createServiceWithMockedRepos(final PetiStopSource petiSource,
             final double threshold, final List<String> stationCodes) throws Exception {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
@@ -327,7 +325,6 @@ class NeTExServiceMatchRateGuardTest {
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
         final StationRepository stationRepository = mock(StationRepository.class);
-        final GeneratedExportRepository generatedExportRepository = mock(GeneratedExportRepository.class);
 
         // Set up schedule provider to return a single regular schedule spanning today
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", stationCodes);
@@ -339,8 +336,7 @@ class NeTExServiceMatchRateGuardTest {
         when(stationRepository.findAll()).thenReturn(stations);
 
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
-                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
-                generatedExportRepository);
+                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository);
 
         // Set minMatchRate via reflection
         final Field field = NeTExService.class.getDeclaredField("minMatchRate");

@@ -73,7 +73,10 @@ public class NeTExIdGenerator {
         return CODESPACE + ":OperatingDay:" + date;
     }
 
-    /** Canonical dated production journey (timetables): train number + operating day. */
+    /**
+     * Canonical dated production journey (timetables): train number + operating
+     * day.
+     */
     public String datedServiceJourneyId(final long trainNumber, final LocalDate date) {
         return CODESPACE + ":DatedServiceJourney:" + trainNumber + "-" + date;
     }
@@ -99,6 +102,7 @@ public class NeTExIdGenerator {
         return CODESPACE + ":DatedServiceJourney:" + trainNumber + "-" + date + suffix;
     }
 
+    
     public String passengerStopAssignmentId(final String stationShortCode) {
         return CODESPACE + ":PassengerStopAssignment:" + stationShortCode;
     }

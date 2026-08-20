@@ -45,7 +45,7 @@ class NeTExServiceTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
-                petiStopSource, null, todaysScheduleService, null, null);
+                petiStopSource, null, todaysScheduleService, null);
     }
 
     // --- Filtering tests ---

@@ -20,8 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping(WebConfig.CONTEXT_PATH + "netex")
 public class NeTExController {
 
-    private static final String TIMETABLES_FILENAME = "netex-nordic-timetables.zip";
-    private static final String COMPOSITIONS_FILENAME = "netex-nordic-compositions.zip";
+    private static final String PACKAGE_FILENAME = "FTR-netex.zip";
     private static final int CACHE_SECONDS = 60 * 15;
 
     private final GeneratedExportRepository generatedExportRepository;
@@ -30,18 +29,11 @@ public class NeTExController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(summary = "Returns train timetables in NeTEx Nordic")
-    @RequestMapping(method = RequestMethod.GET, path = "timetables.zip", produces = "application/zip")
+    @Operation(summary = "Returns the NeTEx Nordic dataset (timetables and compositions)")
+    @RequestMapping(method = RequestMethod.GET, path = "FTR-netex.zip", produces = "application/zip")
     @Transactional(readOnly = true)
-    public byte[] getNeTExTimetables(final HttpServletResponse response) {
-        return getExport(response, TIMETABLES_FILENAME);
-    }
-
-    @Operation(summary = "Returns compositions in NeTEx Nordic")
-    @RequestMapping(method = RequestMethod.GET, path = "compositions.zip", produces = "application/zip")
-    @Transactional(readOnly = true)
-    public byte[] getNeTExCompositions(final HttpServletResponse response) {
-        return getExport(response, COMPOSITIONS_FILENAME);
+    public byte[] getNeTEx(final HttpServletResponse response) {
+        return getExport(response, PACKAGE_FILENAME);
     }
 
     private byte[] getExport(final HttpServletResponse response, final String fileName) {

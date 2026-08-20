@@ -46,7 +46,7 @@ class NeTExCompositionServiceTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(
                 writingService, idGenerator);
-        compositionService = new NeTExCompositionService(null, null, null, null, idGenerator,
+        compositionService = new NeTExCompositionService(null, null, null, idGenerator,
                 compositionWritingService);
     }
 
