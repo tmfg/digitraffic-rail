@@ -52,10 +52,15 @@ public class InfraApiPlatformService {
             final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block();
 
             for (final JsonNode node : jsonNode) {
-                final InfraApiPlatform platform = deserializePlatform(node.get(0));
-                final String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
-                platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
-                platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
+                // Parse each platform independently so one malformed record does not discard the whole batch.
+                try {
+                    final InfraApiPlatform platform = deserializePlatform(node.get(0));
+                    final String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
+                    platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
+                    platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
+                } catch (final Exception e) {
+                    logger.warn("Could not parse Infra-API platform data for node {}", node, e);
+                }
             }
         } catch (final Exception e) {
             logger.error("Could not fetch Infra-API platform data", e);
@@ -64,29 +69,28 @@ public class InfraApiPlatformService {
         return platformsByLiikennepaikkaIdPart;
     }
 
-    private InfraApiPlatform deserializePlatform(final JsonNode node) {
+    InfraApiPlatform deserializePlatform(final JsonNode node) {
         final String liikennepaikkaId;
         final String name;
         final String description;
         final String commercialTrack;
         final Geometry geometry;
 
-        final JsonNode liikennepaikanOsa = node.get("liikennepaikanOsa");
+        // Infra-API omits the key entirely when there is no value, so use path() to get a MissingNode instead of null.
+        final JsonNode liikennepaikanOsa = node.path("liikennepaikanOsa");
 
-
-        if (!liikennepaikanOsa.isNull()) {
-            liikennepaikkaId = liikennepaikanOsa.asText();
+        if (!liikennepaikanOsa.isMissingNode() && !liikennepaikanOsa.isNull()) {
+            liikennepaikkaId = liikennepaikanOsa.asString();
         } else {
-            final JsonNode rautatieliikennepaikka = node.get("rautatieliikennepaikka");
-            liikennepaikkaId = rautatieliikennepaikka.isNull() ? "" : rautatieliikennepaikka.asText();
+            final JsonNode rautatieliikennepaikka = node.path("rautatieliikennepaikka");
+            liikennepaikkaId = rautatieliikennepaikka.isMissingNode() || rautatieliikennepaikka.isNull() ? "" : rautatieliikennepaikka.asString();
         }
 
-        name = node.get("tunnus").asText();
-        description = node.get("kuvaus").asText();
-        commercialTrack = node.get("kaupallinenNumero").asText();
+        name = node.path("tunnus").asString();
+        description = node.path("kuvaus").asString();
+        commercialTrack = node.path("kaupallinenNumero").asString();
 
-        final JsonNode geometria = node.get("geometria");
-        final MultiLineString platformGeometry = deserializePlatformGeometry(geometria);
+        final MultiLineString platformGeometry = deserializePlatformGeometry(node.path("geometria"));
         geometry = wgs84ConversionService.liviToWgs84Jts(platformGeometry);
 
         return new InfraApiPlatform(liikennepaikkaId, name, description, commercialTrack, geometry);
