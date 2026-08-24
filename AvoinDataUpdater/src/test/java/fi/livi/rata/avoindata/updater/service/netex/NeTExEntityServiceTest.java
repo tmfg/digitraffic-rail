@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,8 @@ class NeTExEntityServiceTest {
         final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");
 
         // when
-        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule));
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
 
         // then
         assertEquals(1, lines.size());
@@ -100,7 +102,8 @@ class NeTExEntityServiceTest {
         final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");
 
         // when
-        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule));
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
 
         // then
         assertEquals("FTR:Line:Z", lines.get(0).id());
@@ -114,7 +117,8 @@ class NeTExEntityServiceTest {
         final Schedule schedule2 = createCommuterSchedule(2L, 2107L, "Z");
 
         // when
-        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule1, schedule2));
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule1, schedule2),
+                emptyRouteData(), Map.of());
 
         // then
         assertEquals(1, lines.size());
@@ -363,6 +367,10 @@ class NeTExEntityServiceTest {
     }
 
     // --- Helpers ---
+
+    private static NeTExRouteData emptyRouteData() {
+        return new NeTExRouteData(List.of(), List.of(), Map.of());
+    }
 
     private Schedule createCommuterSchedule(final long id, final long trainNumber, final String commuterLineId) {
         final Schedule schedule = createBaseSchedule(id, trainNumber, "HDM", "Commuter");

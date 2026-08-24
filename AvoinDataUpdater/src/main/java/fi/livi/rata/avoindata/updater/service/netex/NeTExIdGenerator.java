@@ -53,8 +53,13 @@ public class NeTExIdGenerator {
         return CODESPACE + ":JourneyPattern:" + lineId + "-" + hash;
     }
 
+    /**
+     * The type token must be StopPointInJourneyPattern, not the JourneyPattern it
+     * belongs to: NeTEx requires an XxxRef to reference an element of type Xxx.
+     */
     public String stopPointInJourneyPatternId(final String journeyPatternId, final int order) {
-        return journeyPatternId + "-" + order;
+        return CODESPACE + ":StopPointInJourneyPattern:"
+                + journeyPatternId.substring(journeyPatternId.lastIndexOf(':') + 1) + "-" + order;
     }
 
     public String serviceJourneyId(final long trainNumber, final long scheduleId) {

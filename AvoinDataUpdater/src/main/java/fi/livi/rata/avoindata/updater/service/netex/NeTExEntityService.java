@@ -53,17 +53,72 @@ public class NeTExEntityService {
     }
 
     /**
-     * Creates the list of unique Lines from schedules.
+     * Creates the list of unique Lines from schedules. The Line name is the
+     * corridor it serves ("Helsinki-Oulu"), since a code like "IC 140" tells a
+     * passenger nothing on its own; the code stays in PublicCode.
      */
-    public List<NeTExLine> createLines(final List<Schedule> schedules) {
+    public List<NeTExLine> createLines(final List<Schedule> schedules,
+            final NeTExRouteData routeData,
+            final Map<String, String> stationNamesByShortCode) {
         final Map<String, NeTExLine> lineMap = new LinkedHashMap<>();
         for (final Schedule schedule : schedules) {
-            final String lineId = idGenerator.lineId(deriveLineId(schedule));
+            final String lineIdentifier = deriveLineId(schedule);
+            final String lineId = idGenerator.lineId(lineIdentifier);
             if (!lineMap.containsKey(lineId)) {
-                lineMap.put(lineId, new NeTExLine(lineId, deriveLinePublicCode(schedule), "rail"));
+                lineMap.put(lineId, new NeTExLine(lineId,
+                        deriveLineName(lineId, routeData, stationNamesByShortCode, schedule),
+                        deriveLinePublicCode(schedule),
+                        lineIdentifier,
+                        idGenerator.operatorId(schedule.operator.operatorShortCode),
+                        "rail"));
             }
         }
         return new ArrayList<>(lineMap.values());
+    }
+
+    /**
+     * Names the Line after the longest route it serves, which is the variant that
+     * best describes the corridor. Ring lines, whose origin and destination are the
+     * same station, get their midpoint inserted so the name is not "Helsinki-Helsinki".
+     */
+    private String deriveLineName(final String lineId,
+            final NeTExRouteData routeData,
+            final Map<String, String> stationNamesByShortCode,
+            final Schedule schedule) {
+        final NeTExRouteData.NeTExRoute longest = routeData.getRoutes().stream()
+                .filter(route -> lineId.equals(route.lineRef()))
+                .max(Comparator.comparingInt(route -> route.routePointRefs().size()))
+                .orElse(null);
+        if (longest == null) {
+            return deriveLinePublicCode(schedule);
+        }
+
+        final String[] endpoints = longest.name().split(" - ", 2);
+        if (endpoints.length < 2) {
+            return deriveLinePublicCode(schedule);
+        }
+        final String origin = stationName(endpoints[0], stationNamesByShortCode);
+        final String destination = stationName(endpoints[1], stationNamesByShortCode);
+
+        if (!origin.equals(destination)) {
+            return origin + "-" + destination;
+        }
+        final List<String> refs = longest.routePointRefs();
+        if (refs.size() < 3) {
+            return origin + "-" + destination;
+        }
+        final String viaCode = shortCodeOf(refs.get(refs.size() / 2));
+        return origin + "-" + stationName(viaCode, stationNamesByShortCode) + "-" + destination;
+    }
+
+    private static String stationName(final String shortCode, final Map<String, String> stationNamesByShortCode) {
+        return stationNamesByShortCode.getOrDefault(shortCode.trim(), shortCode.trim());
+    }
+
+    /** "FTR:RoutePoint:HKI" -> "HKI". */
+    private static String shortCodeOf(final String routePointRef) {
+        final int lastColon = routePointRef.lastIndexOf(':');
+        return lastColon < 0 ? routePointRef : routePointRef.substring(lastColon + 1);
     }
 
     /**
@@ -201,7 +256,8 @@ public class NeTExEntityService {
         return row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
     }
 
-    public record NeTExLine(String id, String publicCode, String transportMode) {
+    public record NeTExLine(String id, String name, String publicCode, String privateCode,
+            String operatorRef, String transportMode) {
     }
 
     public record NeTExOperator(String id, String name, String privateCode, int companyNumber) {

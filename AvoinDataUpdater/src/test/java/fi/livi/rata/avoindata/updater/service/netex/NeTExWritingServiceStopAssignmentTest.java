@@ -177,7 +177,7 @@ class NeTExWritingServiceStopAssignmentTest {
         try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.getName().equals("FTR_timetables.xml")) {
+                if (entry.getName().startsWith("_")) {
                     return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                 }
             }
@@ -211,7 +211,8 @@ class NeTExWritingServiceStopAssignmentTest {
                         "FTR:OperatingPeriod:20260615-20261214")),
                 Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
 
-        final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "IC", "rail"));
+        final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
+                "IC", "FTR:Operator:vr", "rail"));
         final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
         final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                 "FTR:ServiceJourney:59-12345", "IC 59", "59",

@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +41,7 @@ class NeTExWritingServiceTest {
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
-                // then: valid ZIP containing _FTR_shared_data.xml and FTR_timetables.xml
+                // then: valid ZIP containing the common file and one file per Line
                 assertNotNull(zip);
                 assertTrue(zip.length > 0);
 
@@ -51,8 +52,8 @@ class NeTExWritingServiceTest {
                                 names.add(entry.getName());
                         }
                 }
-                assertTrue(names.contains("FTR_timetables.xml"));
                 assertTrue(names.contains("_FTR_shared_data.xml"));
+                assertTrue(names.contains("FTR_IC_Helsinki-Oulu.xml"));
         }
 
         @Test
@@ -180,7 +181,7 @@ class NeTExWritingServiceTest {
                                 testData.timestamp);
 
                 // then
-                final String xml = extractXmlFromZip(zip);
+                final String xml = extractSharedXmlFromZip(zip);
                 assertTrue(xml.contains("ServiceCalendarFrame") || xml.contains("dayTypes"));
         }
 
@@ -305,33 +306,69 @@ class NeTExWritingServiceTest {
         }
 
         @Test
-        void givenOperatingPeriod_whenWritingZip_thenValidityRangeCoversIt() throws Exception {
-                // given: test data spans operating period 2026-06-15 .. 2026-12-14
+        void givenDatedJourneys_whenWritingZip_thenValidityRangeSpansOperatingDays() throws Exception {
+                // given
                 final var testData = createMinimalTestData();
+                final var dated = List.of(
+                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260701",
+                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 1)),
+                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260705",
+                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 5)));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
                                 testData.stopsData, testData.routeData, testData.calendarData,
-                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.lines, testData.operators, testData.serviceJourneys, dated,
                                 testData.timestamp);
 
                 // then: end is pushed past midnight to cover journeys of the last day
-                final String xml = extractXmlFromZip(zip);
-                assertTrue(xml.contains("<FromDate>2026-06-15T00:00:00</FromDate>"));
-                assertTrue(xml.contains("<ToDate>2026-12-15T04:00:00</ToDate>"));
+                final String xml = extractSharedXmlFromZip(zip);
+                assertTrue(xml.contains("<FromDate>2026-07-01T00:00:00</FromDate>"));
+                assertTrue(xml.contains("<ToDate>2026-07-06T04:00:00</ToDate>"));
+        }
+
+        @Test
+        void givenDatedJourneys_whenWritingZip_thenNoDayTypesAreEmitted() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+                final var dated = List.of(
+                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260701",
+                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 1)));
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.lines, testData.operators, testData.serviceJourneys, dated,
+                                testData.timestamp);
+
+                // then: calendar is expressed purely as OperatingDays (SERVICE_JOURNEY_14)
+                final String shared = extractSharedXmlFromZip(zip);
+                assertTrue(shared.contains("<OperatingDay"));
+                assertFalse(shared.contains("<DayType"));
+                assertFalse(shared.contains("<OperatingPeriod"));
+                assertFalse(extractXmlFromZip(zip).contains("<dayTypes>"));
         }
 
         // --- Helpers ---
 
         private String extractXmlFromZip(final byte[] zip) throws Exception {
+                return extractEntry(zip, name -> !name.startsWith("_"));
+        }
+
+        private String extractSharedXmlFromZip(final byte[] zip) throws Exception {
+                return extractEntry(zip, name -> name.startsWith("_"));
+        }
+
+        private String extractEntry(final byte[] zip, final java.util.function.Predicate<String> match)
+                        throws Exception {
                 try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
                         ZipEntry entry;
                         while ((entry = zis.getNextEntry()) != null) {
-                                if (entry.getName().equals("FTR_timetables.xml")) {
+                                if (match.test(entry.getName())) {
                                         return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                                 }
                         }
-                        throw new IllegalStateException("FTR_timetables.xml not found in ZIP");
+                        throw new IllegalStateException("No matching entry in ZIP");
                 }
         }
 
@@ -365,7 +402,8 @@ class NeTExWritingServiceTest {
                                                 "FTR:OperatingPeriod:20260615-20261214")),
                                 Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
 
-                final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "IC", "rail"));
+                final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
+                                "IC", "FTR:Operator:vr", "rail"));
                 final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
                 final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                                 "FTR:ServiceJourney:59-12345", "IC 59", "59",

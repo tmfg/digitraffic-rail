@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
@@ -182,7 +183,10 @@ public class NeTExService {
         final NeTExCalendarData calendarData = calendarService.createCalendarData(allFiltered);
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(allFiltered);
 
-        final var lines = entityService.createLines(allFiltered);
+        final Map<String, String> stationNames = stations.stream()
+                .collect(Collectors.toMap(station -> station.shortCode, station -> station.name,
+                        (first, second) -> first));
+        final var lines = entityService.createLines(allFiltered, routeData, stationNames);
         final var operators = entityService.createOperators(allFiltered);
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, calendarData, routeData);
 
@@ -195,19 +199,16 @@ public class NeTExService {
         final var datedServiceJourneys = entityService.createDatedServiceJourneys(datedRefs);
 
         final ZonedDateTime timestamp = ZonedDateTime.now();
-        final PublicationDeliveryStructure timetableDelivery = writingService.buildTimetableDelivery(
+        final Map<String, PublicationDeliveryStructure> files = writingService.buildDataset(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, datedServiceJourneys,
                 timestamp);
         final List<LocalDate> operatingDays = datedServiceJourneys.stream()
                 .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
                 .toList();
 
-        final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
-        files.put("_FTR_shared_data.xml", writingService.buildOperatingDaySharedData(operatingDays, timestamp));
-        files.put("FTR_timetables.xml", timetableDelivery);
         final byte[] zip = writingService.marshalAndZip(files);
 
-        return new NeTExGenerationResult(zip, timetableDelivery, operatingDays,
+        return new NeTExGenerationResult(zip, files.get(NeTExFileNaming.SHARED_DATA_XML), operatingDays,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
                 lines.size(), serviceJourneys.size(),
                 stopsData.matchedCount(), stopsData.unmatchedCount(),
