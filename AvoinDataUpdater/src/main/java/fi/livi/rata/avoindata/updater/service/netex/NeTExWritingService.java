@@ -13,14 +13,18 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
+import org.rutebanken.netex.model.AvailabilityCondition;
 import org.rutebanken.netex.model.Codespace;
 import org.rutebanken.netex.model.Codespaces_RelStructure;
+import org.rutebanken.netex.model.CompositeFrame;
 import org.rutebanken.netex.model.DatedServiceJourney;
 import org.rutebanken.netex.model.DayOfWeekEnumeration;
 import org.rutebanken.netex.model.DayType;
@@ -32,6 +36,7 @@ import org.rutebanken.netex.model.DayTypesInFrame_RelStructure;
 import org.rutebanken.netex.model.DestinationDisplay;
 import org.rutebanken.netex.model.DestinationDisplayRefStructure;
 import org.rutebanken.netex.model.DestinationDisplaysInFrame_RelStructure;
+import org.rutebanken.netex.model.Frames_RelStructure;
 import org.rutebanken.netex.model.JourneyPattern;
 import org.rutebanken.netex.model.JourneyPatternRefStructure;
 import org.rutebanken.netex.model.JourneyPatternsInFrame_RelStructure;
@@ -83,6 +88,7 @@ import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.TimetabledPassingTime;
 import org.rutebanken.netex.model.TimetabledPassingTimes_RelStructure;
+import org.rutebanken.netex.model.ValidityConditions_RelStructure;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.springframework.stereotype.Service;
 
@@ -98,6 +104,8 @@ import jakarta.xml.bind.Marshaller;
 public class NeTExWritingService {
 
     private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
+    // Latest arrival of a journey belonging to the previous operating day.
+    private static final LocalTime SERVICE_DAY_END = LocalTime.of(4, 0);
     private static final ObjectFactory FACTORY = new ObjectFactory();
 
     private final NeTExIdGenerator idGenerator;
@@ -195,18 +203,67 @@ public class NeTExWritingService {
         final ServiceCalendarFrame calendarFrame = buildServiceCalendarFrame(calendarData);
         final TimetableFrame timetableFrame = buildTimetableFrame(serviceJourneys, datedServiceJourneys);
 
+        final CompositeFrame compositeFrame = new CompositeFrame()
+                .withId("FTR:CompositeFrame:1")
+                .withVersion("1")
+                .withValidityConditions(buildValidityConditions(
+                        collectCoveredDates(calendarData, datedServiceJourneys), generationTimestamp))
+                .withFrames(new Frames_RelStructure()
+                        .withCommonFrame(
+                                FACTORY.createResourceFrame(resourceFrame),
+                                FACTORY.createServiceFrame(serviceFrame),
+                                FACTORY.createServiceCalendarFrame(calendarFrame),
+                                FACTORY.createTimetableFrame(timetableFrame)));
+
         final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
-                .withCompositeFrameOrCommonFrame(
-                        FACTORY.createResourceFrame(resourceFrame),
-                        FACTORY.createServiceFrame(serviceFrame),
-                        FACTORY.createServiceCalendarFrame(calendarFrame),
-                        FACTORY.createTimetableFrame(timetableFrame));
+                .withCompositeFrameOrCommonFrame(FACTORY.createCompositeFrame(compositeFrame));
 
         return new PublicationDeliveryStructure()
                 .withVersion(VERSION)
                 .withPublicationTimestamp(generationTimestamp.toLocalDateTime())
                 .withParticipantRef("FTR")
                 .withDataObjects(dataObjects);
+    }
+
+    /**
+     * Temporal envelope for the delivery, derived from every dated element it
+     * contains so it can never drift from the data it describes. The end is pushed
+     * into the following morning because journeys on the last operating day run
+     * past midnight. A delivery carrying no dated data falls back to its
+     * publication date.
+     */
+    private ValidityConditions_RelStructure buildValidityConditions(final Collection<LocalDate> dates,
+            final ZonedDateTime publicationTimestamp) {
+        final SortedSet<LocalDate> distinct = new TreeSet<>(dates);
+        final LocalDate firstDay = distinct.isEmpty() ? publicationTimestamp.toLocalDate() : distinct.first();
+        final LocalDate lastDay = distinct.isEmpty() ? publicationTimestamp.toLocalDate() : distinct.last();
+
+        return new ValidityConditions_RelStructure()
+                .withValidityConditionRefOrValidBetweenOrValidityCondition_(
+                        FACTORY.createAvailabilityCondition(new AvailabilityCondition()
+                                .withId("FTR:AvailabilityCondition:1")
+                                .withVersion("1")
+                                .withFromDate(firstDay.atStartOfDay())
+                                .withToDate(lastDay.plusDays(1).atTime(SERVICE_DAY_END))));
+    }
+
+    /**
+     * Every date appearing in the timetable delivery: dated journeys, operating
+     * periods and date-based day type assignments.
+     */
+    private static List<LocalDate> collectCoveredDates(final NeTExCalendarData calendarData,
+            final List<NeTExEntityService.NeTExDatedServiceJourney> datedServiceJourneys) {
+        final List<LocalDate> dates = new ArrayList<>();
+        datedServiceJourneys.forEach(dsj -> dates.add(dsj.operatingDay()));
+        calendarData.getOperatingPeriods().forEach(period -> {
+            dates.add(period.getFromDate());
+            dates.add(period.getToDate());
+        });
+        calendarData.getDayTypeAssignments().stream()
+                .map(NeTExDayTypeAssignment::getDate)
+                .filter(Objects::nonNull)
+                .forEach(dates::add);
+        return dates;
     }
 
     private ResourceFrame buildResourceFrame(final List<NeTExEntityService.NeTExOperator> operators) {
@@ -482,6 +539,7 @@ public class NeTExWritingService {
         final ServiceCalendarFrame calendarFrame = new ServiceCalendarFrame()
                 .withId("FTR:ServiceCalendarFrame:operating-days")
                 .withVersion("1")
+                .withValidityConditions(buildValidityConditions(distinct, timestamp))
                 .withOperatingDays(operatingDays);
 
         final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()

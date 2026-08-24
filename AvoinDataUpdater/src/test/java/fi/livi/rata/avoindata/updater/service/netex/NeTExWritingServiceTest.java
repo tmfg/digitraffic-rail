@@ -269,6 +269,58 @@ class NeTExWritingServiceTest {
                 assertTrue(xml.startsWith("<?xml") && xml.contains("UTF-8"));
         }
 
+        @Test
+        void givenValidData_whenWritingZip_thenFramesAreWrappedInCompositeFrame() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<CompositeFrame"));
+                assertTrue(xml.indexOf("<CompositeFrame") < xml.indexOf("<ResourceFrame"));
+                assertTrue(xml.indexOf("<CompositeFrame") < xml.indexOf("<TimetableFrame"));
+        }
+
+        @Test
+        void givenValidData_whenWritingZip_thenCompositeFrameDeclaresValidityCondition() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<validityConditions>"));
+                assertTrue(xml.contains("<AvailabilityCondition"));
+        }
+
+        @Test
+        void givenOperatingPeriod_whenWritingZip_thenValidityRangeCoversIt() throws Exception {
+                // given: test data spans operating period 2026-06-15 .. 2026-12-14
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then: end is pushed past midnight to cover journeys of the last day
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<FromDate>2026-06-15T00:00:00</FromDate>"));
+                assertTrue(xml.contains("<ToDate>2026-12-15T04:00:00</ToDate>"));
+        }
+
         // --- Helpers ---
 
         private String extractXmlFromZip(final byte[] zip) throws Exception {
