@@ -22,6 +22,7 @@ import java.util.zip.ZipInputStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
 
 /**
  * Dataset-level invariants of the per-Line split: file scoping rules of the
@@ -35,7 +36,8 @@ class NeTExDatasetLayoutTest {
 
     @BeforeEach
     void setUp() {
-        writingService = new NeTExWritingService(new NeTExIdGenerator());
+        final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+        writingService = new NeTExWritingService(idGenerator, new NeTExCompositionWritingService(idGenerator));
     }
 
     @Test
@@ -110,7 +112,61 @@ class NeTExDatasetLayoutTest {
         });
     }
 
+    @Test
+    void givenCompositions_whenBuildingDataset_thenVehicleTypesAreSharedAndTrainsPerLine() {
+        // given: a composition for the (train, day) of the IC-1 dated journey
+        final var composition = new NeTExCompositionService.NeTExDatedVehicleJourney(
+                "FTR:DatedServiceJourney:1-2026-08-20", 1L, LocalDate.of(2026, 8, 20), "HKI", "OL",
+                200, 200, true, false, "FTR:ServiceJourney:1",
+                List.of(new NeTExCompositionService.NeTExTrainComponent(1, "engine",
+                        "FTR:VehicleType:Sr2", "Sr2", 2000, false, false, null)));
+        final var compositions = new NeTExCompositionService.CompositionData(
+                List.of(new NeTExCompositionService.NeTExVehicleType("FTR:VehicleType:Sr2", "Sr2",
+                        "electricity", true, 2000, false, false)),
+                List.of(composition));
+
+        final var dated = List.of(
+                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:1-2026-08-20",
+                        "FTR:ServiceJourney:1", LocalDate.of(2026, 8, 20)),
+                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:2-2026-08-22",
+                        "FTR:ServiceJourney:2", LocalDate.of(2026, 8, 22)));
+
+        // when
+        final Map<String, String> files = marshal(writingService.buildDataset(
+                stopsData(), routeData(), calendarData(), lines(), operators(),
+                serviceJourneys(), dated, compositions,
+                ZonedDateTime.of(2026, 8, 21, 6, 12, 0, 0, ZoneOffset.UTC)));
+
+        // then: rolling stock types are cross-line, formations belong to their Line
+        final String shared = files.get("_FTR_shared_data.xml");
+        final String ic1 = files.get("FTR_IC-1_Helsinki-Oulu.xml");
+        final String z = files.get("FTR_Z_Helsinki-Lahti.xml");
+
+        assertTrue(shared.contains("id=\"FTR:VehicleType:Sr2\""), "VehicleType belongs to the common file");
+        assertFalse(ic1.contains("id=\"FTR:VehicleType:Sr2\""), "VehicleType must not repeat in a line file");
+
+        assertTrue(ic1.contains("id=\"FTR:Train:1-2026-08-20-HKI\""), "Train belongs to its line file");
+        assertTrue(ic1.contains("ref=\"FTR:Train:1-2026-08-20-HKI\""), "journey must reference its formation");
+        assertFalse(z.contains("FTR:Train:1-2026-08-20-HKI"), "another line must not carry the formation");
+
+        assertTrue(ic1.contains("<AccessibilityAssessment"), "wheelchair access is folded onto the journey");
+    }
+
     // --- Helpers ---
+
+    private Map<String, String> marshal(final Map<String, PublicationDeliveryStructure> dataset) {
+        final byte[] zip = writingService.marshalAndZip(dataset);
+        final Map<String, String> files = new LinkedHashMap<>();
+        try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                files.put(entry.getName(), new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException("Failed to read dataset", e);
+        }
+        return files;
+    }
 
     private Map<String, String> build() throws Exception {
         final byte[] zip = writingService.writeNeTExZip(

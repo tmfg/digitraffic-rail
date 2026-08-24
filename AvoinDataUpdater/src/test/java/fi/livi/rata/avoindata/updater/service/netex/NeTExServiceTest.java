@@ -42,7 +42,8 @@ class NeTExServiceTest {
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
+                new NeTExCompositionWritingService(idGenerator));
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
                 petiStopSource, null, todaysScheduleService, null);

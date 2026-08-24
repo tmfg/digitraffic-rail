@@ -5,7 +5,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
- * Builds the NeTEx timetable delivery from schedule + station data. Packaging of
+ * Builds the NeTEx timetable delivery from schedule + station data. Packaging
+ * of
  * the combined dataset ZIP and persistence is handled by
  * {@link NeTExPackageService}.
  */
@@ -75,12 +75,13 @@ public class NeTExService {
 
     /**
      * Fetches schedule and station data and builds the timetable delivery, logging
-     * the generation wide-event. Returns the built package (or null when there is no
+     * the generation wide-event. Returns the built package (or null when there is
+     * no
      * data); persistence and packaging into the combined ZIP is done by
      * {@link NeTExPackageService}.
      */
     @Transactional
-    public NeTExGenerationResult generateNeTEx() {
+    public NeTExGenerationResult generateNeTEx(final NeTExCompositionService.CompositionData compositions) {
         log.info("method=generateNeTEx starting NeTEx generation");
         final long startTime = System.currentTimeMillis();
 
@@ -93,7 +94,8 @@ public class NeTExService {
             log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size());
 
-            final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations);
+            final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations,
+                    compositions);
 
             final long durationMs = System.currentTimeMillis() - startTime;
 
@@ -135,6 +137,14 @@ public class NeTExService {
     public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
+        return generateNeTEx(adhocSchedules, regularSchedules, stations,
+                NeTExCompositionService.CompositionData.empty());
+    }
+
+    public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
+            final List<Schedule> regularSchedules,
+            final List<Station> stations,
+            final NeTExCompositionService.CompositionData compositions) {
         // Filter to passenger trains first (matches GTFS gtfs-passenger.zip approach)
         final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
         final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
@@ -201,14 +211,14 @@ public class NeTExService {
         final ZonedDateTime timestamp = ZonedDateTime.now();
         final Map<String, PublicationDeliveryStructure> files = writingService.buildDataset(
                 stopsData, routeData, calendarData, lines, operators, serviceJourneys, datedServiceJourneys,
-                timestamp);
+                compositions, timestamp);
         final List<LocalDate> operatingDays = datedServiceJourneys.stream()
                 .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
                 .toList();
 
         final byte[] zip = writingService.marshalAndZip(files);
 
-        return new NeTExGenerationResult(zip, files.get(NeTExFileNaming.SHARED_DATA_XML), operatingDays,
+        return new NeTExGenerationResult(zip, files, operatingDays,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
                 lines.size(), serviceJourneys.size(),
                 stopsData.matchedCount(), stopsData.unmatchedCount(),
@@ -308,7 +318,7 @@ public class NeTExService {
      * Holds the generation output and telemetry counts for the wide-event.
      */
     record NeTExGenerationResult(byte[] zip,
-            PublicationDeliveryStructure timetableDelivery, List<LocalDate> operatingDays,
+            Map<String, PublicationDeliveryStructure> files, List<LocalDate> operatingDays,
             int scheduledStopPoints, int routes, int lines,
             int serviceJourneys, int matchedCount, int unmatchedCount,
             int quayMatchedCount, int quayUnmatchedCount, int quayNoTrackCount) {

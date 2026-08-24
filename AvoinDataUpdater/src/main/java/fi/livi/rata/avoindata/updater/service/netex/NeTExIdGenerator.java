@@ -107,7 +107,6 @@ public class NeTExIdGenerator {
         return CODESPACE + ":DatedServiceJourney:" + trainNumber + "-" + date + suffix;
     }
 
-    
     public String passengerStopAssignmentId(final String stationShortCode) {
         return CODESPACE + ":PassengerStopAssignment:" + stationShortCode;
     }

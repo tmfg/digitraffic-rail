@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -94,23 +92,20 @@ public class NeTExCompositionService {
     private final NeTExService neTExService;
     private final ScheduleProviderService scheduleProviderService;
     private final NeTExIdGenerator idGenerator;
-    private final NeTExCompositionWritingService compositionWritingService;
 
     public NeTExCompositionService(final CompositionRepository compositionRepository,
             final NeTExService neTExService,
             final ScheduleProviderService scheduleProviderService,
-            final NeTExIdGenerator idGenerator,
-            final NeTExCompositionWritingService compositionWritingService) {
+            final NeTExIdGenerator idGenerator) {
         this.compositionRepository = compositionRepository;
         this.neTExService = neTExService;
         this.scheduleProviderService = scheduleProviderService;
         this.idGenerator = idGenerator;
-        this.compositionWritingService = compositionWritingService;
     }
 
     @Transactional
-    public CompositionDelivery buildCompositionDelivery() {
-        log.info("method=buildCompositionDelivery starting");
+    public CompositionData buildCompositionData() {
+        log.info("method=buildCompositionData starting");
         final long startTime = System.currentTimeMillis();
 
         try {
@@ -119,12 +114,12 @@ public class NeTExCompositionService {
             final LocalDate end = today.plusDays(30);
 
             final List<Composition> allCompositions = fetchCompositionsForRange(start, end);
-            log.info("method=buildCompositionDelivery fetched {} compositions for range {} to {}",
+            log.info("method=buildCompositionData fetched {} compositions for range {} to {}",
                     allCompositions.size(), start, end);
 
             if (allCompositions.isEmpty()) {
-                log.warn("method=buildCompositionDelivery no compositions found");
-                return null;
+                log.warn("method=buildCompositionData no compositions found");
+                return CompositionData.empty();
             }
 
             // Resolve ServiceJourney refs the same way the timetable does, so the
@@ -140,20 +135,13 @@ public class NeTExCompositionService {
             final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(allCompositions,
                     vehicleTypeIds, serviceJourneyRefs);
 
-            final PublicationDeliveryStructure delivery = compositionWritingService.buildCompositionDelivery(
-                    vehicleTypes, datedJourneys, ZonedDateTime.now());
-            final List<LocalDate> operatingDays = datedJourneys.stream()
-                    .map(NeTExDatedVehicleJourney::date)
-                    .distinct()
-                    .toList();
-
             final long durationMs = System.currentTimeMillis() - startTime;
-            log.info("method=buildCompositionDelivery built delivery, compositions={}, dated_journeys={}, "
-                    + "durationMs={}", allCompositions.size(), datedJourneys.size(), durationMs);
-            return new CompositionDelivery(delivery, operatingDays);
+            log.info("method=buildCompositionData built compositions={}, dated_journeys={}, durationMs={}",
+                    allCompositions.size(), datedJourneys.size(), durationMs);
+            return new CompositionData(vehicleTypes, datedJourneys);
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
-            log.error("method=buildCompositionDelivery failed, durationMs={}", durationMs, e);
+            log.error("method=buildCompositionData failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx compositions generation failed", e);
         }
     }
@@ -167,20 +155,18 @@ public class NeTExCompositionService {
     }
 
     /**
-     * Builds the compositions NeTEx ZIP from the given composition data.
-     * The serviceJourneyRefs map, keyed by (trainNumber, departureDate), provides
-     * the ServiceJourney id that matches the timetable package.
+     * Maps raw compositions to the NeTEx-shaped model without touching the
+     * database. The serviceJourneyRefs map, keyed by (trainNumber, departureDate),
+     * provides the ServiceJourney id that matches the timetable package.
      * Visible for testing.
      */
-    public byte[] buildCompositionsZip(final List<Composition> compositions,
+    public CompositionData toCompositionData(final List<Composition> compositions,
             final Map<TrainId, String> serviceJourneyRefs) {
         final Set<String> vehicleTypeIds = new LinkedHashSet<>();
         final List<NeTExVehicleType> vehicleTypes = buildVehicleTypes(compositions, vehicleTypeIds);
-
         final List<NeTExDatedVehicleJourney> datedJourneys = buildDatedVehicleJourneys(compositions, vehicleTypeIds,
                 serviceJourneyRefs);
-
-        return compositionWritingService.writeZip(vehicleTypes, datedJourneys, ZonedDateTime.now());
+        return new CompositionData(vehicleTypes, datedJourneys);
     }
 
     private List<NeTExVehicleType> buildVehicleTypes(final List<Composition> compositions,
@@ -298,7 +284,15 @@ public class NeTExCompositionService {
 
     // --- DTOs ---
 
-    public record CompositionDelivery(PublicationDeliveryStructure delivery, List<LocalDate> operatingDays) {
+    /**
+     * Train formation for the window, ready to be folded into the line files.
+     */
+    public record CompositionData(List<NeTExVehicleType> vehicleTypes,
+            List<NeTExDatedVehicleJourney> datedJourneys) {
+
+        public static CompositionData empty() {
+            return new CompositionData(List.of(), List.of());
+        }
     }
 
     public record NeTExVehicleType(

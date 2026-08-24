@@ -163,7 +163,7 @@ class NeTExServiceMatchRateGuardTest {
 
         try {
             // when — trigger the no-arg generateNeTEx() which emits the wide event
-            service.generateNeTEx();
+            service.generateNeTEx(NeTExCompositionService.CompositionData.empty());
 
             // then — find the rail.netex.generation event in captured log
             final String generationLog = appender.list.stream()
@@ -205,7 +205,8 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
+                new NeTExCompositionWritingService(idGenerator));
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
                 writingService, petiSource, null, todaysScheduleService, null);
@@ -320,7 +321,8 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
+                new NeTExCompositionWritingService(idGenerator));
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);

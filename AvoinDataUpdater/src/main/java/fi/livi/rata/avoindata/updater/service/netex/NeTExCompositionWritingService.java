@@ -2,8 +2,6 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,14 +11,9 @@ import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.DatedServiceJourney;
 import org.rutebanken.netex.model.FareClassEnumeration;
 import org.rutebanken.netex.model.FuelTypeEnumeration;
-import org.rutebanken.netex.model.JourneysInFrame_RelStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.OperatingDayRefStructure;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.ResourceFrame;
-import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.Train;
 import org.rutebanken.netex.model.TrainComponent;
 import org.rutebanken.netex.model.TrainComponents_RelStructure;
@@ -28,9 +21,9 @@ import org.rutebanken.netex.model.TrainElement;
 import org.rutebanken.netex.model.TrainElementTypeEnumeration;
 import org.rutebanken.netex.model.TrainRefStructure;
 import org.rutebanken.netex.model.TrainSizeStructure;
-import org.rutebanken.netex.model.VehicleJourneyRefStructure;
 import org.rutebanken.netex.model.VehicleType;
-import org.rutebanken.netex.model.VehicleTypesInFrame_RelStructure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTExDatedVehicleJourney;
@@ -38,64 +31,49 @@ import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTE
 import fi.livi.rata.avoindata.updater.service.netex.NeTExCompositionService.NeTExVehicleType;
 
 /**
- * Builds NeTEx compositions PublicationDelivery and delegates
- * marshalling/zipping
- * to NeTExWritingService.
+ * Builds the NeTEx objects that carry train formation: VehicleTypes for the
+ * shared file, Trains for a Line file, and the composition attributes folded
+ * onto that Line's DatedServiceJourneys.
  */
 @Service
 public class NeTExCompositionWritingService {
 
-    private static final String NETEX_VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
-    private static final String COMPOSITIONS_XML = "FTR_compositions.xml";
-    private static final String SHARED_DATA_XML = "_FTR_shared_data.xml";
+    private static final Logger log = LoggerFactory.getLogger(NeTExCompositionWritingService.class);
     private static final ObjectFactory FACTORY = new ObjectFactory();
 
-    private final NeTExWritingService writingService;
     private final NeTExIdGenerator idGenerator;
 
-    public NeTExCompositionWritingService(final NeTExWritingService writingService,
-            final NeTExIdGenerator idGenerator) {
-        this.writingService = writingService;
+    public NeTExCompositionWritingService(final NeTExIdGenerator idGenerator) {
         this.idGenerator = idGenerator;
     }
 
-    public byte[] writeZip(final List<NeTExVehicleType> vehicleTypes,
-            final List<NeTExDatedVehicleJourney> datedJourneys,
-            final ZonedDateTime timestamp) {
-        final List<LocalDate> operatingDays = datedJourneys.stream()
-                .map(NeTExDatedVehicleJourney::date)
-                .toList();
-        final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
-        files.put(SHARED_DATA_XML, writingService.buildOperatingDaySharedData(operatingDays, timestamp));
-        files.put(COMPOSITIONS_XML, buildCompositionDelivery(vehicleTypes, datedJourneys, timestamp));
-        return writingService.marshalAndZip(files);
+    /**
+     * Keys compositions by the DatedServiceJourney id the timetable generates for
+     * the same (train, day), so a Line file can find the formation for each of its
+     * journeys.
+     * <p>
+     * A train that changes formation en route has one composition per journey
+     * section, but the timetable has a single journey for that day. Only the
+     * section leaving the origin is kept; the rest are counted and reported.
+     */
+    public Map<String, NeTExDatedVehicleJourney> indexByDatedServiceJourneyId(
+            final List<NeTExDatedVehicleJourney> datedJourneys) {
+        final Map<String, NeTExDatedVehicleJourney> byId = new LinkedHashMap<>();
+        int laterSections = 0;
+        for (final NeTExDatedVehicleJourney dj : datedJourneys) {
+            final String key = idGenerator.datedServiceJourneyId(dj.trainNumber(), dj.date());
+            if (byId.putIfAbsent(key, dj) != null) {
+                laterSections++;
+            }
+        }
+        if (laterSections > 0) {
+            log.info("method=indexByDatedServiceJourneyId dropped_later_journey_sections={}", laterSections);
+        }
+        return byId;
     }
 
-    public PublicationDeliveryStructure buildCompositionDelivery(
-            final List<NeTExVehicleType> vehicleTypes,
-            final List<NeTExDatedVehicleJourney> datedJourneys,
-            final ZonedDateTime timestamp) {
-
-        final List<Train> trains = buildTrains(datedJourneys);
-        final ResourceFrame resourceFrame = buildResourceFrame(vehicleTypes, trains);
-        final TimetableFrame timetableFrame = buildTimetableFrame(datedJourneys);
-
-        final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
-                .withCompositeFrameOrCommonFrame(
-                        FACTORY.createResourceFrame(resourceFrame),
-                        FACTORY.createTimetableFrame(timetableFrame));
-
-        return new PublicationDeliveryStructure()
-                .withVersion(NETEX_VERSION)
-                .withPublicationTimestamp(timestamp.toLocalDateTime())
-                .withParticipantRef("FTR")
-                .withDescription(new MultilingualString().withValue("Finland rail composition and accessibility data"))
-                .withDataObjects(dataObjects);
-    }
-
-    private ResourceFrame buildResourceFrame(final List<NeTExVehicleType> vehicleTypes, final List<Train> trains) {
-        final VehicleTypesInFrame_RelStructure vtStruct = new VehicleTypesInFrame_RelStructure();
-
+    public List<VehicleType> buildVehicleTypes(final List<NeTExVehicleType> vehicleTypes) {
+        final List<VehicleType> result = new ArrayList<>();
         for (final NeTExVehicleType vt : vehicleTypes) {
             final VehicleType vehicleType = new VehicleType()
                     .withId(vt.id())
@@ -113,102 +91,64 @@ public class NeTExCompositionWritingService {
             if (vt.lengthCm() > 0) {
                 vehicleType.withLength(BigDecimal.valueOf(vt.lengthCm()).movePointLeft(2));
             }
-
-            vtStruct.getCompoundTrainOrTrainOrVehicleType().add(vehicleType);
+            result.add(vehicleType);
         }
-
-        for (final Train train : trains) {
-            vtStruct.getCompoundTrainOrTrainOrVehicleType().add(train);
-        }
-
-        return new ResourceFrame()
-                .withId("FTR:ResourceFrame:compositions")
-                .withVersion("1")
-                .withVehicleTypes(vtStruct);
+        return result;
     }
 
-    private List<Train> buildTrains(final List<NeTExDatedVehicleJourney> datedJourneys) {
-        final List<Train> trains = new ArrayList<>();
+    public Train buildTrain(final NeTExDatedVehicleJourney dj) {
+        final String idSuffix = trainIdSuffix(dj);
+        final TrainComponents_RelStructure components = new TrainComponents_RelStructure();
 
-        for (final NeTExDatedVehicleJourney dj : datedJourneys) {
-            final String idSuffix = dj.trainNumber() + "-" + dj.date()
-                    + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
-            final String trainId = "FTR:Train:" + idSuffix;
+        for (final NeTExTrainComponent comp : dj.components()) {
+            final TrainElement element = new TrainElement()
+                    .withId("FTR:TrainElement:" + idSuffix + "-" + comp.order())
+                    .withVersion("1")
+                    .withTrainElementType(TrainElementTypeEnumeration.fromValue(comp.elementType()));
 
-            final TrainComponents_RelStructure components = new TrainComponents_RelStructure();
-            for (final NeTExTrainComponent comp : dj.components()) {
-                final TrainElement element = new TrainElement()
-                        .withId("FTR:TrainElement:" + idSuffix + "-" + comp.order())
-                        .withVersion("1")
-                        .withTrainElementType(TrainElementTypeEnumeration.fromValue(comp.elementType()));
-
-                if (comp.fareClass() != null) {
-                    element.withFareClasses(mapFareClassEnum(comp.fareClass()));
-                }
-
-                final TrainComponent trainComponent = new TrainComponent()
-                        .withId("FTR:TrainComponent:" + idSuffix + "-" + comp.order())
-                        .withVersion("1")
-                        .withOrder(BigInteger.valueOf(comp.order()))
-                        .withLabel(new MultilingualString().withValue(comp.label()))
-                        .withTrainElement(element);
-
-                components.getTrainComponentRefOrTrainComponent().add(trainComponent);
+            if (comp.fareClass() != null) {
+                element.withFareClasses(mapFareClassEnum(comp.fareClass()));
             }
 
-            trains.add(new Train()
-                    .withId(trainId)
+            components.getTrainComponentRefOrTrainComponent().add(new TrainComponent()
+                    .withId("FTR:TrainComponent:" + idSuffix + "-" + comp.order())
                     .withVersion("1")
-                    .withTrainSize(new TrainSizeStructure()
-                            .withNumberOfCars(BigInteger.valueOf(dj.components().size())))
-                    .withComponents(components));
+                    .withOrder(BigInteger.valueOf(comp.order()))
+                    .withLabel(new MultilingualString().withValue(comp.label()))
+                    .withTrainElement(element));
         }
 
-        return trains;
+        return new Train()
+                .withId("FTR:Train:" + idSuffix)
+                .withVersion("1")
+                .withTrainSize(new TrainSizeStructure()
+                        .withNumberOfCars(BigInteger.valueOf(dj.components().size())))
+                .withComponents(components);
     }
 
-    private TimetableFrame buildTimetableFrame(final List<NeTExDatedVehicleJourney> datedJourneys) {
-        final JourneysInFrame_RelStructure vehicleJourneys = new JourneysInFrame_RelStructure();
+    /**
+     * Folds formation and accessibility onto the journey the timetable already
+     * produced, so one DatedServiceJourney carries both schedule and composition.
+     */
+    public void applyComposition(final DatedServiceJourney dsj, final NeTExDatedVehicleJourney dj) {
+        final TrainRefStructure trainRef = new TrainRefStructure();
+        trainRef.setRef("FTR:Train:" + trainIdSuffix(dj));
 
-        for (final NeTExDatedVehicleJourney dj : datedJourneys) {
-            final String idSuffix = dj.trainNumber() + "-" + dj.date()
-                    + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
-            final String trainId = "FTR:Train:" + idSuffix;
+        dsj.withVehicleTypeRef(FACTORY.createTrainRef(trainRef))
+                .withTrainSize(new TrainSizeStructure()
+                        .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
 
-            final TrainRefStructure trainRef = new TrainRefStructure();
-            trainRef.setRef(trainId);
-
-            final DatedServiceJourney dsj = new DatedServiceJourney()
-                    .withId(dj.id())
+        if (dj.hasWheelchair()) {
+            dsj.withAccessibilityAssessment(new AccessibilityAssessment()
+                    .withId("FTR:AA:" + trainIdSuffix(dj))
                     .withVersion("1")
-                    .withVehicleTypeRef(FACTORY.createTrainRef(trainRef))
-                    .withOperatingDayRef(new OperatingDayRefStructure()
-                            .withRef(idGenerator.operatingDayId(dj.date())))
-                    .withTrainSize(new TrainSizeStructure()
-                            .withNumberOfCars(BigInteger.valueOf(dj.components().size())));
-
-            // Link to the canonical dated journey in FTR_timetables.xml (which in turn
-            // carries the ServiceJourneyRef); present only when that (train, day) runs there.
-            if (dj.serviceJourneyRef() != null) {
-                final VehicleJourneyRefStructure datedRef = new VehicleJourneyRefStructure()
-                        .withRef(idGenerator.datedServiceJourneyId(dj.trainNumber(), dj.date()));
-                dsj.withJourneyRef(FACTORY.createDatedVehicleJourneyRef(datedRef));
-            }
-
-            if (dj.hasWheelchair()) {
-                dsj.withAccessibilityAssessment(new AccessibilityAssessment()
-                        .withId("FTR:AA:" + idSuffix)
-                        .withVersion("1")
-                        .withMobilityImpairedAccess(LimitationStatusEnumeration.TRUE));
-            }
-
-            vehicleJourneys.getVehicleJourneyOrDatedVehicleJourneyOrNormalDatedVehicleJourney().add(dsj);
+                    .withMobilityImpairedAccess(LimitationStatusEnumeration.TRUE));
         }
+    }
 
-        return new TimetableFrame()
-                .withId("FTR:TimetableFrame:compositions")
-                .withVersion("1")
-                .withVehicleJourneys(vehicleJourneys);
+    private static String trainIdSuffix(final NeTExDatedVehicleJourney dj) {
+        return dj.trainNumber() + "-" + dj.date()
+                + (dj.beginStation() != null ? "-" + dj.beginStation() : "");
     }
 
     private static String mapFuelType(final String powerType) {

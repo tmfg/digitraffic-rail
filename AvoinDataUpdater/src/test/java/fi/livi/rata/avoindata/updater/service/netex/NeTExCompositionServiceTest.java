@@ -32,22 +32,20 @@ import fi.livi.rata.avoindata.common.domain.composition.Wagon;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 /**
- * Tests for NeTExCompositionService — end-to-end through buildCompositionsZip,
+ * Tests for NeTExCompositionService — end-to-end through the merged dataset,
  * verifying VehicleTypes, Train elements, DatedServiceJourneys, accessibility,
- * and ServiceJourneyRef cross-references in the resulting XML.
+ * and cross-references in the resulting XML.
  */
 class NeTExCompositionServiceTest {
 
     private NeTExCompositionService compositionService;
+    private NeTExCompositionFixture fixture;
 
     @BeforeEach
     void setUp() {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
-        final NeTExCompositionWritingService compositionWritingService = new NeTExCompositionWritingService(
-                writingService, idGenerator);
-        compositionService = new NeTExCompositionService(null, null, null, idGenerator,
-                compositionWritingService);
+        compositionService = new NeTExCompositionService(null, null, null, idGenerator);
+        fixture = new NeTExCompositionFixture(idGenerator);
     }
 
     // --- VehicleType in XML ---
@@ -143,8 +141,8 @@ class NeTExCompositionServiceTest {
         // when
         final String xml = buildXml(c);
 
-        // then
-        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:59-2026-07-07-HKI\""));
+        // then: composition rides on the journey the timetable already produced
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:59-2026-07-07\""));
     }
 
     @Test
@@ -170,7 +168,7 @@ class NeTExCompositionServiceTest {
         wagon(c, "Ed", 1, 2640, false);
 
         // when
-        final byte[] zip = compositionService.buildCompositionsZip(List.of(c), Map.of());
+        final byte[] zip = fixture.marshalDataset(compositionService.toCompositionData(List.of(c), Map.of()));
         final String shared = extractXml(zip, "_FTR_shared_data.xml");
 
         // then
@@ -181,16 +179,18 @@ class NeTExCompositionServiceTest {
     }
 
     @Test
-    void givenMultiSection_whenBuildingZip_thenMultipleDatedServiceJourneys() {
+    void givenMultiSection_whenBuildingZip_thenOriginSectionWins() {
         // given
         final Composition c = compositionMultiSection(9, "2026-07-07", "HKI", "KV", "KV", "OL");
 
         // when
         final String xml = buildXml(c);
 
-        // then
-        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:9-2026-07-07-HKI\""));
-        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:9-2026-07-07-KV\""));
+        // then: the timetable has one journey for the day, so only the section
+        // leaving the origin can be attached to it
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:9-2026-07-07\""));
+        assertTrue(xml.contains("ref=\"FTR:Train:9-2026-07-07-HKI\""));
+        assertFalse(xml.contains("ref=\"FTR:Train:9-2026-07-07-KV\""));
     }
 
     @Test
@@ -312,7 +312,7 @@ class NeTExCompositionServiceTest {
     // --- Dated journey cross-reference ---
 
     @Test
-    void givenMatchingRef_whenBuildingZip_thenDatedVehicleJourneyRefToTimetableInXml() {
+    void givenMatchingRef_whenBuildingZip_thenCompositionRidesOnTheTimetabledJourney() {
         // given
         final LocalDate date = LocalDate.of(2026, 7, 7);
         final Composition c = composition(59, "2026-07-07", "HKI", "OL");
@@ -323,8 +323,11 @@ class NeTExCompositionServiceTest {
         // when
         final String xml = buildXml(c, refs);
 
-        // then: links to the canonical dated journey in the timetables package
-        assertTrue(xml.contains("<DatedVehicleJourneyRef ref=\"FTR:DatedServiceJourney:59-2026-07-07\""));
+        // then: one journey carries both the schedule and the formation, so no
+        // cross-reference between separate journeys is needed
+        assertTrue(xml.contains("id=\"FTR:DatedServiceJourney:59-2026-07-07\""));
+        assertTrue(xml.contains("ref=\"FTR:Train:59-2026-07-07-HKI\""));
+        assertFalse(xml.contains("<DatedVehicleJourneyRef"));
     }
 
     @Test
@@ -346,14 +349,14 @@ class NeTExCompositionServiceTest {
     // --- ZIP structure ---
 
     @Test
-    void givenComposition_whenBuildingZip_thenOutputIsValidZipWithCorrectFilename() {
+    void givenComposition_whenBuildingZip_thenOutputIsValidZipWithLineFile() {
         // given
         final Composition c = composition(59, "2026-07-07", "HKI", "OL");
         loco(c, "Sr2");
         wagon(c, "Ed", 1, 2640, false);
 
         // when
-        final byte[] zip = compositionService.buildCompositionsZip(List.of(c), Map.of());
+        final byte[] zip = fixture.marshalDataset(compositionService.toCompositionData(List.of(c), Map.of()));
 
         // then
         assertNotNull(zip);
@@ -367,8 +370,8 @@ class NeTExCompositionServiceTest {
         } catch (final Exception e) {
             fail("ZIP parsing failed: " + e.getMessage());
         }
-        assertTrue(names.contains("FTR_compositions.xml"), "missing compositions file");
         assertTrue(names.contains("_FTR_shared_data.xml"), "missing shared data file");
+        assertTrue(names.stream().anyMatch(n -> n.startsWith("FTR_IC_")), "missing line file");
     }
 
     @Test
@@ -400,7 +403,7 @@ class NeTExCompositionServiceTest {
     }
 
     @Test
-    void givenComposition_whenBuildingZip_thenXmlContainsBothFrames() {
+    void givenComposition_whenBuildingZip_thenLineFileCarriesFormationAndJourneys() {
         // given
         final Composition c = composition(59, "2026-07-07", "HKI", "OL");
         loco(c, "Sr2");
@@ -410,8 +413,8 @@ class NeTExCompositionServiceTest {
         final String xml = buildXml(c);
 
         // then
-        assertTrue(xml.contains("id=\"FTR:ResourceFrame:compositions\""));
-        assertTrue(xml.contains("id=\"FTR:TimetableFrame:compositions\""));
+        assertTrue(xml.contains("id=\"FTR:ResourceFrame:IC\""));
+        assertTrue(xml.contains("id=\"FTR:TimetableFrame:IC\""));
     }
 
     @Test
@@ -432,10 +435,9 @@ class NeTExCompositionServiceTest {
     @Test
     void givenEmptyCompositions_whenBuildingZip_thenProducesValidXml() {
         // given / when
-        final byte[] zip = compositionService.buildCompositionsZip(List.of(), Map.of());
+        final String xml = fixture.buildDatasetXml(NeTExCompositionService.CompositionData.empty());
 
         // then
-        final String xml = extractXml(zip);
         assertTrue(xml.contains("PublicationDelivery"));
     }
 
@@ -446,12 +448,7 @@ class NeTExCompositionServiceTest {
     }
 
     private String buildXml(final Composition c, final Map<TrainId, String> refs) {
-        final byte[] zip = compositionService.buildCompositionsZip(List.of(c), refs);
-        return extractXml(zip);
-    }
-
-    private String extractXml(final byte[] zipBytes) {
-        return extractXml(zipBytes, "FTR_compositions.xml");
+        return fixture.buildDatasetXml(compositionService.toCompositionData(List.of(c), refs));
     }
 
     private String extractXml(final byte[] zipBytes, final String fileName) {

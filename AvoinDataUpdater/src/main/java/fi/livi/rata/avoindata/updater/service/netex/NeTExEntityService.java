@@ -79,7 +79,8 @@ public class NeTExEntityService {
     /**
      * Names the Line after the longest route it serves, which is the variant that
      * best describes the corridor. Ring lines, whose origin and destination are the
-     * same station, get their midpoint inserted so the name is not "Helsinki-Helsinki".
+     * same station, get their midpoint inserted so the name is not
+     * "Helsinki-Helsinki".
      */
     private String deriveLineName(final String lineId,
             final NeTExRouteData routeData,

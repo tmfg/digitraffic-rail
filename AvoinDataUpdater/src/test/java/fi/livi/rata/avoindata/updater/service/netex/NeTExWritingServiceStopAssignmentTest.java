@@ -1,7 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -13,7 +14,8 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for NeTExWritingService — PassengerStopAssignment XML output and FSR
@@ -25,7 +27,9 @@ class NeTExWritingServiceStopAssignmentTest {
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+                writingService = new NeTExWritingService(idGenerator,
+                                new NeTExCompositionWritingService(idGenerator));
         }
 
         @Test
@@ -173,61 +177,69 @@ class NeTExWritingServiceStopAssignmentTest {
 
         // --- Helpers ---
 
-    private String extractXmlFromZip(final byte[] zip) throws Exception {
-        try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                if (entry.getName().startsWith("_")) {
-                    return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        private String extractXmlFromZip(final byte[] zip) throws Exception {
+                try (final ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
+                        ZipEntry entry;
+                        while ((entry = zis.getNextEntry()) != null) {
+                                if (entry.getName().startsWith("_")) {
+                                        return new String(zis.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                                }
+                        }
+                        throw new IllegalStateException("FTR_timetables.xml not found in ZIP");
                 }
-            }
-            throw new IllegalStateException("FTR_timetables.xml not found in ZIP");
         }
-    }
 
-    private TestData createTestDataWithAssignments(final List<NeTExStopsData.NeTExStopAssignment> assignments) {
-        final NeTExStopsData stopsData = new NeTExStopsData(
-                List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI", "Helsinki", "HKI",
-                        new BigDecimal("60.172133"), new BigDecimal("24.941662"))),
-                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI")),
-                List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI", "Helsinki")),
-                assignments,
-                assignments.size(),
-                0);
+        private TestData createTestDataWithAssignments(final List<NeTExStopsData.NeTExStopAssignment> assignments) {
+                final NeTExStopsData stopsData = new NeTExStopsData(
+                                List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI",
+                                                "Helsinki", "HKI",
+                                                new BigDecimal("60.172133"), new BigDecimal("24.941662"))),
+                                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI")),
+                                List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI",
+                                                "Helsinki")),
+                                assignments,
+                                assignments.size(),
+                                0);
 
-        final NeTExRouteData routeData = new NeTExRouteData(
-                List.of(new NeTExRouteData.NeTExRoute("FTR:Route:IC-F-abc", "Helsinki - Helsinki", "FTR:Line:IC",
-                        List.of("FTR:RoutePoint:HKI"))),
-                List.of(new NeTExRouteData.NeTExJourneyPattern("FTR:JourneyPattern:IC-abc", "FTR:Route:IC-F-abc",
-                        List.of(new NeTExRouteData.NeTExStopPointInPattern(1, "FTR:ScheduledStopPoint:HKI",
-                                true, false, "FTR:DestinationDisplay:HKI")))),
-                Map.of(1L, "FTR:JourneyPattern:IC-abc"));
+                final NeTExRouteData routeData = new NeTExRouteData(
+                                List.of(new NeTExRouteData.NeTExRoute("FTR:Route:IC-F-abc", "Helsinki - Helsinki",
+                                                "FTR:Line:IC",
+                                                List.of("FTR:RoutePoint:HKI"))),
+                                List.of(new NeTExRouteData.NeTExJourneyPattern("FTR:JourneyPattern:IC-abc",
+                                                "FTR:Route:IC-F-abc",
+                                                List.of(new NeTExRouteData.NeTExStopPointInPattern(1,
+                                                                "FTR:ScheduledStopPoint:HKI",
+                                                                true, false, "FTR:DestinationDisplay:HKI")))),
+                                Map.of(1L, "FTR:JourneyPattern:IC-abc"));
 
-        final NeTExCalendarData calendarData = new NeTExCalendarData(
-                List.of(new NeTExDayType("FTR:DayType:MoTuWeThFr-20260615-20261214", "Monday Tuesday Wednesday Thursday Friday")),
-                List.of(new NeTExOperatingPeriod("FTR:OperatingPeriod:20260615-20261214",
-                        LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14))),
-                List.of(NeTExDayTypeAssignment.forOperatingPeriod("FTR:DayType:MoTuWeThFr-20260615-20261214",
-                        "FTR:OperatingPeriod:20260615-20261214")),
-                Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
+                final NeTExCalendarData calendarData = new NeTExCalendarData(
+                                List.of(new NeTExDayType("FTR:DayType:MoTuWeThFr-20260615-20261214",
+                                                "Monday Tuesday Wednesday Thursday Friday")),
+                                List.of(new NeTExOperatingPeriod("FTR:OperatingPeriod:20260615-20261214",
+                                                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14))),
+                                List.of(NeTExDayTypeAssignment.forOperatingPeriod(
+                                                "FTR:DayType:MoTuWeThFr-20260615-20261214",
+                                                "FTR:OperatingPeriod:20260615-20261214")),
+                                Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
 
-        final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
-                "IC", "FTR:Operator:vr", "rail"));
-        final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
-        final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
-                "FTR:ServiceJourney:59-12345", "IC 59", "59",
-                "FTR:JourneyPattern:IC-abc", "FTR:Operator:vr", "FTR:Line:IC",
-                "FTR:DayType:MoTuWeThFr-20260615-20261214",
-                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
-                        "FTR:JourneyPattern:IC-abc-1"))));
+                final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
+                                "IC", "FTR:Operator:vr", "rail"));
+                final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
+                final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
+                                "FTR:ServiceJourney:59-12345", "IC 59", "59",
+                                "FTR:JourneyPattern:IC-abc", "FTR:Operator:vr", "FTR:Line:IC",
+                                "FTR:DayType:MoTuWeThFr-20260615-20261214",
+                                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
+                                                "FTR:JourneyPattern:IC-abc-1"))));
 
-        return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
-                ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));
-    }
+                return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
+                                ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));
+        }
 
-    private record TestData(NeTExStopsData stopsData, NeTExRouteData routeData, NeTExCalendarData calendarData,
-                            List<NeTExEntityService.NeTExLine> lines,
-                            List<NeTExEntityService.NeTExOperator> operators,
-                            List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
-                            ZonedDateTime timestamp) {}
+        private record TestData(NeTExStopsData stopsData, NeTExRouteData routeData, NeTExCalendarData calendarData,
+                        List<NeTExEntityService.NeTExLine> lines,
+                        List<NeTExEntityService.NeTExOperator> operators,
+                        List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
+                        ZonedDateTime timestamp) {
+        }
 }

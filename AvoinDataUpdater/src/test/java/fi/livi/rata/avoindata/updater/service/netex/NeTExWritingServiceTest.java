@@ -27,7 +27,9 @@ class NeTExWritingServiceTest {
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+                writingService = new NeTExWritingService(idGenerator,
+                                new NeTExCompositionWritingService(idGenerator));
         }
 
         @Test
