@@ -131,8 +131,11 @@ public class NeTExCompositionWritingService {
      * produced, so one DatedServiceJourney carries both schedule and composition.
      */
     public void applyComposition(final DatedServiceJourney dsj, final NeTExDatedVehicleJourney dj) {
+        // the Train lives in the same line file, so the reference must carry its
+        // version
         final TrainRefStructure trainRef = new TrainRefStructure();
         trainRef.setRef("FTR:Train:" + trainIdSuffix(dj));
+        trainRef.setVersion("1");
 
         dsj.withVehicleTypeRef(FACTORY.createTrainRef(trainRef))
                 .withTrainSize(new TrainSizeStructure()

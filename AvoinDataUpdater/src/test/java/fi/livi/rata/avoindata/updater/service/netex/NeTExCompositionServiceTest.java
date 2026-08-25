@@ -430,6 +430,14 @@ class NeTExCompositionServiceTest {
         // then
         assertTrue(xml.contains("id=\"FTR:Train:59-2026-07-07-HKI\""));
         assertTrue(xml.contains("ref=\"FTR:Train:59-2026-07-07-HKI\""));
+
+        // the Train is declared in this same file, so the reference only resolves
+        // when it repeats the Train's version
+        final java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("<TrainRef\\b[^>]*>").matcher(xml);
+        assertTrue(m.find(), "expected a TrainRef element");
+        assertTrue(m.group().contains("version=\"1\""),
+                "TrainRef must carry the referenced Train's version: " + m.group());
     }
 
     @Test

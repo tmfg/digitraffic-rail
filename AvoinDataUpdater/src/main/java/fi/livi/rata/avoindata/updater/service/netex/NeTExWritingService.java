@@ -55,8 +55,8 @@ import org.rutebanken.netex.model.PointProjection;
 import org.rutebanken.netex.model.PointRefStructure;
 import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
 import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
-import org.rutebanken.netex.model.Projections_RelStructure;
 import org.rutebanken.netex.model.PrivateCodeStructure;
+import org.rutebanken.netex.model.Projections_RelStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.QuayRefStructure;
 import org.rutebanken.netex.model.ResourceFrame;
@@ -470,7 +470,8 @@ public class NeTExWritingService {
 
                 if (!stopsData.getStopAssignments().isEmpty()) {
                         final StopAssignmentsInFrame_RelStructure assignments = new StopAssignmentsInFrame_RelStructure();
-                        // order is part of the schema key for PassengerStopAssignment, so omitting it fails validation
+                        // order is part of the schema key for PassengerStopAssignment, so omitting it
+                        // fails validation
                         int assignmentOrder = 1;
                         for (final NeTExStopsData.NeTExStopAssignment a : stopsData.getStopAssignments()) {
                                 final PassengerStopAssignment psa = new PassengerStopAssignment()
@@ -691,7 +692,8 @@ public class NeTExWritingService {
                                                                 .withVersion("1")
                                                                 .withProjectedPointRef(new PointRefStructure()
                                                                                 .withRef(idGenerator
-                                                                                                .scheduledStopPointId(stationShortCode))
+                                                                                                .scheduledStopPointId(
+                                                                                                                stationShortCode))
                                                                                 .withVersion("1"))));
         }
 
@@ -699,7 +701,8 @@ public class NeTExWritingService {
                 final List<TimetabledPassingTime> passingTimes = sj.passingTimes().stream()
                                 .map(pt -> {
                                         final TimetabledPassingTime tpt = new TimetabledPassingTime()
-                                                        .withId(idGenerator.timetabledPassingTimeId(sj.id(), pt.order()))
+                                                        .withId(idGenerator.timetabledPassingTimeId(sj.id(),
+                                                                        pt.order()))
                                                         .withVersion("1")
                                                         .withPointInJourneyPatternRef(
                                                                         FACTORY.createStopPointInJourneyPatternRef(
