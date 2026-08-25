@@ -65,11 +65,25 @@ public class NeTExIdGenerator {
      * patterns of one Line cannot collide.
      */
     public String stopPointInJourneyPatternId(final String journeyPatternId, final int order) {
-        final String prefix = CODESPACE + ":JourneyPattern:";
-        final String localId = journeyPatternId.startsWith(prefix)
-                ? journeyPatternId.substring(prefix.length())
-                : journeyPatternId;
-        return CODESPACE + ":StopPointInJourneyPattern:" + localId + TOKEN_SEPARATOR + order;
+        return CODESPACE + ":StopPointInJourneyPattern:" + localId(journeyPatternId) + TOKEN_SEPARATOR + order;
+    }
+
+    public String pointOnRouteId(final String routeId, final int order) {
+        return CODESPACE + ":PointOnRoute:" + localId(routeId) + TOKEN_SEPARATOR + order;
+    }
+
+    public String timetabledPassingTimeId(final String serviceJourneyId, final int order) {
+        return CODESPACE + ":TimetabledPassingTime:" + localId(serviceJourneyId) + TOKEN_SEPARATOR + order;
+    }
+
+    /**
+     * Strips "{codespace}:{type}:" so a child id can carry its own type token.
+     * Appending the order to a parent id unchanged would let it collide with a
+     * sibling whose own local id ends in that number, e.g. a track number.
+     */
+    private static String localId(final String id) {
+        final int typeEnd = id.indexOf(':', CODESPACE.length() + 1);
+        return typeEnd < 0 ? id : id.substring(typeEnd + 1);
     }
 
     public String serviceJourneyId(final long trainNumber, final long scheduleId) {

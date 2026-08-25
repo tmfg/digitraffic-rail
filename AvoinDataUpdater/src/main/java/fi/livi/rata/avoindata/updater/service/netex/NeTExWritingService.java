@@ -520,7 +520,7 @@ public class NeTExWritingService {
                         int order = 1;
                         for (final String ref : route.routePointRefs()) {
                                 points.add(new PointOnRoute()
-                                                .withId(route.id() + "-" + order)
+                                                .withId(idGenerator.pointOnRouteId(route.id(), order))
                                                 .withVersion("1")
                                                 .withOrder(BigInteger.valueOf(order))
                                                 .withPointRef(FACTORY.createRoutePointRef(
@@ -676,7 +676,7 @@ public class NeTExWritingService {
                 final List<TimetabledPassingTime> passingTimes = sj.passingTimes().stream()
                                 .map(pt -> {
                                         final TimetabledPassingTime tpt = new TimetabledPassingTime()
-                                                        .withId(sj.id() + "-" + pt.order())
+                                                        .withId(idGenerator.timetabledPassingTimeId(sj.id(), pt.order()))
                                                         .withVersion("1")
                                                         .withPointInJourneyPatternRef(
                                                                         FACTORY.createStopPointInJourneyPatternRef(

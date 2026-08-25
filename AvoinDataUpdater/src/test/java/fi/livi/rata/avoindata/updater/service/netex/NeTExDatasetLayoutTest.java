@@ -104,8 +104,45 @@ class NeTExDatasetLayoutTest {
                 "StopPointInJourneyPattern ids must be unique: " + declared);
     }
 
+    @Test
+    void givenRouteEndingAtTrack_whenBuildingDataset_thenPointOnRouteIdsDoNotCollide() {
+        // given: one route ends at HKI track 2 while another reaches HKI untracked,
+        // whose second PointOnRoute then took the first route's id — the shape that
+        // collided in production
+        final NeTExIdGenerator ids = new NeTExIdGenerator();
+        final String untracked = ids.routeId("IC-1", "OL_HKI");
+        final String trackTwo = ids.routeId("IC-1", "OL_HKI-2");
+        final String pattern = ids.journeyPatternId("IC-1", "OL_HKI");
+
+        final NeTExRouteData routes = new NeTExRouteData(
+                List.of(new NeTExRouteData.NeTExRoute(untracked, "OL - HKI", "FTR:Line:IC-1",
+                        List.of("FTR:RoutePoint:OL", "FTR:RoutePoint:HKI")),
+                        new NeTExRouteData.NeTExRoute(trackTwo, "OL - HKI", "FTR:Line:IC-1",
+                                List.of("FTR:RoutePoint:OL", "FTR:RoutePoint:HKI"))),
+                List.of(journeyPattern(pattern, untracked)),
+                Map.of());
+
+        final var journeys = List.of(serviceJourney("FTR:ServiceJourney:1", pattern, ids));
+
+        // when
+        final Map<String, String> files = marshal(writingService.buildDataset(
+                stopsData(), routes, lines(), operators(), journeys, List.of(),
+                NeTExCompositionService.CompositionData.empty(),
+                ZonedDateTime.of(2026, 8, 21, 6, 12, 0, 0, ZoneOffset.UTC)));
+
+        // then
+        final List<String> declared = declaredIds(files.get("FTR_IC-1_Helsinki-Oulu.xml"));
+        assertEquals(declared.size(), new HashSet<>(declared).size(),
+                "ids must be unique within a line file");
+    }
+
     private static NeTExRouteData.NeTExJourneyPattern journeyPattern(final String patternId) {
-        return new NeTExRouteData.NeTExJourneyPattern(patternId, "FTR:Route:IC-1-a",
+        return journeyPattern(patternId, "FTR:Route:IC-1-a");
+    }
+
+    private static NeTExRouteData.NeTExJourneyPattern journeyPattern(final String patternId,
+            final String routeRef) {
+        return new NeTExRouteData.NeTExJourneyPattern(patternId, routeRef,
                 List.of(new NeTExRouteData.NeTExStopPointInPattern(1, "FTR:ScheduledStopPoint:OL",
                         true, false, "FTR:DestinationDisplay:HKI"),
                         new NeTExRouteData.NeTExStopPointInPattern(2, "FTR:ScheduledStopPoint:HKI",
