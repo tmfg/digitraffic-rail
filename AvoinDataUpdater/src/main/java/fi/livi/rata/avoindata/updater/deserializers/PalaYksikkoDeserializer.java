@@ -61,6 +61,10 @@ public class PalaYksikkoDeserializer {
      */
     public PalaDeserializationResult deserializeWithStats(final String json) {
         final JsonNode root = JSON_MAPPER.readTree(json);
+        if (root == null || !root.isObject()) {
+            throw new IllegalStateException("PALA response root is not a JSON object: "
+                    + (root == null ? "null" : root.getClass().getSimpleName()));
+        }
         final List<TrainLocation> locations = new ArrayList<>();
 
         int droppedNoCoordinate = 0;
@@ -117,53 +121,41 @@ public class PalaYksikkoDeserializer {
         }
     }
 
-    private static JsonNode requireKoordinaatti(final String trainNumberKey, final JsonNode node, final JsonNode sijaintiNode) {
-        final JsonNode koordinaatti = sijaintiNode.get("koordinaatti");
+    private static void validateKoordinaatti(final JsonNode koordinaatti, final String trainNumberKey, final JsonNode node) {
         if (koordinaatti == null || !koordinaatti.isArray() || koordinaatti.size() < 2) {
             throw new PalaDeserializationException(trainNumberKey, node.toString(), "malformed_koordinaatti");
         }
-        return koordinaatti;
     }
 
     private TrainLocation deserializeUnit(final String trainNumberKey, final JsonNode node, final JsonNode sijaintiNode) {
         validateRequiredFields(trainNumberKey, node);
-        final JsonNode koordinaatti = requireKoordinaatti(trainNumberKey, node, sijaintiNode);
+        final JsonNode koordinaatti = sijaintiNode.get("koordinaatti");
+        validateKoordinaatti(koordinaatti, trainNumberKey, node);
         try {
-            final long trainNumber = node.get("junanumero").asLong();
-            final LocalDate departureDate = LocalDate.parse(node.get("lahtopaiva").asText());
-            final ZonedDateTime timestamp = ZonedDateTime.parse(node.get("aikaleima").asText());
+            final long trainNumber = node.get("junanumero").longValue();
+            final LocalDate departureDate = LocalDate.parse(node.get("lahtopaiva").stringValue());
+            final ZonedDateTime timestamp = ZonedDateTime.parse(node.get("aikaleima").stringValue());
 
             final TrainLocation trainLocation = new TrainLocation();
             trainLocation.trainLocationId = new TrainLocationId(trainNumber, departureDate, timestamp);
 
             // Speed is present here — null-speed units are dropped upstream in deserializeWithStats.
-            trainLocation.speed = node.get("nopeus").asInt();
+            trainLocation.speed = node.get("nopeus").intValue();
 
             // Coordinates: EPSG:3067 from sijainti.koordinaatti [x, y] (pre-validated by requireKoordinaatti)
-            final double x = koordinaatti.get(0).asDouble();
-            final double y = koordinaatti.get(1).asDouble();
+            final double x = koordinaatti.get(0).doubleValue();
+            final double y = koordinaatti.get(1).doubleValue();
 
             trainLocation.locationEpsg3067 = geometryFactory.createPoint(new Coordinate(x, y));
 
             final ProjCoordinate wgs84 = wgs84ConversionService.liviToWgs84(x, y);
             trainLocation.location = geometryFactory.createPoint(new Coordinate(wgs84.x, wgs84.y));
 
-            // isGpsLocation: true when lahdeKupla is non-empty and at least one entry has koordinaatti
-            final JsonNode lahdeKupla = node.get("lahdeKupla");
-            final boolean hasGpsFix = hasLahdeKuplaWithKoordinaatti(lahdeKupla);
-            trainLocation.isGpsLocation = hasGpsFix;
-
-            if (hasGpsFix) {
-                final JsonNode tarkkuusNode = lahdeKupla.get(0).get("tarkkuus");
-                if (tarkkuusNode != null && !tarkkuusNode.isNull()) {
-                    final int tarkkuusMm = Math.max(tarkkuusNode.asInt(), 0);
-                    trainLocation.accuracy = Math.min(tarkkuusMm / 1000, MAX_ACCURACY);
-                } else {
-                    trainLocation.accuracy = null;
-                }
-            } else {
-                trainLocation.accuracy = null;
-            }
+            // isGpsLocation and accuracy come from the SAME source: the first lahdeKupla entry that carries a usable
+            // [x, y] GPS coordinate. If several qualify, the first (array order) wins.
+            final JsonNode gpsSource = firstGpsSource(node.get("lahdeKupla"));
+            trainLocation.isGpsLocation = gpsSource != null;
+            trainLocation.accuracy = gpsSource == null ? null : accuracyMetres(gpsSource);
 
             return trainLocation;
         } catch (final RuntimeException e) {
@@ -171,15 +163,35 @@ public class PalaYksikkoDeserializer {
         }
     }
 
-    private static boolean hasLahdeKuplaWithKoordinaatti(final JsonNode lahdeKupla) {
-        if (lahdeKupla == null || !lahdeKupla.isArray() || lahdeKupla.isEmpty()) {
-            return false;
+    /** First {@code lahdeKupla} entry whose {@code koordinaatti} is a non-null [x, y] numeric array, or {@code null}. */
+    private static JsonNode firstGpsSource(final JsonNode lahdeKupla) {
+        if (lahdeKupla == null || !lahdeKupla.isArray()) {
+            return null;
         }
         for (final JsonNode entry : lahdeKupla) {
-            if (entry.has("koordinaatti")) {
-                return true;
+            if (hasNumericCoordinate(entry.get("koordinaatti"))) {
+                return entry;
             }
         }
-        return false;
+        return null;
+    }
+
+    private static boolean hasNumericCoordinate(final JsonNode koordinaatti) {
+        return koordinaatti != null && koordinaatti.isArray() && koordinaatti.size() >= 2
+                && koordinaatti.get(0).isNumber() && koordinaatti.get(1).isNumber();
+    }
+
+    /**
+     * GPS accuracy in metres from a source's {@code tarkkuus} (mm), floored at 0 and capped at {@link #MAX_ACCURACY};
+     * {@code null} when the source has no {@code tarkkuus}. A non-numeric {@code tarkkuus} throws (via strict
+     * {@code intValue()}) and is counted as a deserialization error by the caller.
+     */
+    private static Integer accuracyMetres(final JsonNode gpsSource) {
+        final JsonNode tarkkuusNode = gpsSource.get("tarkkuus");
+        if (tarkkuusNode == null || tarkkuusNode.isNull()) {
+            return null;
+        }
+        final int tarkkuusMm = Math.max(tarkkuusNode.intValue(), 0);
+        return Math.min(tarkkuusMm / 1000, MAX_ACCURACY);
     }
 }

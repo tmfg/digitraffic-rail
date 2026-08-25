@@ -8,12 +8,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,12 +63,15 @@ public class TrainLocationUpdater {
 
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION =
             new DecimalFormat("#.000000", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    private static final String PALA_YKSIKOT_PATH = "0.2/yksikot.json";
+    // propertyName excludes the top-level fields we never read to shrink the payload.
+    private static final String PALA_YKSIKOT_PATH = "0.2/yksikot.json?propertyName=-epavarmuus,-lahdeKulkutiedot,-suunta";
 
     // Adaptive back-off when PALA is unavailable (5xx or network failure): skip cycles for an exponentially growing
     // window so we stop hammering PALA while it recovers. Reset on the first successful fetch.
     private static final long BACKOFF_BASE_MS = 1000;
     private static final long BACKOFF_MAX_MS = 30000;
+
+    private static final Duration MQTT_PUBLISH_OBSERVE_TIMEOUT = Duration.ofSeconds(2);
 
     private long backoffUntilMs = 0;
     private int consecutiveUpstreamFailures = 0;
@@ -239,19 +247,53 @@ public class TrainLocationUpdater {
         return result;
     }
 
-    /** Publishes the filtered locations to MQTT; a failure is logged but does not abort the DB persist. */
     private void publishToMqtt(final List<TrainLocation> trainLocations, final IngestionMetrics metrics) {
+        if (!mqttPublishService.isEnabled()) {
+            // MQTT disabled (e.g. in tests) — nothing is published, so this is not a successful publish.
+            metrics.mqttSuccess = false;
+            return;
+        }
         final long mqttStartMs = System.currentTimeMillis();
         try {
-            mqttPublishService.publish(
+            final List<Future<Message<String>>> futures = mqttPublishService.publish(
                     s -> String.format("train-locations/%s/%s", s.trainLocationId.departureDate, s.trainLocationId.trainNumber),
                     trainLocations, null);
-            metrics.mqttSuccess = true;
+            metrics.mqttSuccess = allPublished(futures);
         } catch (final Exception e) {
-            log.error("MQTT updated failed. Still trying to update database.", e);
+            log.error("MQTT update failed.", e);
             metrics.mqttSuccess = false;
         }
         metrics.mqttLatencyMs = System.currentTimeMillis() - mqttStartMs;
+    }
+
+    /**
+     * Waits (bounded by {@link #MQTT_PUBLISH_OBSERVE_TIMEOUT}) for every publish future and reports whether all were
+     * delivered. A {@code null} future means serialization failed; a {@code null} result means the async send failed;
+     * a timeout means delivery is unconfirmed — all count as not-published so the metric never claims a success it
+     * cannot observe. An empty batch is trivially successful.
+     */
+    private static boolean allPublished(final List<Future<Message<String>>> futures) {
+        final long deadlineNs = System.nanoTime() + MQTT_PUBLISH_OBSERVE_TIMEOUT.toNanos();
+        for (final Future<Message<String>> future : futures) {
+            if (future == null) {
+                return false;
+            }
+            final long remainingNs = deadlineNs - System.nanoTime();
+            if (remainingNs <= 0) {
+                return false;
+            }
+            try {
+                if (future.get(remainingNs, TimeUnit.NANOSECONDS) == null) {
+                    return false;
+                }
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            } catch (final ExecutionException | TimeoutException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -370,7 +412,7 @@ public class TrainLocationUpdater {
         }
 
         private int droppedTotal() {
-            return droppedRecentlySeen + droppedIpFallback + droppedOffTrack;
+            return droppedNoCoordinate + droppedNoSpeed + deserializationErrors + droppedRecentlySeen + droppedIpFallback + droppedOffTrack;
         }
 
         private double calculatedRatio() {
