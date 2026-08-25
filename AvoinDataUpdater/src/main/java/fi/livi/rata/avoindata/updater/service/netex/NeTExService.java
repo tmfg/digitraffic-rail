@@ -44,7 +44,6 @@ public class NeTExService {
     private double minMatchRate = 0.95;
 
     private final NeTExEntityService entityService;
-    private final NeTExCalendarService calendarService;
     private final NeTExRouteService routeService;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
@@ -54,7 +53,6 @@ public class NeTExService {
     private final StationRepository stationRepository;
 
     public NeTExService(final NeTExEntityService entityService,
-            final NeTExCalendarService calendarService,
             final NeTExRouteService routeService,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
@@ -63,7 +61,6 @@ public class NeTExService {
             final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository) {
         this.entityService = entityService;
-        this.calendarService = calendarService;
         this.routeService = routeService;
         this.stopsService = stopsService;
         this.writingService = writingService;
@@ -190,15 +187,15 @@ public class NeTExService {
             }
         }
 
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(allFiltered);
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(allFiltered);
 
         final Map<String, String> stationNames = stations.stream()
-                .collect(Collectors.toMap(station -> station.shortCode, station -> station.name,
+                .collect(Collectors.toMap(station -> station.shortCode,
+                        station -> NeTExStopsService.publicStationName(station.name),
                         (first, second) -> first));
         final var lines = entityService.createLines(allFiltered, routeData, stationNames);
         final var operators = entityService.createOperators(allFiltered);
-        final var serviceJourneys = entityService.createServiceJourneys(allFiltered, calendarData, routeData);
+        final var serviceJourneys = entityService.createServiceJourneys(allFiltered, routeData);
 
         // Dated production journeys for the operational window (matches compositions):
         // one DatedServiceJourney per (train, day) with ServiceJourneyRef +
@@ -210,7 +207,7 @@ public class NeTExService {
 
         final ZonedDateTime timestamp = ZonedDateTime.now();
         final Map<String, PublicationDeliveryStructure> files = writingService.buildDataset(
-                stopsData, routeData, calendarData, lines, operators, serviceJourneys, datedServiceJourneys,
+                stopsData, routeData, lines, operators, serviceJourneys, datedServiceJourneys,
                 compositions, timestamp);
         final List<LocalDate> operatingDays = datedServiceJourneys.stream()
                 .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)

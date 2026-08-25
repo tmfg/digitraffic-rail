@@ -39,7 +39,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -65,7 +65,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -82,7 +82,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -98,7 +98,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -114,7 +114,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -130,7 +130,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -146,7 +146,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -162,7 +162,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -178,7 +178,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -194,7 +194,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -210,7 +210,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -226,7 +226,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -242,7 +242,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -263,7 +263,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -279,7 +279,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -297,7 +297,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys,
                                 testData.timestamp);
 
@@ -319,7 +319,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys, dated,
                                 testData.timestamp);
 
@@ -339,7 +339,7 @@ class NeTExWritingServiceTest {
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData, testData.routeData, testData.calendarData,
+                                testData.stopsData, testData.routeData,
                                 testData.lines, testData.operators, testData.serviceJourneys, dated,
                                 testData.timestamp);
 
@@ -394,31 +394,20 @@ class NeTExWritingServiceTest {
                                                                 true, false, "FTR:DestinationDisplay:HKI")))),
                                 Map.of(1L, "FTR:JourneyPattern:IC-abc"));
 
-                final NeTExCalendarData calendarData = new NeTExCalendarData(
-                                List.of(new NeTExDayType("FTR:DayType:MoTuWeThFr-20260615-20261214",
-                                                "Monday Tuesday Wednesday Thursday Friday")),
-                                List.of(new NeTExOperatingPeriod("FTR:OperatingPeriod:20260615-20261214",
-                                                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14))),
-                                List.of(NeTExDayTypeAssignment.forOperatingPeriod(
-                                                "FTR:DayType:MoTuWeThFr-20260615-20261214",
-                                                "FTR:OperatingPeriod:20260615-20261214")),
-                                Map.of(1L, "FTR:DayType:MoTuWeThFr-20260615-20261214"));
-
                 final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
                                 "IC", "FTR:Operator:vr", "rail"));
                 final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
                 final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                                 "FTR:ServiceJourney:59-12345", "IC 59", "59",
                                 "FTR:JourneyPattern:IC-abc", "FTR:Operator:vr", "FTR:Line:IC",
-                                "FTR:DayType:MoTuWeThFr-20260615-20261214",
                                 List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
                                                 "FTR:JourneyPattern:IC-abc-1"))));
 
-                return new TestData(stopsData, routeData, calendarData, lines, operators, serviceJourneys,
+                return new TestData(stopsData, routeData, lines, operators, serviceJourneys,
                                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));
         }
 
-        private record TestData(NeTExStopsData stopsData, NeTExRouteData routeData, NeTExCalendarData calendarData,
+        private record TestData(NeTExStopsData stopsData, NeTExRouteData routeData,
                         List<NeTExEntityService.NeTExLine> lines,
                         List<NeTExEntityService.NeTExOperator> operators,
                         List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,

@@ -71,7 +71,7 @@ final class NeTExCompositionFixture {
             }
             serviceJourneys.add(new NeTExEntityService.NeTExServiceJourney(
                     serviceJourneyId, "IC " + dj.trainNumber(), String.valueOf(dj.trainNumber()),
-                    journeyPatternId, idGenerator.operatorId("vr"), lineId, null,
+                    journeyPatternId, idGenerator.operatorId("vr"), lineId,
                     List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", null, null,
                             idGenerator.stopPointInJourneyPatternId(journeyPatternId, 1)),
                             new NeTExEntityService.NeTExPassingTime(2, "11:30:00", null, null, null,
@@ -105,7 +105,7 @@ final class NeTExCompositionFixture {
         final var operators = List.of(new NeTExEntityService.NeTExOperator(idGenerator.operatorId("vr"),
                 "VR", "vr", 10));
 
-        return writingService.buildDataset(stopsData, routeData, null, lines, operators,
+        return writingService.buildDataset(stopsData, routeData, lines, operators,
                 serviceJourneys, datedServiceJourneys, compositions,
                 ZonedDateTime.of(2026, 6, 30, 4, 0, 0, 0, ZoneOffset.UTC));
     }

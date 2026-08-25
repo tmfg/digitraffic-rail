@@ -149,7 +149,6 @@ public class NeTExEntityService {
      * (most recent version from RIPA).
      */
     public List<NeTExServiceJourney> createServiceJourneys(final List<Schedule> schedules,
-            final NeTExCalendarData calendarData,
             final NeTExRouteData routeData) {
         final Map<String, NeTExServiceJourney> journeyMap = new LinkedHashMap<>();
         final Map<String, Long> journeyScheduleIds = new LinkedHashMap<>();
@@ -169,12 +168,11 @@ public class NeTExEntityService {
 
             final String operatorRef = idGenerator.operatorId(schedule.operator.operatorShortCode);
             final String lineRef = idGenerator.lineId(lineIdentifier);
-            final String dayTypeRef = calendarData.getDayTypeIdForSchedule(schedule.id);
 
             final List<NeTExPassingTime> passingTimes = buildPassingTimes(schedule, journeyPatternRef);
 
             journeyMap.put(id, new NeTExServiceJourney(id, name, privateCode,
-                    journeyPatternRef, operatorRef, lineRef, dayTypeRef, passingTimes));
+                    journeyPatternRef, operatorRef, lineRef, passingTimes));
             journeyScheduleIds.put(id, schedule.id);
         }
 
@@ -266,7 +264,7 @@ public class NeTExEntityService {
 
     public record NeTExServiceJourney(String id, String name, String privateCode,
             String journeyPatternRef, String operatorRef,
-            String lineRef, String dayTypeRef,
+            String lineRef,
             List<NeTExPassingTime> passingTimes) {
     }
 

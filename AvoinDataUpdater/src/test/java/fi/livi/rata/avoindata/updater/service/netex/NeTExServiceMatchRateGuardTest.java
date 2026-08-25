@@ -202,13 +202,12 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
-        final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
                 new NeTExCompositionWritingService(idGenerator));
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
-        final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
+        final NeTExService service = new NeTExService(entityService, routeService, stopsService,
                 writingService, petiSource, null, todaysScheduleService, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
@@ -318,7 +317,6 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
-        final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
@@ -337,7 +335,7 @@ class NeTExServiceMatchRateGuardTest {
         final List<Station> stations = createStations(stationCodes);
         when(stationRepository.findAll()).thenReturn(stations);
 
-        final NeTExService service = new NeTExService(entityService, calendarService, routeService, stopsService,
+        final NeTExService service = new NeTExService(entityService, routeService, stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository);
 
         // Set minMatchRate via reflection

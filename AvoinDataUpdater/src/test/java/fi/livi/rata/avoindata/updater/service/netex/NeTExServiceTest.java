@@ -38,14 +38,13 @@ class NeTExServiceTest {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
-        final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
                 new NeTExCompositionWritingService(idGenerator));
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
-        netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
+        netExService = new NeTExService(entityService, routeService, stopsService, writingService,
                 petiStopSource, null, todaysScheduleService, null);
     }
 

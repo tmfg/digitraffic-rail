@@ -125,7 +125,7 @@ class NeTExDatasetPartitionTest {
 
     private static NeTExServiceJourney journey(final String id, final String lineRef) {
         return new NeTExServiceJourney(id, "name", "code", "FTR:JourneyPattern:x",
-                "FTR:Operator:vr", lineRef, "FTR:DayType:x", List.of());
+                "FTR:Operator:vr", lineRef, List.of());
     }
 
     private static NeTExDatedServiceJourney dated(final String id, final String serviceJourneyRef) {

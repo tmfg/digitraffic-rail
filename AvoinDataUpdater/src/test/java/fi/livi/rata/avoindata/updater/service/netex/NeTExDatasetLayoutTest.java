@@ -133,7 +133,7 @@ class NeTExDatasetLayoutTest {
 
         // when
         final Map<String, String> files = marshal(writingService.buildDataset(
-                stopsData(), routeData(), calendarData(), lines(), operators(),
+                stopsData(), routeData(), lines(), operators(),
                 serviceJourneys(), dated, compositions,
                 ZonedDateTime.of(2026, 8, 21, 6, 12, 0, 0, ZoneOffset.UTC)));
 
@@ -170,7 +170,7 @@ class NeTExDatasetLayoutTest {
 
     private Map<String, String> build() throws Exception {
         final byte[] zip = writingService.writeNeTExZip(
-                stopsData(), routeData(), calendarData(), lines(), operators(),
+                stopsData(), routeData(), lines(), operators(),
                 serviceJourneys(), datedServiceJourneys(),
                 ZonedDateTime.of(2026, 8, 21, 6, 12, 0, 0, ZoneOffset.UTC));
 
@@ -250,25 +250,16 @@ class NeTExDatasetLayoutTest {
                 Map.of());
     }
 
-    private static NeTExCalendarData calendarData() {
-        return new NeTExCalendarData(
-                List.of(new NeTExDayType("FTR:DayType:daily", "Monday Tuesday")),
-                List.of(new NeTExOperatingPeriod("FTR:OperatingPeriod:p1",
-                        LocalDate.of(2026, 8, 20), LocalDate.of(2026, 9, 20))),
-                List.of(NeTExDayTypeAssignment.forOperatingPeriod("FTR:DayType:daily", "FTR:OperatingPeriod:p1")),
-                Map.of());
-    }
-
     private static List<NeTExEntityService.NeTExServiceJourney> serviceJourneys() {
         return List.of(
                 new NeTExEntityService.NeTExServiceJourney("FTR:ServiceJourney:1", "IC 1", "1",
-                        "FTR:JourneyPattern:IC-1-a", "FTR:Operator:vr", "FTR:Line:IC-1", "FTR:DayType:daily",
+                        "FTR:JourneyPattern:IC-1-a", "FTR:Operator:vr", "FTR:Line:IC-1",
                         List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", "HKI", null,
                                 "FTR:StopPointInJourneyPattern:IC-1-a-1"),
                                 new NeTExEntityService.NeTExPassingTime(2, "11:30:00", null, "OL", null,
                                         "FTR:StopPointInJourneyPattern:IC-1-a-2"))),
                 new NeTExEntityService.NeTExServiceJourney("FTR:ServiceJourney:2", "Z 2", "2",
-                        "FTR:JourneyPattern:Z-a", "FTR:Operator:vr", "FTR:Line:Z", "FTR:DayType:daily",
+                        "FTR:JourneyPattern:Z-a", "FTR:Operator:vr", "FTR:Line:Z",
                         List.of(new NeTExEntityService.NeTExPassingTime(1, null, "06:30:00", "HKI", null,
                                 "FTR:StopPointInJourneyPattern:Z-a-1"),
                                 new NeTExEntityService.NeTExPassingTime(2, "12:30:00", null, "OL", null,
