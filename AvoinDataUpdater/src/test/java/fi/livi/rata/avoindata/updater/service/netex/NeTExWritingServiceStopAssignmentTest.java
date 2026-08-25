@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,6 +85,40 @@ class NeTExWritingServiceStopAssignmentTest {
                 final String xml = extractXmlFromZip(zip);
                 assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), "Should contain FTR codespace");
                 assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"), "Should contain FSR codespace");
+        }
+
+        @Test
+        void givenMultipleAssignments_whenWritingZip_thenEachCarriesADistinctOrder() throws Exception {
+                // given: the schema keys PassengerStopAssignment on (id, version, order),
+                // so a missing or repeated order fails validation outright
+                final var testData = createTestDataWithAssignments(List.of(
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
+                                                "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null),
+                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:OL",
+                                                "FTR:ScheduledStopPoint:OL", "FSR:StopPlace:3", null)));
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData(), testData.routeData(),
+                                testData.lines(), testData.operators(), testData.serviceJourneys(),
+                                testData.timestamp());
+
+                // then
+                final String xml = extractXmlFromZip(zip);
+                final java.util.regex.Matcher m = java.util.regex.Pattern
+                                .compile("<PassengerStopAssignment\\b[^>]*>").matcher(xml);
+                final List<String> orders = new java.util.ArrayList<>();
+                while (m.find()) {
+                        final java.util.regex.Matcher o = java.util.regex.Pattern
+                                        .compile("\\border=\"([^\"]+)\"").matcher(m.group());
+                        orders.add(o.find() ? o.group(1) : null);
+                }
+                assertEquals(3, orders.size(), "expected one element per assignment");
+                assertFalse(orders.contains(null), "every PassengerStopAssignment needs an order: " + orders);
+                assertEquals(orders.size(), new java.util.HashSet<>(orders).size(),
+                                "order values must be distinct: " + orders);
         }
 
         @Test

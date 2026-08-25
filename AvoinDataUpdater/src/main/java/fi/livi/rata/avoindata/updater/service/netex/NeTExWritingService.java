@@ -470,10 +470,13 @@ public class NeTExWritingService {
 
                 if (!stopsData.getStopAssignments().isEmpty()) {
                         final StopAssignmentsInFrame_RelStructure assignments = new StopAssignmentsInFrame_RelStructure();
+                        // order is part of the schema key for PassengerStopAssignment, so omitting it fails validation
+                        int assignmentOrder = 1;
                         for (final NeTExStopsData.NeTExStopAssignment a : stopsData.getStopAssignments()) {
                                 final PassengerStopAssignment psa = new PassengerStopAssignment()
                                                 .withId(a.id())
                                                 .withVersion("1")
+                                                .withOrder(BigInteger.valueOf(assignmentOrder++))
                                                 .withScheduledStopPointRef(FACTORY.createScheduledStopPointRef(
                                                                 new ScheduledStopPointRefStructure()
                                                                                 .withRef(a.scheduledStopPointRef())
