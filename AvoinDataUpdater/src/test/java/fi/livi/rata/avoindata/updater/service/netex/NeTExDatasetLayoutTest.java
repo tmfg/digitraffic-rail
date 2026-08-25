@@ -55,7 +55,12 @@ class NeTExDatasetLayoutTest {
         final Map<String, String> owningFile = new LinkedHashMap<>();
         final List<String> duplicates = new ArrayList<>();
         for (final var entry : files.entrySet()) {
+            final Set<String> seenInThisFile = new HashSet<>();
             for (final String id : declaredIds(entry.getValue())) {
+                if (!seenInThisFile.add(id)) {
+                    duplicates.add(id + " twice in " + entry.getKey());
+                    continue;
+                }
                 final String previous = owningFile.putIfAbsent(id, entry.getKey());
                 if (previous != null && !previous.equals(entry.getKey())) {
                     duplicates.add(id + " in " + previous + " and " + entry.getKey());
@@ -63,7 +68,58 @@ class NeTExDatasetLayoutTest {
             }
         }
 
-        assertTrue(duplicates.isEmpty(), "Duplicated NeTEx ids across files: " + duplicates);
+        assertTrue(duplicates.isEmpty(), "Duplicated NeTEx ids: " + duplicates);
+    }
+
+    @Test
+    void givenTrackQualifiedPatternsEndingAtSameTrack_whenBuildingDataset_thenStopPointIdsStayUnique() {
+        // given: two patterns of one Line differing only before the final stop,
+        // both ending at HKI track 8 — the shape that collided in production
+        final NeTExIdGenerator ids = new NeTExIdGenerator();
+        final String viaHameenlinna = ids.journeyPatternId("IC-1", "OL-1_HM-1_HKI-8");
+        final String direct = ids.journeyPatternId("IC-1", "OL-1_HKI-8");
+
+        final NeTExRouteData routes = new NeTExRouteData(
+                List.of(new NeTExRouteData.NeTExRoute("FTR:Route:IC-1-a", "OL - HKI", "FTR:Line:IC-1",
+                        List.of("FTR:RoutePoint:HKI", "FTR:RoutePoint:OL"))),
+                List.of(journeyPattern(viaHameenlinna), journeyPattern(direct)),
+                Map.of());
+
+        final var journeys = List.of(
+                serviceJourney("FTR:ServiceJourney:1", viaHameenlinna, ids),
+                serviceJourney("FTR:ServiceJourney:2", direct, ids));
+
+        // when
+        final Map<String, String> files = marshal(writingService.buildDataset(
+                stopsData(), routes, lines(), operators(), journeys, List.of(),
+                NeTExCompositionService.CompositionData.empty(),
+                ZonedDateTime.of(2026, 8, 21, 6, 12, 0, 0, ZoneOffset.UTC)));
+
+        // then
+        final String lineFile = files.get("FTR_IC-1_Helsinki-Oulu.xml");
+        final List<String> declared = declaredIds(lineFile).stream()
+                .filter(id -> id.startsWith("FTR:StopPointInJourneyPattern:"))
+                .toList();
+        assertEquals(declared.size(), new HashSet<>(declared).size(),
+                "StopPointInJourneyPattern ids must be unique: " + declared);
+    }
+
+    private static NeTExRouteData.NeTExJourneyPattern journeyPattern(final String patternId) {
+        return new NeTExRouteData.NeTExJourneyPattern(patternId, "FTR:Route:IC-1-a",
+                List.of(new NeTExRouteData.NeTExStopPointInPattern(1, "FTR:ScheduledStopPoint:OL",
+                        true, false, "FTR:DestinationDisplay:HKI"),
+                        new NeTExRouteData.NeTExStopPointInPattern(2, "FTR:ScheduledStopPoint:HKI",
+                                false, true, null)));
+    }
+
+    private static NeTExEntityService.NeTExServiceJourney serviceJourney(final String id,
+            final String patternId, final NeTExIdGenerator ids) {
+        return new NeTExEntityService.NeTExServiceJourney(id, "IC 1", "1", patternId,
+                "FTR:Operator:vr", "FTR:Line:IC-1",
+                List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00", "OL", null,
+                        ids.stopPointInJourneyPatternId(patternId, 1)),
+                        new NeTExEntityService.NeTExPassingTime(2, "11:30:00", null, "HKI", null,
+                                ids.stopPointInJourneyPatternId(patternId, 2))));
     }
 
     @Test
@@ -188,8 +244,9 @@ class NeTExDatasetLayoutTest {
         return files;
     }
 
-    private static Set<String> declaredIds(final String xml) {
-        final Set<String> ids = new HashSet<>();
+    /** Every declared id in document order — a Set here would hide duplicates. */
+    private static List<String> declaredIds(final String xml) {
+        final List<String> ids = new ArrayList<>();
         final Matcher matcher = NETEX_ID.matcher(xml);
         while (matcher.find()) {
             ids.add(matcher.group(1));

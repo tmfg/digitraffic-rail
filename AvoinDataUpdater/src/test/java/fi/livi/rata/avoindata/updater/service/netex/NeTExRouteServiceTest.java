@@ -40,6 +40,71 @@ class NeTExRouteServiceTest {
     }
 
     @Test
+    void givenStopsWithTracks_whenComputingHash_thenBindsTrackWithDashAndSeparatesStopsWithUnderscore() {
+        // given
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("HKI", "4"),
+                new NeTExRouteService.StopWithTrack("TPE", "1"),
+                new NeTExRouteService.StopWithTrack("OL", "2"));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertEquals("HKI-4_TPE-1_OL-2", hash);
+    }
+
+    @Test
+    void givenStopWithoutTrack_whenComputingHash_thenEmitsStationOnly() {
+        // given
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("HKI", "4"),
+                new NeTExRouteService.StopWithTrack("TPE", null),
+                new NeTExRouteService.StopWithTrack("OL", "  "));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertEquals("HKI-4_TPE_OL", hash);
+    }
+
+    @Test
+    void givenAnyStops_whenComputingHash_thenHashCarriesNoColon() {
+        // a colon here makes the local part indistinguishable from the codespace
+        // and element type, which previously caused ID collisions downstream
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("KML", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertFalse(hash.contains(":"), "hash must not contain a colon: " + hash);
+    }
+
+    @Test
+    void givenRoutesDifferingOnlyInInteriorStop_whenComputingHash_thenHashesDiffer() {
+        // given: two routes of one Line that start and end at the same track
+        final List<NeTExRouteService.StopWithTrack> viaHameenlinna = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("HM", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+        final List<NeTExRouteService.StopWithTrack> direct = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+
+        // when
+        final String viaHash = routeService.computeTrackQualifiedHash(viaHameenlinna);
+        final String directHash = routeService.computeTrackQualifiedHash(direct);
+
+        // then
+        assertNotEquals(viaHash, directHash);
+    }
+
+    @Test
     void givenScheduleWithStops_whenCreatingRouteData_thenProducesRouteWithCorrectPoints() {
         // given: a schedule with stops HKI → TPE → OL
         final Schedule schedule = createScheduleWithStops(1L, 59L, "IC", "Long-distance",

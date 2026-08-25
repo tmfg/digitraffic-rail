@@ -8,11 +8,16 @@ import org.springframework.stereotype.Service;
  * Generates NeTEx IDs following the {Codespace}:{ElementType}:{localId}
  * convention.
  * All IDs use the FTR codespace (Fintraffic).
+ * <p>
+ * localId must not contain ':', or it can no longer be told apart from the
+ * codespace and element type. Within localId, '-' joins a station to its track
+ * and '_' separates stops.
  */
 @Service
 public class NeTExIdGenerator {
 
     public static final String CODESPACE = "FTR";
+    static final String TOKEN_SEPARATOR = "_";
 
     public String authorityId(final String code) {
         return CODESPACE + ":Authority:" + code;
@@ -27,7 +32,7 @@ public class NeTExIdGenerator {
     }
 
     public String routeId(final String lineId, final String hash) {
-        return CODESPACE + ":Route:" + lineId + "-" + hash;
+        return CODESPACE + ":Route:" + lineId + TOKEN_SEPARATOR + hash;
     }
 
     public String routePointId(final String stationShortCode) {
@@ -50,16 +55,21 @@ public class NeTExIdGenerator {
     }
 
     public String journeyPatternId(final String lineId, final String hash) {
-        return CODESPACE + ":JourneyPattern:" + lineId + "-" + hash;
+        return CODESPACE + ":JourneyPattern:" + lineId + TOKEN_SEPARATOR + hash;
     }
 
     /**
      * The type token must be StopPointInJourneyPattern, not the JourneyPattern it
      * belongs to: NeTEx requires an XxxRef to reference an element of type Xxx.
+     * Only the type prefix is replaced, so the whole stop sequence is retained and
+     * patterns of one Line cannot collide.
      */
     public String stopPointInJourneyPatternId(final String journeyPatternId, final int order) {
-        return CODESPACE + ":StopPointInJourneyPattern:"
-                + journeyPatternId.substring(journeyPatternId.lastIndexOf(':') + 1) + "-" + order;
+        final String prefix = CODESPACE + ":JourneyPattern:";
+        final String localId = journeyPatternId.startsWith(prefix)
+                ? journeyPatternId.substring(prefix.length())
+                : journeyPatternId;
+        return CODESPACE + ":StopPointInJourneyPattern:" + localId + TOKEN_SEPARATOR + order;
     }
 
     public String serviceJourneyId(final long trainNumber, final long scheduleId) {

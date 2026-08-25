@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -79,7 +80,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.routeId(lineId, hash);
 
         // then
-        assertEquals("FTR:Route:Z-a3b2", result);
+        assertEquals("FTR:Route:Z_a3b2", result);
     }
 
     @Test
@@ -116,7 +117,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.journeyPatternId(lineId, hash);
 
         // then
-        assertEquals("FTR:JourneyPattern:Z-1234", result);
+        assertEquals("FTR:JourneyPattern:Z_1234", result);
     }
 
     @Test
@@ -324,5 +325,33 @@ class NeTExIdGeneratorTest {
 
         // then
         assertEquals("FTR:PassengerStopAssignment:TPE-1", result);
+    }
+
+    @Test
+    void givenTrackQualifiedJourneyPattern_whenGeneratingStopPointId_thenKeepsWholeLocalId() {
+        // given: track-qualified patterns embed the whole stop sequence, so the
+        // local id itself contains separators
+        final String journeyPatternId = idGenerator.journeyPatternId("IC-56", "OL-1_PSL-5_HKI-8");
+
+        // when
+        final String result = idGenerator.stopPointInJourneyPatternId(journeyPatternId, 1);
+
+        // then
+        assertEquals("FTR:StopPointInJourneyPattern:IC-56_OL-1_PSL-5_HKI-8_1", result);
+    }
+
+    @Test
+    void givenPatternsDifferingOnlyBeforeLastTrack_whenGeneratingStopPointIds_thenIdsDiffer() {
+        // given: two patterns of the same Line ending at the same track — the case
+        // that collided in production
+        final String viaHameenlinna = idGenerator.journeyPatternId("IC-56", "OL-1_HM-1_HKI-8");
+        final String direct = idGenerator.journeyPatternId("IC-56", "OL-1_HKI-8");
+
+        // when
+        final String first = idGenerator.stopPointInJourneyPatternId(viaHameenlinna, 1);
+        final String second = idGenerator.stopPointInJourneyPatternId(direct, 1);
+
+        // then
+        assertNotEquals(first, second);
     }
 }

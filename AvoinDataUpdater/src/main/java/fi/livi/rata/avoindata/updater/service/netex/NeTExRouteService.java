@@ -27,18 +27,19 @@ public class NeTExRouteService {
 
     /**
      * Computes a track-qualified hash from station+track tuples.
-     * Format: "HKI:4-TPE:1-OL:2" (station:track). When track is null, station only.
+     * Format: "HKI-4_TPE-1_OL-2" — '-' joins station to track, '_' separates
+     * stops. When track is null, station only.
      */
     public String computeTrackQualifiedHash(final List<StopWithTrack> stopsWithTrack) {
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < stopsWithTrack.size(); i++) {
             if (i > 0) {
-                sb.append("-");
+                sb.append("_");
             }
             final StopWithTrack s = stopsWithTrack.get(i);
             sb.append(s.stationShortCode());
             if (s.commercialTrack() != null && !s.commercialTrack().isBlank()) {
-                sb.append(":").append(s.commercialTrack());
+                sb.append("-").append(s.commercialTrack());
             }
         }
         return sb.toString();
