@@ -51,8 +51,11 @@ import org.rutebanken.netex.model.OperatorRefStructure;
 import org.rutebanken.netex.model.OrganisationsInFrame_RelStructure;
 import org.rutebanken.netex.model.PassengerStopAssignment;
 import org.rutebanken.netex.model.PointOnRoute;
+import org.rutebanken.netex.model.PointProjection;
+import org.rutebanken.netex.model.PointRefStructure;
 import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
 import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
+import org.rutebanken.netex.model.Projections_RelStructure;
 import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.QuayRefStructure;
@@ -460,7 +463,8 @@ public class NeTExWritingService {
                 for (final var rp : stopsData.getRoutePoints()) {
                         routePointsStructure.getRoutePoint().add(new RoutePoint()
                                         .withId(rp.id())
-                                        .withVersion("1"));
+                                        .withVersion("1")
+                                        .withProjections(routePointProjection(rp.stationShortCode())));
                 }
                 frame.withRoutePoints(routePointsStructure);
 
@@ -670,6 +674,22 @@ public class NeTExWritingService {
                                 .withDescription(new MultilingualString()
                                                 .withValue("Finland rail shared data (operating days)"))
                                 .withDataObjects(dataObjects);
+        }
+
+        /**
+         * A RoutePoint carries no geography of its own, so it is projected onto the
+         * station-level ScheduledStopPoint that does.
+         */
+        private Projections_RelStructure routePointProjection(final String stationShortCode) {
+                return new Projections_RelStructure()
+                                .withProjectionRefOrProjection(FACTORY.createPointProjection(
+                                                new PointProjection()
+                                                                .withId(idGenerator.pointProjectionId(stationShortCode))
+                                                                .withVersion("1")
+                                                                .withProjectedPointRef(new PointRefStructure()
+                                                                                .withRef(idGenerator
+                                                                                                .scheduledStopPointId(stationShortCode))
+                                                                                .withVersion("1"))));
         }
 
         private ServiceJourney buildServiceJourney(final NeTExEntityService.NeTExServiceJourney sj) {

@@ -39,6 +39,10 @@ public class NeTExIdGenerator {
         return CODESPACE + ":RoutePoint:" + stationShortCode;
     }
 
+    public String pointProjectionId(final String stationShortCode) {
+        return CODESPACE + ":PointProjection:" + stationShortCode;
+    }
+
     public String scheduledStopPointId(final String stationShortCode) {
         return CODESPACE + ":ScheduledStopPoint:" + stationShortCode;
     }

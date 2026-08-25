@@ -140,7 +140,7 @@ public class NeTExCompositionWritingService {
 
         if (dj.hasWheelchair()) {
             dsj.withAccessibilityAssessment(new AccessibilityAssessment()
-                    .withId("FTR:AA:" + trainIdSuffix(dj))
+                    .withId("FTR:AccessibilityAssessment:" + trainIdSuffix(dj))
                     .withVersion("1")
                     .withMobilityImpairedAccess(LimitationStatusEnumeration.TRUE));
         }

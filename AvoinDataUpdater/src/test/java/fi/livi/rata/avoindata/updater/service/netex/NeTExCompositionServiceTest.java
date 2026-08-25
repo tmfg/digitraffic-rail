@@ -292,7 +292,7 @@ class NeTExCompositionServiceTest {
 
         // then
         assertTrue(xml.contains("<MobilityImpairedAccess>true</MobilityImpairedAccess>"));
-        assertTrue(xml.contains("id=\"FTR:AA:59-2026-07-07-HKI\""));
+        assertTrue(xml.contains("id=\"FTR:AccessibilityAssessment:59-2026-07-07-HKI\""));
     }
 
     @Test
