@@ -581,4 +581,93 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
         Assertions.assertEquals(1, result.deserializationErrors());
         Assertions.assertEquals(0, result.droppedNoCoordinate());
     }
+
+    // ========================================================================
+    // Test 12: Root must be the documented object-keyed response
+    // ========================================================================
+
+    @Test
+    public void arrayRootShouldThrowContractFailure() {
+        // A syntactically valid but non-object root ([]) is an upstream contract failure, not an empty poll.
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> palaYksikkoDeserializer.deserializeWithStats("[]"));
+    }
+
+    @Test
+    public void nullRootShouldThrowContractFailure() {
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> palaYksikkoDeserializer.deserializeWithStats("null"));
+    }
+
+    @Test
+    public void emptyObjectRootShouldRemainAValidEmptyPoll() {
+        // {} is a valid "no trains" response and must NOT throw.
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats("{}");
+        Assertions.assertTrue(result.locations().isEmpty());
+        Assertions.assertEquals(0, result.receivedCount());
+    }
+
+    // ========================================================================
+    // Test 13: GPS classification requires a real coordinate; accuracy is coupled to that same source
+    // ========================================================================
+
+    @Test
+    public void lahdeKuplaWithNullKoordinaattiShouldNotBeGps() throws Exception {
+        // has("koordinaatti") is true even for JSON null; it must NOT be classified as a GPS fix.
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": null, "tarkkuus": 5000 }]
+                """;
+        final String json = buildPalaJson(8070L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertFalse(tl.isGpsLocation, "JSON-null koordinaatti is not a GPS fix");
+        Assertions.assertNull(tl.accuracy, "no GPS source → null accuracy (tarkkuus of a non-GPS source is ignored)");
+    }
+
+    @Test
+    public void lahdeKuplaWithMalformedKoordinaattiShouldNotBeGps() throws Exception {
+        // A single-element coordinate array is malformed → not GPS.
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": [385754], "tarkkuus": 5000 }]
+                """;
+        final String json = buildPalaJson(8071L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertFalse(tl.isGpsLocation);
+        Assertions.assertNull(tl.accuracy);
+    }
+
+    @Test
+    public void accuracyShouldComeFromTheSourceThatSuppliedTheGpsCoordinate() throws Exception {
+        // First source has no coordinate (tarkkuus 9999); the second supplies the GPS fix (tarkkuus 5000).
+        // Accuracy must come from the second (5 m), not the unrelated first (9 m).
+        final String lahdeKupla = """
+                [
+                  { "aikaleima": "2026-07-06T08:34:27Z", "tunniste": "1.2.246.586.1.99.a", "tarkkuus": 9999 },
+                  { "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.b", "koordinaatti": [385754, 6672611], "tarkkuus": 5000 }
+                ]
+                """;
+        final String json = buildPalaJson(8072L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertTrue(tl.isGpsLocation);
+        Assertions.assertEquals(5, tl.accuracy.intValue(),
+                "accuracy must come from the GPS coordinate's own source entry, not lahdeKupla[0]");
+    }
+
+    @Test
+    public void gpsSourceWithoutTarkkuusShouldHaveNullAccuracy() throws Exception {
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": [385754, 6672611] }]
+                """;
+        final String json = buildPalaJson(8073L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertTrue(tl.isGpsLocation);
+        Assertions.assertNull(tl.accuracy, "GPS fix without tarkkuus → null accuracy");
+    }
 }
