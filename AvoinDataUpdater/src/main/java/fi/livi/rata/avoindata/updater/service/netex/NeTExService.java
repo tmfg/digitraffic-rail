@@ -44,6 +44,7 @@ public class NeTExService {
     private double minMatchRate = 0.95;
 
     private final NeTExEntityService entityService;
+    private final NeTExCalendarService calendarService;
     private final NeTExRouteService routeService;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
@@ -53,6 +54,7 @@ public class NeTExService {
     private final StationRepository stationRepository;
 
     public NeTExService(final NeTExEntityService entityService,
+            final NeTExCalendarService calendarService,
             final NeTExRouteService routeService,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
@@ -61,6 +63,7 @@ public class NeTExService {
             final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository) {
         this.entityService = entityService;
+        this.calendarService = calendarService;
         this.routeService = routeService;
         this.stopsService = stopsService;
         this.writingService = writingService;
@@ -78,7 +81,7 @@ public class NeTExService {
      * {@link NeTExPackageService}.
      */
     @Transactional
-    public NeTExGenerationResult generateNeTEx(final NeTExCompositionService.CompositionData compositions) {
+    public NeTExGenerationResult generateNeTEx() {
         log.info("method=generateNeTEx starting NeTEx generation");
         final long startTime = System.currentTimeMillis();
 
@@ -91,8 +94,7 @@ public class NeTExService {
             log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size());
 
-            final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations,
-                    compositions);
+            final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations);
 
             final long durationMs = System.currentTimeMillis() - startTime;
 
@@ -134,14 +136,6 @@ public class NeTExService {
     public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
-        return generateNeTEx(adhocSchedules, regularSchedules, stations,
-                NeTExCompositionService.CompositionData.empty());
-    }
-
-    public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
-            final List<Schedule> regularSchedules,
-            final List<Station> stations,
-            final NeTExCompositionService.CompositionData compositions) {
         // Filter to passenger trains first (matches GTFS gtfs-passenger.zip approach)
         final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
         final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
@@ -197,22 +191,22 @@ public class NeTExService {
         final var operators = entityService.createOperators(allFiltered);
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, routeData);
 
-        // Dated production journeys for the operational window (matches compositions):
-        // one DatedServiceJourney per (train, day) with ServiceJourneyRef +
-        // OperatingDayRef.
+        // The calendar is derived from the same resolution that picks the winning
+        // schedule per day, so DayTypes cannot disagree with the ServiceJourneys.
         final Map<TrainId, String> datedRefs = resolveServiceJourneyIds(adhocSchedules, regularSchedules,
                 feedStart(), feedEnd());
-        final var datedServiceJourneys = entityService.createDatedServiceJourneys(datedRefs);
+        final NeTExCalendarService.NeTExCalendarData calendar = calendarService.createCalendarData(datedRefs);
 
         final ZonedDateTime timestamp = ZonedDateTime.now();
         final Map<String, PublicationDeliveryStructure> files = writingService.buildDataset(
-                stopsData, routeData, lines, operators, serviceJourneys, datedServiceJourneys,
-                compositions, timestamp);
-        final List<LocalDate> operatingDays = datedServiceJourneys.stream()
-                .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
-                .toList();
+                stopsData, routeData, lines, operators, serviceJourneys, calendar, timestamp);
+        final List<LocalDate> operatingDays = calendar.datesOf(
+                serviceJourneys.stream().map(NeTExEntityService.NeTExServiceJourney::id).toList());
 
         final byte[] zip = writingService.marshalAndZip(files);
+
+        log.info("method=generateNeTEx calendar day_types={} operating_periods={} day_type_assignments={}",
+                calendar.dayTypes().size(), calendar.operatingPeriods().size(), calendar.assignments().size());
 
         return new NeTExGenerationResult(zip, files, operatingDays,
                 stopsData.getScheduledStopPoints().size(), routeData.getRoutes().size(),
@@ -259,9 +253,7 @@ public class NeTExService {
     /**
      * Resolves the NeTEx ServiceJourney id in effect for each (trainNumber, date)
      * within the given range, using the exact same passenger filter and
-     * winning-schedule resolution as the timetable generation. Compositions use
-     * this so their ServiceJourneyRefs point at ids that actually exist in the
-     * timetable ServiceJourney set.
+     * winning-schedule resolution as the timetable generation.
      */
     public Map<TrainId, String> resolveServiceJourneyIds(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,

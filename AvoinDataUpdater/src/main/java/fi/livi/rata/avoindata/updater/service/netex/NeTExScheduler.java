@@ -6,9 +6,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Schedules the daily generation of the combined NeTEx Nordic dataset (timetables
- * + compositions in one archive). Runs one hour before the GTFS generation to
- * avoid resource contention.
+ * Schedules the daily generation of the NeTEx Nordic dataset. Runs one hour
+ * before the GTFS generation to avoid resource contention.
  */
 @Component
 public class NeTExScheduler {

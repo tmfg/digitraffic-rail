@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -17,6 +18,8 @@ import java.util.zip.ZipInputStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 /**
  * Tests for NeTExWritingService — XML marshalling and ZIP output.
@@ -27,9 +30,7 @@ class NeTExWritingServiceTest {
 
         @BeforeEach
         void setUp() {
-                final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
-                writingService = new NeTExWritingService(idGenerator,
-                                new NeTExCompositionWritingService(idGenerator));
+                writingService = new NeTExWritingService(new NeTExIdGenerator());
         }
 
         @Test
@@ -124,7 +125,7 @@ class NeTExWritingServiceTest {
         }
 
         @Test
-        void givenValidData_whenWritingZip_thenContainsResourceFrame() throws Exception {
+        void givenValidData_whenWritingZip_thenCommonFileContainsResourceFrame() throws Exception {
                 // given
                 final var testData = createMinimalTestData();
 
@@ -135,7 +136,7 @@ class NeTExWritingServiceTest {
                                 testData.timestamp);
 
                 // then
-                final String xml = extractXmlFromZip(zip);
+                final String xml = extractSharedXmlFromZip(zip);
                 assertTrue(xml.contains("ResourceFrame"));
         }
 
@@ -286,7 +287,7 @@ class NeTExWritingServiceTest {
                 // then
                 final String xml = extractXmlFromZip(zip);
                 assertTrue(xml.contains("<CompositeFrame"));
-                assertTrue(xml.indexOf("<CompositeFrame") < xml.indexOf("<ResourceFrame"));
+                assertTrue(xml.indexOf("<CompositeFrame") < xml.indexOf("<ServiceFrame"));
                 assertTrue(xml.indexOf("<CompositeFrame") < xml.indexOf("<TimetableFrame"));
         }
 
@@ -308,19 +309,16 @@ class NeTExWritingServiceTest {
         }
 
         @Test
-        void givenDatedJourneys_whenWritingZip_thenValidityRangeSpansOperatingDays() throws Exception {
+        void givenCalendar_whenWritingZip_thenValidityRangeSpansOperatingDays() throws Exception {
                 // given
                 final var testData = createMinimalTestData();
-                final var dated = List.of(
-                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260701",
-                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 1)),
-                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260705",
-                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 5)));
+                final var calendar = calendar("FTR:ServiceJourney:59-12345",
+                                LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
                                 testData.stopsData, testData.routeData,
-                                testData.lines, testData.operators, testData.serviceJourneys, dated,
+                                testData.lines, testData.operators, testData.serviceJourneys, calendar,
                                 testData.timestamp);
 
                 // then: end is pushed past midnight to cover journeys of the last day
@@ -330,25 +328,34 @@ class NeTExWritingServiceTest {
         }
 
         @Test
-        void givenDatedJourneys_whenWritingZip_thenNoDayTypesAreEmitted() throws Exception {
+        void givenCalendar_whenWritingZip_thenJourneysCarryDayTypesAndNoDatedJourneys() throws Exception {
                 // given
                 final var testData = createMinimalTestData();
-                final var dated = List.of(
-                                new NeTExEntityService.NeTExDatedServiceJourney("FTR:DatedServiceJourney:59-20260701",
-                                                "FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 1)));
+                final var calendar = calendar("FTR:ServiceJourney:59-12345", LocalDate.of(2026, 7, 1));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
                                 testData.stopsData, testData.routeData,
-                                testData.lines, testData.operators, testData.serviceJourneys, dated,
+                                testData.lines, testData.operators, testData.serviceJourneys, calendar,
                                 testData.timestamp);
 
-                // then: calendar is expressed purely as OperatingDays (SERVICE_JOURNEY_14)
+                // then: a ServiceJourney may not carry both DayTypes and dated journeys
+                // (SERVICE_JOURNEY_14)
                 final String shared = extractSharedXmlFromZip(zip);
-                assertTrue(shared.contains("<OperatingDay"));
-                assertFalse(shared.contains("<DayType"));
-                assertFalse(shared.contains("<OperatingPeriod"));
-                assertFalse(extractXmlFromZip(zip).contains("<dayTypes>"));
+                assertTrue(shared.contains("<DayType"));
+                assertTrue(shared.contains("<DayTypeAssignment"));
+                assertTrue(extractXmlFromZip(zip).contains("<dayTypes>"));
+                assertFalse(extractXmlFromZip(zip).contains("<DatedServiceJourney"));
+        }
+
+        /** Builds calendar data the way generation does, from resolved (train, day) pairs. */
+        private static NeTExCalendarService.NeTExCalendarData calendar(final String serviceJourneyId,
+                        final LocalDate... dates) {
+                final Map<TrainId, String> refs = new LinkedHashMap<>();
+                for (final LocalDate date : dates) {
+                        refs.put(new TrainId(59L, date), serviceJourneyId);
+                }
+                return new NeTExCalendarService(new NeTExIdGenerator()).createCalendarData(refs);
         }
 
         // --- Helpers ---

@@ -163,7 +163,7 @@ class NeTExServiceMatchRateGuardTest {
 
         try {
             // when — trigger the no-arg generateNeTEx() which emits the wide event
-            service.generateNeTEx(NeTExCompositionService.CompositionData.empty());
+            service.generateNeTEx();
 
             // then — find the rail.netex.generation event in captured log
             final String generationLog = appender.list.stream()
@@ -204,10 +204,10 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
-                new NeTExCompositionWritingService(idGenerator));
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
-        final NeTExService service = new NeTExService(entityService, routeService, stopsService,
+        final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
+                routeService, stopsService,
                 writingService, petiSource, null, todaysScheduleService, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
@@ -319,8 +319,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator,
-                new NeTExCompositionWritingService(idGenerator));
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
@@ -335,7 +334,8 @@ class NeTExServiceMatchRateGuardTest {
         final List<Station> stations = createStations(stationCodes);
         when(stationRepository.findAll()).thenReturn(stations);
 
-        final NeTExService service = new NeTExService(entityService, routeService, stopsService,
+        final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
+                routeService, stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository);
 
         // Set minMatchRate via reflection

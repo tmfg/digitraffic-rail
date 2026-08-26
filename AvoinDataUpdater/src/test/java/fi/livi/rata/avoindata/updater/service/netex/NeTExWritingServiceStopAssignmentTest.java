@@ -27,9 +27,7 @@ class NeTExWritingServiceStopAssignmentTest {
 
         @BeforeEach
         void setUp() {
-                final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
-                writingService = new NeTExWritingService(idGenerator,
-                                new NeTExCompositionWritingService(idGenerator));
+                writingService = new NeTExWritingService(new NeTExIdGenerator());
         }
 
         @Test

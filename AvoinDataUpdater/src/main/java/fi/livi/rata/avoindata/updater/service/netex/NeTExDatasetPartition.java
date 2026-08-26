@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExDatedServiceJourney;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExLine;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExServiceJourney;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExRouteData.NeTExJourneyPattern;
@@ -26,30 +25,25 @@ public record NeTExDatasetPartition(List<LineSlice> lineSlices, Orphans orphans)
     public record LineSlice(NeTExLine line,
             List<NeTExRoute> routes,
             List<NeTExJourneyPattern> journeyPatterns,
-            List<NeTExServiceJourney> serviceJourneys,
-            List<NeTExDatedServiceJourney> datedServiceJourneys) {
+            List<NeTExServiceJourney> serviceJourneys) {
     }
 
     public record Orphans(List<NeTExRoute> routes,
             List<NeTExJourneyPattern> journeyPatterns,
-            List<NeTExServiceJourney> serviceJourneys,
-            List<NeTExDatedServiceJourney> datedServiceJourneys) {
+            List<NeTExServiceJourney> serviceJourneys) {
 
         public boolean isEmpty() {
-            return routes.isEmpty() && journeyPatterns.isEmpty()
-                    && serviceJourneys.isEmpty() && datedServiceJourneys.isEmpty();
+            return routes.isEmpty() && journeyPatterns.isEmpty() && serviceJourneys.isEmpty();
         }
 
         public int total() {
-            return routes.size() + journeyPatterns.size()
-                    + serviceJourneys.size() + datedServiceJourneys.size();
+            return routes.size() + journeyPatterns.size() + serviceJourneys.size();
         }
     }
 
     public static NeTExDatasetPartition partition(final List<NeTExLine> lines,
             final NeTExRouteData routeData,
-            final List<NeTExServiceJourney> serviceJourneys,
-            final List<NeTExDatedServiceJourney> datedServiceJourneys) {
+            final List<NeTExServiceJourney> serviceJourneys) {
 
         final Map<String, List<NeTExRoute>> routesByLine = new HashMap<>();
         final List<NeTExRoute> orphanRoutes = new ArrayList<>();
@@ -79,24 +73,11 @@ public record NeTExDatasetPartition(List<LineSlice> lineSlices, Orphans orphans)
 
         final Map<String, List<NeTExServiceJourney>> journeysByLine = new HashMap<>();
         final List<NeTExServiceJourney> orphanJourneys = new ArrayList<>();
-        final Map<String, String> lineIdByJourneyId = new HashMap<>();
         for (final NeTExServiceJourney journey : serviceJourneys) {
             if (knownLineIds.contains(journey.lineRef())) {
                 journeysByLine.computeIfAbsent(journey.lineRef(), k -> new ArrayList<>()).add(journey);
-                lineIdByJourneyId.put(journey.id(), journey.lineRef());
             } else {
                 orphanJourneys.add(journey);
-            }
-        }
-
-        final Map<String, List<NeTExDatedServiceJourney>> datedByLine = new HashMap<>();
-        final List<NeTExDatedServiceJourney> orphanDated = new ArrayList<>();
-        for (final NeTExDatedServiceJourney dated : datedServiceJourneys) {
-            final String lineId = lineIdByJourneyId.get(dated.serviceJourneyRef());
-            if (lineId != null) {
-                datedByLine.computeIfAbsent(lineId, k -> new ArrayList<>()).add(dated);
-            } else {
-                orphanDated.add(dated);
             }
         }
 
@@ -105,11 +86,10 @@ public record NeTExDatasetPartition(List<LineSlice> lineSlices, Orphans orphans)
             slices.put(line.id(), new LineSlice(line,
                     routesByLine.getOrDefault(line.id(), List.of()),
                     patternsByLine.getOrDefault(line.id(), List.of()),
-                    journeysByLine.getOrDefault(line.id(), List.of()),
-                    datedByLine.getOrDefault(line.id(), List.of())));
+                    journeysByLine.getOrDefault(line.id(), List.of())));
         }
 
         return new NeTExDatasetPartition(List.copyOf(slices.values()),
-                new Orphans(orphanRoutes, orphanPatterns, orphanJourneys, orphanDated));
+                new Orphans(orphanRoutes, orphanPatterns, orphanJourneys));
     }
 }

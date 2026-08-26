@@ -5,14 +5,16 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -25,7 +27,13 @@ import org.rutebanken.netex.model.AvailabilityCondition;
 import org.rutebanken.netex.model.Codespace;
 import org.rutebanken.netex.model.Codespaces_RelStructure;
 import org.rutebanken.netex.model.CompositeFrame;
-import org.rutebanken.netex.model.DatedServiceJourney;
+import org.rutebanken.netex.model.DayOfWeekEnumeration;
+import org.rutebanken.netex.model.DayType;
+import org.rutebanken.netex.model.DayTypeAssignment;
+import org.rutebanken.netex.model.DayTypeAssignmentsInFrame_RelStructure;
+import org.rutebanken.netex.model.DayTypeRefStructure;
+import org.rutebanken.netex.model.DayTypeRefs_RelStructure;
+import org.rutebanken.netex.model.DayTypesInFrame_RelStructure;
 import org.rutebanken.netex.model.DestinationDisplay;
 import org.rutebanken.netex.model.DestinationDisplayRefStructure;
 import org.rutebanken.netex.model.DestinationDisplaysInFrame_RelStructure;
@@ -43,9 +51,9 @@ import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.Network;
 import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.OperatingDay;
-import org.rutebanken.netex.model.OperatingDayRefStructure;
-import org.rutebanken.netex.model.OperatingDaysInFrame_RelStructure;
+import org.rutebanken.netex.model.OperatingPeriod;
+import org.rutebanken.netex.model.OperatingPeriodRefStructure;
+import org.rutebanken.netex.model.OperatingPeriodsInFrame_RelStructure;
 import org.rutebanken.netex.model.Operator;
 import org.rutebanken.netex.model.OperatorRefStructure;
 import org.rutebanken.netex.model.OrganisationsInFrame_RelStructure;
@@ -53,6 +61,8 @@ import org.rutebanken.netex.model.PassengerStopAssignment;
 import org.rutebanken.netex.model.PointOnRoute;
 import org.rutebanken.netex.model.PointProjection;
 import org.rutebanken.netex.model.PointRefStructure;
+import org.rutebanken.netex.model.PropertiesOfDay_RelStructure;
+import org.rutebanken.netex.model.PropertyOfDay;
 import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
 import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
 import org.rutebanken.netex.model.PrivateCodeStructure;
@@ -80,10 +90,7 @@ import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.TimetabledPassingTime;
 import org.rutebanken.netex.model.TimetabledPassingTimes_RelStructure;
-import org.rutebanken.netex.model.Train;
 import org.rutebanken.netex.model.ValidityConditions_RelStructure;
-import org.rutebanken.netex.model.VehicleType;
-import org.rutebanken.netex.model.VehicleTypesInFrame_RelStructure;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,12 +115,9 @@ public class NeTExWritingService {
         private static final ObjectFactory FACTORY = new ObjectFactory();
 
         private final NeTExIdGenerator idGenerator;
-        private final NeTExCompositionWritingService compositionWriter;
 
-        public NeTExWritingService(final NeTExIdGenerator idGenerator,
-                        final NeTExCompositionWritingService compositionWriter) {
+        public NeTExWritingService(final NeTExIdGenerator idGenerator) {
                 this.idGenerator = idGenerator;
-                this.compositionWriter = compositionWriter;
         }
 
         private volatile JAXBContext jaxbContext;
@@ -147,7 +151,7 @@ public class NeTExWritingService {
                         final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
                         final ZonedDateTime generationTimestamp) {
                 return writeNeTExZip(stopsData, routeData, lines, operators, serviceJourneys,
-                                List.of(), generationTimestamp);
+                                NeTExCalendarService.NeTExCalendarData.empty(), generationTimestamp);
         }
 
         public byte[] writeNeTExZip(final NeTExStopsData stopsData,
@@ -155,11 +159,10 @@ public class NeTExWritingService {
                         final List<NeTExEntityService.NeTExLine> lines,
                         final List<NeTExEntityService.NeTExOperator> operators,
                         final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
-                        final List<NeTExEntityService.NeTExDatedServiceJourney> datedServiceJourneys,
+                        final NeTExCalendarService.NeTExCalendarData calendar,
                         final ZonedDateTime generationTimestamp) {
                 return marshalAndZip(buildDataset(stopsData, routeData, lines, operators,
-                                serviceJourneys, datedServiceJourneys, NeTExCompositionService.CompositionData.empty(),
-                                generationTimestamp));
+                                serviceJourneys, calendar, generationTimestamp));
         }
 
         /**
@@ -173,49 +176,36 @@ public class NeTExWritingService {
                         final List<NeTExEntityService.NeTExLine> lines,
                         final List<NeTExEntityService.NeTExOperator> operators,
                         final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
-                        final List<NeTExEntityService.NeTExDatedServiceJourney> datedServiceJourneys,
-                        final NeTExCompositionService.CompositionData compositions,
+                        final NeTExCalendarService.NeTExCalendarData calendar,
                         final ZonedDateTime generationTimestamp) {
 
                 final NeTExDatasetPartition partition = NeTExDatasetPartition.partition(
-                                lines, routeData, serviceJourneys, datedServiceJourneys);
+                                lines, routeData, serviceJourneys);
                 if (!partition.orphans().isEmpty()) {
                         log.warn("method=buildDataset dropped orphaned entities routes={} journeyPatterns={} "
-                                        + "serviceJourneys={} datedServiceJourneys={}",
+                                        + "serviceJourneys={}",
                                         partition.orphans().routes().size(),
                                         partition.orphans().journeyPatterns().size(),
-                                        partition.orphans().serviceJourneys().size(),
-                                        partition.orphans().datedServiceJourneys().size());
+                                        partition.orphans().serviceJourneys().size());
                 }
 
-                final List<LocalDate> operatingDays = datedServiceJourneys.stream()
-                                .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
-                                .toList();
-
-                final Map<String, NeTExCompositionService.NeTExDatedVehicleJourney> compositionsByJourney = compositionWriter
-                                .indexByDatedServiceJourneyId(compositions.datedJourneys());
-                final Set<String> matched = new HashSet<>();
+                final List<LocalDate> feedDates = calendar.datesOf(
+                                serviceJourneys.stream().map(NeTExEntityService.NeTExServiceJourney::id).toList());
 
                 final Map<String, PublicationDeliveryStructure> files = new LinkedHashMap<>();
-                files.put(SHARED_DATA_XML, buildSharedDelivery(stopsData, operators,
-                                compositions.vehicleTypes(), operatingDays, generationTimestamp));
+                files.put(SHARED_DATA_XML, buildSharedDelivery(stopsData, operators, calendar,
+                                feedDates, generationTimestamp));
                 for (final NeTExDatasetPartition.LineSlice slice : partition.lineSlices()) {
                         files.put(NeTExFileNaming.lineFileName(slice.line()),
-                                        buildLineDelivery(slice, compositionsByJourney, matched, generationTimestamp));
+                                        buildLineDelivery(slice, calendar, generationTimestamp));
                 }
 
-                final int unmatched = compositionsByJourney.size() - matched.size();
-                if (unmatched > 0) {
-                        log.warn("method=buildDataset dropped compositions without a timetabled journey count={}",
-                                        unmatched);
-                }
                 return files;
         }
 
         /**
          * Marshals a PublicationDelivery to XML and wraps in a ZIP with the given
          * filename.
-         * Shared by timetable and composition writing.
          */
         public byte[] marshalAndZip(final PublicationDeliveryStructure delivery, final String xmlFileName) {
                 final String xml = marshalToXml(delivery);
@@ -241,64 +231,46 @@ public class NeTExWritingService {
         public PublicationDeliveryStructure buildSharedDelivery(
                         final NeTExStopsData stopsData,
                         final List<NeTExEntityService.NeTExOperator> operators,
-                        final List<NeTExCompositionService.NeTExVehicleType> vehicleTypes,
-                        final Collection<LocalDate> operatingDays,
+                        final NeTExCalendarService.NeTExCalendarData calendar,
+                        final Collection<LocalDate> feedDates,
                         final ZonedDateTime generationTimestamp) {
 
                 final CompositeFrame compositeFrame = frame("shared", generationTimestamp,
-                                buildValidityConditions("shared", operatingDays, generationTimestamp))
+                                buildValidityConditions("shared", feedDates, generationTimestamp))
                                 .withFrames(new Frames_RelStructure()
                                                 .withCommonFrame(
                                                                 FACTORY.createResourceFrame(
-                                                                                buildSharedResourceFrame(operators,
-                                                                                                vehicleTypes)),
+                                                                                buildSharedResourceFrame(operators)),
                                                                 FACTORY.createServiceFrame(
                                                                                 buildSharedServiceFrame(stopsData)),
                                                                 FACTORY.createServiceCalendarFrame(
                                                                                 buildServiceCalendarFrame(
-                                                                                                operatingDays))));
+                                                                                                calendar))));
 
                 return delivery(generationTimestamp, "Finland rail shared data", compositeFrame);
         }
 
         /**
          * Builds one line file. Frame ids are qualified with the Line's local id so
-         * that no NeTEx id repeats across the files of the dataset. Ids of the
-         * compositions consumed here are added to {@code matched} so the caller can
-         * report the ones no Line claimed.
+         * that no NeTEx id repeats across the files of the dataset.
          */
         public PublicationDeliveryStructure buildLineDelivery(final NeTExDatasetPartition.LineSlice slice,
-                        final Map<String, NeTExCompositionService.NeTExDatedVehicleJourney> compositionsByJourney,
-                        final Set<String> matched,
+                        final NeTExCalendarService.NeTExCalendarData calendar,
                         final ZonedDateTime generationTimestamp) {
                 final String localId = localId(slice.line().id());
-                final List<LocalDate> dates = slice.datedServiceJourneys().stream()
-                                .map(NeTExEntityService.NeTExDatedServiceJourney::operatingDay)
-                                .toList();
-
-                final List<Train> trains = new ArrayList<>();
-                for (final NeTExEntityService.NeTExDatedServiceJourney dsj : slice.datedServiceJourneys()) {
-                        final NeTExCompositionService.NeTExDatedVehicleJourney composition = compositionsByJourney
-                                        .get(dsj.id());
-                        if (composition != null) {
-                                trains.add(compositionWriter.buildTrain(composition));
-                                matched.add(dsj.id());
-                        }
-                }
+                final List<LocalDate> dates = calendar.datesOf(slice.serviceJourneys().stream()
+                                .map(NeTExEntityService.NeTExServiceJourney::id).toList());
 
                 final CompositeFrame compositeFrame = frame(localId, generationTimestamp,
                                 buildValidityConditions(localId, dates, generationTimestamp))
                                 .withFrames(new Frames_RelStructure()
                                                 .withCommonFrame(
-                                                                FACTORY.createResourceFrame(buildLineResourceFrame(
-                                                                                localId, trains)),
                                                                 FACTORY.createServiceFrame(
                                                                                 buildLineServiceFrame(localId, slice)),
                                                                 FACTORY.createTimetableFrame(buildTimetableFrame(
                                                                                 localId,
                                                                                 slice.serviceJourneys(),
-                                                                                slice.datedServiceJourneys(),
-                                                                                compositionsByJourney))));
+                                                                                calendar))));
 
                 return delivery(generationTimestamp, slice.line().name(), compositeFrame);
         }
@@ -376,10 +348,9 @@ public class NeTExWritingService {
         }
 
         /**
-         * Organisations and rolling stock types, both referenced from many Lines.
+         * Organisations, referenced from many Lines.
          */
-        private ResourceFrame buildSharedResourceFrame(final List<NeTExEntityService.NeTExOperator> operators,
-                        final List<NeTExCompositionService.NeTExVehicleType> vehicleTypes) {
+        private ResourceFrame buildSharedResourceFrame(final List<NeTExEntityService.NeTExOperator> operators) {
                 final OrganisationsInFrame_RelStructure organisations = new OrganisationsInFrame_RelStructure();
                 for (final var op : operators) {
                         organisations.getOrganisation_().add(FACTORY.createOperator(new Operator()
@@ -397,28 +368,6 @@ public class NeTExWritingService {
                         frame.withOrganisations(organisations);
                 }
 
-                final List<VehicleType> netexVehicleTypes = compositionWriter.buildVehicleTypes(vehicleTypes);
-                if (!netexVehicleTypes.isEmpty()) {
-                        final VehicleTypesInFrame_RelStructure vtStruct = new VehicleTypesInFrame_RelStructure();
-                        vtStruct.getCompoundTrainOrTrainOrVehicleType().addAll(netexVehicleTypes);
-                        frame.withVehicleTypes(vtStruct);
-                }
-                return frame;
-        }
-
-        /**
-         * Train formations are specific to the journeys of one Line, so they live in
-         * that Line's file rather than the common one.
-         */
-        private ResourceFrame buildLineResourceFrame(final String localId, final List<Train> trains) {
-                final ResourceFrame frame = new ResourceFrame()
-                                .withId("FTR:ResourceFrame:" + localId)
-                                .withVersion("1");
-                if (!trains.isEmpty()) {
-                        final VehicleTypesInFrame_RelStructure vtStruct = new VehicleTypesInFrame_RelStructure();
-                        vtStruct.getCompoundTrainOrTrainOrVehicleType().addAll(trains);
-                        frame.withVehicleTypes(vtStruct);
-                }
                 return frame;
         }
 
@@ -587,97 +536,96 @@ public class NeTExWritingService {
         }
 
         /**
-         * Calendar is expressed purely as OperatingDays referenced by
-         * DatedServiceJourney. DayTypes/OperatingPeriods are deliberately not
-         * emitted: a ServiceJourney may not carry both DayTypes and dated journeys
-         * (SERVICE_JOURNEY_14), and unreferenced DayTypes are themselves a finding.
+         * Calendar is expressed as DayTypes shared by every journey that runs on the
+         * same dates. A DayType either recurs (DaysOfWeek over an OperatingPeriod,
+         * with per-date assignments for the exceptions) or has its dates enumerated,
+         * whichever needs fewer assignments.
          */
-        private ServiceCalendarFrame buildServiceCalendarFrame(final Collection<LocalDate> operatingDays) {
-                final OperatingDaysInFrame_RelStructure operatingDaysStructure = new OperatingDaysInFrame_RelStructure();
-                for (final LocalDate date : new TreeSet<>(operatingDays)) {
-                        operatingDaysStructure.getOperatingDay().add(new OperatingDay()
-                                        .withId(idGenerator.operatingDayId(date))
-                                        .withVersion("1")
-                                        .withCalendarDate(date.atStartOfDay()));
+        private ServiceCalendarFrame buildServiceCalendarFrame(
+                        final NeTExCalendarService.NeTExCalendarData calendar) {
+                final DayTypesInFrame_RelStructure dayTypes = new DayTypesInFrame_RelStructure();
+                for (final NeTExCalendarService.NeTExDayType dayType : calendar.dayTypes()) {
+                        final DayType netexDayType = new DayType()
+                                        .withId(dayType.id())
+                                        .withVersion("1");
+                        if (!dayType.daysOfWeek().isEmpty()) {
+                                netexDayType.withProperties(new PropertiesOfDay_RelStructure()
+                                                .withPropertyOfDay(new PropertyOfDay()
+                                                                .withDaysOfWeek(daysOfWeek(dayType.daysOfWeek()))));
+                        }
+                        dayTypes.getDayType_().add(FACTORY.createDayType(netexDayType));
                 }
 
-                return new ServiceCalendarFrame()
+                final OperatingPeriodsInFrame_RelStructure periods = new OperatingPeriodsInFrame_RelStructure();
+                for (final NeTExCalendarService.NeTExOperatingPeriod period : calendar.operatingPeriods()) {
+                        periods.getOperatingPeriodOrUicOperatingPeriod().add(new OperatingPeriod()
+                                        .withId(period.id())
+                                        .withVersion("1")
+                                        .withFromDate(period.from().atStartOfDay())
+                                        .withToDate(period.to().atStartOfDay()));
+                }
+
+                final DayTypeAssignmentsInFrame_RelStructure assignments = new DayTypeAssignmentsInFrame_RelStructure();
+                for (final NeTExCalendarService.NeTExDayTypeAssignment assignment : calendar.assignments()) {
+                        final DayTypeAssignment netexAssignment = new DayTypeAssignment()
+                                        .withId(assignment.id())
+                                        .withVersion("1")
+                                        // order is part of the schema key, so omitting it fails validation
+                                        .withOrder(BigInteger.valueOf(assignment.order()))
+                                        .withDayTypeRef(FACTORY.createDayTypeRef(new DayTypeRefStructure()
+                                                        .withRef(assignment.dayTypeRef())
+                                                        .withVersion("1")));
+                        if (assignment.operatingPeriodRef() != null) {
+                                netexAssignment.withOperatingPeriodRef(FACTORY.createOperatingPeriodRef(
+                                                new OperatingPeriodRefStructure()
+                                                                .withRef(assignment.operatingPeriodRef())
+                                                                .withVersion("1")));
+                        } else {
+                                netexAssignment.withDate(assignment.date().atStartOfDay());
+                        }
+                        if (!assignment.available()) {
+                                netexAssignment.withIsAvailable(Boolean.FALSE);
+                        }
+                        assignments.getDayTypeAssignment().add(netexAssignment);
+                }
+
+                final ServiceCalendarFrame frame = new ServiceCalendarFrame()
                                 .withId("FTR:ServiceCalendarFrame:shared")
-                                .withVersion("1")
-                                .withOperatingDays(operatingDaysStructure);
+                                .withVersion("1");
+                if (!calendar.dayTypes().isEmpty()) {
+                        frame.withDayTypes(dayTypes);
+                }
+                if (!calendar.operatingPeriods().isEmpty()) {
+                        frame.withOperatingPeriods(periods);
+                }
+                if (!calendar.assignments().isEmpty()) {
+                        frame.withDayTypeAssignments(assignments);
+                }
+                return frame;
+        }
+
+        private static List<DayOfWeekEnumeration> daysOfWeek(final Set<DayOfWeek> days) {
+                return days.stream().sorted()
+                                .map(day -> DayOfWeekEnumeration.fromValue(
+                                                day.getDisplayName(TextStyle.FULL, Locale.ENGLISH)))
+                                .toList();
         }
 
         private TimetableFrame buildTimetableFrame(final String localId,
                         final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
-                        final List<NeTExEntityService.NeTExDatedServiceJourney> datedServiceJourneys,
-                        final Map<String, NeTExCompositionService.NeTExDatedVehicleJourney> compositionsByJourney) {
+                        final NeTExCalendarService.NeTExCalendarData calendar) {
                 final JourneysInFrame_RelStructure vehicleJourneys = new JourneysInFrame_RelStructure();
                 final List<org.rutebanken.netex.model.Journey_VersionStructure> journeys = vehicleJourneys
                                 .getVehicleJourneyOrDatedVehicleJourneyOrNormalDatedVehicleJourney();
-                serviceJourneys.stream().map(this::buildServiceJourney).forEach(journeys::add);
-                datedServiceJourneys.stream()
-                                .map(dsj -> buildDatedServiceJourney(dsj, compositionsByJourney.get(dsj.id())))
+                serviceJourneys.stream()
+                                .map(sj -> buildServiceJourney(sj,
+                                                calendar.dayTypeRefByServiceJourney().get(sj.id())))
                                 .forEach(journeys::add);
 
                 return new TimetableFrame()
                                 .withId("FTR:TimetableFrame:" + localId)
                                 .withVersion("1")
                                 .withVehicleJourneys(vehicleJourneys);
-        }
-
-        /**
-         * Dated production journey: the recurring ServiceJourney materialized for one
-         * OperatingDay, carrying its train formation when one is known for that day.
-         */
-        private DatedServiceJourney buildDatedServiceJourney(final NeTExEntityService.NeTExDatedServiceJourney dsj,
-                        final NeTExCompositionService.NeTExDatedVehicleJourney composition) {
-                final DatedServiceJourney journey = new DatedServiceJourney()
-                                .withId(dsj.id())
-                                .withVersion("1")
-                                .withJourneyRef(FACTORY.createServiceJourneyRef(
-                                                new ServiceJourneyRefStructure().withRef(dsj.serviceJourneyRef())
-                                                                .withVersion("1")))
-                                .withOperatingDayRef(new OperatingDayRefStructure()
-                                                .withRef(idGenerator.operatingDayId(dsj.operatingDay())));
-
-                if (composition != null) {
-                        compositionWriter.applyComposition(journey, composition);
-                }
-                return journey;
-        }
-
-        /**
-         * Builds the _FTR_shared_data.xml delivery: a ServiceCalendarFrame of
-         * OperatingDays that the timetables and compositions reference via
-         * OperatingDayRef.
-         */
-        public PublicationDeliveryStructure buildOperatingDaySharedData(final Collection<LocalDate> dates,
-                        final ZonedDateTime timestamp) {
-                final Set<LocalDate> distinct = new TreeSet<>(dates);
-                final OperatingDaysInFrame_RelStructure operatingDays = new OperatingDaysInFrame_RelStructure();
-                for (final LocalDate date : distinct) {
-                        operatingDays.getOperatingDay().add(new OperatingDay()
-                                        .withId(idGenerator.operatingDayId(date))
-                                        .withVersion("1")
-                                        .withCalendarDate(date.atStartOfDay()));
-                }
-
-                final ServiceCalendarFrame calendarFrame = new ServiceCalendarFrame()
-                                .withId("FTR:ServiceCalendarFrame:operating-days")
-                                .withVersion("1")
-                                .withValidityConditions(buildValidityConditions("operating-days", distinct, timestamp))
-                                .withOperatingDays(operatingDays);
-
-                final PublicationDeliveryStructure.DataObjects dataObjects = new PublicationDeliveryStructure.DataObjects()
-                                .withCompositeFrameOrCommonFrame(FACTORY.createServiceCalendarFrame(calendarFrame));
-
-                return new PublicationDeliveryStructure()
-                                .withVersion(VERSION)
-                                .withPublicationTimestamp(timestamp.toLocalDateTime())
-                                .withParticipantRef("FTR")
-                                .withDescription(new MultilingualString()
-                                                .withValue("Finland rail shared data (operating days)"))
-                                .withDataObjects(dataObjects);
         }
 
         /**
@@ -697,7 +645,8 @@ public class NeTExWritingService {
                                                                                 .withVersion("1"))));
         }
 
-        private ServiceJourney buildServiceJourney(final NeTExEntityService.NeTExServiceJourney sj) {
+        private ServiceJourney buildServiceJourney(final NeTExEntityService.NeTExServiceJourney sj,
+                        final String dayTypeRef) {
                 final List<TimetabledPassingTime> passingTimes = sj.passingTimes().stream()
                                 .map(pt -> {
                                         final TimetabledPassingTime tpt = new TimetabledPassingTime()
@@ -728,7 +677,7 @@ public class NeTExWritingService {
                                 })
                                 .toList();
 
-                return new ServiceJourney()
+                final ServiceJourney journey = new ServiceJourney()
                                 .withId(sj.id())
                                 .withVersion("1")
                                 .withName(new MultilingualString().withValue(sj.name()))
@@ -741,6 +690,16 @@ public class NeTExWritingService {
                                                 new LineRefStructure().withRef(sj.lineRef()).withVersion("1")))
                                 .withPassingTimes(new TimetabledPassingTimes_RelStructure()
                                                 .withTimetabledPassingTime(passingTimes));
+
+                if (dayTypeRef != null) {
+                        // The DayType lives in the common file, and the schema resolves a
+                        // versioned reference within one document only, so this one carries no
+                        // version.
+                        journey.withDayTypes(new DayTypeRefs_RelStructure()
+                                        .withDayTypeRef(FACTORY.createDayTypeRef(new DayTypeRefStructure()
+                                                        .withRef(dayTypeRef))));
+                }
+                return journey;
         }
 
         private String marshalToXml(final PublicationDeliveryStructure delivery) {

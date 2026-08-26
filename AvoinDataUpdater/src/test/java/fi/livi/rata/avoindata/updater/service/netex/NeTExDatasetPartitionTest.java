@@ -3,14 +3,12 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExDatedServiceJourney;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExLine;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExServiceJourney;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExRouteData.NeTExJourneyPattern;
@@ -29,9 +27,7 @@ class NeTExDatasetPartitionTest {
                                                 List.of(pattern("FTR:JourneyPattern:IC-1-a", "FTR:Route:IC-1-a"),
                                                                 pattern("FTR:JourneyPattern:Z-a", "FTR:Route:Z-a"))),
                                 List.of(journey("FTR:ServiceJourney:1", LINE_IC),
-                                                journey("FTR:ServiceJourney:2", LINE_Z)),
-                                List.of(dated("FTR:DatedServiceJourney:1", "FTR:ServiceJourney:1"),
-                                                dated("FTR:DatedServiceJourney:2", "FTR:ServiceJourney:2")));
+                                                journey("FTR:ServiceJourney:2", LINE_Z)));
 
                 assertEquals(2, partition.lineSlices().size());
                 final var ic = partition.lineSlices().get(0);
@@ -41,8 +37,6 @@ class NeTExDatasetPartitionTest {
                                 ic.journeyPatterns().stream().map(NeTExJourneyPattern::id).toList());
                 assertEquals(List.of("FTR:ServiceJourney:1"),
                                 ic.serviceJourneys().stream().map(NeTExServiceJourney::id).toList());
-                assertEquals(List.of("FTR:DatedServiceJourney:1"),
-                                ic.datedServiceJourneys().stream().map(NeTExDatedServiceJourney::id).toList());
                 assertTrue(partition.orphans().isEmpty());
         }
 
@@ -55,7 +49,7 @@ class NeTExDatasetPartitionTest {
 
                 final var partition = NeTExDatasetPartition.partition(
                                 List.of(line(LINE_IC, "IC 1"), line(LINE_Z, "Z")),
-                                routeData(routes, List.of()), journeys, List.of());
+                                routeData(routes, List.of()), journeys);
 
                 final var assignedRoutes = partition.lineSlices().stream().flatMap(s -> s.routes().stream())
                                 .map(NeTExRoute::id).toList();
@@ -69,18 +63,17 @@ class NeTExDatasetPartitionTest {
         }
 
         @Test
-        void givenDatedJourneyWithUnknownServiceJourney_whenPartitioning_thenReportedAsOrphan() {
+        void givenJourneyForUnknownLine_whenPartitioning_thenReportedAsOrphan() {
                 final var partition = NeTExDatasetPartition.partition(
                                 List.of(line(LINE_IC, "IC 1")),
                                 routeData(List.of(route("FTR:Route:IC-1-a", LINE_IC)), List.of()),
-                                List.of(journey("FTR:ServiceJourney:1", LINE_IC)),
-                                List.of(dated("FTR:DatedServiceJourney:1", "FTR:ServiceJourney:1"),
-                                                dated("FTR:DatedServiceJourney:99", "FTR:ServiceJourney:missing")));
+                                List.of(journey("FTR:ServiceJourney:1", LINE_IC),
+                                                journey("FTR:ServiceJourney:99", "FTR:Line:missing")));
 
-                assertEquals(1, partition.lineSlices().get(0).datedServiceJourneys().size());
-                assertEquals(1, partition.orphans().datedServiceJourneys().size());
-                assertEquals("FTR:DatedServiceJourney:99",
-                                partition.orphans().datedServiceJourneys().get(0).id());
+                assertEquals(1, partition.lineSlices().get(0).serviceJourneys().size());
+                assertEquals(1, partition.orphans().serviceJourneys().size());
+                assertEquals("FTR:ServiceJourney:99",
+                                partition.orphans().serviceJourneys().get(0).id());
                 assertEquals(1, partition.orphans().total());
         }
 
@@ -90,8 +83,7 @@ class NeTExDatasetPartitionTest {
                                 List.of(line(LINE_IC, "IC 1")),
                                 routeData(List.of(route("FTR:Route:ghost-a", "FTR:Line:ghost")),
                                                 List.of(pattern("FTR:JourneyPattern:ghost-a", "FTR:Route:ghost-a"))),
-                                List.of(), List.of());
-
+                                List.of());
                 assertEquals(1, partition.orphans().routes().size());
                 assertEquals(1, partition.orphans().journeyPatterns().size());
                 assertTrue(partition.lineSlices().get(0).routes().isEmpty());
@@ -102,7 +94,7 @@ class NeTExDatasetPartitionTest {
                 final var partition = NeTExDatasetPartition.partition(
                                 List.of(line(LINE_IC, "IC 1"), line(LINE_Z, "Z")),
                                 routeData(List.of(route("FTR:Route:IC-1-a", LINE_IC)), List.of()),
-                                List.of(journey("FTR:ServiceJourney:1", LINE_IC)), List.of());
+                                List.of(journey("FTR:ServiceJourney:1", LINE_IC)));
 
                 final var z = partition.lineSlices().get(1);
                 assertEquals(LINE_Z, z.line().id());
@@ -127,10 +119,6 @@ class NeTExDatasetPartitionTest {
         private static NeTExServiceJourney journey(final String id, final String lineRef) {
                 return new NeTExServiceJourney(id, "name", "code", "FTR:JourneyPattern:x",
                                 "FTR:Operator:vr", lineRef, List.of());
-        }
-
-        private static NeTExDatedServiceJourney dated(final String id, final String serviceJourneyRef) {
-                return new NeTExDatedServiceJourney(id, serviceJourneyRef, LocalDate.of(2026, 8, 21));
         }
 
         private static NeTExRouteData routeData(final List<NeTExRoute> routes,

@@ -191,27 +191,6 @@ public class NeTExEntityService {
         return idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
     }
 
-    /**
-     * Builds the dated production journeys: one DatedServiceJourney per (train,
-     * operating day), each referencing the recurring ServiceJourney in effect that
-     * day and the shared OperatingDay. The input maps (trainNumber, date) to the
-     * ServiceJourney id, resolved the same way the timetable ServiceJourneys are.
-     */
-    public List<NeTExDatedServiceJourney> createDatedServiceJourneys(
-            final Map<TrainId, String> serviceJourneyRefsByTrainDay) {
-        final List<NeTExDatedServiceJourney> result = new ArrayList<>();
-        for (final Map.Entry<TrainId, String> entry : serviceJourneyRefsByTrainDay.entrySet()) {
-            final TrainId trainId = entry.getKey();
-            result.add(new NeTExDatedServiceJourney(
-                    idGenerator.datedServiceJourneyId(trainId.trainNumber, trainId.departureDate),
-                    entry.getValue(),
-                    trainId.departureDate));
-        }
-        result.sort(Comparator.comparing(NeTExDatedServiceJourney::operatingDay)
-                .thenComparing(NeTExDatedServiceJourney::id));
-        return result;
-    }
-
     private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule, final String journeyPatternRef) {
         final List<NeTExPassingTime> times = new ArrayList<>();
         final Duration firstDeparture = findFirstDeparture(schedule);
@@ -270,8 +249,5 @@ public class NeTExEntityService {
 
     public record NeTExPassingTime(int order, String arrivalTime, String departureTime,
             String stationShortCode, String commercialTrack, String stopPointInJourneyPatternRef) {
-    }
-
-    public record NeTExDatedServiceJourney(String id, String serviceJourneyRef, LocalDate operatingDay) {
     }
 }
