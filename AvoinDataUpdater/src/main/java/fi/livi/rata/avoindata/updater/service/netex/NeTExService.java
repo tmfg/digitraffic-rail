@@ -83,7 +83,7 @@ public class NeTExService {
         final long startTime = System.currentTimeMillis();
 
         try {
-            final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
+            final LocalDate start = feedStart();
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
             final List<Station> stations = stationRepository.findAll();
@@ -200,9 +200,8 @@ public class NeTExService {
         // Dated production journeys for the operational window (matches compositions):
         // one DatedServiceJourney per (train, day) with ServiceJourneyRef +
         // OperatingDayRef.
-        final LocalDate today = DateProvider.dateInHelsinki();
         final Map<TrainId, String> datedRefs = resolveServiceJourneyIds(adhocSchedules, regularSchedules,
-                today.minusDays(1), today.plusDays(30));
+                feedStart(), feedEnd());
         final var datedServiceJourneys = entityService.createDatedServiceJourneys(datedRefs);
 
         final ZonedDateTime timestamp = ZonedDateTime.now();
@@ -223,14 +222,25 @@ public class NeTExService {
     }
 
     /**
+     * Schedules and dated journeys share one horizon so the two cannot drift apart.
+     */
+    private static LocalDate feedStart() {
+        return DateProvider.dateInHelsinki().minusDays(7);
+    }
+
+    private static LocalDate feedEnd() {
+        return feedStart().plusYears(1).withMonth(12).withDayOfMonth(31);
+    }
+
+    /**
      * Resolves which schedule IDs actually "win" for at least one day.
      * Uses TodaysScheduleService (same as GTFS) to determine the schedule in effect
      * per train per day, filtering out superseded/broken schedule versions.
      */
     private Set<Long> resolveWinningScheduleIds(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules) {
-        final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
-        final LocalDate end = start.plusYears(1).withMonth(12).withDayOfMonth(31);
+        final LocalDate start = feedStart();
+        final LocalDate end = feedEnd();
         final Set<Long> winningIds = new HashSet<>();
 
         for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
