@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -11,9 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriJourneyResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 class SiriScheduleMapJourneyRefResolverTest {
@@ -34,8 +36,10 @@ class SiriScheduleMapJourneyRefResolverTest {
                 100L, adhocSchedule
         );
 
-        final SiriJourneyResolver journeyResolver = new SiriJourneyResolver(new NeTExIdGenerator());
-        resolver = new ScheduleMapJourneyRefResolver(scheduleMap, journeyResolver);
+        final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+        final NeTExEntityService entityService =
+                new NeTExEntityService(idGenerator, mock(NeTExTimeConverter.class));
+        resolver = new ScheduleMapJourneyRefResolver(scheduleMap, entityService, idGenerator);
     }
 
     // --- SMJR-01: REGULAR train resolves to ServiceJourney with schedule id ---

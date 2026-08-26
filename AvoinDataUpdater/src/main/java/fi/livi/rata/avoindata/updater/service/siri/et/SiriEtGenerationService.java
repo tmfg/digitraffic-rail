@@ -2,10 +2,9 @@ package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,16 +15,18 @@ import org.springframework.transaction.annotation.Transactional;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriJourneyResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
-import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import uk.org.siri.siri21.Siri;
 
@@ -35,31 +36,34 @@ public class SiriEtGenerationService {
     private static final Logger log = LoggerFactory.getLogger(SiriEtGenerationService.class);
 
     private final ScheduleProviderService scheduleProviderService;
-    private final TodaysScheduleService todaysScheduleService;
     private final StationRepository stationRepository;
     private final GTFSTrainRepository gtfsTrainRepository;
     private final PetiStopSource petiStopSource;
-    private final SiriJourneyResolver siriJourneyResolver;
+    private final NeTExService neTExService;
+    private final NeTExEntityService neTExEntityService;
+    private final NeTExIdGenerator neTExIdGenerator;
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
     private final String codespace;
 
     public SiriEtGenerationService(
             final ScheduleProviderService scheduleProviderService,
-            final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository,
             final GTFSTrainRepository gtfsTrainRepository,
             final PetiStopSource petiStopSource,
-            final SiriJourneyResolver siriJourneyResolver,
+            final NeTExService neTExService,
+            final NeTExEntityService neTExEntityService,
+            final NeTExIdGenerator neTExIdGenerator,
             final SiriWritingService siriWritingService,
             final GeneratedExportRepository generatedExportRepository,
             @Value("${updater.siri.codespace:TEST}") final String codespace) {
         this.scheduleProviderService = scheduleProviderService;
-        this.todaysScheduleService = todaysScheduleService;
         this.stationRepository = stationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
         this.petiStopSource = petiStopSource;
-        this.siriJourneyResolver = siriJourneyResolver;
+        this.neTExService = neTExService;
+        this.neTExEntityService = neTExEntityService;
+        this.neTExIdGenerator = neTExIdGenerator;
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
         this.codespace = codespace;
@@ -74,10 +78,12 @@ public class SiriEtGenerationService {
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(operatingDate);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(operatingDate);
 
-            final List<Schedule> winningSchedules = todaysScheduleService.getDaysSchedules(
-                    operatingDate, adhocSchedules, regularSchedules);
-            final Map<Long, Schedule> scheduleMap = winningSchedules.stream()
-                    .collect(Collectors.toMap(s -> s.trainNumber, Function.identity(), (a, b) -> a));
+            // Reuse the exact passenger + winning-schedule selection that produced the published timetable,
+            // so every SIRI FramedVehicleJourneyRef resolves against the static package (TICKET-04.1 Option A).
+            final Map<TrainId, Schedule> winningSchedules = neTExService.resolveWinningSchedules(
+                    adhocSchedules, regularSchedules, operatingDate, operatingDate);
+            final Map<Long, Schedule> scheduleMap = new HashMap<>();
+            winningSchedules.forEach((trainId, schedule) -> scheduleMap.put(trainId.trainNumber, schedule));
 
             final DbStationUicLookup stationUicLookup = new DbStationUicLookup(stationRepository.findAll());
 
@@ -85,7 +91,7 @@ public class SiriEtGenerationService {
             final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
 
             final ScheduleMapJourneyRefResolver journeyRefResolver =
-                    new ScheduleMapJourneyRefResolver(scheduleMap, siriJourneyResolver);
+                    new ScheduleMapJourneyRefResolver(scheduleMap, neTExEntityService, neTExIdGenerator);
 
             final List<GTFSTrain> trains = gtfsTrainRepository.findBySourceVersionGreaterThan(0L);
             final ZonedDateTime now = DateProvider.nowInHelsinki();

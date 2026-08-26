@@ -4,19 +4,23 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 
+import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriJourneyResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 public class ScheduleMapJourneyRefResolver implements JourneyRefResolver {
 
     private final Map<Long, Schedule> scheduleMap;
-    private final SiriJourneyResolver siriJourneyResolver;
+    private final NeTExEntityService entityService;
+    private final NeTExIdGenerator idGenerator;
 
     public ScheduleMapJourneyRefResolver(final Map<Long, Schedule> scheduleMap,
-                                         final SiriJourneyResolver siriJourneyResolver) {
+                                         final NeTExEntityService entityService,
+                                         final NeTExIdGenerator idGenerator) {
         this.scheduleMap = scheduleMap;
-        this.siriJourneyResolver = siriJourneyResolver;
+        this.entityService = entityService;
+        this.idGenerator = idGenerator;
     }
 
     @Override
@@ -25,6 +29,8 @@ public class ScheduleMapJourneyRefResolver implements JourneyRefResolver {
         if (schedule == null) {
             return Optional.empty();
         }
-        return Optional.of(siriJourneyResolver.resolveFromSchedule(schedule, departureDate));
+        final String serviceJourneyId = entityService.serviceJourneyIdFor(schedule);
+        final String lineId = idGenerator.lineId(entityService.deriveLineId(schedule));
+        return Optional.of(new ResolvedJourney(serviceJourneyId, departureDate.toString(), lineId));
     }
 }

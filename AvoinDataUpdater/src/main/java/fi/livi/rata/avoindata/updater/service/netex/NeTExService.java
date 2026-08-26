@@ -223,16 +223,33 @@ public class NeTExService {
             final List<Schedule> regularSchedules,
             final LocalDate start,
             final LocalDate end) {
+        final Map<TrainId, String> result = new HashMap<>();
+        resolveWinningSchedules(adhocSchedules, regularSchedules, start, end)
+                .forEach((trainId, schedule) -> result.put(trainId, entityService.serviceJourneyIdFor(schedule)));
+        return result;
+    }
+
+    /**
+     * Resolves the winning passenger {@link Schedule} in effect for each
+     * (trainNumber, date) in the range, using the exact same passenger filter and
+     * winning-schedule resolution as the timetable generation. Real-time producers
+     * (SIRI) use this so their journey/line refs point at journeys that actually
+     * exist in the published ServiceJourney set.
+     */
+    public Map<TrainId, Schedule> resolveWinningSchedules(final List<Schedule> adhocSchedules,
+            final List<Schedule> regularSchedules,
+            final LocalDate start,
+            final LocalDate end) {
         final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
         final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
 
-        final Map<TrainId, String> result = new HashMap<>();
+        final Map<TrainId, Schedule> result = new HashMap<>();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, passengerAdhoc,
                     passengerRegular);
             for (final Schedule schedule : todaysSchedules) {
                 if (!schedule.changeType.equals("P") && schedule.isRunOnDay(date)) {
-                    result.put(new TrainId(schedule.trainNumber, date), entityService.serviceJourneyIdFor(schedule));
+                    result.put(new TrainId(schedule.trainNumber, date), schedule);
                 }
             }
         }

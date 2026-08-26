@@ -18,6 +18,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -34,15 +35,16 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
+import fi.livi.rata.avoindata.updater.service.netex.NeTExTimeConverter;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriJourneyResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
-import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 class SiriEtGenerationServiceTest {
@@ -52,12 +54,13 @@ class SiriEtGenerationServiceTest {
     private static final String CODESPACE = "TEST";
 
     private ScheduleProviderService scheduleProviderService;
-    private TodaysScheduleService todaysScheduleService;
     private StationRepository stationRepository;
     private GTFSTrainRepository gtfsTrainRepository;
     private PetiStopSource petiStopSource;
     private GeneratedExportRepository generatedExportRepository;
-    private SiriJourneyResolver siriJourneyResolver;
+    private NeTExService neTExService;
+    private NeTExEntityService neTExEntityService;
+    private NeTExIdGenerator neTExIdGenerator;
     private SiriWritingService siriWritingService;
 
     private SiriEtGenerationService service;
@@ -65,21 +68,23 @@ class SiriEtGenerationServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         scheduleProviderService = mock(ScheduleProviderService.class);
-        todaysScheduleService = mock(TodaysScheduleService.class);
         stationRepository = mock(StationRepository.class);
         gtfsTrainRepository = mock(GTFSTrainRepository.class);
         petiStopSource = mock(PetiStopSource.class);
         generatedExportRepository = mock(GeneratedExportRepository.class);
-        siriJourneyResolver = new SiriJourneyResolver(new NeTExIdGenerator());
+        neTExService = mock(NeTExService.class);
+        neTExIdGenerator = new NeTExIdGenerator();
+        neTExEntityService = new NeTExEntityService(neTExIdGenerator, mock(NeTExTimeConverter.class));
         siriWritingService = new SiriWritingService();
 
         service = new SiriEtGenerationService(
                 scheduleProviderService,
-                todaysScheduleService,
                 stationRepository,
                 gtfsTrainRepository,
                 petiStopSource,
-                siriJourneyResolver,
+                neTExService,
+                neTExEntityService,
+                neTExIdGenerator,
                 siriWritingService,
                 generatedExportRepository,
                 CODESPACE
@@ -95,8 +100,8 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(adhocSchedules);
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(regularSchedules);
-        when(todaysScheduleService.getDaysSchedules(any(LocalDate.class), any(), any()))
-                .thenReturn(List.of(schedule59));
+        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Map.of(new TrainId(59L, TODAY), schedule59));
 
         final List<Station> stations = List.of(
                 createStation("HKI", 1),
@@ -134,8 +139,8 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(adhocSchedules);
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(regularSchedules);
-        when(todaysScheduleService.getDaysSchedules(any(LocalDate.class), any(), any()))
-                .thenReturn(List.of(schedule59));
+        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Map.of(new TrainId(59L, TODAY), schedule59));
 
         final List<Station> stations = List.of(
                 createStation("HKI", 1),
@@ -286,7 +291,7 @@ class SiriEtGenerationServiceTest {
     // ===== GEN-04: Schedule map built from getAdhocSchedules + getRegularSchedules via getDaysSchedules =====
 
     @Test
-    void givenSchedules_whenGenerate_thenGetDaysSchedulesCalledWithBothLists() throws Exception {
+    void givenSchedules_whenGenerate_thenResolveWinningSchedulesCalledWithBothLists() throws Exception {
         // given
         final Schedule scheduleA = createSchedule(59L, 111L, Train.TimetableType.ADHOC, "IC");
         scheduleA.startDate = TODAY;
@@ -294,7 +299,8 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(List.of(scheduleA));
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(List.of(scheduleB));
-        when(todaysScheduleService.getDaysSchedules(any(LocalDate.class), any(), any())).thenReturn(List.of(scheduleA));
+        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Map.of(new TrainId(59L, TODAY), scheduleA));
         when(stationRepository.findAll()).thenReturn(List.of());
         when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(List.of()));
         when(gtfsTrainRepository.findBySourceVersionGreaterThan(0L)).thenReturn(List.of());
@@ -307,7 +313,8 @@ class SiriEtGenerationServiceTest {
         final ArgumentCaptor<List<Schedule>> adhocCaptor = ArgumentCaptor.forClass(List.class);
         @SuppressWarnings("unchecked")
         final ArgumentCaptor<List<Schedule>> regularCaptor = ArgumentCaptor.forClass(List.class);
-        verify(todaysScheduleService).getDaysSchedules(any(LocalDate.class), adhocCaptor.capture(), regularCaptor.capture());
+        verify(neTExService).resolveWinningSchedules(adhocCaptor.capture(), regularCaptor.capture(),
+                any(LocalDate.class), any(LocalDate.class));
         assertEquals(List.of(scheduleA), adhocCaptor.getValue());
         assertEquals(List.of(scheduleB), regularCaptor.getValue());
     }
@@ -393,7 +400,8 @@ class SiriEtGenerationServiceTest {
         // given
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(List.of());
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(List.of());
-        when(todaysScheduleService.getDaysSchedules(any(LocalDate.class), any(), any())).thenReturn(List.of());
+        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Map.of());
         when(stationRepository.findAll()).thenThrow(new RuntimeException("DB down"));
 
         // when / then
