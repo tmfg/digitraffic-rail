@@ -32,7 +32,7 @@ public class TrainLocationFactory {
         final double pCoordinate = y;
         final ProjCoordinate projCoordinate = wgs84ConversionService.liviToWgs84(iCoordinate, pCoordinate);
         trainLocation.location = geometryFactory.createPoint(new Coordinate(projCoordinate.x, projCoordinate.y));
-        trainLocation.liikeLocation = geometryFactory.createPoint(new Coordinate(iCoordinate, pCoordinate));
+        trainLocation.locationEpsg3067 = geometryFactory.createPoint(new Coordinate(iCoordinate, pCoordinate));
 
         return trainLocation;
     }

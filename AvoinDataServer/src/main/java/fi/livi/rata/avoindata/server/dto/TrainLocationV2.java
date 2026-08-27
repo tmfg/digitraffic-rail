@@ -15,10 +15,13 @@ public class TrainLocationV2 {
 
     public final Integer speed;
 
-    public TrainLocationV2(TrainLocation trainLocation) {
+    public final boolean isGpsLocation;
+
+    public TrainLocationV2(final TrainLocation trainLocation) {
         this.trainLocationId = trainLocation.trainLocationId;
         this.speed = trainLocation.speed;
         this.location = new Double[]{trainLocation.location.getX(), trainLocation.location.getY()};
+        this.isGpsLocation = trainLocation.isGpsLocation;
 
     }
 
