@@ -96,6 +96,32 @@ class NeTExEntityServiceTest {
     }
 
     @Test
+    void givenCommuterSchedule_whenCreatingLines_thenSubmodeIsLocal() {
+        // given
+        final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
+
+        // then
+        assertEquals("local", lines.get(0).transportSubmode());
+    }
+
+    @Test
+    void givenLongDistanceSchedule_whenCreatingLines_thenSubmodeIsLongDistance() {
+        // given
+        final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
+
+        // then
+        assertEquals("longDistance", lines.get(0).transportSubmode());
+    }
+
+    @Test
     void givenCommuterSchedule_whenCreatingLines_thenLineIdIsCorrect() {
         // given
         final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");

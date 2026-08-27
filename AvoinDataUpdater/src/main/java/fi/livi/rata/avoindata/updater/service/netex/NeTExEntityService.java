@@ -68,10 +68,21 @@ public class NeTExEntityService {
                         deriveLinePublicCode(schedule),
                         lineIdentifier,
                         idGenerator.operatorId(schedule.operator.operatorShortCode),
-                        "rail"));
+                        "rail",
+                        deriveTransportSubmode(schedule)));
             }
         }
         return new ArrayList<>(lineMap.values());
+    }
+
+    /**
+     * Only Commuter and Long-distance survive the passenger filter, so anything
+     * else means the filter has changed and the submode would be a guess.
+     * The Nordic profile does not allow suburbanRailway, so commuter trains use
+     * local, the same value Norwegian lokaltog carry.
+     */
+    private static String deriveTransportSubmode(final Schedule schedule) {
+        return "Commuter".equals(schedule.trainCategory.name) ? "local" : "longDistance";
     }
 
     /**
@@ -233,7 +244,7 @@ public class NeTExEntityService {
     }
 
     public record NeTExLine(String id, String name, String publicCode, String privateCode,
-            String operatorRef, String transportMode) {
+            String operatorRef, String transportMode, String transportSubmode) {
     }
 
     public record NeTExOperator(String id, String name, String privateCode, int companyNumber) {

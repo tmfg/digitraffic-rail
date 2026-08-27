@@ -405,7 +405,7 @@ class NeTExWritingServiceTest {
                                 Map.of(1L, "FTR:JourneyPattern:IC-abc"));
 
                 final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
-                                "IC", "FTR:Operator:vr", "rail"));
+                                "IC", "FTR:Operator:vr", "rail", "longDistance"));
                 final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
                 final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                                 "FTR:ServiceJourney:59-12345", "IC 59", "59",

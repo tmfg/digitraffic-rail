@@ -319,9 +319,9 @@ class NeTExDatasetLayoutTest {
         private static List<NeTExEntityService.NeTExLine> lines() {
                 return List.of(
                                 new NeTExEntityService.NeTExLine("FTR:Line:IC-1", "Helsinki-Oulu", "IC 1", "IC-1",
-                                                "FTR:Operator:vr", "rail"),
+                                                "FTR:Operator:vr", "rail", "longDistance"),
                                 new NeTExEntityService.NeTExLine("FTR:Line:Z", "Helsinki-Lahti", "Z", "Z",
-                                                "FTR:Operator:vr", "rail"));
+                                                "FTR:Operator:vr", "rail", "local"));
         }
 
         private static List<NeTExEntityService.NeTExOperator> operators() {

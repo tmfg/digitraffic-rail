@@ -105,7 +105,8 @@ class NeTExDatasetPartitionTest {
         // --- Helpers ---
 
         private static NeTExLine line(final String id, final String publicCode) {
-                return new NeTExLine(id, publicCode, publicCode, publicCode, "FTR:Operator:vr", "rail");
+                return new NeTExLine(id, publicCode, publicCode, publicCode, "FTR:Operator:vr", "rail",
+                                "longDistance");
         }
 
         private static NeTExRoute route(final String id, final String lineRef) {
