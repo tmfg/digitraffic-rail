@@ -9,45 +9,45 @@
                 <RecordedAtTime>2026-07-15T12:00:00</RecordedAtTime>
                 <EstimatedVehicleJourney>
                     <RecordedAtTime>2026-07-15T12:00:00</RecordedAtTime>
-                    <LineRef>DT:Line:IC</LineRef>
+                    <LineRef>FTR:Line:IC</LineRef>
                     <DirectionRef>0</DirectionRef>
                     <FramedVehicleJourneyRef>
                         <DataFrameRef>2026-07-15</DataFrameRef>
-                        <DatedVehicleJourneyRef>DT:ServiceJourney:59-12345</DatedVehicleJourneyRef>
+                        <DatedVehicleJourneyRef>FTR:ServiceJourney:59-12345</DatedVehicleJourneyRef>
                     </FramedVehicleJourneyRef>
                     <VehicleMode>rail</VehicleMode>
-                    <OperatorRef>DT:Operator:vr</OperatorRef>
+                    <OperatorRef>FTR:Operator:vr</OperatorRef>
                     <Monitored>true</Monitored>
                     <DataSource>FSR</DataSource>
-                    <RecordedCalls>
-                        <RecordedCall>
+                    <EstimatedCalls>
+                        <EstimatedCall>
                             <StopPointRef>FSR:Quay:HKI-7</StopPointRef>
                             <Order>1</Order>
-                            <AimedDepartureTime>2026-07-15T08:00:00</AimedDepartureTime>
-                            <ActualDepartureTime>2026-07-15T08:01:00</ActualDepartureTime>
+                            <RequestStop>false</RequestStop>
+                            <AimedDepartureTime>2026-07-15T13:00:00</AimedDepartureTime>
+                            <ExpectedDepartureTime>2026-07-15T13:02:00</ExpectedDepartureTime>
                             <DepartureStatus>delayed</DepartureStatus>
                             <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
-                        </RecordedCall>
-                        <RecordedCall>
+                        </EstimatedCall>
+                        <EstimatedCall>
                             <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
                             <Order>2</Order>
-                            <AimedArrivalTime>2026-07-15T09:30:00</AimedArrivalTime>
-                            <ActualArrivalTime>2026-07-15T09:33:00</ActualArrivalTime>
+                            <RequestStop>false</RequestStop>
+                            <AimedArrivalTime>2026-07-15T14:30:00</AimedArrivalTime>
+                            <ExpectedArrivalTime>2026-07-15T14:35:00</ExpectedArrivalTime>
                             <ArrivalStatus>delayed</ArrivalStatus>
                             <ArrivalBoardingActivity>alighting</ArrivalBoardingActivity>
-                            <AimedDepartureTime>2026-07-15T09:35:00</AimedDepartureTime>
-                            <ExpectedDepartureTime>2026-07-15T09:38:00</ExpectedDepartureTime>
+                            <AimedDepartureTime>2026-07-15T14:35:00</AimedDepartureTime>
+                            <ExpectedDepartureTime>2026-07-15T14:40:00</ExpectedDepartureTime>
                             <DepartureStatus>delayed</DepartureStatus>
                             <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
-                        </RecordedCall>
-                    </RecordedCalls>
-                    <EstimatedCalls>
+                        </EstimatedCall>
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:OL-1</StopPointRef>
                             <Order>3</Order>
                             <RequestStop>false</RequestStop>
-                            <AimedArrivalTime>2026-07-15T14:00:00</AimedArrivalTime>
-                            <ExpectedArrivalTime>2026-07-15T14:06:00</ExpectedArrivalTime>
+                            <AimedArrivalTime>2026-07-15T18:00:00</AimedArrivalTime>
+                            <ExpectedArrivalTime>2026-07-15T18:10:00</ExpectedArrivalTime>
                             <ArrivalStatus>delayed</ArrivalStatus>
                             <ArrivalBoardingActivity>alighting</ArrivalBoardingActivity>
                         </EstimatedCall>

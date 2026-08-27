@@ -7,7 +7,11 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
+import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
+import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
@@ -45,7 +49,8 @@ class SiriEtServiceTest {
     private static final String DATA_SOURCE = "FSR";
 
     private static final ResolvedJourney RESOLVED_59 =
-            new ResolvedJourney("DT:ServiceJourney:59-12345", "2026-07-15", "DT:Line:IC", "DT:Operator:vr");
+            new ResolvedJourney(new ServiceJourneyId("FTR:ServiceJourney:59-12345"), new DataFrameRef("2026-07-15"),
+                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"));
 
     private static final Map<String, Integer> UIC_MAP = Map.of(
             "HKI", 1,
@@ -201,7 +206,7 @@ class SiriEtServiceTest {
         final EstimatedVehicleJourney evj = getEvjs(result).get(0);
         assertNotNull(evj.getFramedVehicleJourneyRef());
         assertEquals("2026-07-15", evj.getFramedVehicleJourneyRef().getDataFrameRef().getValue());
-        assertEquals("DT:ServiceJourney:59-12345", evj.getFramedVehicleJourneyRef().getDatedVehicleJourneyRef());
+        assertEquals("FTR:ServiceJourney:59-12345", evj.getFramedVehicleJourneyRef().getDatedVehicleJourneyRef());
     }
 
     // --- ET-03: LineRef from resolver ---
@@ -217,7 +222,7 @@ class SiriEtServiceTest {
         // then
         final EstimatedVehicleJourney evj = getEvjs(result).get(0);
         assertNotNull(evj.getLineRef());
-        assertEquals("DT:Line:IC", evj.getLineRef().getValue());
+        assertEquals("FTR:Line:IC", evj.getLineRef().getValue());
     }
 
     // --- ET-04: DataSource is configured codespace ---
@@ -356,6 +361,44 @@ class SiriEtServiceTest {
         assertEquals(2, recorded.get(1).getOrder().intValue());
         assertEquals(3, estimated.get(0).getOrder().intValue());
         assertEquals(4, estimated.get(1).getOrder().intValue());
+    }
+
+    // --- ET-08b: timeTableRows in arbitrary order → calls emitted in schedule order ---
+
+    @Test
+    void givenUnorderedTimeTableRows_whenBuild_thenCallsInScheduleOrder() {
+        // given — a 3-stop future train whose rows are added in scrambled order
+        final GTFSTrain train = createTrain(59L, false);
+        final GTFSTimeTableRow olArr = createRow(train, "OL", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI));
+        olArr.commercialTrack = "1";
+        final GTFSTimeTableRow hkiDep = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
+        hkiDep.commercialTrack = "7";
+        final GTFSTimeTableRow tpeArr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+        tpeArr.commercialTrack = "1";
+        final GTFSTimeTableRow tpeDep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+        tpeDep.commercialTrack = "1";
+        train.timeTableRows.add(olArr);
+        train.timeTableRows.add(tpeDep);
+        train.timeTableRows.add(hkiDep);
+        train.timeTableRows.add(tpeArr);
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — calls come out in schedule order HKI(1), TPE(2), OL(3)
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        assertEquals(3, calls.size());
+        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:OL-1", calls.get(2).getStopPointRef().getValue());
+        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(2, calls.get(1).getOrder().intValue());
+        assertEquals(3, calls.get(2).getOrder().intValue());
     }
 
     // --- ET-09: Stop with arrival.actualTime but no departure.actualTime → still RecordedCall ---
@@ -1021,7 +1064,7 @@ class SiriEtServiceTest {
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
         assertEquals(1, evj.getVehicleModes().size());
         assertEquals(VehicleModesEnumeration.RAIL, evj.getVehicleModes().get(0));
-        assertEquals("DT:Operator:vr", evj.getOperatorRef().getValue());
+        assertEquals("FTR:Operator:vr", evj.getOperatorRef().getValue());
         assertFalse(evj.isMonitored());
     }
 

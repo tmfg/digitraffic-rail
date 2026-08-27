@@ -9,14 +9,14 @@ import org.junit.jupiter.api.Test;
 
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 
-class SiriDbStationUicLookupTest {
+class SiriInMemoryStationUicLookupTest {
 
     // --- DBUL-01: Known shortCode returns its uicCode ---
 
     @Test
     void givenKnownStation_whenUicFor_thenReturnsUicCode() {
         // given
-        final DbStationUicLookup lookup = new DbStationUicLookup(List.of(createStation("HKI", 1)));
+        final InMemoryStationUicLookup lookup = new InMemoryStationUicLookup(List.of(createStation("HKI", 1)));
 
         // when
         final OptionalInt result = lookup.uicFor("HKI");
@@ -30,7 +30,7 @@ class SiriDbStationUicLookupTest {
     @Test
     void givenUnknownStation_whenUicFor_thenReturnsEmpty() {
         // given
-        final DbStationUicLookup lookup = new DbStationUicLookup(List.of(createStation("HKI", 1)));
+        final InMemoryStationUicLookup lookup = new InMemoryStationUicLookup(List.of(createStation("HKI", 1)));
 
         // when
         final OptionalInt result = lookup.uicFor("XYZ");
@@ -44,7 +44,7 @@ class SiriDbStationUicLookupTest {
     @Test
     void givenMultipleStations_whenUicFor_thenReturnsCorrectUic() {
         // given
-        final DbStationUicLookup lookup = new DbStationUicLookup(List.of(
+        final InMemoryStationUicLookup lookup = new InMemoryStationUicLookup(List.of(
                 createStation("HKI", 1),
                 createStation("TPE", 160),
                 createStation("TKU", 130)
@@ -62,7 +62,7 @@ class SiriDbStationUicLookupTest {
     @Test
     void givenDuplicateShortCode_whenUicFor_thenFirstWins() {
         // given
-        final DbStationUicLookup lookup = new DbStationUicLookup(List.of(
+        final InMemoryStationUicLookup lookup = new InMemoryStationUicLookup(List.of(
                 createStation("HKI", 1),
                 createStation("HKI", 99)
         ));
@@ -79,7 +79,7 @@ class SiriDbStationUicLookupTest {
     @Test
     void givenEmptyStationList_whenUicFor_thenReturnsEmpty() {
         // given
-        final DbStationUicLookup lookup = new DbStationUicLookup(List.of());
+        final InMemoryStationUicLookup lookup = new InMemoryStationUicLookup(List.of());
 
         // when
         final OptionalInt result = lookup.uicFor("HKI");

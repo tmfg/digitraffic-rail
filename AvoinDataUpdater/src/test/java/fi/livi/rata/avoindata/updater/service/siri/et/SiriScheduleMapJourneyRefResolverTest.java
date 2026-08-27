@@ -51,7 +51,7 @@ class SiriScheduleMapJourneyRefResolverTest {
 
         // then
         assertTrue(result.isPresent());
-        assertEquals("DT:ServiceJourney:59-12345", result.get().serviceJourneyId());
+        assertEquals("FTR:ServiceJourney:59-12345", result.get().serviceJourneyId().value());
     }
 
     // --- SMJR-02: ADHOC train resolves to ServiceJourney with adhoc id format ---
@@ -63,7 +63,7 @@ class SiriScheduleMapJourneyRefResolverTest {
 
         // then
         assertTrue(result.isPresent());
-        assertEquals("DT:ServiceJourney:100-2026-07-15", result.get().serviceJourneyId());
+        assertEquals("FTR:ServiceJourney:100-2026-07-15", result.get().serviceJourneyId().value());
     }
 
     // --- SMJR-03: Unknown train number → empty ---
@@ -89,7 +89,7 @@ class SiriScheduleMapJourneyRefResolverTest {
 
         // then
         assertTrue(result.isPresent());
-        assertEquals("2026-08-01", result.get().dataFrameRef());
+        assertEquals("2026-08-01", result.get().dataFrameRef().value());
     }
 
     // ===== HELPERS =====

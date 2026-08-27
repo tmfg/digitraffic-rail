@@ -7,11 +7,11 @@ import java.util.stream.Collectors;
 
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 
-public class DbStationUicLookup implements StationUicLookup {
+public class InMemoryStationUicLookup implements StationUicLookup {
 
     private final Map<String, Integer> shortCodeToUic;
 
-    public DbStationUicLookup(final List<Station> stations) {
+    public InMemoryStationUicLookup(final List<Station> stations) {
         this.shortCodeToUic = stations.stream()
                 .collect(Collectors.toMap(s -> s.shortCode, s -> s.uicCode, (a, b) -> a));
     }

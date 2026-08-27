@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +43,6 @@ public class SiriEtGenerationService {
     private final NeTExIdGenerator neTExIdGenerator;
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
-    private final String codespace;
 
     public SiriEtGenerationService(
             final ScheduleProviderService scheduleProviderService,
@@ -55,8 +53,7 @@ public class SiriEtGenerationService {
             final NeTExEntityService neTExEntityService,
             final NeTExIdGenerator neTExIdGenerator,
             final SiriWritingService siriWritingService,
-            final GeneratedExportRepository generatedExportRepository,
-            @Value("${updater.siri.codespace:TEST}") final String codespace) {
+            final GeneratedExportRepository generatedExportRepository) {
         this.scheduleProviderService = scheduleProviderService;
         this.stationRepository = stationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
@@ -66,7 +63,6 @@ public class SiriEtGenerationService {
         this.neTExIdGenerator = neTExIdGenerator;
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
-        this.codespace = codespace;
     }
 
     @Transactional
@@ -85,7 +81,7 @@ public class SiriEtGenerationService {
             final Map<Long, Schedule> scheduleMap = new HashMap<>();
             winningSchedules.forEach((trainId, schedule) -> scheduleMap.put(trainId.trainNumber, schedule));
 
-            final DbStationUicLookup stationUicLookup = new DbStationUicLookup(stationRepository.findAll());
+            final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stationRepository.findAll());
 
             final PetiUicMatcher matcher = petiStopSource.getMatcher();
             final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
@@ -98,7 +94,7 @@ public class SiriEtGenerationService {
 
             final SiriEtService etService = new SiriEtService(
                     journeyRefResolver, stationUicLookup, siriStopResolver,
-                    siriWritingService, codespace, codespace);
+                    siriWritingService, NeTExIdGenerator.CODESPACE, NeTExIdGenerator.CODESPACE);
             final Siri siri = etService.buildEtDocument(trains, now);
             final byte[] bytes = siriWritingService.marshalToBytes(siri);
 

@@ -1,0 +1,215 @@
+package fi.livi.rata.avoindata.updater.service.siri.et;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+
+import org.apache.commons.lang3.BooleanUtils;
+
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.StopRef;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.CallPoint;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.CallStatus;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
+
+/**
+ * Interprets a live {@link GTFSTrain} into the domain {@link EtJourney} IR: it decides <em>what the
+ * real-time situation is</em> (journey ref, per-stop recorded/estimated, delay status, cancellation
+ * boundary, quay ref) without touching any SIRI/JAXB type. Marshalling is a separate concern
+ * ({@link EtJourneyMarshaller}).
+ *
+ * <p>Returns {@link Optional#empty()} when the journey does not resolve to a published {@code ServiceJourney},
+ * or when any commercial stop cannot be resolved to a PETI {@code FSR:Quay} — because the profile requires a
+ * complete stop sequence, an incomplete journey is skipped rather than emitted.
+ */
+public class EtJourneyInterpreter {
+
+    // Deviations within a minute are treated as on-time.
+    private static final long ON_TIME_TOLERANCE_SECONDS = 60;
+
+    private final JourneyRefResolver journeyRefResolver;
+    private final StationUicLookup stationUicLookup;
+    private final SiriStopResolver siriStopResolver;
+
+    public EtJourneyInterpreter(final JourneyRefResolver journeyRefResolver,
+                                final StationUicLookup stationUicLookup,
+                                final SiriStopResolver siriStopResolver) {
+        this.journeyRefResolver = journeyRefResolver;
+        this.stationUicLookup = stationUicLookup;
+        this.siriStopResolver = siriStopResolver;
+    }
+
+    public Optional<EtJourney> interpret(final GTFSTrain train) {
+        final Optional<ResolvedJourney> resolved =
+                journeyRefResolver.resolve(train.id.trainNumber, train.id.departureDate);
+        if (resolved.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final List<PairedStop> commercialStops = new ArrayList<>();
+        for (final PairedStop stop : pairRows(train.timeTableRows)) {
+            if (isCommercial(stop)) {
+                commercialStops.add(stop);
+            }
+        }
+
+        final List<StopRef> stopRefs = new ArrayList<>(commercialStops.size());
+        boolean monitored = false;
+        for (final PairedStop stop : commercialStops) {
+            final Optional<StopRef> stopRef = resolveStopRef(stop);
+            // The Nordic profile requires us to assert IsCompleteStopSequence=true. If even one commercial stop can't
+            // be resolved to a Quay, we can't honestly claim a complete sequence, so we omit the entire journey rather
+            // than publish a hole.
+            if (stopRef.isEmpty()) {
+                return Optional.empty();
+            }
+            stopRefs.add(stopRef.get());
+            // If any stop has live data, the whole journey is considered monitored.
+            monitored = monitored || hasLiveData(stop);
+        }
+
+        final List<EtCall> calls = new ArrayList<>(commercialStops.size());
+        for (int i = 0; i < commercialStops.size(); i++) {
+            final PairedStop stop = commercialStops.get(i);
+            final int order = i + 1;
+            // Partial-cancellation boundary: the last served stop before a cancelled stop departs 'cancelled'.
+            final boolean nextCancelled = i + 1 < commercialStops.size() && isCancelled(commercialStops.get(i + 1));
+            calls.add(toCall(stop, stopRefs.get(i), order, nextCancelled));
+        }
+
+        final ResolvedJourney j = resolved.get();
+        return Optional.of(new EtJourney(
+                j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(),
+                train.cancelled, monitored, calls));
+    }
+
+    private EtCall toCall(final PairedStop stop, final StopRef stopRef, final int order, final boolean nextCancelled) {
+        final boolean cancelled = isCancelled(stop);
+        final boolean recorded = hasAnyActualTime(stop);
+
+        final CallPoint arrival = stop.arrival == null ? null
+                : new CallPoint(
+                        stop.arrival.scheduledTime,
+                        recorded ? null : stop.arrival.liveEstimateTime,
+                        recorded ? stop.arrival.actualTime : null,
+                        cancelled ? CallStatus.CANCELLED : timeStatus(stop.arrival));
+
+        final CallStatus departureStatus = (cancelled || nextCancelled) ? CallStatus.CANCELLED
+                : (stop.departure == null ? null : timeStatus(stop.departure));
+        final CallPoint departure = stop.departure == null ? null
+                : new CallPoint(
+                        stop.departure.scheduledTime,
+                        stop.departure.liveEstimateTime,
+                        recorded ? stop.departure.actualTime : null,
+                        departureStatus);
+
+        if (recorded) {
+            return new EtCall.Recorded(stopRef, order, cancelled, arrival, departure);
+        }
+        return new EtCall.Estimated(stopRef, order, cancelled, arrival, departure, isPredictionInaccurate(stop));
+    }
+
+    private Optional<StopRef> resolveStopRef(final PairedStop stop) {
+        final GTFSTimeTableRow representative = stop.arrival != null ? stop.arrival : stop.departure;
+        final OptionalInt uic = stationUicLookup.uicFor(representative.stationShortCode);
+        if (uic.isEmpty()) {
+            return Optional.empty();
+        }
+        final String track = BooleanUtils.isTrue(representative.unknownTrack)
+                ? null
+                : representative.commercialTrack;
+        return siriStopResolver.resolveQuayId(uic.getAsInt(), track);
+    }
+
+    private static CallStatus timeStatus(final GTFSTimeTableRow row) {
+        final long delaySeconds = row.delayInSeconds();
+        if (delaySeconds >= ON_TIME_TOLERANCE_SECONDS) {
+            return CallStatus.DELAYED;
+        }
+        if (delaySeconds <= -ON_TIME_TOLERANCE_SECONDS) {
+            return CallStatus.EARLY;
+        }
+        return CallStatus.ON_TIME;
+    }
+
+    private static boolean hasAnyActualTime(final PairedStop stop) {
+        if (stop.arrival != null && stop.arrival.actualTime != null) {
+            return true;
+        }
+        return stop.departure != null && stop.departure.actualTime != null;
+    }
+
+    private static boolean isCommercial(final PairedStop stop) {
+        // Must select the same stops as the NeTEx timetable — see CommercialStopRule.
+        return CommercialStopRule.isCommercialStop(leg(stop.arrival), leg(stop.departure));
+    }
+
+    private static Leg leg(final GTFSTimeTableRow row) {
+        if (row == null) {
+            return Leg.ABSENT;
+        }
+        return BooleanUtils.isTrue(row.commercialStop) ? Leg.COMMERCIAL : Leg.NON_COMMERCIAL;
+    }
+
+    private static boolean isCancelled(final PairedStop stop) {
+        if (stop.arrival != null && stop.arrival.cancelled) {
+            return true;
+        }
+        return stop.departure != null && stop.departure.cancelled;
+    }
+
+    private static boolean isPredictionInaccurate(final PairedStop stop) {
+        return (stop.arrival != null && BooleanUtils.isTrue(stop.arrival.unknownDelay))
+                || (stop.departure != null && BooleanUtils.isTrue(stop.departure.unknownDelay));
+    }
+
+    private static boolean hasLiveData(final PairedStop stop) {
+        return (stop.arrival != null && stop.arrival.hasEstimateOrActualTime())
+                || (stop.departure != null && stop.departure.hasEstimateOrActualTime());
+    }
+
+    /**
+     * Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
+     * (ARRIVAL only). The {@code timeTableRows} association declares no order, so the rows are first sorted
+     * (into a copy) by scheduled time, then ARRIVAL before DEPARTURE — the same key used when they are ingested.
+     */
+    private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
+        final List<PairedStop> stops = new ArrayList<>();
+        if (rows.isEmpty()) {
+            return stops;
+        }
+
+        final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
+        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime).thenComparing(r -> r.type));
+
+        int i = 0;
+        if (ordered.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+            stops.add(new PairedStop(null, ordered.get(0)));
+            i = 1;
+        }
+
+        while (i < ordered.size()) {
+            final GTFSTimeTableRow arrival = ordered.get(i);
+            i++;
+            if (i < ordered.size() && ordered.get(i).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+                stops.add(new PairedStop(arrival, ordered.get(i)));
+                i++;
+            } else {
+                stops.add(new PairedStop(arrival, null));
+            }
+        }
+
+        return stops;
+    }
+
+    private record PairedStop(GTFSTimeTableRow arrival, GTFSTimeTableRow departure) {}
+}

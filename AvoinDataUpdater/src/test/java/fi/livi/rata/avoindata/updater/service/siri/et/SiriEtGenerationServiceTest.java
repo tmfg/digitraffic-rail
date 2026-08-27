@@ -51,7 +51,6 @@ class SiriEtGenerationServiceTest {
 
     private static final ZoneId HELSINKI = ZoneId.of("Europe/Helsinki");
     private static final LocalDate TODAY = LocalDate.of(2026, 7, 15);
-    private static final String CODESPACE = "TEST";
 
     private ScheduleProviderService scheduleProviderService;
     private StationRepository stationRepository;
@@ -86,8 +85,7 @@ class SiriEtGenerationServiceTest {
                 neTExEntityService,
                 neTExIdGenerator,
                 siriWritingService,
-                generatedExportRepository,
-                CODESPACE
+                generatedExportRepository
         );
     }
 
@@ -284,7 +282,7 @@ class SiriEtGenerationServiceTest {
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
         final String xml = new String(exports.get(0).data);
-        assertTrue(xml.contains("DT:ServiceJourney:59-12345"),
+        assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
                 "Expected ServiceJourney id for train 59 in XML");
     }
 
@@ -360,7 +358,7 @@ class SiriEtGenerationServiceTest {
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
         final String xml = new String(exports.get(0).data);
-        assertTrue(xml.contains("DT:ServiceJourney:59-12345"),
+        assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
                 "Expected train 59 in output");
         assertFalse(xml.contains("999"),
                 "Train 999 should not appear (no schedule match)");

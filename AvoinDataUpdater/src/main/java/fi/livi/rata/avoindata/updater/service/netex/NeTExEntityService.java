@@ -12,8 +12,11 @@ import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
  * Builds core NeTEx domain objects: Lines, Operators, Authority,
@@ -224,14 +227,15 @@ public class NeTExEntityService {
     }
 
     private boolean isCommercialStop(final ScheduleRow row) {
-        // First stop (no arrival) and last stop (no departure) are always commercial
-        if (row.arrival == null || row.departure == null) {
-            return true;
+        // Must select the same stops as the SIRI-ET feed — see CommercialStopRule.
+        return CommercialStopRule.isCommercialStop(leg(row.arrival), leg(row.departure));
+    }
+
+    private static Leg leg(final ScheduleRowPart part) {
+        if (part == null) {
+            return Leg.ABSENT;
         }
-        if (row.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL) {
-            return true;
-        }
-        return row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
+        return part.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL ? Leg.COMMERCIAL : Leg.NON_COMMERCIAL;
     }
 
     public record NeTExLine(String id, String name, String publicCode, String privateCode,

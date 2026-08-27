@@ -16,9 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
@@ -27,20 +31,24 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
+import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
+import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import uk.org.siri.siri21.Siri;
 
 /**
- * Golden-master test: marshals a deterministic SIRI-ET document and compares it, node-for-node,
+ * Golden-master test: marshals deterministic SIRI-ET documents and compares each, node-for-node,
  * against a complete reference XML stored next to the test
- * ({@code src/test/resources/siri/expected-siri-et.xml}).
+ * ({@code src/test/resources/siri/expected-siri-et-{scenario}.xml}).
  *
- * <p>The reference file is the human-verified, profile-conformant expected output. If the SIRI-ET
- * mapping changes intentionally, regenerate it from {@code target/siri-et-actual.xml} (written on
- * every run) after confirming the new output is correct.
+ * <p>If the SIRI-ET mapping changes intentionally, regenerate the affected file(s) from
+ * {@code target/siri-et-actual-{scenario}.xml} (written on every run) after confirming the new output is
+ * correct.
  */
 class SiriEtGoldenXmlTest {
 
@@ -49,14 +57,15 @@ class SiriEtGoldenXmlTest {
     private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, HELSINKI);
     private static final String PRODUCER_REF = "TEST";
     private static final String DATA_SOURCE = "FSR";
-    private static final String GOLDEN_RESOURCE = "/siri/expected-siri-et.xml";
 
     private static final ResolvedJourney RESOLVED_59 =
-            new ResolvedJourney("DT:ServiceJourney:59-12345", "2026-07-15", "DT:Line:IC", "DT:Operator:vr");
+            new ResolvedJourney(new ServiceJourneyId("FTR:ServiceJourney:59-12345"), new DataFrameRef("2026-07-15"),
+                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"));
 
     private static final Map<String, Integer> UIC_MAP = Map.of(
             "HKI", 1,
             "TPE", 160,
+            "TKU", 130,
             "OL", 280);
 
     private SiriEtService service;
@@ -77,6 +86,8 @@ class SiriEtGoldenXmlTest {
                         List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null))),
                 new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
                         List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null))),
+                new PetiStop("FSR:StopPlace:TKU", 1000130, "Turku", true, null,
+                        List.of(new PetiQuay("FSR:Quay:TKU-3", "3", null))),
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
                         List.of(new PetiQuay("FSR:Quay:OL-1", "1", null))));
 
@@ -90,40 +101,48 @@ class SiriEtGoldenXmlTest {
                 DATA_SOURCE);
     }
 
-    @Test
-    void generatedSiriEt_matchesGoldenFile() throws IOException {
-        final Siri document = service.buildEtDocument(List.of(mixedRecordedAndEstimatedTrain()), NOW);
+    /** Each scenario builds a train whose serialized document has a structurally distinct shape. */
+    static Stream<Arguments> scenarios() {
+        return Stream.of(
+                Arguments.of("mixed", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::mixedRecordedAndEstimatedTrain),
+                Arguments.of("all-estimated", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::allEstimatedTrain),
+                Arguments.of("cancelled", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::fullyCancelledTrain),
+                Arguments.of("partial-cancellation",
+                        (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::partiallyCancelledTrain));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("scenarios")
+    void generatedSiriEt_matchesGoldenFile(final String scenario, final Supplier<GTFSTrain> trainBuilder)
+            throws IOException {
+        final Siri document = service.buildEtDocument(List.of(trainBuilder.get()), NOW);
         final String actual = writingService.marshalToXml(document);
 
         // Always dump the actual output so a diff / regeneration is trivial when the mapping changes.
-        final Path dump = Path.of("target", "siri-et-actual.xml");
+        final Path dump = Path.of("target", "siri-et-actual-" + scenario + ".xml");
         Files.createDirectories(dump.getParent());
         Files.writeString(dump, actual, StandardCharsets.UTF_8);
 
-        final String expected = readGolden();
+        final String resource = "/siri/expected-siri-et-" + scenario + ".xml";
+        final String expected = readGolden(resource);
         assertEquals(normalizeXml(expected), normalizeXml(actual),
-                "SIRI-ET output differs from " + GOLDEN_RESOURCE
-                        + ". If the change is intentional, copy target/siri-et-actual.xml over the resource.");
+                "SIRI-ET output differs from " + resource
+                        + ". If the change is intentional, copy target/siri-et-actual-" + scenario
+                        + ".xml over the resource.");
     }
 
     /**
-     * A representative, deterministic journey exercising the whole ET mapping: an already-departed
-     * origin (RecordedCall), an intermediate stop that has arrived but departs late (RecordedCall
-     * with an expected departure) and a still-upcoming, delayed terminus (EstimatedCall).
+     * A representative journey exercising the mixed mapping: an already-departed origin (RecordedCall), an
+     * intermediate stop that has arrived but departs late (RecordedCall with an expected departure) and a
+     * still-upcoming, delayed terminus (EstimatedCall). Produces both call containers.
      */
-    private GTFSTrain mixedRecordedAndEstimatedTrain() {
-        final GTFSTrain train = new GTFSTrain();
-        train.id = new TrainId(59L, DEPARTURE_DATE);
-        train.cancelled = false;
-        train.timeTableRows = new ArrayList<>();
+    private static GTFSTrain mixedRecordedAndEstimatedTrain() {
+        final GTFSTrain train = train(false);
 
-        // HKI — origin, departed on time
-        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                at(8, 0), "7");
+        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, at(8, 0), "7");
         hkiDep.actualTime = at(8, 1);
         train.timeTableRows.add(hkiDep);
 
-        // TPE — arrived, departs 3 min late
         final GTFSTimeTableRow tpeArr = row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, at(9, 30), "1");
         tpeArr.actualTime = at(9, 33);
         train.timeTableRows.add(tpeArr);
@@ -131,7 +150,6 @@ class SiriEtGoldenXmlTest {
         tpeDep.liveEstimateTime = at(9, 38);
         train.timeTableRows.add(tpeDep);
 
-        // OL — terminus, expected 6 min late
         final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 0), "1");
         olArr.liveEstimateTime = at(14, 6);
         train.timeTableRows.add(olArr);
@@ -139,7 +157,98 @@ class SiriEtGoldenXmlTest {
         return train;
     }
 
-    private GTFSTimeTableRow row(final String shortCode, final TimeTableRow.TimeTableRowType type,
+    /**
+     * A fully upcoming journey with no actual times: every stop is an EstimatedCall, so the document has an
+     * {@code EstimatedCalls} container and no {@code RecordedCalls} container. Live estimates make it monitored.
+     */
+    private static GTFSTrain allEstimatedTrain() {
+        final GTFSTrain train = train(false);
+
+        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, at(13, 0), "7");
+        hkiDep.liveEstimateTime = at(13, 2);
+        train.timeTableRows.add(hkiDep);
+
+        final GTFSTimeTableRow tpeArr = row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 30), "1");
+        tpeArr.liveEstimateTime = at(14, 35);
+        train.timeTableRows.add(tpeArr);
+        final GTFSTimeTableRow tpeDep = row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, at(14, 35), "1");
+        tpeDep.liveEstimateTime = at(14, 40);
+        train.timeTableRows.add(tpeDep);
+
+        final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(18, 0), "1");
+        olArr.liveEstimateTime = at(18, 10);
+        train.timeTableRows.add(olArr);
+
+        return train;
+    }
+
+    /**
+     * A wholly cancelled journey: EVJ-level {@code Cancellation} plus every call cancelled (status CANCELLED,
+     * no boarding). No actual times, so all calls are EstimatedCalls and the train is not monitored.
+     */
+    private static GTFSTrain fullyCancelledTrain() {
+        final GTFSTrain train = train(true);
+
+        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, at(8, 0), "7");
+        hkiDep.cancelled = true;
+        train.timeTableRows.add(hkiDep);
+
+        final GTFSTimeTableRow tpeArr = row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, at(9, 30), "1");
+        tpeArr.cancelled = true;
+        train.timeTableRows.add(tpeArr);
+        final GTFSTimeTableRow tpeDep = row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, at(9, 35), "1");
+        tpeDep.cancelled = true;
+        train.timeTableRows.add(tpeDep);
+
+        final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 0), "1");
+        olArr.cancelled = true;
+        train.timeTableRows.add(olArr);
+
+        return train;
+    }
+
+    /**
+     * A partially cancelled journey: served origin and one served intermediate stop (RecordedCalls), then a
+     * cancelled stop and cancelled terminus (EstimatedCalls with Cancellation). Exercises the boundary rule —
+     * the last served stop departs {@code cancelled} because the next stop is cancelled. Produces both containers.
+     */
+    private static GTFSTrain partiallyCancelledTrain() {
+        final GTFSTrain train = train(false);
+
+        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, at(8, 0), "7");
+        hkiDep.actualTime = at(8, 0);
+        train.timeTableRows.add(hkiDep);
+
+        final GTFSTimeTableRow tpeArr = row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, at(9, 30), "1");
+        tpeArr.actualTime = at(9, 31);
+        train.timeTableRows.add(tpeArr);
+        final GTFSTimeTableRow tpeDep = row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, at(9, 35), "1");
+        tpeDep.actualTime = at(9, 35);
+        train.timeTableRows.add(tpeDep);
+
+        final GTFSTimeTableRow tkuArr = row("TKU", TimeTableRow.TimeTableRowType.ARRIVAL, at(11, 0), "3");
+        tkuArr.cancelled = true;
+        train.timeTableRows.add(tkuArr);
+        final GTFSTimeTableRow tkuDep = row("TKU", TimeTableRow.TimeTableRowType.DEPARTURE, at(11, 5), "3");
+        tkuDep.cancelled = true;
+        train.timeTableRows.add(tkuDep);
+
+        final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 0), "1");
+        olArr.cancelled = true;
+        train.timeTableRows.add(olArr);
+
+        return train;
+    }
+
+    private static GTFSTrain train(final boolean cancelled) {
+        final GTFSTrain train = new GTFSTrain();
+        train.id = new TrainId(59L, DEPARTURE_DATE);
+        train.cancelled = cancelled;
+        train.timeTableRows = new ArrayList<>();
+        return train;
+    }
+
+    private static GTFSTimeTableRow row(final String shortCode, final TimeTableRow.TimeTableRowType type,
             final ZonedDateTime scheduledTime, final String track) {
         final GTFSTimeTableRow r = new GTFSTimeTableRow();
         r.stationShortCode = shortCode;
@@ -154,10 +263,10 @@ class SiriEtGoldenXmlTest {
         return ZonedDateTime.of(2026, 7, 15, hour, minute, 0, 0, HELSINKI);
     }
 
-    private static String readGolden() throws IOException {
-        try (InputStream in = SiriEtGoldenXmlTest.class.getResourceAsStream(GOLDEN_RESOURCE)) {
-            assertNotNull(in, "Missing golden resource " + GOLDEN_RESOURCE
-                    + " — copy target/siri-et-actual.xml there to create it.");
+    private static String readGolden(final String resource) throws IOException {
+        try (InputStream in = SiriEtGoldenXmlTest.class.getResourceAsStream(resource)) {
+            assertNotNull(in, "Missing golden resource " + resource
+                    + " — copy the matching target/siri-et-actual-*.xml there to create it.");
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }

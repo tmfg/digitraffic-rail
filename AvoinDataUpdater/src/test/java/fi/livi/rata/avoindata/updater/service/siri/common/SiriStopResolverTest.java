@@ -33,10 +33,10 @@ class SiriStopResolverTest {
     @Test
     void givenKnownStationAndTrack1_whenResolveQuayId_thenReturnsQuay7() {
         // when
-        final Optional<String> result = resolver.resolveQuayId(361, "1");
+        final Optional<StopRef> result = resolver.resolveQuayId(361, "1");
 
         // then
-        assertEquals(Optional.of("FSR:Quay:7"), result);
+        assertEquals(Optional.of(new StopRef("FSR:Quay:7")), result);
     }
 
     // --- STOP-02: Known station + different track → different Quay ---
@@ -44,10 +44,10 @@ class SiriStopResolverTest {
     @Test
     void givenKnownStationAndTrack2_whenResolveQuayId_thenReturnsQuay8() {
         // when
-        final Optional<String> result = resolver.resolveQuayId(361, "2");
+        final Optional<StopRef> result = resolver.resolveQuayId(361, "2");
 
         // then
-        assertEquals(Optional.of("FSR:Quay:8"), result);
+        assertEquals(Optional.of(new StopRef("FSR:Quay:8")), result);
     }
 
     // --- STOP-03: Known station + null track → StopPlace fallback ---
@@ -55,10 +55,10 @@ class SiriStopResolverTest {
     @Test
     void givenKnownStationAndNullTrack_whenResolveQuayId_thenReturnsStopPlace() {
         // when
-        final Optional<String> result = resolver.resolveQuayId(361, null);
+        final Optional<StopRef> result = resolver.resolveQuayId(361, null);
 
         // then
-        assertEquals(Optional.of("FSR:StopPlace:1"), result);
+        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 
     // --- STOP-04: Known station + unknown track → StopPlace fallback ---
@@ -66,10 +66,10 @@ class SiriStopResolverTest {
     @Test
     void givenKnownStationAndUnknownTrack_whenResolveQuayId_thenReturnsStopPlace() {
         // when
-        final Optional<String> result = resolver.resolveQuayId(361, "99");
+        final Optional<StopRef> result = resolver.resolveQuayId(361, "99");
 
         // then
-        assertEquals(Optional.of("FSR:StopPlace:1"), result);
+        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 
     // --- STOP-05: Unknown station → empty ---
@@ -77,7 +77,7 @@ class SiriStopResolverTest {
     @Test
     void givenUnknownStation_whenResolveQuayId_thenReturnsEmpty() {
         // when
-        final Optional<String> result = resolver.resolveQuayId(999, "1");
+        final Optional<StopRef> result = resolver.resolveQuayId(999, "1");
 
         // then
         assertEquals(Optional.empty(), result);
@@ -88,10 +88,10 @@ class SiriStopResolverTest {
     @Test
     void givenKnownStation_whenResolveStopPlaceId_thenReturnsStopPlace() {
         // when
-        final Optional<String> result = resolver.resolveStopPlaceId(361);
+        final Optional<StopRef> result = resolver.resolveStopPlaceId(361);
 
         // then
-        assertEquals(Optional.of("FSR:StopPlace:1"), result);
+        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 
     // --- STOP-07: resolveStopPlaceId with unknown station → empty ---
@@ -99,7 +99,7 @@ class SiriStopResolverTest {
     @Test
     void givenUnknownStation_whenResolveStopPlaceId_thenReturnsEmpty() {
         // when
-        final Optional<String> result = resolver.resolveStopPlaceId(999);
+        final Optional<StopRef> result = resolver.resolveStopPlaceId(999);
 
         // then
         assertEquals(Optional.empty(), result);
@@ -124,10 +124,10 @@ class SiriStopResolverTest {
         final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
 
         // when
-        final Optional<String> result = prebuiltResolver.resolveQuayId(361, "1");
+        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(361, "1");
 
         // then
-        assertEquals(Optional.of("FSR:Quay:7"), result);
+        assertEquals(Optional.of(new StopRef("FSR:Quay:7")), result);
     }
 
     // --- STOP-F3-02: Prebuilt-matcher resolves stopPlaceId same as source-backed ---
@@ -138,10 +138,10 @@ class SiriStopResolverTest {
         final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
 
         // when
-        final Optional<String> result = prebuiltResolver.resolveStopPlaceId(361);
+        final Optional<StopRef> result = prebuiltResolver.resolveStopPlaceId(361);
 
         // then
-        assertEquals(Optional.of("FSR:StopPlace:1"), result);
+        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 
     // --- STOP-F3-03: Prebuilt-matcher returns empty for unknown station ---
@@ -152,7 +152,7 @@ class SiriStopResolverTest {
         final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
 
         // when
-        final Optional<String> result = prebuiltResolver.resolveQuayId(999, "1");
+        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(999, "1");
 
         // then
         assertEquals(Optional.empty(), result);
@@ -166,9 +166,9 @@ class SiriStopResolverTest {
         final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
 
         // when
-        final Optional<String> result = prebuiltResolver.resolveQuayId(361, null);
+        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(361, null);
 
         // then
-        assertEquals(Optional.of("FSR:StopPlace:1"), result);
+        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 }

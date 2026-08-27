@@ -6,7 +6,11 @@ import java.util.Optional;
 
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
+import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
+import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
+import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 public class ScheduleMapJourneyRefResolver implements JourneyRefResolver {
@@ -34,6 +38,10 @@ public class ScheduleMapJourneyRefResolver implements JourneyRefResolver {
         final String operatorRef = schedule.operator != null
                 ? idGenerator.operatorId(schedule.operator.operatorShortCode)
                 : null;
-        return Optional.of(new ResolvedJourney(serviceJourneyId, departureDate.toString(), lineId, operatorRef));
+        return Optional.of(new ResolvedJourney(
+                new ServiceJourneyId(serviceJourneyId),
+                new DataFrameRef(departureDate.toString()),
+                new LineId(lineId),
+                operatorRef != null ? new OperatorRef(operatorRef) : null));
     }
 }
