@@ -70,7 +70,7 @@ public class TrainLocationMqttPublishServiceTest extends BaseTest {
 
         // internal fields must not leak
         assertPathNotPresent(json, "$['id']");
-        assertPathNotPresent(json, "$['liikeLocation']");
+        assertPathNotPresent(json, "$['locationEpsg3067']");
     }
 
     @Test

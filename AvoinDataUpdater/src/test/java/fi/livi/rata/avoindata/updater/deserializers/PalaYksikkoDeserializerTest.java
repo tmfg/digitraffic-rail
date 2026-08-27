@@ -167,13 +167,12 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
         Assertions.assertEquals(1, result.size());
         final TrainLocation tl = result.getFirst();
 
-        // accuracy is null (no GPS data to derive from) — ASSUMPTION(PALA-Q1)
         Assertions.assertNull(tl.accuracy, "Calculated position should have null accuracy");
         // isGpsLocation = false (lahdeKupla is empty)
         Assertions.assertFalse(tl.isGpsLocation, "Calculated position should have isGpsLocation=false");
         // coordinates should still be valid (from sijainti.koordinaatti)
         Assertions.assertNotNull(tl.location, "Calculated position should still have a location");
-        Assertions.assertNotNull(tl.liikeLocation, "Calculated position should have liikeLocation for filter");
+        Assertions.assertNotNull(tl.locationEpsg3067, "Calculated position should have locationEpsg3067 for filter");
     }
 
     // ========================================================================
@@ -198,37 +197,38 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
     }
 
     @Test
-    public void shouldRetainEpsg3067InLiikeLocation() throws Exception {
+    public void shouldRetainEpsg3067InLocationEpsg3067() throws Exception {
         // given
         final String json = loadFixture("pala-yksikko-gps.json");
 
         // when
         final List<TrainLocation> result = palaYksikkoDeserializer.deserialize(json);
 
-        // then — liikeLocation (transient) holds original EPSG:3067 for the near-track filter
+        // then — locationEpsg3067 (transient) holds original EPSG:3067 for the near-track filter
         Assertions.assertEquals(1, result.size());
         final TrainLocation tl = result.getFirst();
 
-        Assertions.assertEquals(380012.416714, tl.liikeLocation.getX(), 0.001, "EPSG:3067 X");
-        Assertions.assertEquals(6736100.100908, tl.liikeLocation.getY(), 0.001, "EPSG:3067 Y");
+        Assertions.assertEquals(380012.416714, tl.locationEpsg3067.getX(), 0.001, "EPSG:3067 X");
+        Assertions.assertEquals(6736100.100908, tl.locationEpsg3067.getY(), 0.001, "EPSG:3067 Y");
     }
 
     // ========================================================================
-    // Test 5: Null speed handling — ASSUMPTION(PALA-Q2)
+    // Test 5: Null speed handling — null nopeus = "unknown" → drop unit
     // ========================================================================
 
     @Test
-    public void nullSpeedShouldBeTreatedAsZero() throws Exception {
-        // given — calculated fixture has nopeus: null
-        final String json = loadFixture("pala-yksikko-calculated.json");
+    public void nullSpeedShouldDropUnit() throws Exception {
+        // given — PALA null nopeus means "speed unknown"; our speed column is NOT NULL so the unit is dropped
+        final String json = buildPalaJson(8050L, null, 5, "[385754, 6672611]", gpsLahdeKupla(5000));
 
         // when
-        final List<TrainLocation> result = palaYksikkoDeserializer.deserialize(json);
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats(json);
 
-        // then — ASSUMPTION(PALA-Q2): nopeus null → speed 0 (controlled by updater.pala.null-speed-as-zero flag)
-        Assertions.assertEquals(1, result.size());
-        Assertions.assertEquals(0, result.getFirst().speed.intValue(),
-                "null nopeus should be treated as 0 (interim assumption PALA-Q2)");
+        // then — unit is dropped and counted, not defaulted to speed 0
+        Assertions.assertEquals(1, result.receivedCount());
+        Assertions.assertTrue(result.locations().isEmpty(), "unit with unknown speed is dropped");
+        Assertions.assertEquals(1, result.droppedNoSpeed());
+        Assertions.assertEquals(0, result.deserializationErrors());
     }
 
     @Test
@@ -388,13 +388,13 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
     }
 
     // ========================================================================
-    // Test 9: Missing sijainti.koordinaatti drops unit — ASSUMPTION(PALA-Q3)
+    // Test 9: Missing sijainti.koordinaatti drops unit
     // ========================================================================
 
     @Test
     public void missingKoordinaattiShouldDropUnit() throws Exception {
         // given — sijainti present but koordinaatti absent → unit should be excluded
-        // ASSUMPTION(PALA-Q3): drop units without koordinaatti
+        // Units without koordinaatti are dropped
         final String json = buildPalaJson(8030L, 74, 5, null, gpsLahdeKupla(5000));
 
         // when
@@ -402,7 +402,7 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
 
         // then
         Assertions.assertTrue(result.isEmpty(),
-                "Unit without sijainti.koordinaatti should be dropped (ASSUMPTION PALA-Q3)");
+                "Unit without sijainti.koordinaatti should be dropped");
     }
 
     @Test
@@ -465,13 +465,13 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
     }
 
     // ========================================================================
-    // Test 10: epavarmuus is not exposed — ASSUMPTION(PALA-Q1)
+    // Test 10: epavarmuus is not exposed
     // ========================================================================
 
     @Test
     public void epavarmuusShouldNotAffectAccuracyForGpsPosition() throws Exception {
         // given — GPS position with epavarmuus: 100 and lahdeKupla[0].tarkkuus: 5000
-        // ASSUMPTION(PALA-Q1): accuracy derives from tarkkuus, not epavarmuus
+        // accuracy derives from tarkkuus
         final String json = buildPalaJson(8040L, 74, 100, "[385754, 6672611]", gpsLahdeKupla(5000));
 
         // when
@@ -480,13 +480,13 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
         // then — accuracy is 5 (from tarkkuus 5000mm / 1000), not 100 (epavarmuus)
         Assertions.assertEquals(1, result.size());
         Assertions.assertEquals(5, result.getFirst().accuracy.intValue(),
-                "accuracy must derive from lahdeKupla[].tarkkuus, not top-level epavarmuus (ASSUMPTION PALA-Q1)");
+                "accuracy must derive from lahdeKupla[].tarkkuus, not top-level epavarmuus");
     }
 
     @Test
     public void epavarmuusShouldNotAffectAccuracyForCalculatedPosition() throws Exception {
         // given — calculated position with epavarmuus: 416 and empty lahdeKupla
-        // ASSUMPTION(PALA-Q1): epavarmuus is ignored for public accuracy
+        // epavarmuus is ignored for public accuracy
         final String json = buildPalaJson(8041L, 74, 416, "[327785, 6823456]", EMPTY_LAHDE_KUPLA);
 
         // when
@@ -495,6 +495,179 @@ public class PalaYksikkoDeserializerTest extends BaseTest {
         // then — accuracy is null (no GPS data), not 416 (epavarmuus)
         Assertions.assertEquals(1, result.size());
         Assertions.assertNull(result.getFirst().accuracy,
-                "calculated position accuracy must be null, not epavarmuus (ASSUMPTION PALA-Q1)");
+                "calculated position accuracy must be null, not epavarmuus");
+    }
+
+    // ========================================================================
+    // Test 11: Parse result stats — resilience + observability (deserializeWithStats)
+    // ========================================================================
+
+    @Test
+    public void resultShouldReportRawReceivedCount() throws Exception {
+        final String json = loadFixture("pala-yksikko-multiple.json");
+
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats(json);
+
+        Assertions.assertEquals(2, result.receivedCount(), "receivedCount is the raw PALA object size");
+        Assertions.assertEquals(2, result.locations().size());
+        Assertions.assertEquals(0, result.deserializationErrors());
+        Assertions.assertEquals(0, result.droppedNoCoordinate());
+    }
+
+    @Test
+    public void missingKoordinaattiShouldBeCountedAsNoCoordinateDrop() throws Exception {
+        // sijainti present but koordinaatti absent → legitimate "no position known" (RESOLVED PALA-Q3)
+        final String json = buildPalaJson(8030L, 74, 5, null, gpsLahdeKupla(5000));
+
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats(json);
+
+        Assertions.assertEquals(1, result.receivedCount());
+        Assertions.assertTrue(result.locations().isEmpty());
+        Assertions.assertEquals(1, result.droppedNoCoordinate(), "unit without koordinaatti is a no-coordinate drop");
+        Assertions.assertEquals(0, result.deserializationErrors());
+    }
+
+    @Test
+    public void malformedUnitShouldBeCountedAsErrorAndNotAbortBatch() throws Exception {
+        // train 200 has an unparseable aikaleima; trains 100 and 300 are valid and must still survive
+        final String json = """
+                {
+                  "100": {
+                    "junanumero": 100, "lahtopaiva": "2026-07-06", "aikaleima": "2026-07-06T08:00:00Z",
+                    "nopeus": 50, "epavarmuus": 5,
+                    "sijainti": { "koordinaatti": [385754, 6672611], "raideosuudet": [], "lhraiteet": [], "toimialueet": [] },
+                    "lahdeKupla": [], "lahdeKulkutiedot": []
+                  },
+                  "200": {
+                    "junanumero": 200, "lahtopaiva": "2026-07-06", "aikaleima": "NOT-A-TIMESTAMP",
+                    "nopeus": 60, "epavarmuus": 5,
+                    "sijainti": { "koordinaatti": [385754, 6672611], "raideosuudet": [], "lhraiteet": [], "toimialueet": [] },
+                    "lahdeKupla": [], "lahdeKulkutiedot": []
+                  },
+                  "300": {
+                    "junanumero": 300, "lahtopaiva": "2026-07-06", "aikaleima": "2026-07-06T08:02:00Z",
+                    "nopeus": 80, "epavarmuus": 3,
+                    "sijainti": { "koordinaatti": [327785, 6823456], "raideosuudet": [], "lhraiteet": [], "toimialueet": [] },
+                    "lahdeKupla": [], "lahdeKulkutiedot": []
+                  }
+                }
+                """;
+
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats(json);
+
+        Assertions.assertEquals(3, result.receivedCount());
+        Assertions.assertEquals(2, result.locations().size(), "valid units survive; the bad one is skipped");
+        Assertions.assertEquals(1, result.deserializationErrors());
+        Assertions.assertEquals("200", result.firstErrorTrainNumber());
+        Assertions.assertNotNull(result.firstErrorSampleJson(), "first error captures a JSON sample");
+    }
+
+    @Test
+    public void missingRequiredFieldShouldBeCountedAsErrorNotNoCoordinateDrop() throws Exception {
+        // koordinaatti present but junanumero missing → data-quality error, not a legitimate no-coordinate drop
+        final String json = """
+                {
+                  "500": {
+                    "lahtopaiva": "2026-07-06", "aikaleima": "2026-07-06T08:00:00Z", "nopeus": 50, "epavarmuus": 5,
+                    "sijainti": { "koordinaatti": [385754, 6672611], "raideosuudet": [], "lhraiteet": [], "toimialueet": [] },
+                    "lahdeKupla": [], "lahdeKulkutiedot": []
+                  }
+                }
+                """;
+
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats(json);
+
+        Assertions.assertTrue(result.locations().isEmpty());
+        Assertions.assertEquals(1, result.deserializationErrors());
+        Assertions.assertEquals(0, result.droppedNoCoordinate());
+    }
+
+    // ========================================================================
+    // Test 12: Root must be the documented object-keyed response
+    // ========================================================================
+
+    @Test
+    public void arrayRootShouldThrowContractFailure() {
+        // A syntactically valid but non-object root ([]) is an upstream contract failure, not an empty poll.
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> palaYksikkoDeserializer.deserializeWithStats("[]"));
+    }
+
+    @Test
+    public void nullRootShouldThrowContractFailure() {
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> palaYksikkoDeserializer.deserializeWithStats("null"));
+    }
+
+    @Test
+    public void emptyObjectRootShouldRemainAValidEmptyPoll() {
+        // {} is a valid "no trains" response and must NOT throw.
+        final PalaDeserializationResult result = palaYksikkoDeserializer.deserializeWithStats("{}");
+        Assertions.assertTrue(result.locations().isEmpty());
+        Assertions.assertEquals(0, result.receivedCount());
+    }
+
+    // ========================================================================
+    // Test 13: GPS classification requires a real coordinate; accuracy is coupled to that same source
+    // ========================================================================
+
+    @Test
+    public void lahdeKuplaWithNullKoordinaattiShouldNotBeGps() throws Exception {
+        // has("koordinaatti") is true even for JSON null; it must NOT be classified as a GPS fix.
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": null, "tarkkuus": 5000 }]
+                """;
+        final String json = buildPalaJson(8070L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertFalse(tl.isGpsLocation, "JSON-null koordinaatti is not a GPS fix");
+        Assertions.assertNull(tl.accuracy, "no GPS source → null accuracy (tarkkuus of a non-GPS source is ignored)");
+    }
+
+    @Test
+    public void lahdeKuplaWithMalformedKoordinaattiShouldNotBeGps() throws Exception {
+        // A single-element coordinate array is malformed → not GPS.
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": [385754], "tarkkuus": 5000 }]
+                """;
+        final String json = buildPalaJson(8071L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertFalse(tl.isGpsLocation);
+        Assertions.assertNull(tl.accuracy);
+    }
+
+    @Test
+    public void accuracyShouldComeFromTheSourceThatSuppliedTheGpsCoordinate() throws Exception {
+        // First source has no coordinate (tarkkuus 9999); the second supplies the GPS fix (tarkkuus 5000).
+        // Accuracy must come from the second (5 m), not the unrelated first (9 m).
+        final String lahdeKupla = """
+                [
+                  { "aikaleima": "2026-07-06T08:34:27Z", "tunniste": "1.2.246.586.1.99.a", "tarkkuus": 9999 },
+                  { "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.b", "koordinaatti": [385754, 6672611], "tarkkuus": 5000 }
+                ]
+                """;
+        final String json = buildPalaJson(8072L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertTrue(tl.isGpsLocation);
+        Assertions.assertEquals(5, tl.accuracy.intValue(),
+                "accuracy must come from the GPS coordinate's own source entry, not lahdeKupla[0]");
+    }
+
+    @Test
+    public void gpsSourceWithoutTarkkuusShouldHaveNullAccuracy() throws Exception {
+        final String lahdeKupla = """
+                [{ "aikaleima": "2026-07-06T08:34:28Z", "tunniste": "1.2.246.586.1.99.1", "koordinaatti": [385754, 6672611] }]
+                """;
+        final String json = buildPalaJson(8073L, 74, 5, "[385754, 6672611]", lahdeKupla);
+
+        final TrainLocation tl = palaYksikkoDeserializer.deserialize(json).getFirst();
+
+        Assertions.assertTrue(tl.isGpsLocation);
+        Assertions.assertNull(tl.accuracy, "GPS fix without tarkkuus → null accuracy");
     }
 }

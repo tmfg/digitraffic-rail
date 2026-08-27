@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.function.Function;
@@ -55,14 +56,21 @@ public class MQTTPublishService {
         executor.initialize();
     }
 
-    public <E> void publish(final Function<E, String> topicProvider, final List<E> entities) {
-        this.publish(topicProvider, entities, null);
+    public <E> List<Future<Message<String>>> publish(final Function<E, String> topicProvider, final List<E> entities) {
+        return this.publish(topicProvider, entities, null);
     }
 
-    public <E> void publish(final Function<E, String> topicProvider, final List<E> entities, final Class viewClass) {
+    public <E> List<Future<Message<String>>> publish(final Function<E, String> topicProvider, final List<E> entities, final Class viewClass) {
+        final List<Future<Message<String>>> futures = new ArrayList<>(entities.size());
         for (final E entity : entities) {
-            publishEntity(topicProvider.apply(entity), entity, viewClass);
+            futures.add(publishEntity(topicProvider.apply(entity), entity, viewClass));
         }
+        return futures;
+    }
+
+    /** Whether MQTT publishing is enabled by configuration. */
+    public boolean isEnabled() {
+        return enableMqtt;
     }
 
     public <E> Future<Message<String>> publishEntity(final String topic, final E entity, final Class viewClass) {

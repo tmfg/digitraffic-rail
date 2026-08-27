@@ -1,19 +1,26 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -22,6 +29,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
+import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
@@ -46,6 +54,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
     private RipaService ripaService;
     private PalaYksikkoDeserializer deserializer;
     private RecentlySeenTrainLocationFilter recentlySeenFilter;
+    private MQTTPublishService mqttPublishService;
 
     private Logger logbackLogger;
     private ListAppender<ILoggingEvent> appender;
@@ -56,13 +65,14 @@ public class TrainLocationUpdaterErrorHandlingTest {
         ripaService = mock(RipaService.class);
         deserializer = mock(PalaYksikkoDeserializer.class);
         recentlySeenFilter = mock(RecentlySeenTrainLocationFilter.class);
+        mqttPublishService = mock(MQTTPublishService.class);
 
         ReflectionTestUtils.setField(updater, "ripaService", ripaService);
         ReflectionTestUtils.setField(updater, "palaYksikkoDeserializer", deserializer);
         ReflectionTestUtils.setField(updater, "recentlySeenTrainLocationFilter", recentlySeenFilter);
         ReflectionTestUtils.setField(updater, "trainLocationNearTrackFilterService",
                 mock(TrainLocationNearTrackFilterService.class));
-        ReflectionTestUtils.setField(updater, "mqttPublishService", mock(MQTTPublishService.class));
+        ReflectionTestUtils.setField(updater, "mqttPublishService", mqttPublishService);
         ReflectionTestUtils.setField(updater, "trainLocationRepository", mock(TrainLocationRepository.class));
         ReflectionTestUtils.setField(updater, "lastUpdateService", mock(LastUpdateService.class));
 
@@ -102,12 +112,76 @@ public class TrainLocationUpdaterErrorHandlingTest {
     @Test
     public void successfulFetchShouldRecordStatus200() {
         when(ripaService.getFromPalaAsString(anyString())).thenReturn("{}");
-        when(deserializer.deserialize(anyString())).thenReturn(List.of());
+        when(deserializer.deserializeWithStats(anyString()))
+                .thenReturn(new PalaDeserializationResult(List.of(), 0, 0, 0, 0, null, null));
         when(recentlySeenFilter.filter(anyList())).thenReturn(List.of());
 
         updater.trainLocation();
 
         assertWideLogContains("outcome=success", "rail.upstream.pala.http_status=200");
+    }
+
+    @Test
+    public void mqttSuccessShouldBeTrueWhenAllMessagesDelivered() {
+        stubEmptySuccessfulPoll();
+        when(mqttPublishService.isEnabled()).thenReturn(true);
+        final Future<Message<String>> delivered = CompletableFuture.completedFuture(MessageBuilder.withPayload("x").build());
+        when(mqttPublishService.publish(any(), anyList(), any())).thenReturn(List.of(delivered));
+
+        updater.trainLocation();
+
+        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=true");
+    }
+
+    @Test
+    public void mqttSuccessShouldBeFalseWhenASendFails() {
+        stubEmptySuccessfulPoll();
+        when(mqttPublishService.isEnabled()).thenReturn(true);
+        // A future resolving to null models MQTTPublishService swallowing a send failure.
+        final Future<Message<String>> failed = CompletableFuture.<Message<String>>completedFuture(null);
+        when(mqttPublishService.publish(any(), anyList(), any())).thenReturn(List.of(failed));
+
+        updater.trainLocation();
+
+        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=false");
+    }
+
+    @Test
+    public void mqttSuccessShouldBeFalseWhenMqttDisabled() {
+        stubEmptySuccessfulPoll();
+        when(mqttPublishService.isEnabled()).thenReturn(false);
+
+        updater.trainLocation();
+
+        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=false");
+    }
+
+    private void stubEmptySuccessfulPoll() {
+        when(ripaService.getFromPalaAsString(anyString())).thenReturn("{}");
+        when(deserializer.deserializeWithStats(anyString()))
+                .thenReturn(new PalaDeserializationResult(List.of(), 0, 0, 0, 0, null, null));
+        when(recentlySeenFilter.filter(anyList())).thenReturn(List.of());
+    }
+
+    @Test
+    public void httpErrorShouldActivateBackoff() {
+        when(ripaService.getFromPalaAsString(anyString()))
+                .thenThrow(new WebClientResponseException(503, "Service Unavailable", HttpHeaders.EMPTY, null, null));
+
+        updater.trainLocation();
+
+        assertWideLogContains("outcome=error", "rail.upstream.pala.backoff_active=true");
+    }
+
+    @Test
+    public void cyclesDuringBackoffShouldSkipTheUpstreamCall() {
+        when(ripaService.getFromPalaAsString(anyString()))
+                .thenThrow(new WebClientResponseException(503, "Service Unavailable", HttpHeaders.EMPTY, null, null));
+
+        updater.trainLocation(); // fails → backs off for ~1s
+        updater.trainLocation(); // immediately after → skipped, PALA is not called again
+
+        verify(ripaService, times(1)).getFromPalaAsString(anyString());
     }
 
     private void assertWideLogContains(final String... expectedSubstrings) {
