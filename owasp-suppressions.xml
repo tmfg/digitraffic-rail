@@ -4,22 +4,23 @@
     <!--
         Temporary suppressions, check and update these periodically
     -->
-    <!-- We dont use logger to send logs to remote servers -->
-    <suppress until="2026-07-01">
-        <notes><![CDATA[file name: log4j-api-2.24.3.jar]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j-api@.*$</packageUrl>
-        <cve>CVE-2025-68161</cve>
+
+    <suppress until="2026-11-01">
+        <notes><![CDATA[file name: httpcore5-5.4.2.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.httpcomponents\.core5/httpcore5@.*$</packageUrl>
+        <cpe>cpe:/a:apache:httpcomponents_core</cpe>
     </suppress>
 
-    <!-- In Eclipse Paho Go MQTT v3.1 library (paho.mqtt.golang) versions <=1.5.0 UTF-8 encoded
-    strings, passed into the library, may be incorrectly encoded if their length exceeds 65535
-    bytes.
-         Hopefully we are not doing that big payloads and if we are, we have ticket to update to new client -->
-    <suppress>
-        <notes><![CDATA[file name: org.eclipse.paho.client.mqttv3-1.2.5.jar]]></notes>
-        <packageUrl regex="true">
-            ^pkg:maven/org\.eclipse\.paho/org\.eclipse\.paho\.client\.mqttv3@.*$</packageUrl>
-        <cve>CVE-2025-10543</cve>
+    <suppress until="2026-11-01">
+        <notes><![CDATA[file name: httpcore5-h2-5.4.2.jar]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.httpcomponents\.core5/httpcore5-h2@.*$</packageUrl>
+        <cpe>cpe:/a:apache:httpcomponents_core</cpe>
+    </suppress>
+
+    <suppress until="2026-11-01">
+        <notes><![CDATA[file name: swagger-ui-5.32.2.jar: swagger-ui-bundle.js]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-65898</cve>
     </suppress>
 
     <!-- False positive. CVE-2022-31691 affects "Spring Tools 4 for Eclipse" IDE plugin, NOT
@@ -27,7 +28,7 @@
          The CPE match on vmware:spring_boot_tools incorrectly maps to spring-boot-devtools.
          Dependency: spring-boot-devtools 4.0.3
          See: https://nvd.nist.gov/vuln/detail/CVE-2022-31691 -->
-    <suppress>
+    <suppress until="2026-11-01">
         <notes><![CDATA[file name: spring-boot-devtools-4.0.3.jar]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework\.boot/spring\-boot\-devtools@.*$</packageUrl>
         <cve>CVE-2022-31691</cve>
@@ -37,5 +38,15 @@
         Permanent suppressions
     -->
 
+    <!-- In Eclipse Paho Go MQTT v3.1 library (paho.mqtt.golang) versions <=1.5.0 UTF-8 encoded
+strings, passed into the library, may be incorrectly encoded if their length exceeds 65535
+bytes.
+     Hopefully we are not doing that big payloads and if we are, we have ticket to update to new client -->
+    <suppress>
+        <notes><![CDATA[file name: org.eclipse.paho.client.mqttv3-1.2.5.jar]]></notes>
+        <packageUrl regex="true">
+            ^pkg:maven/org\.eclipse\.paho/org\.eclipse\.paho\.client\.mqttv3@.*$</packageUrl>
+        <cve>CVE-2025-10543</cve>
+    </suppress>
 
 </suppressions>

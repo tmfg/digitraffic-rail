@@ -45,7 +45,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Checkout CI-repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
@@ -111,14 +111,33 @@ jobs:
           cat digitraffic-ci/aws/sbom/config.json >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT      
 
-      - name: Generate SBOM
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Extract ECR registry ID
+        id: ecr
+        run: echo "registry-id=$(echo '${{ secrets.FIRA_ECR_URL }}' | cut -d. -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
         with:
-          version: v0.72.0
-          scan-type: image
-          image-ref: ${{ secrets.FIRA_ECR_URL }}/${{ github.event.inputs.application-name }}:digitraffic-${{ github.event.inputs.env }}
-          format: cyclonedx
-          output: ${{ github.event.inputs.application-name }}-sbom.json
+          registries: ${{ steps.ecr.outputs.registry-id }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 #v0.24.0
+        env:
+          SYFT_FILE_METADATA_SELECTION: "none"
+        with:
+          image: ${{ secrets.FIRA_ECR_URL }}/${{ github.event.inputs.application-name }}:digitraffic-${{ github.event.inputs.env }}
+          format: cyclonedx-json
+          output-file: ${{ github.event.inputs.application-name }}-sbom.json
+
+      - name: Update ${{ github.event.inputs.application-name }} ECS service
+        uses: tmfg/digitraffic-actions@ecs-service-update/v1
+        with:
+          aws-role: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          task-definition: ${{ github.event.inputs.application-name }}
+          service-name: ${{ github.event.inputs.application-name }}
+          cluster-name: ${{ secrets.CLUSTER_NAME }}
+          desired-count: ${{ github.event.inputs.env == 'prod' && 2 || 1 }}
 
       - name: Configure AWS credentials for SBOM
         uses: aws-actions/configure-aws-credentials@v6.1.1

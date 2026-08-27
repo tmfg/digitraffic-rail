@@ -49,7 +49,7 @@ jobs:
       git_sha: ${{ steps.git_sha.outputs.sha_short }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.ref }}
       - name: Set git sha output
@@ -146,7 +146,7 @@ jobs:
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout CI-repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
@@ -362,6 +362,14 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: updater-sbom.json
+
+      - name: Checkout CI-repo
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
 
       - name: Read SBOM config
         id: sbom-config
