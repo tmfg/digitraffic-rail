@@ -31,6 +31,9 @@ public class ScheduleMapJourneyRefResolver implements JourneyRefResolver {
         }
         final String serviceJourneyId = entityService.serviceJourneyIdFor(schedule);
         final String lineId = idGenerator.lineId(entityService.deriveLineId(schedule));
-        return Optional.of(new ResolvedJourney(serviceJourneyId, departureDate.toString(), lineId));
+        final String operatorRef = schedule.operator != null
+                ? idGenerator.operatorId(schedule.operator.operatorShortCode)
+                : null;
+        return Optional.of(new ResolvedJourney(serviceJourneyId, departureDate.toString(), lineId, operatorRef));
     }
 }

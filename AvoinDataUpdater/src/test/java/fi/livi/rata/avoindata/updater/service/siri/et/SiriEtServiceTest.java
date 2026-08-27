@@ -13,12 +13,16 @@ import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.org.siri.siri21.ArrivalBoardingActivityEnumeration;
+import uk.org.siri.siri21.CallStatusEnumeration;
+import uk.org.siri.siri21.DepartureBoardingActivityEnumeration;
 import uk.org.siri.siri21.EstimatedCall;
 import uk.org.siri.siri21.EstimatedTimetableDeliveryStructure;
 import uk.org.siri.siri21.EstimatedVehicleJourney;
 import uk.org.siri.siri21.EstimatedVersionFrameStructure;
 import uk.org.siri.siri21.RecordedCall;
 import uk.org.siri.siri21.Siri;
+import uk.org.siri.siri21.VehicleModesEnumeration;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -41,7 +45,7 @@ class SiriEtServiceTest {
     private static final String DATA_SOURCE = "FSR";
 
     private static final ResolvedJourney RESOLVED_59 =
-            new ResolvedJourney("DT:ServiceJourney:59-12345", "2026-07-15", "DT:Line:IC");
+            new ResolvedJourney("DT:ServiceJourney:59-12345", "2026-07-15", "DT:Line:IC", "DT:Operator:vr");
 
     private static final Map<String, Integer> UIC_MAP = Map.of(
             "HKI", 1,
@@ -512,10 +516,10 @@ class SiriEtServiceTest {
         assertEquals("FSR:StopPlace:TKU", calls.get(1).getStopPointRef().getValue());
     }
 
-    // --- ET-14: Station not in UIC lookup → call omitted ---
+    // --- ET-14: Station not in UIC lookup → whole journey omitted (complete-sequence rule) ---
 
     @Test
-    void givenStationNotInUicLookup_whenBuild_thenCallOmittedAndIsCompleteStopSequenceFalse() {
+    void givenStationNotInUicLookup_whenBuild_thenJourneyOmitted() {
         // given — stop at "XXX" (not in UIC map)
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
@@ -529,12 +533,8 @@ class SiriEtServiceTest {
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
-        // XXX should be skipped, so only 2 calls
-        final int totalCalls = countAllCalls(evj);
-        assertEquals(2, totalCalls);
-        assertEquals(false, evj.isIsCompleteStopSequence());
+        // then — an unresolvable stop means the sequence cannot be complete, so the journey is not emitted
+        assertTrue(getEvjs(result).isEmpty());
     }
 
     // ===== AREA 4 — Time fields =====
@@ -991,10 +991,10 @@ class SiriEtServiceTest {
         assertEquals(true, evj.isIsCompleteStopSequence());
     }
 
-    // --- ET-34: One stop unresolvable → IsCompleteStopSequence=false ---
+    // --- ET-34: One stop unresolvable → whole journey omitted (never IsCompleteStopSequence=false) ---
 
     @Test
-    void givenOneStopUnresolvable_whenBuild_thenIsCompleteStopSequenceFalse() {
+    void givenOneStopUnresolvable_whenBuild_thenJourneyOmitted() {
         // given — one station ("XXX") not in StationUicLookup
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
@@ -1008,9 +1008,94 @@ class SiriEtServiceTest {
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
-        assertEquals(false, evj.isIsCompleteStopSequence());
+        // then — no journey is emitted; we never publish an incomplete sequence
+        assertTrue(getEvjs(result).isEmpty());
+    }
+
+    // ===== AREA 11 — Pass 4: journey-level fields, call statuses & boarding activity =====
+
+    // --- ET-35: scheduled train → VehicleMode=rail, OperatorRef set, not monitored ---
+    @Test
+    void givenScheduledTrain_whenBuild_thenVehicleModeOperatorRefAndNotMonitored() {
+        final GTFSTrain train = createStandard4StopTrain();
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        assertEquals(1, evj.getVehicleModes().size());
+        assertEquals(VehicleModesEnumeration.RAIL, evj.getVehicleModes().get(0));
+        assertEquals("DT:Operator:vr", evj.getOperatorRef().getValue());
+        assertFalse(evj.isMonitored());
+    }
+
+    // --- ET-36: live estimate present → Monitored=true ---
+    @Test
+    void givenTrainWithLiveEstimate_whenBuild_thenMonitoredTrue() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(5).liveEstimateTime =
+                ZonedDateTime.of(2026, 7, 15, 14, 6, 0, 0, HELSINKI);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        assertTrue(evj.isMonitored());
+    }
+
+    // --- ET-37: on-time train → onTime statuses + boarding/alighting + RequestStop=false ---
+    @Test
+    void givenOnTimeTrain_whenBuild_thenStatusesOnTimeAndBoardingSet() {
+        final GTFSTrain train = createStandard4StopTrain();
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        final EstimatedCall origin = calls.get(0);
+        assertEquals(CallStatusEnumeration.ON_TIME, origin.getDepartureStatus());
+        assertEquals(DepartureBoardingActivityEnumeration.BOARDING, origin.getDepartureBoardingActivity());
+        assertEquals(Boolean.FALSE, origin.isRequestStop());
+        final EstimatedCall mid = calls.get(1);
+        assertEquals(CallStatusEnumeration.ON_TIME, mid.getArrivalStatus());
+        assertEquals(ArrivalBoardingActivityEnumeration.ALIGHTING, mid.getArrivalBoardingActivity());
+    }
+
+    // --- ET-38: late departure → DepartureStatus=delayed ---
+    @Test
+    void givenLateDeparture_whenBuild_thenDepartureStatusDelayed() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(2).liveEstimateTime = // TPE departure, 5 min late
+                ZonedDateTime.of(2026, 7, 15, 9, 40, 0, 0, HELSINKI);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertEquals(CallStatusEnumeration.DELAYED, tpe.getDepartureStatus());
+    }
+
+    // --- ET-39: early arrival → ArrivalStatus=early ---
+    @Test
+    void givenEarlyArrival_whenBuild_thenArrivalStatusEarly() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(3).liveEstimateTime = // TKU arrival, 2 min early
+                ZonedDateTime.of(2026, 7, 15, 10, 58, 0, 0, HELSINKI);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(2);
+        assertEquals(CallStatusEnumeration.EARLY, tku.getArrivalStatus());
+    }
+
+    // --- ET-40: trailing stop cancelled → boundary DepartureStatus=cancelled + cancelled stop noAlighting ---
+    @Test
+    void givenTrailingStopCancelled_whenBuild_thenBoundaryAndCancelledStatuses() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(5).cancelled = true; // cancel the terminus (OL arrival)
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        final EstimatedCall tku = calls.get(2); // last served stop before the cancelled terminus
+        assertEquals(CallStatusEnumeration.CANCELLED, tku.getDepartureStatus());
+        assertEquals(DepartureBoardingActivityEnumeration.NO_BOARDING, tku.getDepartureBoardingActivity());
+        final EstimatedCall ol = calls.get(3); // cancelled terminus
+        assertEquals(Boolean.TRUE, ol.isCancellation());
+        assertEquals(CallStatusEnumeration.CANCELLED, ol.getArrivalStatus());
+        assertEquals(ArrivalBoardingActivityEnumeration.NO_ALIGHTING, ol.getArrivalBoardingActivity());
+    }
+
+    // --- ET-41: unknownDelay row → PredictionInaccurate=true on that call ---
+    @Test
+    void givenUnknownDelay_whenBuild_thenCallPredictionInaccurate() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(2).unknownDelay = true; // TPE departure
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertEquals(Boolean.TRUE, tpe.isPredictionInaccurate());
     }
 
     // ===== Helper =====

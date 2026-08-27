@@ -79,7 +79,7 @@ public class SiriEtGenerationService {
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(operatingDate);
 
             // Reuse the exact passenger + winning-schedule selection that produced the published timetable,
-            // so every SIRI FramedVehicleJourneyRef resolves against the static package (TICKET-04.1 Option A).
+            // so every SIRI FramedVehicleJourneyRef resolves against the static package.
             final Map<TrainId, Schedule> winningSchedules = neTExService.resolveWinningSchedules(
                     adhocSchedules, regularSchedules, operatingDate, operatingDate);
             final Map<Long, Schedule> scheduleMap = new HashMap<>();
