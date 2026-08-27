@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -30,7 +31,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.authorityId(code);
 
         // then
-        assertEquals("DT:Authority:FIN", result);
+        assertEquals("FTR:Authority:FIN", result);
     }
 
     @Test
@@ -42,7 +43,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.operatorId(shortCode);
 
         // then
-        assertEquals("DT:Operator:vr", result);
+        assertEquals("FTR:Operator:vr", result);
     }
 
     @Test
@@ -54,7 +55,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.lineId(lineIdentifier);
 
         // then
-        assertEquals("DT:Line:Z", result);
+        assertEquals("FTR:Line:Z", result);
     }
 
     @Test
@@ -66,7 +67,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.lineId(lineIdentifier);
 
         // then
-        assertEquals("DT:Line:IC", result);
+        assertEquals("FTR:Line:IC", result);
     }
 
     @Test
@@ -79,7 +80,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.routeId(lineId, hash);
 
         // then
-        assertEquals("DT:Route:Z-a3b2", result);
+        assertEquals("FTR:Route:Z_a3b2", result);
     }
 
     @Test
@@ -91,7 +92,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.routePointId(stationShortCode);
 
         // then
-        assertEquals("DT:RoutePoint:HKI", result);
+        assertEquals("FTR:RoutePoint:HKI", result);
     }
 
     @Test
@@ -103,7 +104,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.scheduledStopPointId(stationShortCode);
 
         // then
-        assertEquals("DT:ScheduledStopPoint:HKI", result);
+        assertEquals("FTR:ScheduledStopPoint:HKI", result);
     }
 
     @Test
@@ -116,7 +117,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.journeyPatternId(lineId, hash);
 
         // then
-        assertEquals("DT:JourneyPattern:Z-1234", result);
+        assertEquals("FTR:JourneyPattern:Z_1234", result);
     }
 
     @Test
@@ -129,7 +130,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.serviceJourneyId(trainNumber, scheduleId);
 
         // then
-        assertEquals("DT:ServiceJourney:59-12345", result);
+        assertEquals("FTR:ServiceJourney:59-12345", result);
     }
 
     @Test
@@ -142,7 +143,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.serviceJourneyIdAdhoc(trainNumber, date);
 
         // then
-        assertEquals("DT:ServiceJourney:59-2026-06-25", result);
+        assertEquals("FTR:ServiceJourney:59-2026-06-25", result);
     }
 
     @Test
@@ -154,7 +155,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.dayTypeId(hash);
 
         // then
-        assertEquals("DT:DayType:MoTuWeThFr-20260615-20261214", result);
+        assertEquals("FTR:DayType:MoTuWeThFr-20260615-20261214", result);
     }
 
     @Test
@@ -166,7 +167,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.destinationDisplayId(stationShortCode);
 
         // then
-        assertEquals("DT:DestinationDisplay:TPE", result);
+        assertEquals("FTR:DestinationDisplay:TPE", result);
     }
 
     @Test
@@ -178,7 +179,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.networkId(code);
 
         // then
-        assertEquals("DT:Network:FIN-RAIL", result);
+        assertEquals("FTR:Network:FIN-RAIL", result);
     }
 
     @Test
@@ -202,62 +203,9 @@ class NeTExIdGeneratorTest {
         final String lineId = idGenerator.lineId("Z");
 
         // then
-        assertTrue(authorityId.startsWith("DT:"));
-        assertTrue(operatorId.startsWith("DT:"));
-        assertTrue(lineId.startsWith("DT:"));
-    }
-
-    // --- Composition-related IDs ---
-
-    @Test
-    void givenTypeName_whenGeneratingVehicleTypeId_thenFollowsConvention() {
-        // given
-        final String typeName = "Sr2";
-
-        // when
-        final String result = idGenerator.vehicleTypeId(typeName);
-
-        // then
-        assertEquals("DT:VehicleType:Sr2", result);
-    }
-
-    @Test
-    void givenWagonTypeName_whenGeneratingVehicleTypeId_thenFollowsConvention() {
-        // given
-        final String typeName = "Ed";
-
-        // when
-        final String result = idGenerator.vehicleTypeId(typeName);
-
-        // then
-        assertEquals("DT:VehicleType:Ed", result);
-    }
-
-    @Test
-    void givenTrainWithBeginStation_whenGeneratingDatedVehicleJourneyId_thenIncludesStation() {
-        // given
-        final long trainNumber = 59;
-        final LocalDate date = LocalDate.of(2026, 7, 7);
-        final String beginStation = "HKI";
-
-        // when
-        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, beginStation);
-
-        // then
-        assertEquals("DT:DatedVehicleJourney:59-2026-07-07-HKI", result);
-    }
-
-    @Test
-    void givenTrainWithoutBeginStation_whenGeneratingDatedVehicleJourneyId_thenOmitsStation() {
-        // given
-        final long trainNumber = 59;
-        final LocalDate date = LocalDate.of(2026, 7, 7);
-
-        // when
-        final String result = idGenerator.datedVehicleJourneyId(trainNumber, date, null);
-
-        // then
-        assertEquals("DT:DatedVehicleJourney:59-2026-07-07", result);
+        assertTrue(authorityId.startsWith("FTR:"));
+        assertTrue(operatorId.startsWith("FTR:"));
+        assertTrue(lineId.startsWith("FTR:"));
     }
 
     // --- Pass 2: PassengerStopAssignment ID ---
@@ -271,7 +219,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.passengerStopAssignmentId(stationShortCode);
 
         // then
-        assertEquals("DT:PassengerStopAssignment:HKI", result);
+        assertEquals("FTR:PassengerStopAssignment:HKI", result);
     }
 
     // --- Pass 2b: Track-qualified IDs ---
@@ -286,7 +234,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.scheduledStopPointId(shortCode, track);
 
         // then
-        assertEquals("DT:ScheduledStopPoint:HKI-4", result);
+        assertEquals("FTR:ScheduledStopPoint:HKI-4", result);
     }
 
     @Test
@@ -298,7 +246,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.scheduledStopPointId(shortCode, null);
 
         // then
-        assertEquals("DT:ScheduledStopPoint:HKI", result);
+        assertEquals("FTR:ScheduledStopPoint:HKI", result);
     }
 
     @Test
@@ -310,7 +258,7 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.scheduledStopPointId(shortCode, "");
 
         // then
-        assertEquals("DT:ScheduledStopPoint:HKI", result);
+        assertEquals("FTR:ScheduledStopPoint:HKI", result);
     }
 
     @Test
@@ -323,6 +271,34 @@ class NeTExIdGeneratorTest {
         final String result = idGenerator.passengerStopAssignmentId(shortCode, track);
 
         // then
-        assertEquals("DT:PassengerStopAssignment:TPE-1", result);
+        assertEquals("FTR:PassengerStopAssignment:TPE-1", result);
+    }
+
+    @Test
+    void givenTrackQualifiedJourneyPattern_whenGeneratingStopPointId_thenKeepsWholeLocalId() {
+        // given: track-qualified patterns embed the whole stop sequence, so the
+        // local id itself contains separators
+        final String journeyPatternId = idGenerator.journeyPatternId("IC-56", "OL-1_PSL-5_HKI-8");
+
+        // when
+        final String result = idGenerator.stopPointInJourneyPatternId(journeyPatternId, 1);
+
+        // then
+        assertEquals("FTR:StopPointInJourneyPattern:IC-56_OL-1_PSL-5_HKI-8_1", result);
+    }
+
+    @Test
+    void givenPatternsDifferingOnlyBeforeLastTrack_whenGeneratingStopPointIds_thenIdsDiffer() {
+        // given: two patterns of the same Line ending at the same track — the case
+        // that collided in production
+        final String viaHameenlinna = idGenerator.journeyPatternId("IC-56", "OL-1_HM-1_HKI-8");
+        final String direct = idGenerator.journeyPatternId("IC-56", "OL-1_HKI-8");
+
+        // when
+        final String first = idGenerator.stopPointInJourneyPatternId(viaHameenlinna, 1);
+        final String second = idGenerator.stopPointInJourneyPatternId(direct, 1);
+
+        // then
+        assertNotEquals(first, second);
     }
 }

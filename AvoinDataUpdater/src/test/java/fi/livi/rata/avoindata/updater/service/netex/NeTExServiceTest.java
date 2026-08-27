@@ -1,5 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
@@ -11,17 +25,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for NeTExService — orchestration and filtering logic.
@@ -35,13 +38,14 @@ class NeTExServiceTest {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
-        final NeTExCalendarService calendarService = new NeTExCalendarService(idGenerator);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, new EmptyPetiStopSource());
-        final NeTExWritingService writingService = new NeTExWritingService();
+        final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
+        final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
-        netExService = new NeTExService(entityService, calendarService, routeService, stopsService, writingService,
-                null, todaysScheduleService, null, null);
+        netExService = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
+                routeService, stopsService, writingService,
+                petiStopSource, null, todaysScheduleService, null);
     }
 
     // --- Filtering tests ---

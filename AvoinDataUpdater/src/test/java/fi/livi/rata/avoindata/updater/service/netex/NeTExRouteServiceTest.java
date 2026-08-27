@@ -1,15 +1,10 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.common.Operator;
-import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
-import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
-import fi.livi.rata.avoindata.common.domain.localization.TrainType;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,10 +13,21 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.common.domain.common.Operator;
+import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
+import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
+import fi.livi.rata.avoindata.common.domain.localization.TrainType;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * Tests for NeTExRouteService — Route and JourneyPattern derivation from schedules.
+ * Tests for NeTExRouteService — Route and JourneyPattern derivation from
+ * schedules.
  */
 class NeTExRouteServiceTest {
 
@@ -31,6 +37,71 @@ class NeTExRouteServiceTest {
     void setUp() {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         routeService = new NeTExRouteService(idGenerator);
+    }
+
+    @Test
+    void givenStopsWithTracks_whenComputingHash_thenBindsTrackWithDashAndSeparatesStopsWithUnderscore() {
+        // given
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("HKI", "4"),
+                new NeTExRouteService.StopWithTrack("TPE", "1"),
+                new NeTExRouteService.StopWithTrack("OL", "2"));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertEquals("HKI-4_TPE-1_OL-2", hash);
+    }
+
+    @Test
+    void givenStopWithoutTrack_whenComputingHash_thenEmitsStationOnly() {
+        // given
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("HKI", "4"),
+                new NeTExRouteService.StopWithTrack("TPE", null),
+                new NeTExRouteService.StopWithTrack("OL", "  "));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertEquals("HKI-4_TPE_OL", hash);
+    }
+
+    @Test
+    void givenAnyStops_whenComputingHash_thenHashCarriesNoColon() {
+        // a colon here makes the local part indistinguishable from the codespace
+        // and element type, which previously caused ID collisions downstream
+        final List<NeTExRouteService.StopWithTrack> stops = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("KML", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+
+        // when
+        final String hash = routeService.computeTrackQualifiedHash(stops);
+
+        // then
+        assertFalse(hash.contains(":"), "hash must not contain a colon: " + hash);
+    }
+
+    @Test
+    void givenRoutesDifferingOnlyInInteriorStop_whenComputingHash_thenHashesDiffer() {
+        // given: two routes of one Line that start and end at the same track
+        final List<NeTExRouteService.StopWithTrack> viaHameenlinna = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("HM", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+        final List<NeTExRouteService.StopWithTrack> direct = List.of(
+                new NeTExRouteService.StopWithTrack("OL", "1"),
+                new NeTExRouteService.StopWithTrack("HKI", "8"));
+
+        // when
+        final String viaHash = routeService.computeTrackQualifiedHash(viaHameenlinna);
+        final String directHash = routeService.computeTrackQualifiedHash(direct);
+
+        // then
+        assertNotEquals(viaHash, directHash);
     }
 
     @Test
@@ -45,9 +116,9 @@ class NeTExRouteServiceTest {
         // then
         assertEquals(1, routeData.getRoutes().size());
         assertEquals(3, routeData.getRoutes().get(0).routePointRefs().size());
-        assertEquals("DT:RoutePoint:HKI", routeData.getRoutes().get(0).routePointRefs().get(0));
-        assertEquals("DT:RoutePoint:TPE", routeData.getRoutes().get(0).routePointRefs().get(1));
-        assertEquals("DT:RoutePoint:OL", routeData.getRoutes().get(0).routePointRefs().get(2));
+        assertEquals("FTR:RoutePoint:HKI", routeData.getRoutes().get(0).routePointRefs().get(0));
+        assertEquals("FTR:RoutePoint:TPE", routeData.getRoutes().get(0).routePointRefs().get(1));
+        assertEquals("FTR:RoutePoint:OL", routeData.getRoutes().get(0).routePointRefs().get(2));
     }
 
     @Test
@@ -75,7 +146,7 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertTrue(routeData.getRoutes().get(0).id().startsWith("DT:Route:"));
+        assertTrue(routeData.getRoutes().get(0).id().startsWith("FTR:Route:"));
     }
 
     @Test
@@ -88,12 +159,13 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertEquals("DT:Line:IC", routeData.getRoutes().get(0).lineRef());
+        assertEquals("FTR:Line:IC-59", routeData.getRoutes().get(0).lineRef());
     }
 
     @Test
     void givenScheduleWithCommercialStops_whenCreatingRouteData_thenJourneyPatternContainsOnlyCommercialStops() {
-        // given: HKI (commercial) → PSL (non-commercial, pass-through) → TPE (commercial) → OL (commercial)
+        // given: HKI (commercial) → PSL (non-commercial, pass-through) → TPE
+        // (commercial) → OL (commercial)
         final Schedule schedule = createScheduleWithMixedStops(1L, 59L, "IC", "Long-distance");
 
         // when
@@ -114,7 +186,7 @@ class NeTExRouteServiceTest {
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // then
-        assertTrue(routeData.getJourneyPatterns().get(0).id().startsWith("DT:JourneyPattern:"));
+        assertTrue(routeData.getJourneyPatterns().get(0).id().startsWith("FTR:JourneyPattern:"));
     }
 
     @Test
@@ -186,7 +258,7 @@ class NeTExRouteServiceTest {
 
         // then: first stop shows destination
         final var firstStop = routeData.getJourneyPatterns().get(0).stopPoints().get(0);
-        assertEquals("DT:DestinationDisplay:OL", firstStop.destinationDisplayRef());
+        assertEquals("FTR:DestinationDisplay:OL", firstStop.destinationDisplayRef());
     }
 
     @Test
@@ -216,17 +288,17 @@ class NeTExRouteServiceTest {
 
         // then
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
     void givenTwoTrainsWithSameStopSequence_whenCreatingRouteData_thenShareJourneyPattern() {
-        // given
+        // given — same line (train number) and stops
         final Schedule schedule1 = createScheduleWithStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"));
-        final Schedule schedule2 = createScheduleWithStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"));
 
         // when
@@ -266,9 +338,9 @@ class NeTExRouteServiceTest {
 
         // then — journey pattern stop refs are track-qualified
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE-1", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE-1", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
@@ -282,9 +354,9 @@ class NeTExRouteServiceTest {
 
         // then — TPE falls back to station-level SSP
         final var stops = routeData.getJourneyPatterns().get(0).stopPoints();
-        assertEquals("DT:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
-        assertEquals("DT:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:HKI-4", stops.get(0).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:TPE", stops.get(1).scheduledStopPointRef());
+        assertEquals("FTR:ScheduledStopPoint:OL-2", stops.get(2).scheduledStopPointRef());
     }
 
     @Test
@@ -292,7 +364,7 @@ class NeTExRouteServiceTest {
         // given — same stations, different tracks at HKI
         final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
-        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("6", "1", "2"));
 
         // when
@@ -308,7 +380,7 @@ class NeTExRouteServiceTest {
         // given — same stations AND same tracks
         final Schedule schedule1 = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
-        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 61L, "IC", "Long-distance",
+        final Schedule schedule2 = createScheduleWithTrackedStops(2L, 59L, "IC", "Long-distance",
                 List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
 
         // when
@@ -330,15 +402,15 @@ class NeTExRouteServiceTest {
 
         // then — route points are STILL station-level (not track-qualified)
         final var routePointRefs = routeData.getRoutes().get(0).routePointRefs();
-        assertEquals("DT:RoutePoint:HKI", routePointRefs.get(0));
-        assertEquals("DT:RoutePoint:TPE", routePointRefs.get(1));
-        assertEquals("DT:RoutePoint:OL", routePointRefs.get(2));
+        assertEquals("FTR:RoutePoint:HKI", routePointRefs.get(0));
+        assertEquals("FTR:RoutePoint:TPE", routePointRefs.get(1));
+        assertEquals("FTR:RoutePoint:OL", routePointRefs.get(2));
     }
 
     // --- Helpers ---
 
     private Schedule createScheduleWithStops(final long id, final long trainNumber, final String trainTypeName,
-                                              final String categoryName, final List<String> stationCodes) {
+            final String categoryName, final List<String> stationCodes) {
         final Schedule schedule = new Schedule();
         schedule.id = id;
         schedule.trainNumber = trainNumber;
@@ -398,7 +470,7 @@ class NeTExRouteServiceTest {
     }
 
     private Schedule createScheduleWithMixedStops(final long id, final long trainNumber,
-                                                   final String trainTypeName, final String categoryName) {
+            final String trainTypeName, final String categoryName) {
         final Schedule schedule = createScheduleWithStops(id, trainNumber, trainTypeName, categoryName,
                 List.of("HKI", "PSL", "TPE", "OL"));
 
@@ -415,8 +487,8 @@ class NeTExRouteServiceTest {
     }
 
     private Schedule createScheduleWithTrackedStops(final long id, final long trainNumber,
-                                                     final String trainTypeName, final String categoryName,
-                                                     final List<String> stationCodes, final List<String> tracks) {
+            final String trainTypeName, final String categoryName,
+            final List<String> stationCodes, final List<String> tracks) {
         final Schedule schedule = createScheduleWithStops(id, trainNumber, trainTypeName, categoryName, stationCodes);
         // Assign commercial tracks to each ScheduleRow
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {

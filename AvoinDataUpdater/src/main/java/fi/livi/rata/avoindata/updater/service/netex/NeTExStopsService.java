@@ -1,11 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.metadata.Station;
-import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
-import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
-import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
-import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,9 +11,16 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
+
 /**
  * Maps station metadata to NeTEx ScheduledStopPoints, RoutePoints, and
- * DestinationDisplays. Wires PETI stop data to produce PassengerStopAssignments.
+ * DestinationDisplays. Wires PETI stop data to produce
+ * PassengerStopAssignments.
  */
 @Service
 public class NeTExStopsService {
@@ -34,15 +35,19 @@ public class NeTExStopsService {
 
     /**
      * Track-aware overload: creates NeTEx stop data with track-qualified SSPs.
-     * Accepts (station, track) pairs derived from schedule data. Each unique pair produces
-     * a track-qualified ScheduledStopPoint (DT:ScheduledStopPoint:{shortCode}-{track})
-     * and, when PETI matches, a PassengerStopAssignment with StopPlaceRef and QuayRef.
+     * Accepts (station, track) pairs derived from schedule data. Each unique pair
+     * produces
+     * a track-qualified ScheduledStopPoint
+     * (DT:ScheduledStopPoint:{shortCode}-{track})
+     * and, when PETI matches, a PassengerStopAssignment with StopPlaceRef and
+     * QuayRef.
      *
-     * @param stations station metadata (for coordinates, names)
-     * @param stationTrackPairs list of (stationShortCode, commercialTrack) tuples from schedules
+     * @param stations          station metadata (for coordinates, names)
+     * @param stationTrackPairs list of (stationShortCode, commercialTrack) tuples
+     *                          from schedules
      */
     public NeTExStopsData createStopsData(final List<Station> stations,
-                                           final List<StationTrackPair> stationTrackPairs) {
+            final List<StationTrackPair> stationTrackPairs) {
         final Map<String, Station> stationByShortCode = stations.stream()
                 .filter(s -> s.passengerTraffic)
                 .collect(Collectors.toMap(s -> s.shortCode, Function.identity(), (a, b) -> a));
@@ -99,11 +104,20 @@ public class NeTExStopsService {
                 quayMatchedCount, quayUnmatchedCount, quayNoTrackCount);
     }
 
+    /**
+     * Station names in the rail metadata carry an " asema" ("station") suffix that
+     * passengers do not use. Anchored on whitespace so compounds such as
+     * "Lentoasema" and "Pasila autojuna-asema" are left alone.
+     */
+    public static String publicStationName(final String stationName) {
+        return stationName == null ? null : stationName.replaceAll("\\s+asema$", "");
+    }
+
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
             final Station station) {
         final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), pair.commercialTrack());
         return new NeTExStopsData.NeTExScheduledStopPoint(
-                sspId, station.name, station.shortCode, station.latitude, station.longitude);
+                sspId, publicStationName(station.name), station.shortCode, station.latitude, station.longitude);
     }
 
     private void addStationLevelArtifacts(final Station station, final Set<String> seenStations,
@@ -113,7 +127,7 @@ public class NeTExStopsService {
             routePoints.add(new NeTExStopsData.NeTExRoutePoint(
                     idGenerator.routePointId(station.shortCode), station.shortCode));
             destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
-                    idGenerator.destinationDisplayId(station.shortCode), station.name));
+                    idGenerator.destinationDisplayId(station.shortCode), publicStationName(station.name)));
         }
     }
 
@@ -150,7 +164,9 @@ public class NeTExStopsService {
                 MatchOutcome.MATCHED_NO_QUAY);
     }
 
-    private enum MatchOutcome { MATCHED_QUAY, MATCHED_NO_QUAY, MATCHED_NO_TRACK, UNMATCHED }
+    private enum MatchOutcome {
+        MATCHED_QUAY, MATCHED_NO_QUAY, MATCHED_NO_TRACK, UNMATCHED
+    }
 
     private record AssignmentResult(Optional<NeTExStopsData.NeTExStopAssignment> assignment, MatchOutcome outcome) {
     }

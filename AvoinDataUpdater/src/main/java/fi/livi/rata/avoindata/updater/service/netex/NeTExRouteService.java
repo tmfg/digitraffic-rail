@@ -1,8 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -11,6 +8,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
  * Derives Routes and JourneyPatterns from schedule data.
@@ -27,18 +27,19 @@ public class NeTExRouteService {
 
     /**
      * Computes a track-qualified hash from station+track tuples.
-     * Format: "HKI:4-TPE:1-OL:2" (station:track). When track is null, station only.
+     * Format: "HKI-4_TPE-1_OL-2" — '-' joins station to track, '_' separates
+     * stops. When track is null, station only.
      */
     public String computeTrackQualifiedHash(final List<StopWithTrack> stopsWithTrack) {
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < stopsWithTrack.size(); i++) {
             if (i > 0) {
-                sb.append("-");
+                sb.append("_");
             }
             final StopWithTrack s = stopsWithTrack.get(i);
             sb.append(s.stationShortCode());
             if (s.commercialTrack() != null && !s.commercialTrack().isBlank()) {
-                sb.append(":").append(s.commercialTrack());
+                sb.append("-").append(s.commercialTrack());
             }
         }
         return sb.toString();
@@ -98,8 +99,8 @@ public class NeTExRouteService {
     private NeTExRouteData.NeTExJourneyPattern buildJourneyPattern(final String patternId, final String routeId,
             final List<StopWithTrack> commercialStopsWithTrack) {
         final List<NeTExRouteData.NeTExStopPointInPattern> stopPoints = new ArrayList<>();
-        final String lastStopCode =
-                commercialStopsWithTrack.get(commercialStopsWithTrack.size() - 1).stationShortCode();
+        final String lastStopCode = commercialStopsWithTrack.get(commercialStopsWithTrack.size() - 1)
+                .stationShortCode();
         for (int i = 0; i < commercialStopsWithTrack.size(); i++) {
             final StopWithTrack swt = commercialStopsWithTrack.get(i);
             final boolean isFirst = (i == 0);
@@ -142,6 +143,6 @@ public class NeTExRouteService {
         if (schedule.commuterLineId != null && !schedule.commuterLineId.isEmpty()) {
             return schedule.commuterLineId;
         }
-        return schedule.trainType.name;
+        return schedule.trainType.name + "-" + schedule.trainNumber;
     }
 }

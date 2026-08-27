@@ -1,296 +1,177 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 /**
- * Tests for NeTExCalendarService — Schedule to DayType/OperatingPeriod conversion.
+ * Tests for NeTExCalendarService — turning resolved operating dates into
+ * DayTypes.
  */
 class NeTExCalendarServiceTest {
 
+    private static final LocalDate MONDAY = LocalDate.of(2026, 8, 3).with(DayOfWeek.MONDAY);
+
     private NeTExCalendarService calendarService;
-    private NeTExIdGenerator idGenerator;
 
     @BeforeEach
     void setUp() {
-        idGenerator = new NeTExIdGenerator();
-        calendarService = new NeTExCalendarService(idGenerator);
+        calendarService = new NeTExCalendarService(new NeTExIdGenerator());
     }
 
-    // --- DaysOfWeek string generation ---
-
     @Test
-    void givenWeekdaySchedule_whenCreatingDaysOfWeek_thenContainsMondayToFriday() {
+    void givenTwoJourneysOnTheSameDates_whenBuildingCalendar_thenTheyShareOneDayType() {
         // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
+        final Map<TrainId, String> refs = new LinkedHashMap<>();
+        refs.put(new TrainId(1L, MONDAY), "FTR:ServiceJourney:1");
+        refs.put(new TrainId(2L, MONDAY), "FTR:ServiceJourney:2");
 
         // when
-        final String daysOfWeek = calendarService.createDaysOfWeekString(schedule);
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals("Monday Tuesday Wednesday Thursday Friday", daysOfWeek);
+        assertEquals(1, calendar.dayTypes().size());
+        assertEquals(calendar.dayTypeRefByServiceJourney().get("FTR:ServiceJourney:1"),
+                calendar.dayTypeRefByServiceJourney().get("FTR:ServiceJourney:2"));
     }
 
     @Test
-    void givenWeekendSchedule_whenCreatingDaysOfWeek_thenContainsSaturdaySunday() {
+    void givenJourneysOnDifferentDates_whenBuildingCalendar_thenDayTypesDiffer() {
         // given
-        final Schedule schedule = createSchedule(false, false, false, false, false, true, true,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
+        final Map<TrainId, String> refs = new LinkedHashMap<>();
+        refs.put(new TrainId(1L, MONDAY), "FTR:ServiceJourney:1");
+        refs.put(new TrainId(2L, MONDAY.plusDays(1)), "FTR:ServiceJourney:2");
 
         // when
-        final String daysOfWeek = calendarService.createDaysOfWeekString(schedule);
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals("Saturday Sunday", daysOfWeek);
+        assertEquals(2, calendar.dayTypes().size());
     }
 
     @Test
-    void givenSingleDaySchedule_whenCreatingDaysOfWeek_thenContainsOnlyThatDay() {
-        // given: runs only on Wednesdays
-        final Schedule schedule = createSchedule(false, false, true, false, false, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
+    void givenWeeklyPattern_whenBuildingCalendar_thenOnePeriodInsteadOfOneAssignmentPerDate() {
+        // given: every Monday for six weeks
+        final var refs = journeyOn(MONDAY, MONDAY.plusWeeks(1), MONDAY.plusWeeks(2),
+                MONDAY.plusWeeks(3), MONDAY.plusWeeks(4), MONDAY.plusWeeks(5));
 
         // when
-        final String daysOfWeek = calendarService.createDaysOfWeekString(schedule);
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals("Wednesday", daysOfWeek);
+        assertEquals(Set.of(DayOfWeek.MONDAY), calendar.dayTypes().get(0).daysOfWeek());
+        assertEquals(1, calendar.operatingPeriods().size());
+        assertEquals(MONDAY, calendar.operatingPeriods().get(0).from());
+        assertEquals(MONDAY.plusWeeks(5), calendar.operatingPeriods().get(0).to());
+        assertEquals(1, calendar.assignments().size());
+        assertEquals(calendar.operatingPeriods().get(0).id(),
+                calendar.assignments().get(0).operatingPeriodRef());
     }
 
     @Test
-    void givenEverydaySchedule_whenCreatingDaysOfWeek_thenContainsAllDays() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, true, true,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
+    void givenWeeklyPatternWithACancellation_whenBuildingCalendar_thenTheGapIsMarkedUnavailable() {
+        // given: every Monday for six weeks, except the third
+        final var refs = journeyOn(MONDAY, MONDAY.plusWeeks(1), MONDAY.plusWeeks(3),
+                MONDAY.plusWeeks(4), MONDAY.plusWeeks(5));
 
         // when
-        final String daysOfWeek = calendarService.createDaysOfWeekString(schedule);
+        final var calendar = calendarService.createCalendarData(refs);
+
+        // then: the pattern still collapses, with the missing day subtracted
+        assertEquals(1, calendar.operatingPeriods().size());
+        final var unavailable = calendar.assignments().stream().filter(a -> !a.available()).toList();
+        assertEquals(1, unavailable.size());
+        assertEquals(MONDAY.plusWeeks(2), unavailable.get(0).date());
+    }
+
+    @Test
+    void givenScatteredDates_whenBuildingCalendar_thenDatesAreEnumeratedWithoutAPeriod() {
+        // given: one Monday and one Wednesday a fortnight later, so a Monday+Wednesday
+        // mask over the span would pull in four days the journey does not run
+        final var refs = journeyOn(MONDAY, MONDAY.plusWeeks(2).plusDays(2));
+
+        // when
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals("Monday Tuesday Wednesday Thursday Friday Saturday Sunday", daysOfWeek);
+        assertTrue(calendar.operatingPeriods().isEmpty());
+        assertTrue(calendar.dayTypes().get(0).daysOfWeek().isEmpty());
+        assertEquals(2, calendar.assignments().size());
+        assertTrue(calendar.assignments().stream().allMatch(a -> a.date() != null));
     }
 
-    // --- Calendar data creation for REGULAR schedules ---
-
     @Test
-    void givenRegularSchedule_whenCreatingCalendarData_thenProducesDayTypeWithCorrectWeekdays() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule.id = 100L;
+    void givenAnyCalendar_whenBuildingAssignments_thenEachDayTypeHasDistinctOrders() {
+        // given: order is part of the DayTypeAssignment schema key, and a collapsed
+        // pattern mixes a period assignment with per-date exceptions
+        final var refs = journeyOn(MONDAY, MONDAY.plusWeeks(1), MONDAY.plusWeeks(3),
+                MONDAY.plusWeeks(4), MONDAY.plusWeeks(5));
 
         // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals(1, calendarData.getDayTypes().size());
-        assertEquals("Monday Tuesday Wednesday Thursday Friday", calendarData.getDayTypes().get(0).getDaysOfWeek());
+        final List<Integer> orders = calendar.assignments().stream()
+                .map(NeTExCalendarService.NeTExDayTypeAssignment::order).toList();
+        assertEquals(orders.size(), Set.copyOf(orders).size());
+        assertFalse(orders.contains(0), "order is 1-based");
     }
 
     @Test
-    void givenRegularSchedule_whenCreatingCalendarData_thenProducesOperatingPeriodWithCorrectDates() {
+    void givenTheSameDates_whenBuildingCalendarTwice_thenDayTypeIdsAreStable() {
         // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule.id = 100L;
+        final var refs = journeyOn(MONDAY, MONDAY.plusWeeks(1));
 
         // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final var first = calendarService.createCalendarData(refs);
+        final var second = new NeTExCalendarService(new NeTExIdGenerator()).createCalendarData(refs);
 
         // then
-        assertEquals(1, calendarData.getOperatingPeriods().size());
-        assertEquals(LocalDate.of(2026, 6, 15), calendarData.getOperatingPeriods().get(0).getFromDate());
-        assertEquals(LocalDate.of(2026, 12, 14), calendarData.getOperatingPeriods().get(0).getToDate());
+        assertEquals(first.dayTypes().get(0).id(), second.dayTypes().get(0).id());
     }
 
     @Test
-    void givenRegularSchedule_whenCreatingCalendarData_thenProducesDayTypeAssignmentLinkingBoth() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule.id = 100L;
+    void givenNoJourneys_whenBuildingCalendar_thenCalendarIsEmpty() {
+        final var calendar = calendarService.createCalendarData(Map.of());
+
+        assertTrue(calendar.dayTypes().isEmpty());
+        assertTrue(calendar.assignments().isEmpty());
+        assertTrue(calendar.operatingPeriods().isEmpty());
+    }
+
+    @Test
+    void givenJourneyDates_whenAskingForDates_thenTheyComeBackSortedAndDeduplicated() {
+        // given: two journeys sharing a date
+        final Map<TrainId, String> refs = new LinkedHashMap<>();
+        refs.put(new TrainId(1L, MONDAY.plusDays(1)), "FTR:ServiceJourney:1");
+        refs.put(new TrainId(1L, MONDAY), "FTR:ServiceJourney:1");
+        refs.put(new TrainId(2L, MONDAY), "FTR:ServiceJourney:2");
 
         // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
+        final var calendar = calendarService.createCalendarData(refs);
 
         // then
-        assertEquals(1, calendarData.getDayTypeAssignments().size());
-        final NeTExDayTypeAssignment assignment = calendarData.getDayTypeAssignments().get(0);
-        assertFalse(assignment.isDateBased());
-        assertNotNull(assignment.getOperatingPeriodId());
-        assertNotNull(assignment.getDayTypeId());
+        assertEquals(List.of(MONDAY, MONDAY.plusDays(1)),
+                calendar.datesOf(List.of("FTR:ServiceJourney:1", "FTR:ServiceJourney:2")));
     }
 
-    // --- Calendar data creation for ADHOC schedules ---
-
-    @Test
-    void givenAdhocSchedule_whenCreatingCalendarData_thenProducesDayTypeAssignmentWithDate() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, true, true,
-                LocalDate.of(2026, 7, 15), LocalDate.of(2026, 7, 15), Train.TimetableType.ADHOC);
-        schedule.id = 200L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-
-        // then
-        assertEquals(1, calendarData.getDayTypeAssignments().size());
-        final NeTExDayTypeAssignment assignment = calendarData.getDayTypeAssignments().get(0);
-        assertTrue(assignment.isDateBased());
-        assertEquals(LocalDate.of(2026, 7, 15), assignment.getDate());
-        assertNull(assignment.getOperatingPeriodId());
-    }
-
-    // --- Deduplication ---
-
-    @Test
-    void givenTwoSchedulesWithSameWeekdayPatternAndDateRange_whenCreatingCalendarData_thenShareDayType() {
-        // given: two different trains with identical calendar patterns
-        final Schedule schedule1 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule1.id = 100L;
-
-        final Schedule schedule2 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule2.id = 200L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule1, schedule2));
-
-        // then: only one DayType created
-        assertEquals(1, calendarData.getDayTypes().size());
-        // both schedules map to the same DayType
-        assertEquals(calendarData.getDayTypeIdForSchedule(100L), calendarData.getDayTypeIdForSchedule(200L));
-    }
-
-    @Test
-    void givenTwoSchedulesWithDifferentWeekdayPatterns_whenCreatingCalendarData_thenSeparateDayTypes() {
-        // given
-        final Schedule weekdaySchedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        weekdaySchedule.id = 100L;
-
-        final Schedule weekendSchedule = createSchedule(false, false, false, false, false, true, true,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        weekendSchedule.id = 200L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(weekdaySchedule, weekendSchedule));
-
-        // then
-        assertEquals(2, calendarData.getDayTypes().size());
-        assertNotEquals(calendarData.getDayTypeIdForSchedule(100L), calendarData.getDayTypeIdForSchedule(200L));
-    }
-
-    @Test
-    void givenSameWeekdaysButDifferentDateRanges_whenCreatingCalendarData_thenSeparateOperatingPeriods() {
-        // given
-        final Schedule schedule1 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 9, 14), Train.TimetableType.REGULAR);
-        schedule1.id = 100L;
-
-        final Schedule schedule2 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 9, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule2.id = 200L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule1, schedule2));
-
-        // then: separate operating periods (may share DayType if only weekday pattern is keyed)
-        assertEquals(2, calendarData.getOperatingPeriods().size());
-    }
-
-    // --- DayType ID convention ---
-
-    @Test
-    void givenSchedule_whenCreatingCalendarData_thenDayTypeIdStartsWithFSR() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule.id = 100L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-
-        // then
-        assertTrue(calendarData.getDayTypes().get(0).getId().startsWith("DT:DayType:"));
-    }
-
-    @Test
-    void givenSchedule_whenCreatingCalendarData_thenOperatingPeriodIdStartsWithFSR() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        schedule.id = 100L;
-
-        // when
-        final NeTExCalendarData calendarData = calendarService.createCalendarData(List.of(schedule));
-
-        // then
-        assertTrue(calendarData.getOperatingPeriods().get(0).getId().startsWith("DT:OperatingPeriod:"));
-    }
-
-    // --- Hash generation ---
-
-    @Test
-    void givenSchedule_whenGeneratingDayTypeHash_thenIncludesWeekdaysAndDates() {
-        // given
-        final Schedule schedule = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-
-        // when
-        final String hash = calendarService.generateDayTypeHash(schedule);
-
-        // then: hash should be deterministic and include relevant info
-        assertNotNull(hash);
-        assertFalse(hash.isEmpty());
-    }
-
-    @Test
-    void givenTwoIdenticalSchedules_whenGeneratingDayTypeHash_thenProducesSameHash() {
-        // given
-        final Schedule schedule1 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-        final Schedule schedule2 = createSchedule(true, true, true, true, true, false, false,
-                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 12, 14), Train.TimetableType.REGULAR);
-
-        // when
-        final String hash1 = calendarService.generateDayTypeHash(schedule1);
-        final String hash2 = calendarService.generateDayTypeHash(schedule2);
-
-        // then
-        assertEquals(hash1, hash2);
-    }
-
-    // --- Helper ---
-
-    private Schedule createSchedule(final boolean mo, final boolean tu, final boolean we,
-                                     final boolean th, final boolean fr, final boolean sa, final boolean su,
-                                     final LocalDate startDate, final LocalDate endDate,
-                                     final Train.TimetableType timetableType) {
-        final Schedule schedule = new Schedule();
-        schedule.runOnMonday = mo;
-        schedule.runOnTuesday = tu;
-        schedule.runOnWednesday = we;
-        schedule.runOnThursday = th;
-        schedule.runOnFriday = fr;
-        schedule.runOnSaturday = sa;
-        schedule.runOnSunday = su;
-        schedule.startDate = startDate;
-        schedule.endDate = endDate;
-        schedule.timetableType = timetableType;
-        schedule.scheduleCancellations = new HashSet<>();
-        schedule.scheduleExceptions = new HashSet<>();
-        return schedule;
+    private static Map<TrainId, String> journeyOn(final LocalDate... dates) {
+        final Map<TrainId, String> refs = new LinkedHashMap<>();
+        for (final LocalDate date : dates) {
+            refs.put(new TrainId(1L, date), "FTR:ServiceJourney:1");
+        }
+        return refs;
     }
 }

@@ -15,19 +15,28 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 
 /**
- * Pins the exception contract that {@code TrainLocationUpdater.fetchFromPala} depends on:
+ * Pins the exception contract that {@code TrainLocationUpdater.fetchFromPala}
+ * depends on:
  *
  * <ul>
- *   <li>{@code WebClient.retrieve()} must turn a 4xx/5xx PALA response into a {@link WebClientResponseException} that
- *       carries the real HTTP status, and</li>
- *   <li>{@code Mono.block()} must propagate that exception <b>unwrapped</b> (it is an unchecked {@link RuntimeException},
- *       so {@code block()} does not wrap it), through {@link RipaService#getFromPalaAsString} which rethrows it as-is.</li>
+ * <li>{@code WebClient.retrieve()} must turn a 4xx/5xx PALA response into a
+ * {@link WebClientResponseException} that
+ * carries the real HTTP status, and</li>
+ * <li>{@code Mono.block()} must propagate that exception <b>unwrapped</b> (it
+ * is an unchecked {@link RuntimeException},
+ * so {@code block()} does not wrap it), through
+ * {@link RipaService#getFromPalaAsString} which rethrows it as-is.</li>
  * </ul>
  *
- * <p>If a Spring/Reactor upgrade or a refactor away from {@code retrieve()} (e.g. to {@code exchangeToMono}) changes this
- * behavior, these tests fail so we know to revisit the {@code fetchFromPala} status-code handling.
+ * <p>
+ * If a Spring/Reactor upgrade or a refactor away from {@code retrieve()} (e.g.
+ * to {@code exchangeToMono}) changes this
+ * behavior, these tests fail so we know to revisit the {@code fetchFromPala}
+ * status-code handling.
  *
- * <p>Uses a stubbed {@link ExchangeFunction} instead of a network mock so the test exercises the real {@code retrieve()}
+ * <p>
+ * Uses a stubbed {@link ExchangeFunction} instead of a network mock so the test
+ * exercises the real {@code retrieve()}
  * + {@code block()} code paths without an HTTP server.
  */
 public class RipaServiceTest {
@@ -39,8 +48,9 @@ public class RipaServiceTest {
                         .body(body)
                         .build());
         final WebClient webClient = WebClient.builder().exchangeFunction(exchange).build();
-        // Only palaWebClient (2nd arg) is exercised by getFromPalaAsString; RestTemplate is unused here.
-        return new RipaService(webClient, webClient, null, "http://liike", "http://koju", "http://pala");
+        // Only palaWebClient (2nd arg) is exercised by getFromPalaAsString;
+        // RestTemplate is unused here.
+        return new RipaService(webClient, webClient, null, "http://liike", "http://koju", "http://pala", 30_000L);
     }
 
     @Test
