@@ -17,8 +17,8 @@ class PetiStopTest {
     @Test
     void givenStopWithTwoQuays_whenResolveQuayByTrack1_thenReturnsQuay7() {
         // given
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
-        final PetiQuay quay10 = new PetiQuay("FSR:Quay:10", "2", null);
+        final PetiQuay quay7 = quay("FSR:Quay:7", "1");
+        final PetiQuay quay10 = quay("FSR:Quay:10", "2");
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay10));
 
@@ -35,8 +35,8 @@ class PetiStopTest {
     @Test
     void givenStopWithQuays1And2_whenResolveQuayByTrack3_thenReturnsEmpty() {
         // given
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
-        final PetiQuay quay10 = new PetiQuay("FSR:Quay:10", "2", null);
+        final PetiQuay quay7 = quay("FSR:Quay:7", "1");
+        final PetiQuay quay10 = quay("FSR:Quay:10", "2");
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay10));
 
@@ -52,7 +52,7 @@ class PetiStopTest {
     @Test
     void givenStopWithQuays_whenResolveQuayWithNull_thenReturnsEmpty() {
         // given
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
+        final PetiQuay quay7 = quay("FSR:Quay:7", "1");
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7));
 
@@ -83,8 +83,8 @@ class PetiStopTest {
     @Test
     void givenTervolaStop_whenResolveQuayByTrack2_thenReturnsQuay10() {
         // given
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
-        final PetiQuay quay10 = new PetiQuay("FSR:Quay:10", "2", null);
+        final PetiQuay quay7 = quay("FSR:Quay:7", "1");
+        final PetiQuay quay10 = quay("FSR:Quay:10", "2");
         final PetiStop tervola = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay10));
 
@@ -95,5 +95,10 @@ class PetiStopTest {
         assertTrue(result.isPresent());
         assertEquals("FSR:Quay:10", result.get().quayId());
         assertEquals("2", result.get().publicCode());
+    }
+
+    /** Quay resolution is by publicCode alone, so these cases need no geography. */
+    private static PetiQuay quay(final String quayId, final String publicCode) {
+        return new PetiQuay(quayId, publicCode, null, null, null);
     }
 }

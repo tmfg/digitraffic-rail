@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,9 +126,33 @@ public class PetiNeTExParser {
             final String quayId = quayEl.getAttribute("id");
             final String publicCode = getDirectChildText(quayEl, "PublicCode");
             final PetiAccessibility quayAccessibility = parseAccessibility(quayEl);
-            quays.add(new PetiQuay(quayId, publicCode, quayAccessibility));
+            final Element location = centroidLocation(quayEl);
+            quays.add(new PetiQuay(quayId, publicCode,
+                    coordinate(location, "Latitude"), coordinate(location, "Longitude"),
+                    quayAccessibility));
         }
         return quays;
+    }
+
+    private Element centroidLocation(final Element quayEl) {
+        final Element centroid = getDirectChildElement(quayEl, "Centroid");
+        return centroid == null ? null : getDirectChildElement(centroid, "Location");
+    }
+
+    private BigDecimal coordinate(final Element location, final String localName) {
+        if (location == null) {
+            return null;
+        }
+        final String text = getDirectChildText(location, localName);
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(text.trim());
+        } catch (final NumberFormatException e) {
+            log.warn("method=parseQuays unparseableCoordinate element={} value={}", localName, text);
+            return null;
+        }
     }
 
     private PetiAccessibility parseAccessibility(final Element parent) {

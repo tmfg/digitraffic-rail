@@ -238,7 +238,9 @@ class NeTExDatasetLayoutTest {
                 assertTrue(shared.contains("<DaysOfWeek>Thursday</DaysOfWeek>"));
         }
 
-        /** Mirrors generation: the calendar is built from resolved (train, day) pairs. */
+        /**
+         * Mirrors generation: the calendar is built from resolved (train, day) pairs.
+         */
         private static NeTExCalendarService.NeTExCalendarData calendar() {
                 return new NeTExCalendarService(new NeTExIdGenerator()).createCalendarData(Map.of(
                                 new TrainId(1L, LocalDate.of(2026, 8, 20)), "FTR:ServiceJourney:1",
@@ -376,7 +378,7 @@ class NeTExDatasetLayoutTest {
                                                 "FTR:JourneyPattern:IC-1-a", "FTR:Operator:vr", "FTR:Line:IC-1",
                                                 List.of(new NeTExEntityService.NeTExPassingTime(1, null, "05:30:00",
                                                                 "HKI", null,
-                                                                                "FTR:StopPointInJourneyPattern:IC-1-a_1"),
+                                                                "FTR:StopPointInJourneyPattern:IC-1-a_1"),
                                                                 new NeTExEntityService.NeTExPassingTime(2, "11:30:00",
                                                                                 null, "OL", null,
                                                                                 "FTR:StopPointInJourneyPattern:IC-1-a_2"))),

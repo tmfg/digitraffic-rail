@@ -10,7 +10,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
@@ -283,7 +288,7 @@ class NeTExStopsServiceTest {
         void givenStationAndTrack_whenCreatingStopsWithTrackContext_thenProducesTrackQualifiedSsp() {
                 // given — station HKI with commercialTrack "4", PETI stop with quay PublicCode
                 // "4"
-                final PetiQuay quay4 = new PetiQuay("FSR:Quay:7", "4", null);
+                final PetiQuay quay4 = quayAt("FSR:Quay:7", "4", "60.172500", "24.942000");
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
                                 List.of(quay4));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -302,10 +307,55 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenQuayWithLocation_whenCreatingStops_thenSspUsesQuayCoordinatesNotStationCentroid() {
+                // given — the quay sits on the platform, away from the station centroid
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
+                                List.of(quayAt("FSR:Quay:7", "4", "60.172500", "24.942000")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(petiStop)));
+                final Station station = createStation("HKI", "Helsinki asema", 1, true,
+                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
+
+                // when
+                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "4")));
+
+                // then
+                final var ssp = stopsData.getScheduledStopPoints().stream()
+                                .filter(s -> "FTR:ScheduledStopPoint:HKI-4".equals(s.id()))
+                                .findFirst()
+                                .orElseThrow();
+                assertEquals(new BigDecimal("60.172500"), ssp.latitude());
+                assertEquals(new BigDecimal("24.942000"), ssp.longitude());
+        }
+
+        @Test
+        void givenQuayWithoutLocation_whenCreatingStops_thenSspFallsBackToStationCentroid() {
+                // given — PETI knows the quay but not where it is
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:7", "4")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(petiStop)));
+                final Station station = createStation("HKI", "Helsinki asema", 1, true,
+                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
+
+                // when
+                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "4")));
+
+                // then
+                final var ssp = stopsData.getScheduledStopPoints().stream()
+                                .filter(s -> "FTR:ScheduledStopPoint:HKI-4".equals(s.id()))
+                                .findFirst()
+                                .orElseThrow();
+                assertEquals(new BigDecimal("60.172133"), ssp.latitude());
+        }
+
+        @Test
         void givenStationAndTrackWithMatchingQuay_whenCreatingStops_thenAssignmentHasStopPlaceRefAndQuayRef() {
                 // given — station HKI / track "4", PetiStop with quay PublicCode "4" →
                 // FSR:Quay:7
-                final PetiQuay quay4 = new PetiQuay("FSR:Quay:7", "4", null);
+                final PetiQuay quay4 = quayAt("FSR:Quay:7", "4", "60.172500", "24.942000");
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
                                 List.of(quay4));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -330,8 +380,8 @@ class NeTExStopsServiceTest {
         void givenStationAndTrackWithNoMatchingQuay_whenCreatingStops_thenAssignmentHasNoQuayRef() {
                 // given — station TPE / track "3", PetiStop has quays but none with PublicCode
                 // "3"
-                final PetiQuay quay1 = new PetiQuay("FSR:Quay:20", "1", null);
-                final PetiQuay quay2 = new PetiQuay("FSR:Quay:21", "2", null);
+                final PetiQuay quay1 = quay("FSR:Quay:20", "1");
+                final PetiQuay quay2 = quay("FSR:Quay:21", "2");
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
                                 List.of(quay1, quay2));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -354,6 +404,46 @@ class NeTExStopsServiceTest {
                 final boolean hasTrackSsp = stopsData.getScheduledStopPoints().stream()
                                 .anyMatch(ssp -> "FTR:ScheduledStopPoint:TPE-3".equals(ssp.id()));
                 assertTrue(hasTrackSsp, "Expected track-qualified SSP even without quay match");
+        }
+
+        @Test
+        void givenStationAndTrackWithNoMatchingQuay_whenCreatingStops_thenErrorIsLoggedWithPetiTracks() {
+                // given — station TPE / track "3", PETI knows only tracks "1" and "2"
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1"),
+                                                quay("FSR:Quay:21", "2")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(petiStop)));
+                final Station station = createStation("TPE", "Tampere", 160, true,
+                                new BigDecimal("61.498500"), new BigDecimal("23.773000"));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        // when
+                        serviceWithPeti.createStopsData(List.of(station),
+                                        List.of(new NeTExStopsService.StationTrackPair("TPE", "3")));
+
+                        // then — the log must carry enough to chase the gap in PETI
+                        final String message = appender.list.stream()
+                                        .filter(e -> e.getLevel() == Level.ERROR)
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .filter(m -> m.contains("PETI quay not found"))
+                                        .findFirst()
+                                        .orElseThrow(() -> new AssertionError(
+                                                        "Expected PETI quay not found error, got: " + appender.list));
+
+                        assertTrue(message.contains("station=TPE"), message);
+                        assertTrue(message.contains("uic=160"), message);
+                        assertTrue(message.contains("track=3"), message);
+                        assertTrue(message.contains("stopPlace=FSR:StopPlace:2"), message);
+                        assertTrue(message.contains("petiTracks=[1, 2]"), message);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
         }
 
         @Test
@@ -428,8 +518,8 @@ class NeTExStopsServiceTest {
         @Test
         void givenMultipleTracksAtSameStation_whenCreatingStops_thenMultipleSspsProduced() {
                 // given — station HKI appearing with tracks "4" and "6" in schedule data
-                final PetiQuay quay4 = new PetiQuay("FSR:Quay:7", "4", null);
-                final PetiQuay quay6 = new PetiQuay("FSR:Quay:9", "6", null);
+                final PetiQuay quay4 = quay("FSR:Quay:7", "4");
+                final PetiQuay quay6 = quay("FSR:Quay:9", "6");
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
                                 List.of(quay4, quay6));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -456,10 +546,10 @@ class NeTExStopsServiceTest {
                 // given — three (station, track) tuples:
                 // HKI/4 → quay resolves (matched), TPE/3 → no matching quay (unmatched),
                 // OL/null → no track
-                final PetiQuay quay4 = new PetiQuay("FSR:Quay:7", "4", null);
+                final PetiQuay quay4 = quay("FSR:Quay:7", "4");
                 final PetiStop hkiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
                                 List.of(quay4));
-                final PetiQuay quay1 = new PetiQuay("FSR:Quay:20", "1", null);
+                final PetiQuay quay1 = quay("FSR:Quay:20", "1");
                 final PetiStop tpeStop = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
                                 List.of(quay1));
                 final PetiStop olStop = new PetiStop("FSR:StopPlace:3", 1_000_200, "Oulu", true, null, List.of());
@@ -490,7 +580,7 @@ class NeTExStopsServiceTest {
         void givenTervolaWorkedExample_whenCreatingStops_thenAssignmentHasCorrectQuayRef() {
                 // given — Tervola: UIC 361, PetiStop "FSR:StopPlace:1" with quay PublicCode "2"
                 // → "FSR:Quay:10"
-                final PetiQuay quay2 = new PetiQuay("FSR:Quay:10", "2", null);
+                final PetiQuay quay2 = quay("FSR:Quay:10", "2");
                 final PetiStop tervolaStop = new PetiStop("FSR:StopPlace:1", 1_000_361, "Tervola", true, null,
                                 List.of(quay2));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -535,6 +625,16 @@ class NeTExStopsServiceTest {
 
         private PetiStopSource fixturePetiSource(final List<PetiStop> stops) {
                 return () -> stops;
+        }
+
+        /** For cases that only exercise quay resolution, where geography is irrelevant. */
+        private static PetiQuay quay(final String quayId, final String publicCode) {
+                return new PetiQuay(quayId, publicCode, null, null, null);
+        }
+
+        private static PetiQuay quayAt(final String quayId, final String publicCode,
+                        final String latitude, final String longitude) {
+                return new PetiQuay(quayId, publicCode, new BigDecimal(latitude), new BigDecimal(longitude), null);
         }
 
         private Station createStation(final String shortCode, final String name, final int uicCode,

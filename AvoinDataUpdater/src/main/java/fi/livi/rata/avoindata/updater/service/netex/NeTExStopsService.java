@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
@@ -24,6 +26,8 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
  */
 @Service
 public class NeTExStopsService {
+
+    private static final Logger log = LoggerFactory.getLogger(NeTExStopsService.class);
 
     private final NeTExIdGenerator idGenerator;
     private final PetiStopSource petiStopSource;
@@ -75,11 +79,16 @@ public class NeTExStopsService {
                 continue;
             }
 
-            stopPoints.add(buildScheduledStopPoint(pair, station));
+            // the assignment resolves the quay, whose centroid is the only real geography
+            // we have for a platform
+            final AssignmentResult result = petiSourceEmpty
+                    ? AssignmentResult.none()
+                    : buildAssignment(pair, station, matcher);
+
+            stopPoints.add(buildScheduledStopPoint(pair, station, result.quay()));
             addStationLevelArtifacts(station, seenStations, routePoints, destinationDisplays);
 
             if (!petiSourceEmpty) {
-                final AssignmentResult result = buildAssignment(pair, station, matcher);
                 result.assignment().ifPresent(stopAssignments::add);
                 switch (result.outcome()) {
                     case MATCHED_QUAY -> {
@@ -114,10 +123,15 @@ public class NeTExStopsService {
     }
 
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
-            final Station station) {
+            final Station station, final Optional<PetiQuay> quay) {
         final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), pair.commercialTrack());
-        return new NeTExStopsData.NeTExScheduledStopPoint(
-                sspId, publicStationName(station.name), station.shortCode, station.latitude, station.longitude);
+        // a station-level point is the station, so it keeps the station centroid
+        return quay.filter(PetiQuay::hasLocation)
+                .map(q -> new NeTExStopsData.NeTExScheduledStopPoint(
+                        sspId, publicStationName(station.name), station.shortCode, q.latitude(), q.longitude()))
+                .orElseGet(() -> new NeTExStopsData.NeTExScheduledStopPoint(
+                        sspId, publicStationName(station.name), station.shortCode,
+                        station.latitude, station.longitude));
     }
 
     private void addStationLevelArtifacts(final Station station, final Set<String> seenStations,
@@ -135,7 +149,7 @@ public class NeTExStopsService {
             final PetiUicMatcher matcher) {
         final Optional<PetiStop> petiMatch = matcher.match(station.uicCode);
         if (petiMatch.isEmpty()) {
-            return new AssignmentResult(Optional.empty(), MatchOutcome.UNMATCHED);
+            return new AssignmentResult(Optional.empty(), Optional.empty(), MatchOutcome.UNMATCHED);
         }
 
         final PetiStop matched = petiMatch.get();
@@ -147,6 +161,7 @@ public class NeTExStopsService {
             return new AssignmentResult(
                     Optional.of(new NeTExStopsData.NeTExStopAssignment(
                             assignmentId, sspId, matched.stopPlaceId(), null)),
+                    Optional.empty(),
                     MatchOutcome.MATCHED_NO_TRACK);
         }
 
@@ -155,12 +170,23 @@ public class NeTExStopsService {
             return new AssignmentResult(
                     Optional.of(new NeTExStopsData.NeTExStopAssignment(
                             assignmentId, sspId, matched.stopPlaceId(), quay.get().quayId())),
+                    quay,
                     MatchOutcome.MATCHED_QUAY);
         }
+
+        // the schedule names a track PETI does not know, so the assignment loses its
+        // quay and the stop is only locatable to the station
+        log.error("method=buildAssignment PETI quay not found for track station={} uic={} track={} "
+                + "stopPlace={} stopPlaceName={} petiTracks={} assignment={}",
+                pair.stationShortCode(), station.uicCode, track,
+                matched.stopPlaceId(), matched.name(),
+                matched.quays().stream().map(PetiQuay::publicCode).toList(),
+                assignmentId);
 
         return new AssignmentResult(
                 Optional.of(new NeTExStopsData.NeTExStopAssignment(
                         assignmentId, sspId, matched.stopPlaceId(), null)),
+                Optional.empty(),
                 MatchOutcome.MATCHED_NO_QUAY);
     }
 
@@ -168,7 +194,12 @@ public class NeTExStopsService {
         MATCHED_QUAY, MATCHED_NO_QUAY, MATCHED_NO_TRACK, UNMATCHED
     }
 
-    private record AssignmentResult(Optional<NeTExStopsData.NeTExStopAssignment> assignment, MatchOutcome outcome) {
+    private record AssignmentResult(Optional<NeTExStopsData.NeTExStopAssignment> assignment,
+            Optional<PetiQuay> quay, MatchOutcome outcome) {
+
+        static AssignmentResult none() {
+            return new AssignmentResult(Optional.empty(), Optional.empty(), MatchOutcome.UNMATCHED);
+        }
     }
 
     /**

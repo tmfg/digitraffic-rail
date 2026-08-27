@@ -348,7 +348,10 @@ class NeTExWritingServiceTest {
                 assertFalse(extractXmlFromZip(zip).contains("<DatedServiceJourney"));
         }
 
-        /** Builds calendar data the way generation does, from resolved (train, day) pairs. */
+        /**
+         * Builds calendar data the way generation does, from resolved (train, day)
+         * pairs.
+         */
         private static NeTExCalendarService.NeTExCalendarData calendar(final String serviceJourneyId,
                         final LocalDate... dates) {
                 final Map<TrainId, String> refs = new LinkedHashMap<>();

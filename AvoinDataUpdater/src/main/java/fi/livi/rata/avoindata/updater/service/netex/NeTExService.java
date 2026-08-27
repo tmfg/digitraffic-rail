@@ -205,7 +205,7 @@ public class NeTExService {
 
         final byte[] zip = writingService.marshalAndZip(files);
 
-        log.info("method=generateNeTEx calendar day_types={} operating_periods={} day_type_assignments={}",
+        log.info("method=generateNeTEx calendar dayTypes={} operatingPeriods={} dayTypeAssignments={}",
                 calendar.dayTypes().size(), calendar.operatingPeriods().size(), calendar.assignments().size());
 
         return new NeTExGenerationResult(zip, files, operatingDays,
