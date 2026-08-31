@@ -177,6 +177,34 @@ class NeTExRouteServiceTest {
     }
 
     @Test
+    void givenScheduleWithPassThroughStation_whenCreatingRouteData_thenRouteOmitsIt() {
+        // given: HKI (commercial) → PSL (non-commercial, pass-through) → TPE
+        // (commercial) → OL (commercial)
+        final Schedule schedule = createScheduleWithMixedStops(1L, 59L, "IC", "Long-distance");
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then: the pass-through has no ScheduledStopPoint to project onto, so
+        // it cannot be a RoutePoint under the Nordic profile
+        assertEquals(List.of("FTR:RoutePoint:HKI", "FTR:RoutePoint:TPE", "FTR:RoutePoint:OL"),
+                routeData.getRoutes().get(0).routePointRefs());
+    }
+
+    @Test
+    void givenSchedule_whenCreatingRouteData_thenEveryRoutePointRefHasAStopInThePattern() {
+        // given
+        final Schedule schedule = createScheduleWithMixedStops(1L, 59L, "IC", "Long-distance");
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then
+        assertEquals(routeData.getJourneyPatterns().get(0).stopPoints().size(),
+                routeData.getRoutes().get(0).routePointRefs().size());
+    }
+
+    @Test
     void givenSchedule_whenCreatingJourneyPattern_thenIdFollowsConvention() {
         // given
         final Schedule schedule = createScheduleWithStops(1L, 59L, "IC", "Long-distance",

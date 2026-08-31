@@ -627,7 +627,9 @@ class NeTExStopsServiceTest {
                 return () -> stops;
         }
 
-        /** For cases that only exercise quay resolution, where geography is irrelevant. */
+        /**
+         * For cases that only exercise quay resolution, where geography is irrelevant.
+         */
         private static PetiQuay quay(final String quayId, final String publicCode) {
                 return new PetiQuay(quayId, publicCode, null, null, null);
         }
