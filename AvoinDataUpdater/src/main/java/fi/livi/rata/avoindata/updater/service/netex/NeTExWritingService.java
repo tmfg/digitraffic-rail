@@ -61,14 +61,15 @@ import org.rutebanken.netex.model.PassengerStopAssignment;
 import org.rutebanken.netex.model.PointOnRoute;
 import org.rutebanken.netex.model.PointProjection;
 import org.rutebanken.netex.model.PointRefStructure;
-import org.rutebanken.netex.model.PropertiesOfDay_RelStructure;
-import org.rutebanken.netex.model.PropertyOfDay;
 import org.rutebanken.netex.model.PointsInJourneyPattern_RelStructure;
 import org.rutebanken.netex.model.PointsOnRoute_RelStructure;
 import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.Projections_RelStructure;
+import org.rutebanken.netex.model.PropertiesOfDay_RelStructure;
+import org.rutebanken.netex.model.PropertyOfDay;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.QuayRefStructure;
+import org.rutebanken.netex.model.RailSubmodeEnumeration;
 import org.rutebanken.netex.model.ResourceFrame;
 import org.rutebanken.netex.model.Route;
 import org.rutebanken.netex.model.RoutePoint;
@@ -82,7 +83,6 @@ import org.rutebanken.netex.model.ScheduledStopPointsInFrame_RelStructure;
 import org.rutebanken.netex.model.ServiceCalendarFrame;
 import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.ServiceJourney;
-import org.rutebanken.netex.model.ServiceJourneyRefStructure;
 import org.rutebanken.netex.model.StopAssignmentsInFrame_RelStructure;
 import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPointInJourneyPattern;
@@ -90,6 +90,7 @@ import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
 import org.rutebanken.netex.model.TimetabledPassingTime;
 import org.rutebanken.netex.model.TimetabledPassingTimes_RelStructure;
+import org.rutebanken.netex.model.TransportSubmodeStructure;
 import org.rutebanken.netex.model.ValidityConditions_RelStructure;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.slf4j.Logger;
@@ -462,6 +463,9 @@ public class NeTExWritingService {
                                                 .withPrivateCode(new PrivateCodeStructure()
                                                                 .withValue(line.privateCode()))
                                                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL)
+                                                .withTransportSubmode(new TransportSubmodeStructure()
+                                                                .withRailSubmode(RailSubmodeEnumeration
+                                                                                .fromValue(line.transportSubmode())))
                                                 .withOperatorRef(new OperatorRefStructure().withRef(line.operatorRef()))
                                                 // Cross-file references carry no version: the XSD keyref is keyed on
                                                 // (id, version), so omitting it keeps the constraint from being applied

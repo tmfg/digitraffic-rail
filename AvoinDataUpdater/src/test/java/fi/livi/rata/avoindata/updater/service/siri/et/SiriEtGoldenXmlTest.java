@@ -97,14 +97,14 @@ class SiriEtGoldenXmlTest {
 
         final PetiStopSource petiStopSource = () -> List.of(
                 new PetiStop("FSR:StopPlace:HKI", 1000001, "Helsinki", true, null,
-                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null))),
+                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null, null, null))),
                 new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
-                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null),
-                                new PetiQuay("FSR:Quay:TPE-2", "2", null))),
+                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null, null, null),
+                                new PetiQuay("FSR:Quay:TPE-2", "2", null, null, null))),
                 new PetiStop("FSR:StopPlace:TKU", 1000130, "Turku", true, null,
-                        List.of(new PetiQuay("FSR:Quay:TKU-3", "3", null))),
+                        List.of(new PetiQuay("FSR:Quay:TKU-3", "3", null, null, null))),
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
-                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null))));
+                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null))));
 
         final StationNameLookup stationNameLookup = shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode));
         final PlannedTrackLookup plannedTrackLookup =

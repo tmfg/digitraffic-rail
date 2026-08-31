@@ -71,11 +71,8 @@ public class NeTExRouteService {
 
             if (!patternMap.containsKey(patternId)) {
                 final String routeId = idGenerator.routeId(lineIdentifier, hash);
-                final List<String> allStopCodes = schedule.scheduleRows.stream()
-                        .map(row -> row.station.stationShortCode)
-                        .collect(Collectors.toList());
 
-                routeMap.put(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack, allStopCodes));
+                routeMap.put(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack));
                 patternMap.put(patternId, buildJourneyPattern(patternId, routeId, commercialStopsWithTrack));
             }
         }
@@ -86,14 +83,19 @@ public class NeTExRouteService {
                 scheduleToPatternId);
     }
 
+    /**
+     * Non-stop operating points are left out: the Nordic profile requires every
+     * RoutePoint to project onto a ScheduledStopPoint, which a passing point has
+     * no business having.
+     */
     private NeTExRouteData.NeTExRoute buildRoute(final String lineIdentifier, final String routeId,
-            final List<StopWithTrack> commercialStopsWithTrack, final List<String> allStopCodes) {
+            final List<StopWithTrack> commercialStopsWithTrack) {
         final String lineRef = idGenerator.lineId(lineIdentifier);
         final List<String> stationCodes = commercialStopsWithTrack.stream()
                 .map(StopWithTrack::stationShortCode)
                 .toList();
         final String routeName = stationCodes.get(0) + " - " + stationCodes.get(stationCodes.size() - 1);
-        final List<String> routePointRefs = allStopCodes.stream()
+        final List<String> routePointRefs = stationCodes.stream()
                 .map(idGenerator::routePointId)
                 .collect(Collectors.toList());
         return new NeTExRouteData.NeTExRoute(routeId, routeName, lineRef, routePointRefs);
@@ -121,7 +123,7 @@ public class NeTExRouteService {
     public record StopWithTrack(String stationShortCode, String commercialTrack) {
     }
 
-    private List<StopWithTrack> extractCommercialStopsWithTrack(final Schedule schedule) {
+    public List<StopWithTrack> extractCommercialStopsWithTrack(final Schedule schedule) {
         final List<StopWithTrack> stops = new ArrayList<>();
         for (final ScheduleRow row : schedule.scheduleRows) {
             if (isCommercialStop(row)) {

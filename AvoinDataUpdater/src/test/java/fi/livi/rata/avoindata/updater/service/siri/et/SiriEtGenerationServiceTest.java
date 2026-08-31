@@ -98,7 +98,7 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(adhocSchedules);
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(regularSchedules);
-        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+        when(neTExService.resolveWinningSchedules(any(), any(), any(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Map.of(new TrainId(59L, TODAY), schedule59));
 
         final List<Station> stations = List.of(
@@ -110,11 +110,11 @@ class SiriEtGenerationServiceTest {
 
         final PetiUicMatcher matcher = new PetiUicMatcher(List.of(
                 new PetiStop("FSR:StopPlace:HKI", 1000001, "Helsinki", true, null,
-                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null))),
+                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null, null, null))),
                 new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
-                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null))),
+                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null, null, null))),
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
-                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null)))
+                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null)))
         ));
         when(petiStopSource.getMatcher()).thenReturn(matcher);
 
@@ -137,7 +137,7 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(adhocSchedules);
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(regularSchedules);
-        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+        when(neTExService.resolveWinningSchedules(any(), any(), any(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Map.of(new TrainId(59L, TODAY), schedule59));
 
         final List<Station> stations = List.of(
@@ -149,11 +149,11 @@ class SiriEtGenerationServiceTest {
 
         final PetiUicMatcher matcher = new PetiUicMatcher(List.of(
                 new PetiStop("FSR:StopPlace:HKI", 1000001, "Helsinki", true, null,
-                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null))),
+                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null, null, null))),
                 new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
-                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null))),
+                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null, null, null))),
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
-                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null)))
+                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null)))
         ));
         when(petiStopSource.getMatcher()).thenReturn(matcher);
 
@@ -225,6 +225,7 @@ class SiriEtGenerationServiceTest {
         final Station station = new Station();
         station.shortCode = shortCode;
         station.uicCode = uicCode;
+        station.passengerTraffic = true;
         return station;
     }
 
@@ -297,7 +298,7 @@ class SiriEtGenerationServiceTest {
 
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(List.of(scheduleA));
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(List.of(scheduleB));
-        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+        when(neTExService.resolveWinningSchedules(any(), any(), any(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Map.of(new TrainId(59L, TODAY), scheduleA));
         when(stationRepository.findAll()).thenReturn(List.of());
         when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(List.of()));
@@ -312,7 +313,7 @@ class SiriEtGenerationServiceTest {
         @SuppressWarnings("unchecked")
         final ArgumentCaptor<List<Schedule>> regularCaptor = ArgumentCaptor.forClass(List.class);
         verify(neTExService).resolveWinningSchedules(adhocCaptor.capture(), regularCaptor.capture(),
-                any(LocalDate.class), any(LocalDate.class));
+                any(), any(LocalDate.class), any(LocalDate.class));
         assertEquals(List.of(scheduleA), adhocCaptor.getValue());
         assertEquals(List.of(scheduleB), regularCaptor.getValue());
     }
@@ -398,7 +399,7 @@ class SiriEtGenerationServiceTest {
         // given
         when(scheduleProviderService.getAdhocSchedules(any(LocalDate.class))).thenReturn(List.of());
         when(scheduleProviderService.getRegularSchedules(any(LocalDate.class))).thenReturn(List.of());
-        when(neTExService.resolveWinningSchedules(any(), any(), any(LocalDate.class), any(LocalDate.class)))
+        when(neTExService.resolveWinningSchedules(any(), any(), any(), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Map.of());
         when(stationRepository.findAll()).thenThrow(new RuntimeException("DB down"));
 

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -128,6 +129,44 @@ class PetiNeTExParserTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals("2", quay10.publicCode());
+    }
+
+    // --- A6b: Quay centroid parsed, and absent centroid leaves the quay unlocated ---
+
+    @Test
+    void givenQuayWithCentroid_whenParsed_thenCoordinatesAreRead() {
+        // given
+        final InputStream xml = fixtureStream();
+
+        // when
+        final List<PetiStop> result = parser.parse(xml);
+
+        // then
+        final PetiQuay quay7 = findByStopPlaceId(result, "FSR:StopPlace:1").quays().stream()
+                .filter(q -> q.quayId().equals("FSR:Quay:7"))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(quay7.hasLocation());
+        assertEquals(new BigDecimal("66.081168"), quay7.latitude());
+        assertEquals(new BigDecimal("24.771454"), quay7.longitude());
+    }
+
+    @Test
+    void givenQuayWithoutCentroid_whenParsed_thenQuayHasNoLocation() {
+        // given
+        final InputStream xml = fixtureStream();
+
+        // when
+        final List<PetiStop> result = parser.parse(xml);
+
+        // then
+        final PetiQuay quay10 = findByStopPlaceId(result, "FSR:StopPlace:1").quays().stream()
+                .filter(q -> q.quayId().equals("FSR:Quay:10"))
+                .findFirst()
+                .orElseThrow();
+        assertFalse(quay10.hasLocation());
+        assertNull(quay10.latitude());
+        assertNull(quay10.longitude());
     }
 
     // --- A7: StopPlace with zero quays yields empty quay list ---

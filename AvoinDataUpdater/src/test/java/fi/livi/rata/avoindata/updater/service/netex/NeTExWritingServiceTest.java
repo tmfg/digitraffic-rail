@@ -348,7 +348,10 @@ class NeTExWritingServiceTest {
                 assertFalse(extractXmlFromZip(zip).contains("<DatedServiceJourney"));
         }
 
-        /** Builds calendar data the way generation does, from resolved (train, day) pairs. */
+        /**
+         * Builds calendar data the way generation does, from resolved (train, day)
+         * pairs.
+         */
         private static NeTExCalendarService.NeTExCalendarData calendar(final String serviceJourneyId,
                         final LocalDate... dates) {
                 final Map<TrainId, String> refs = new LinkedHashMap<>();
@@ -402,7 +405,7 @@ class NeTExWritingServiceTest {
                                 Map.of(1L, "FTR:JourneyPattern:IC-abc"));
 
                 final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
-                                "IC", "FTR:Operator:vr", "rail"));
+                                "IC", "FTR:Operator:vr", "rail", "longDistance"));
                 final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
                 final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                                 "FTR:ServiceJourney:59-12345", "IC 59", "59",

@@ -19,8 +19,8 @@ class SiriStopResolverTest {
     @BeforeEach
     void setUp() {
         // given — fixture: one StopPlace with uicCode 1000361 (national=361), two quays
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
-        final PetiQuay quay8 = new PetiQuay("FSR:Quay:8", "2", null);
+        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null, null, null);
+        final PetiQuay quay8 = new PetiQuay("FSR:Quay:8", "2", null, null, null);
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay8));
 
@@ -108,8 +108,8 @@ class SiriStopResolverTest {
     // ===== F3 — Prebuilt-matcher constructor tests =====
 
     private SiriStopResolver createPrebuiltMatcherResolver() {
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null);
-        final PetiQuay quay8 = new PetiQuay("FSR:Quay:8", "2", null);
+        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null, null, null);
+        final PetiQuay quay8 = new PetiQuay("FSR:Quay:8", "2", null, null, null);
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay8));
         final PetiUicMatcher matcher = new PetiUicMatcher(List.of(stop));

@@ -90,7 +90,7 @@ class PetiAccessibilityTest {
         assertNull(stop.accessibility());
 
         // given — PetiQuay with null accessibility
-        final PetiQuay quay = new PetiQuay("FSR:Quay:20", "1", null);
+        final PetiQuay quay = new PetiQuay("FSR:Quay:20", "1", null, null, null);
 
         // when / then
         assertNull(quay.accessibility());

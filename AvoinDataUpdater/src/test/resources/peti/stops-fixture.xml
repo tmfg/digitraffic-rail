@@ -42,6 +42,12 @@
               <quays>
                 <Quay id="FSR:Quay:7" version="1">
                   <PublicCode>1</PublicCode>
+                  <Centroid>
+                    <Location>
+                      <Longitude>24.771454</Longitude>
+                      <Latitude>66.081168</Latitude>
+                    </Location>
+                  </Centroid>
                   <AccessibilityAssessment id="FSR:AccessibilityAssessment:Q7" version="1">
                     <limitations>
                       <AccessibilityLimitation>

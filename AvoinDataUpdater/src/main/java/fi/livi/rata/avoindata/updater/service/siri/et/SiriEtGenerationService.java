@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,14 +78,17 @@ public class SiriEtGenerationService {
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(operatingDate);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(operatingDate);
 
-            // Reuse the exact passenger + winning-schedule selection that produced the published timetable,
-            // so every SIRI FramedVehicleJourneyRef resolves against the static package.
+            final var stations = stationRepository.findAll();
+            final Set<String> publishableStations = NeTExService.publishableStations(stations);
+
+            // Reuse the exact passenger + winning-schedule selection (incl. dropping unpublishable-stop journeys)
+            // that produced the published timetable, so every SIRI FramedVehicleJourneyRef resolves against the
+            // static package.
             final Map<TrainId, Schedule> winningSchedules = neTExService.resolveWinningSchedules(
-                    adhocSchedules, regularSchedules, operatingDate, operatingDate);
+                    adhocSchedules, regularSchedules, publishableStations, operatingDate, operatingDate);
             final Map<Long, Schedule> scheduleMap = new HashMap<>();
             winningSchedules.forEach((trainId, schedule) -> scheduleMap.put(trainId.trainNumber, schedule));
 
-            final var stations = stationRepository.findAll();
             final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
             final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
             final ScheduleMapPlannedTrackLookup plannedTrackLookup = new ScheduleMapPlannedTrackLookup(scheduleMap);
