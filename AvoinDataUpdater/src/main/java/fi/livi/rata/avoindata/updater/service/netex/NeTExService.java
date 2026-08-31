@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
@@ -137,8 +138,11 @@ public class NeTExService {
             final List<Schedule> regularSchedules,
             final List<Station> stations) {
         // Filter to passenger trains first (matches GTFS gtfs-passenger.zip approach)
-        final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
-        final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
+        final Set<String> publishable = publishableStations(stations);
+        final List<Schedule> passengerAdhoc = dropUnpublishableStops(filterPassengerTrains(adhocSchedules),
+                publishable);
+        final List<Schedule> passengerRegular = dropUnpublishableStops(filterPassengerTrains(regularSchedules),
+                publishable);
 
         // Resolve which schedules are "in effect" among passenger trains only
         final Set<Long> winningScheduleIds = resolveWinningScheduleIds(passengerAdhoc, passengerRegular);
@@ -194,7 +198,7 @@ public class NeTExService {
         // The calendar is derived from the same resolution that picks the winning
         // schedule per day, so DayTypes cannot disagree with the ServiceJourneys.
         final Map<TrainId, String> datedRefs = resolveServiceJourneyIds(adhocSchedules, regularSchedules,
-                feedStart(), feedEnd());
+                publishable, feedStart(), feedEnd());
         final NeTExCalendarService.NeTExCalendarData calendar = calendarService.createCalendarData(datedRefs);
 
         final ZonedDateTime timestamp = ZonedDateTime.now();
@@ -257,10 +261,13 @@ public class NeTExService {
      */
     public Map<TrainId, String> resolveServiceJourneyIds(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
+            final Set<String> publishableStations,
             final LocalDate start,
             final LocalDate end) {
-        final List<Schedule> passengerAdhoc = filterPassengerTrains(adhocSchedules);
-        final List<Schedule> passengerRegular = filterPassengerTrains(regularSchedules);
+        final List<Schedule> passengerAdhoc = dropUnpublishableStops(filterPassengerTrains(adhocSchedules),
+                publishableStations);
+        final List<Schedule> passengerRegular = dropUnpublishableStops(filterPassengerTrains(regularSchedules),
+                publishableStations);
 
         final Map<TrainId, String> result = new HashMap<>();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
@@ -274,6 +281,46 @@ public class NeTExService {
         }
 
         return result;
+    }
+
+    /**
+     * Stations we are able to declare as ScheduledStopPoints.
+     */
+    public static Set<String> publishableStations(final List<Station> stations) {
+        return stations.stream()
+                .filter(station -> station.passengerTraffic)
+                .map(station -> station.shortCode)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Drops schedules that make a commercial stop at a station we cannot declare,
+     * which would otherwise leave the journey pattern referencing a
+     * ScheduledStopPoint that does not exist. Self-correcting: the schedules
+     * return once the station metadata catches up.
+     */
+    private List<Schedule> dropUnpublishableStops(final List<Schedule> schedules,
+            final Set<String> publishableStations) {
+        final Map<String, Integer> droppedByStation = new TreeMap<>();
+        final List<Schedule> kept = new ArrayList<>();
+
+        for (final Schedule schedule : schedules) {
+            final Set<String> missing = routeService.extractCommercialStopsWithTrack(schedule).stream()
+                    .map(NeTExRouteService.StopWithTrack::stationShortCode)
+                    .filter(code -> !publishableStations.contains(code))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (missing.isEmpty()) {
+                kept.add(schedule);
+            } else {
+                missing.forEach(code -> droppedByStation.merge(code, 1, Integer::sum));
+            }
+        }
+
+        if (!droppedByStation.isEmpty()) {
+            log.error("method=dropUnpublishableStops droppedSchedules={} stationsNotPublishable={}",
+                    schedules.size() - kept.size(), droppedByStation);
+        }
+        return kept;
     }
 
     /**

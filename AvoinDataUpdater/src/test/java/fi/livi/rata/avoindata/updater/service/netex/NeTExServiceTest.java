@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -226,6 +227,50 @@ class NeTExServiceTest {
         // ZIP)
         // For now, just assert no exception was thrown
         assertTrue(result == null || result.zip().length >= 0);
+    }
+
+    @Test
+    void givenCommercialStopAtStationMissingFromMetadata_whenGenerating_thenJourneyIsDropped() {
+        // given: the schedule stops at OL, which the station metadata does not know
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"));
+        final List<Station> stations = createStations(List.of("HKI", "TPE"));
+
+        // when
+        final var result = netExService.generateNeTEx(List.of(), List.of(schedule), stations);
+
+        // then: no journey rather than one referencing a stop point we cannot declare
+        assertNull(result);
+    }
+
+    @Test
+    void givenCommercialStopAtNonPassengerStation_whenGenerating_thenJourneyIsDropped() {
+        // given
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"));
+        final List<Station> stations = createStations(List.of("HKI", "TPE", "OL"));
+        stations.get(2).passengerTraffic = false;
+
+        // when
+        final var result = netExService.generateNeTEx(List.of(), List.of(schedule), stations);
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    void givenStationBecomesPublishable_whenGenerating_thenJourneyReturns() {
+        // given: the same schedule that was dropped above
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"));
+
+        // when: metadata catches up
+        final var result = netExService.generateNeTEx(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then: no code change needed for the journey to come back
+        assertNotNull(result);
+        assertTrue(result.zip().length > 0);
     }
 
     // --- Helpers ---

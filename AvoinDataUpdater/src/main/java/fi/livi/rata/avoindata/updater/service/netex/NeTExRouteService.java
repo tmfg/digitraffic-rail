@@ -120,7 +120,7 @@ public class NeTExRouteService {
     public record StopWithTrack(String stationShortCode, String commercialTrack) {
     }
 
-    private List<StopWithTrack> extractCommercialStopsWithTrack(final Schedule schedule) {
+    public List<StopWithTrack> extractCommercialStopsWithTrack(final Schedule schedule) {
         final List<StopWithTrack> stops = new ArrayList<>();
         for (final ScheduleRow row : schedule.scheduleRows) {
             if (isCommercialStop(row)) {
