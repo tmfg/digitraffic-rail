@@ -1237,6 +1237,97 @@ class SiriEtServiceTest {
         }
     }
 
+    // ===== Pass 5 — generation stats (rail.siri.et.generation wide event) =====
+
+    @Test
+    void givenResolvableTrain_whenBuildWithStats_thenEmittedAndStopRefCounts() {
+        final GTFSTrain train = createStandard4StopTrain(); // 4 stops, all future → estimated, all quays resolve
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(1, stats.journeysEmitted());
+        assertEquals(0, stats.journeysCancelled());
+        assertEquals(0, stats.skippedUnresolvedJourney());
+        assertEquals(0, stats.skippedUnresolvedStop());
+        assertEquals(4, stats.callsTotal());
+        assertEquals(0, stats.callsRecorded());
+        assertEquals(4, stats.callsEstimated());
+        assertEquals(4, stats.stopRefsQuay());
+        assertEquals(0, stats.stopRefsStopPlace());
+        assertEquals(0, stats.stopRefsUnresolved());
+        assertEquals(1.0, stats.matchRate().orElseThrow(), 0.0001);
+    }
+
+    @Test
+    void givenMixedActuals_whenBuildWithStats_thenRecordedEstimatedSplit() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.timeTableRows.get(0).actualTime = ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI); // HKI dep
+        train.timeTableRows.get(1).actualTime = ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI); // TPE arr
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(2, stats.callsRecorded()); // HKI, TPE
+        assertEquals(2, stats.callsEstimated()); // TKU, OL
+        assertEquals(4, stats.callsTotal());
+    }
+
+    @Test
+    void givenCancelledTrain_whenBuildWithStats_thenJourneyCancelledCounted() {
+        final GTFSTrain train = createStandard4StopTrain();
+        train.cancelled = true;
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(1, stats.journeysEmitted());
+        assertEquals(1, stats.journeysCancelled());
+    }
+
+    @Test
+    void givenUnresolvableJourney_whenBuildWithStats_thenSkippedUnresolvedJourney() {
+        final GTFSTrain train = createTrain(999L, false); // resolver only knows train 59
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(1, stats.skippedUnresolvedJourney());
+        assertEquals(0, stats.skippedUnresolvedStop());
+    }
+
+    @Test
+    void givenUnresolvableStop_whenBuildWithStats_thenSkippedUnresolvedStop() {
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "XXX", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "1"); // not in UIC map
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(0, stats.skippedUnresolvedJourney());
+        assertEquals(1, stats.skippedUnresolvedStop());
+        assertEquals(1, stats.stopRefsUnresolved());
+    }
+
+    @Test
+    void givenUnknownTrack_whenBuildWithStats_thenStopPlaceCounted() {
+        final GTFSTrain train = createTrain(59L, false);
+        final GTFSTimeTableRow hkiDep = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
+        hkiDep.unknownTrack = true; // → FSR:StopPlace fallback
+        train.timeTableRows.add(hkiDep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(1, stats.journeysEmitted());
+        assertEquals(1, stats.stopRefsStopPlace()); // HKI unknown track
+        assertEquals(1, stats.stopRefsQuay());       // OL-1
+    }
+
+    @Test
+    void givenNoTrains_whenBuildWithStats_thenEmptyStatsAndNoMatchRate() {
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(0, stats.callsTotal());
+        assertTrue(stats.matchRate().isEmpty());
+    }
+
     // ===== Helper =====
 
     private int countAllCalls(final EstimatedVehicleJourney evj) {

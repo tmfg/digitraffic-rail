@@ -27,4 +27,9 @@ public interface PetiStopSource {
     default PetiUicMatcher getMatcher() {
         return new PetiUicMatcher(getStops());
     }
+
+    /** Age of the current snapshot in seconds, or -1 when never loaded / not applicable (static sources). */
+    default long getSnapshotAgeSeconds() {
+        return -1L;
+    }
 }

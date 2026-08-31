@@ -7,6 +7,9 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
+import fi.livi.rata.avoindata.updater.service.siri.common.StopRef;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
 import uk.org.siri.siri21.EstimatedTimetableDeliveryStructure;
 import uk.org.siri.siri21.EstimatedVersionFrameStructure;
 import uk.org.siri.siri21.Siri;
@@ -44,6 +47,11 @@ public class SiriEtService {
     }
 
     public Siri buildEtDocument(final List<GTFSTrain> trains, final ZonedDateTime now) {
+        return buildEtDocumentWithStats(trains, now).document();
+    }
+
+    /** Builds the document and the per-cycle {@link SiriEtStats} that back the generation wide event. */
+    public SiriEtResult buildEtDocumentWithStats(final List<GTFSTrain> trains, final ZonedDateTime now) {
         final Siri siri = siriWritingService.buildEnvelope(now, producerRef);
 
         final EstimatedTimetableDeliveryStructure delivery = new EstimatedTimetableDeliveryStructure();
@@ -53,14 +61,61 @@ public class SiriEtService {
         final EstimatedVersionFrameStructure frame = new EstimatedVersionFrameStructure();
         frame.setRecordedAtTime(now.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
 
+        long emitted = 0;
+        long cancelled = 0;
+        long skippedUnresolvedJourney = 0;
+        long skippedUnresolvedStop = 0;
+        long callsRecorded = 0;
+        long callsEstimated = 0;
+        long stopRefsQuay = 0;
+        long stopRefsStopPlace = 0;
+        long stopRefsUnresolved = 0;
+
         for (final GTFSTrain train : trains) {
-            interpreter.interpret(train)
-                    .map(journey -> marshaller.marshal(journey, now))
-                    .ifPresent(evj -> frame.getEstimatedVehicleJourneies().add(evj));
+            switch (interpreter.interpret(train)) {
+                case InterpretResult.Skipped skipped -> {
+                    switch (skipped.reason()) {
+                        case UNRESOLVED_JOURNEY -> skippedUnresolvedJourney++;
+                        case UNRESOLVED_STOP -> {
+                            skippedUnresolvedStop++;
+                            stopRefsUnresolved++;
+                        }
+                    }
+                }
+                case InterpretResult.Emitted result -> {
+                    final EtJourney journey = result.journey();
+                    emitted++;
+                    if (journey.cancelled()) {
+                        cancelled++;
+                    }
+                    for (final EtCall call : journey.calls()) {
+                        if (call instanceof EtCall.Recorded) {
+                            callsRecorded++;
+                        } else {
+                            callsEstimated++;
+                        }
+                        if (isQuay(call.stopRef())) {
+                            stopRefsQuay++;
+                        } else {
+                            stopRefsStopPlace++;
+                        }
+                    }
+                    frame.getEstimatedVehicleJourneies().add(marshaller.marshal(journey, now));
+                }
+            }
         }
 
         delivery.getEstimatedJourneyVersionFrames().add(frame);
         siri.getServiceDelivery().getEstimatedTimetableDeliveries().add(delivery);
-        return siri;
+
+        final SiriEtStats stats = new SiriEtStats(emitted, cancelled, skippedUnresolvedJourney,
+                skippedUnresolvedStop, callsRecorded, callsEstimated, stopRefsQuay, stopRefsStopPlace,
+                stopRefsUnresolved);
+        return new SiriEtResult(siri, stats);
+    }
+
+    // FSR:Quay:... when the track resolved, FSR:StopPlace:... on the track-unknown fallback.
+    private static boolean isQuay(final StopRef stopRef) {
+        return stopRef.value().contains(":Quay:");
     }
 }

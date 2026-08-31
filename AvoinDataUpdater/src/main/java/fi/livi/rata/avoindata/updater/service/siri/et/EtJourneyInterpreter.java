@@ -28,9 +28,10 @@ import fi.livi.rata.avoindata.updater.service.siri.et.model.QuayChange;
  * boundary, quay ref) without touching any SIRI/JAXB type. Marshalling is a separate concern
  * ({@link EtJourneyMarshaller}).
  *
- * <p>Returns {@link Optional#empty()} when the journey does not resolve to a published {@code ServiceJourney},
- * or when any commercial stop cannot be resolved to a PETI {@code FSR:Quay} — because the profile requires a
- * complete stop sequence, an incomplete journey is skipped rather than emitted.
+ * <p>Returns an {@link InterpretResult.Skipped} when the journey does not resolve to a published
+ * {@code ServiceJourney} ({@code UNRESOLVED_JOURNEY}), or when any commercial stop cannot be resolved to a PETI
+ * {@code FSR:Quay} ({@code UNRESOLVED_STOP}) — because the profile requires a complete stop sequence, an
+ * incomplete journey is skipped rather than emitted.
  */
 public class EtJourneyInterpreter {
 
@@ -55,11 +56,11 @@ public class EtJourneyInterpreter {
         this.plannedTrackLookup = plannedTrackLookup;
     }
 
-    public Optional<EtJourney> interpret(final GTFSTrain train) {
+    public InterpretResult interpret(final GTFSTrain train) {
         final Optional<ResolvedJourney> resolved =
                 journeyRefResolver.resolve(train.id.trainNumber, train.id.departureDate);
         if (resolved.isEmpty()) {
-            return Optional.empty();
+            return new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_JOURNEY);
         }
 
         final List<PairedStop> commercialStops = new ArrayList<>();
@@ -78,7 +79,7 @@ public class EtJourneyInterpreter {
             // be resolved to a Quay, we can't honestly claim a complete sequence, so we omit the entire journey rather
             // than publish a hole.
             if (stopRef.isEmpty()) {
-                return Optional.empty();
+                return new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_STOP);
             }
             stopRefs.add(stopRef.get());
             stopNames.add(stationNameLookup.nameFor(representativeRow(stop).stationShortCode).orElse(null));
@@ -96,7 +97,7 @@ public class EtJourneyInterpreter {
         }
 
         final ResolvedJourney j = resolved.get();
-        return Optional.of(new EtJourney(
+        return new InterpretResult.Emitted(new EtJourney(
                 j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(),
                 train.cancelled, monitored,
                 stopNames.isEmpty() ? null : stopNames.get(0),

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -27,7 +28,6 @@ import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
-import uk.org.siri.siri21.Siri;
 
 @Service
 public class SiriEtGenerationService {
@@ -67,8 +67,11 @@ public class SiriEtGenerationService {
 
     @Transactional
     public void generate() {
+        final long start = System.currentTimeMillis();
+        long trainsReceived = 0;
+        SiriEtStats stats = SiriEtStats.empty();
+        int outputSize = 0;
         try {
-            final long start = System.currentTimeMillis();
             final LocalDate operatingDate = DateProvider.dateInHelsinki();
 
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(operatingDate);
@@ -93,14 +96,17 @@ public class SiriEtGenerationService {
                     new ScheduleMapJourneyRefResolver(scheduleMap, neTExEntityService, neTExIdGenerator);
 
             final List<GTFSTrain> trains = gtfsTrainRepository.findBySourceVersionGreaterThan(0L);
+            trainsReceived = trains.size();
             final ZonedDateTime now = DateProvider.nowInHelsinki();
 
             final SiriEtService etService = new SiriEtService(
                     journeyRefResolver, stationUicLookup, siriStopResolver,
                     stationNameLookup, plannedTrackLookup,
                     siriWritingService, NeTExIdGenerator.CODESPACE, NeTExIdGenerator.CODESPACE);
-            final Siri siri = etService.buildEtDocument(trains, now);
-            final byte[] bytes = siriWritingService.marshalToBytes(siri);
+            final SiriEtResult result = etService.buildEtDocumentWithStats(trains, now);
+            stats = result.stats();
+            final byte[] bytes = siriWritingService.marshalToBytes(result.document());
+            outputSize = bytes.length;
 
             final GeneratedExport export = new GeneratedExport();
             export.data = bytes;
@@ -108,10 +114,44 @@ public class SiriEtGenerationService {
             export.fileName = "siri-et.xml";
             generatedExportRepository.persist(List.of(export));
 
-            final long duration = System.currentTimeMillis() - start;
-            log.info("event=rail.siri.et.generation outcome=success duration_ms={} journeys={}", duration, trains.size());
+            logGenerationEvent("success", "NULL", System.currentTimeMillis() - start,
+                    trainsReceived, stats, outputSize);
         } catch (final Exception e) {
-            log.error("event=rail.siri.et.generation outcome=failed", e);
+            logGenerationEvent("error", e.getClass().getSimpleName(), System.currentTimeMillis() - start,
+                    trainsReceived, stats, outputSize);
+            // Companion line carries the message + stack trace; the wide line above stays scalar-only.
+            log.error("event=rail.siri.et.generation operation=generateSiriEt outcome=error", e);
+        }
+    }
+
+    /**
+     * Emits the one-line {@code rail.siri.et.generation} wide event — same field set on success and error
+     * (zeros / NULL where unavailable), only the level differs (info vs error).
+     */
+    private void logGenerationEvent(final String outcome, final String errorType, final long durationMs,
+            final long trainsReceived, final SiriEtStats stats, final int outputSize) {
+        final String matchRate = stats.matchRate().isPresent()
+                ? String.format(Locale.ROOT, "%.4f", stats.matchRate().getAsDouble())
+                : "NULL";
+        final String line = String.format(Locale.ROOT,
+                "event=rail.siri.et.generation operation=generateSiriEt outcome=%s error.type=%s duration_ms=%d "
+                        + "rail.siri.service=et "
+                        + "rail.siri.et.trains.received=%d rail.siri.et.journeys.emitted=%d "
+                        + "rail.siri.et.journeys.cancelled=%d rail.siri.et.journeys.skipped.unresolved_journey=%d "
+                        + "rail.siri.et.journeys.skipped.unresolved_stop=%d rail.siri.et.calls.total=%d "
+                        + "rail.siri.et.calls.recorded=%d rail.siri.et.calls.estimated=%d "
+                        + "rail.siri.et.stop_refs.resolved.quay=%d rail.siri.et.stop_refs.resolved.stop_place=%d "
+                        + "rail.siri.et.stop_refs.unresolved=%d rail.siri.et.peti.match_rate=%s "
+                        + "rail.netex.peti.snapshot.age_s=%d rail.siri.et.output.size_bytes=%d",
+                outcome, errorType, durationMs, trainsReceived,
+                stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
+                stats.skippedUnresolvedStop(), stats.callsTotal(), stats.callsRecorded(), stats.callsEstimated(),
+                stats.stopRefsQuay(), stats.stopRefsStopPlace(), stats.stopRefsUnresolved(), matchRate,
+                petiStopSource.getSnapshotAgeSeconds(), outputSize);
+        if ("success".equals(outcome)) {
+            log.info(line);
+        } else {
+            log.error(line);
         }
     }
 }
