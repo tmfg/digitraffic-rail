@@ -11,6 +11,9 @@ import fi.livi.rata.avoindata.updater.service.siri.common.StopRef;
  * {@code cancelled} means the whole stop is cancelled ({@code Cancellation=true}); a call may still carry a
  * per-side {@link CallStatus#CANCELLED} status without being cancelled itself (the partial-cancellation
  * boundary: the last served stop before a cancelled one departs {@code cancelled}).
+ *
+ * <p>{@code stopName} is the station name for {@code StopPointName} (null when unavailable). {@code quayChange}
+ * is present only on a genuine platform change and becomes a SIRI {@code StopAssignment}.
  */
 public sealed interface EtCall permits EtCall.Recorded, EtCall.Estimated {
 
@@ -24,9 +27,13 @@ public sealed interface EtCall permits EtCall.Recorded, EtCall.Estimated {
 
     CallPoint departure();
 
-    record Recorded(StopRef stopRef, int order, boolean cancelled, CallPoint arrival, CallPoint departure)
-            implements EtCall {}
+    String stopName();
+
+    QuayChange quayChange();
+
+    record Recorded(StopRef stopRef, int order, boolean cancelled, CallPoint arrival, CallPoint departure,
+                    String stopName, QuayChange quayChange) implements EtCall {}
 
     record Estimated(StopRef stopRef, int order, boolean cancelled, CallPoint arrival, CallPoint departure,
-                     boolean predictionInaccurate) implements EtCall {}
+                     boolean predictionInaccurate, String stopName, QuayChange quayChange) implements EtCall {}
 }

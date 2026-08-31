@@ -68,6 +68,20 @@ class SiriEtGoldenXmlTest {
             "TKU", 130,
             "OL", 280);
 
+    private static final Map<String, String> NAME_MAP = Map.of(
+            "HKI", "Helsinki",
+            "TPE", "Tampere",
+            "TKU", "Turku",
+            "OL", "Oulu");
+
+    // Planned tracks match the actual tracks the normal scenarios use, so only the quay-change scenario
+    // (whose train departs from a different actual track) produces a StopAssignment.
+    private static final Map<String, String> PLANNED_TRACKS = Map.of(
+            "HKI", "7",
+            "TPE", "1",
+            "TKU", "3",
+            "OL", "1");
+
     private SiriEtService service;
     private SiriWritingService writingService;
 
@@ -85,17 +99,24 @@ class SiriEtGoldenXmlTest {
                 new PetiStop("FSR:StopPlace:HKI", 1000001, "Helsinki", true, null,
                         List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null))),
                 new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
-                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null))),
+                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null),
+                                new PetiQuay("FSR:Quay:TPE-2", "2", null))),
                 new PetiStop("FSR:StopPlace:TKU", 1000130, "Turku", true, null,
                         List.of(new PetiQuay("FSR:Quay:TKU-3", "3", null))),
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
                         List.of(new PetiQuay("FSR:Quay:OL-1", "1", null))));
+
+        final StationNameLookup stationNameLookup = shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode));
+        final PlannedTrackLookup plannedTrackLookup =
+                (trainNumber, date, shortCode) -> Optional.ofNullable(PLANNED_TRACKS.get(shortCode));
 
         writingService = new SiriWritingService();
         service = new SiriEtService(
                 journeyRefResolver,
                 stationUicLookup,
                 new SiriStopResolver(petiStopSource),
+                stationNameLookup,
+                plannedTrackLookup,
                 writingService,
                 PRODUCER_REF,
                 DATA_SOURCE);
@@ -108,7 +129,8 @@ class SiriEtGoldenXmlTest {
                 Arguments.of("all-estimated", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::allEstimatedTrain),
                 Arguments.of("cancelled", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::fullyCancelledTrain),
                 Arguments.of("partial-cancellation",
-                        (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::partiallyCancelledTrain));
+                        (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::partiallyCancelledTrain),
+                Arguments.of("quay-change", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::quayChangeTrain));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -235,6 +257,32 @@ class SiriEtGoldenXmlTest {
 
         final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 0), "1");
         olArr.cancelled = true;
+        train.timeTableRows.add(olArr);
+
+        return train;
+    }
+
+    /**
+     * A fully upcoming journey whose intermediate stop uses a different actual track (TPE-2) than planned
+     * (TPE-1), so its call carries a {@code StopAssignment} (aimed TPE-1, expected TPE-2). The other stops
+     * keep their planned tracks → no assignment.
+     */
+    private static GTFSTrain quayChangeTrain() {
+        final GTFSTrain train = train(false);
+
+        final GTFSTimeTableRow hkiDep = row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, at(13, 0), "7");
+        hkiDep.liveEstimateTime = at(13, 0);
+        train.timeTableRows.add(hkiDep);
+
+        final GTFSTimeTableRow tpeArr = row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, at(14, 30), "2");
+        tpeArr.liveEstimateTime = at(14, 30);
+        train.timeTableRows.add(tpeArr);
+        final GTFSTimeTableRow tpeDep = row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, at(14, 35), "2");
+        tpeDep.liveEstimateTime = at(14, 35);
+        train.timeTableRows.add(tpeDep);
+
+        final GTFSTimeTableRow olArr = row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, at(18, 0), "1");
+        olArr.liveEstimateTime = at(18, 0);
         train.timeTableRows.add(olArr);
 
         return train;

@@ -10,6 +10,7 @@ import fi.livi.rata.avoindata.updater.service.siri.et.model.CallPoint;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallStatus;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
+import fi.livi.rata.avoindata.updater.service.siri.et.model.QuayChange;
 import uk.org.siri.siri21.ArrivalBoardingActivityEnumeration;
 import uk.org.siri.siri21.CallStatusEnumeration;
 import uk.org.siri.siri21.DataFrameRefStructure;
@@ -19,8 +20,12 @@ import uk.org.siri.siri21.EstimatedCall;
 import uk.org.siri.siri21.EstimatedVehicleJourney;
 import uk.org.siri.siri21.FramedVehicleJourneyRefStructure;
 import uk.org.siri.siri21.LineRef;
+import uk.org.siri.siri21.NaturalLanguagePlaceNameStructure;
+import uk.org.siri.siri21.NaturalLanguageStringStructure;
 import uk.org.siri.siri21.OperatorRefStructure;
+import uk.org.siri.siri21.QuayRefStructure;
 import uk.org.siri.siri21.RecordedCall;
+import uk.org.siri.siri21.StopAssignmentStructure;
 import uk.org.siri.siri21.StopPointRefStructure;
 import uk.org.siri.siri21.VehicleModesEnumeration;
 
@@ -68,6 +73,12 @@ public class EtJourneyMarshaller {
         if (journey.cancelled()) {
             evj.setCancellation(true);
         }
+        if (journey.originName() != null) {
+            evj.getOriginNames().add(placeName(journey.originName()));
+        }
+        if (journey.destinationName() != null) {
+            evj.getDestinationNames().add(nlString(journey.destinationName()));
+        }
 
         final List<RecordedCall> recordedCalls = new ArrayList<>();
         final List<EstimatedCall> estimatedCalls = new ArrayList<>();
@@ -100,6 +111,9 @@ public class EtJourneyMarshaller {
         if (call.cancelled()) {
             out.setCancellation(true);
         }
+        if (call.stopName() != null) {
+            out.getStopPointNames().add(nlString(call.stopName()));
+        }
 
         final CallPoint arrival = call.arrival();
         if (arrival != null) {
@@ -118,6 +132,7 @@ public class EtJourneyMarshaller {
             out.setDepartureStatus(status(departure.status()));
             out.setDepartureBoardingActivity(departureBoarding(departure.status()));
         }
+        addStopAssignment(call, out.getArrivalStopAssignments(), out.getDepartureStopAssignments());
         return out;
     }
 
@@ -131,6 +146,9 @@ public class EtJourneyMarshaller {
         }
         if (call.predictionInaccurate()) {
             out.setPredictionInaccurate(true);
+        }
+        if (call.stopName() != null) {
+            out.getStopPointNames().add(nlString(call.stopName()));
         }
 
         final CallPoint arrival = call.arrival();
@@ -151,13 +169,53 @@ public class EtJourneyMarshaller {
             out.setDepartureStatus(status(departure.status()));
             out.setDepartureBoardingActivity(departureBoarding(departure.status()));
         }
+        addStopAssignment(call, out.getArrivalStopAssignments(), out.getDepartureStopAssignments());
         return out;
+    }
+
+    /**
+     * Adds a {@code StopAssignment} (aimed + expected quay) for a genuine platform change. It sits on the
+     * arrival side when the call has an arrival (per the profile example); the origin (arrival-only-absent)
+     * carries it on departure.
+     */
+    private static void addStopAssignment(final EtCall call, final List<StopAssignmentStructure> arrivalAssignments,
+                                          final List<StopAssignmentStructure> departureAssignments) {
+        final QuayChange quayChange = call.quayChange();
+        if (quayChange == null) {
+            return;
+        }
+        final StopAssignmentStructure assignment = new StopAssignmentStructure();
+        assignment.setAimedQuayRef(quayRef(quayChange.aimed().value()));
+        assignment.setExpectedQuayRef(quayRef(quayChange.expected().value()));
+        if (call.arrival() != null) {
+            arrivalAssignments.add(assignment);
+        } else {
+            departureAssignments.add(assignment);
+        }
+    }
+
+    private static QuayRefStructure quayRef(final String value) {
+        final QuayRefStructure ref = new QuayRefStructure();
+        ref.setValue(value);
+        return ref;
     }
 
     private static StopPointRefStructure stopPointRef(final String value) {
         final StopPointRefStructure ref = new StopPointRefStructure();
         ref.setValue(value);
         return ref;
+    }
+
+    private static NaturalLanguageStringStructure nlString(final String value) {
+        final NaturalLanguageStringStructure name = new NaturalLanguageStringStructure();
+        name.setValue(value);
+        return name;
+    }
+
+    private static NaturalLanguagePlaceNameStructure placeName(final String value) {
+        final NaturalLanguagePlaceNameStructure name = new NaturalLanguagePlaceNameStructure();
+        name.setValue(value);
+        return name;
     }
 
     private static CallStatusEnumeration status(final CallStatus status) {

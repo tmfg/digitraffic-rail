@@ -31,12 +31,15 @@ public class SiriEtService {
             final JourneyRefResolver journeyRefResolver,
             final StationUicLookup stationUicLookup,
             final SiriStopResolver siriStopResolver,
+            final StationNameLookup stationNameLookup,
+            final PlannedTrackLookup plannedTrackLookup,
             final SiriWritingService siriWritingService,
             final String producerRef,
             final String dataSource) {
         this.siriWritingService = siriWritingService;
         this.producerRef = producerRef;
-        this.interpreter = new EtJourneyInterpreter(journeyRefResolver, stationUicLookup, siriStopResolver);
+        this.interpreter = new EtJourneyInterpreter(journeyRefResolver, stationUicLookup, siriStopResolver,
+                stationNameLookup, plannedTrackLookup);
         this.marshaller = new EtJourneyMarshaller(dataSource);
     }
 

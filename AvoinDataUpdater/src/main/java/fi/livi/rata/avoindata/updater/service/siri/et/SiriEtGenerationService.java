@@ -81,7 +81,10 @@ public class SiriEtGenerationService {
             final Map<Long, Schedule> scheduleMap = new HashMap<>();
             winningSchedules.forEach((trainId, schedule) -> scheduleMap.put(trainId.trainNumber, schedule));
 
-            final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stationRepository.findAll());
+            final var stations = stationRepository.findAll();
+            final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
+            final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
+            final ScheduleMapPlannedTrackLookup plannedTrackLookup = new ScheduleMapPlannedTrackLookup(scheduleMap);
 
             final PetiUicMatcher matcher = petiStopSource.getMatcher();
             final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
@@ -94,6 +97,7 @@ public class SiriEtGenerationService {
 
             final SiriEtService etService = new SiriEtService(
                     journeyRefResolver, stationUicLookup, siriStopResolver,
+                    stationNameLookup, plannedTrackLookup,
                     siriWritingService, NeTExIdGenerator.CODESPACE, NeTExIdGenerator.CODESPACE);
             final Siri siri = etService.buildEtDocument(trains, now);
             final byte[] bytes = siriWritingService.marshalToBytes(siri);

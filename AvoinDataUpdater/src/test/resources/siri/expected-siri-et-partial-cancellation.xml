@@ -16,6 +16,8 @@
                         <DatedVehicleJourneyRef>FTR:ServiceJourney:59-12345</DatedVehicleJourneyRef>
                     </FramedVehicleJourneyRef>
                     <VehicleMode>rail</VehicleMode>
+                    <OriginName>Helsinki</OriginName>
+                    <DestinationName>Oulu</DestinationName>
                     <OperatorRef>FTR:Operator:vr</OperatorRef>
                     <Monitored>true</Monitored>
                     <DataSource>FSR</DataSource>
@@ -23,6 +25,7 @@
                         <RecordedCall>
                             <StopPointRef>FSR:Quay:HKI-7</StopPointRef>
                             <Order>1</Order>
+                            <StopPointName>Helsinki</StopPointName>
                             <AimedDepartureTime>2026-07-15T08:00:00</AimedDepartureTime>
                             <ActualDepartureTime>2026-07-15T08:00:00</ActualDepartureTime>
                             <DepartureStatus>onTime</DepartureStatus>
@@ -31,6 +34,7 @@
                         <RecordedCall>
                             <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
                             <Order>2</Order>
+                            <StopPointName>Tampere</StopPointName>
                             <AimedArrivalTime>2026-07-15T09:30:00</AimedArrivalTime>
                             <ActualArrivalTime>2026-07-15T09:31:00</ActualArrivalTime>
                             <ArrivalStatus>delayed</ArrivalStatus>
@@ -45,6 +49,7 @@
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:TKU-3</StopPointRef>
                             <Order>3</Order>
+                            <StopPointName>Turku</StopPointName>
                             <Cancellation>true</Cancellation>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T11:00:00</AimedArrivalTime>
@@ -57,6 +62,7 @@
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:OL-1</StopPointRef>
                             <Order>4</Order>
+                            <StopPointName>Oulu</StopPointName>
                             <Cancellation>true</Cancellation>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T14:00:00</AimedArrivalTime>

@@ -17,6 +17,8 @@
                     </FramedVehicleJourneyRef>
                     <Cancellation>true</Cancellation>
                     <VehicleMode>rail</VehicleMode>
+                    <OriginName>Helsinki</OriginName>
+                    <DestinationName>Oulu</DestinationName>
                     <OperatorRef>FTR:Operator:vr</OperatorRef>
                     <Monitored>false</Monitored>
                     <DataSource>FSR</DataSource>
@@ -24,6 +26,7 @@
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:HKI-7</StopPointRef>
                             <Order>1</Order>
+                            <StopPointName>Helsinki</StopPointName>
                             <Cancellation>true</Cancellation>
                             <RequestStop>false</RequestStop>
                             <AimedDepartureTime>2026-07-15T08:00:00</AimedDepartureTime>
@@ -33,6 +36,7 @@
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
                             <Order>2</Order>
+                            <StopPointName>Tampere</StopPointName>
                             <Cancellation>true</Cancellation>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T09:30:00</AimedArrivalTime>
@@ -45,6 +49,7 @@
                         <EstimatedCall>
                             <StopPointRef>FSR:Quay:OL-1</StopPointRef>
                             <Order>3</Order>
+                            <StopPointName>Oulu</StopPointName>
                             <Cancellation>true</Cancellation>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T14:00:00</AimedArrivalTime>

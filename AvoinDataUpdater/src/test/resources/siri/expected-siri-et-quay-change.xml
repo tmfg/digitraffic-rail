@@ -28,22 +28,26 @@
                             <StopPointName>Helsinki</StopPointName>
                             <RequestStop>false</RequestStop>
                             <AimedDepartureTime>2026-07-15T13:00:00</AimedDepartureTime>
-                            <ExpectedDepartureTime>2026-07-15T13:02:00</ExpectedDepartureTime>
-                            <DepartureStatus>delayed</DepartureStatus>
+                            <ExpectedDepartureTime>2026-07-15T13:00:00</ExpectedDepartureTime>
+                            <DepartureStatus>onTime</DepartureStatus>
                             <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
                         </EstimatedCall>
                         <EstimatedCall>
-                            <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
+                            <StopPointRef>FSR:Quay:TPE-2</StopPointRef>
                             <Order>2</Order>
                             <StopPointName>Tampere</StopPointName>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T14:30:00</AimedArrivalTime>
-                            <ExpectedArrivalTime>2026-07-15T14:35:00</ExpectedArrivalTime>
-                            <ArrivalStatus>delayed</ArrivalStatus>
+                            <ExpectedArrivalTime>2026-07-15T14:30:00</ExpectedArrivalTime>
+                            <ArrivalStatus>onTime</ArrivalStatus>
                             <ArrivalBoardingActivity>alighting</ArrivalBoardingActivity>
+                            <ArrivalStopAssignment>
+                                <AimedQuayRef>FSR:Quay:TPE-1</AimedQuayRef>
+                                <ExpectedQuayRef>FSR:Quay:TPE-2</ExpectedQuayRef>
+                            </ArrivalStopAssignment>
                             <AimedDepartureTime>2026-07-15T14:35:00</AimedDepartureTime>
-                            <ExpectedDepartureTime>2026-07-15T14:40:00</ExpectedDepartureTime>
-                            <DepartureStatus>delayed</DepartureStatus>
+                            <ExpectedDepartureTime>2026-07-15T14:35:00</ExpectedDepartureTime>
+                            <DepartureStatus>onTime</DepartureStatus>
                             <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
                         </EstimatedCall>
                         <EstimatedCall>
@@ -52,8 +56,8 @@
                             <StopPointName>Oulu</StopPointName>
                             <RequestStop>false</RequestStop>
                             <AimedArrivalTime>2026-07-15T18:00:00</AimedArrivalTime>
-                            <ExpectedArrivalTime>2026-07-15T18:10:00</ExpectedArrivalTime>
-                            <ArrivalStatus>delayed</ArrivalStatus>
+                            <ExpectedArrivalTime>2026-07-15T18:00:00</ExpectedArrivalTime>
+                            <ArrivalStatus>onTime</ArrivalStatus>
                             <ArrivalBoardingActivity>alighting</ArrivalBoardingActivity>
                         </EstimatedCall>
                     </EstimatedCalls>

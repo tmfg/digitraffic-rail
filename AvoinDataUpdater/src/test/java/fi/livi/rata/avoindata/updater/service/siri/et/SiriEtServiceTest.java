@@ -26,6 +26,7 @@ import uk.org.siri.siri21.EstimatedVehicleJourney;
 import uk.org.siri.siri21.EstimatedVersionFrameStructure;
 import uk.org.siri.siri21.RecordedCall;
 import uk.org.siri.siri21.Siri;
+import uk.org.siri.siri21.StopAssignmentStructure;
 import uk.org.siri.siri21.VehicleModesEnumeration;
 
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,13 +61,27 @@ class SiriEtServiceTest {
             "OL", 280
     );
 
+    private static final Map<String, String> NAME_MAP = Map.of(
+            "HKI", "Helsinki",
+            "TPE", "Tampere",
+            "TKU", "Turku",
+            "OL", "Oulu"
+    );
+
     private SiriEtService service;
     private SiriWritingService writingService;
+    private JourneyRefResolver journeyRefResolver;
+    private StationUicLookup stationUicLookup;
+    private SiriStopResolver siriStopResolver;
+    // Planned track per station short code; empty = no planned track known (no quay change). Populate in a test.
+    private final Map<String, String> plannedTracks = new HashMap<>();
 
     @BeforeEach
     void setUp() {
+        plannedTracks.clear();
+
         // given — stub JourneyRefResolver always resolves train 59
-        final JourneyRefResolver journeyRefResolver = (trainNumber, date) -> {
+        journeyRefResolver = (trainNumber, date) -> {
             if (trainNumber == 59L) {
                 return Optional.of(RESOLVED_59);
             }
@@ -73,7 +89,7 @@ class SiriEtServiceTest {
         };
 
         // given — stub StationUicLookup from map
-        final StationUicLookup stationUicLookup = shortCode -> {
+        stationUicLookup = shortCode -> {
             final Integer uic = UIC_MAP.get(shortCode);
             return uic != null ? OptionalInt.of(uic) : OptionalInt.empty();
         };
@@ -91,14 +107,23 @@ class SiriEtServiceTest {
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
                         List.of(new PetiQuay("FSR:Quay:OL-1", "1", null)))
         );
-        final SiriStopResolver siriStopResolver = new SiriStopResolver(petiStopSource);
+        siriStopResolver = new SiriStopResolver(petiStopSource);
 
         writingService = new SiriWritingService();
 
-        service = new SiriEtService(
+        service = newService(
+                shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
+                (trainNumber, date, shortCode) -> Optional.ofNullable(plannedTracks.get(shortCode)));
+    }
+
+    private SiriEtService newService(final StationNameLookup stationNameLookup,
+                                     final PlannedTrackLookup plannedTrackLookup) {
+        return new SiriEtService(
                 journeyRefResolver,
                 stationUicLookup,
                 siriStopResolver,
+                stationNameLookup,
+                plannedTrackLookup,
                 writingService,
                 PRODUCER_REF,
                 DATA_SOURCE
@@ -1139,6 +1164,77 @@ class SiriEtServiceTest {
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(Boolean.TRUE, tpe.isPredictionInaccurate());
+    }
+
+    // ===== Group D — name fields (OriginName / DestinationName / StopPointName) =====
+
+    @Test
+    void givenNamedStations_whenBuild_thenOriginDestinationAndStopNamesEmitted() {
+        final GTFSTrain train = createStandard4StopTrain(); // HKI, TPE, TKU, OL — all future → estimated calls
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        assertEquals("Helsinki", evj.getOriginNames().get(0).getValue());
+        assertEquals("Oulu", evj.getDestinationNames().get(0).getValue());
+
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        assertEquals("Helsinki", calls.get(0).getStopPointNames().get(0).getValue());
+        assertEquals("Tampere", calls.get(1).getStopPointNames().get(0).getValue());
+        assertEquals("Turku", calls.get(2).getStopPointNames().get(0).getValue());
+        assertEquals("Oulu", calls.get(3).getStopPointNames().get(0).getValue());
+    }
+
+    @Test
+    void givenNameLookupMiss_whenBuild_thenNoNamesEmitted() {
+        final SiriEtService noNames = newService(
+                shortCode -> Optional.empty(),
+                (trainNumber, date, shortCode) -> Optional.empty());
+        final GTFSTrain train = createStandard4StopTrain();
+        final EstimatedVehicleJourney evj = getEvjs(noNames.buildEtDocument(List.of(train), NOW)).get(0);
+
+        assertTrue(evj.getOriginNames().isEmpty());
+        assertTrue(evj.getDestinationNames().isEmpty());
+        for (final EstimatedCall call : evj.getEstimatedCalls().getEstimatedCalls()) {
+            assertTrue(call.getStopPointNames().isEmpty());
+        }
+    }
+
+    // ===== Group C — platform (quay) change → StopAssignment =====
+
+    @Test
+    void givenPlannedTrackDiffersFromActual_whenBuild_thenStopAssignmentEmitted() {
+        plannedTracks.put("TPE", "2"); // planned quay TPE-2; the train's actual TPE track is "1"
+        final GTFSTrain train = createStandard4StopTrain();
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertEquals(1, tpe.getArrivalStopAssignments().size());
+        final StopAssignmentStructure assignment = tpe.getArrivalStopAssignments().get(0);
+        assertEquals("FSR:Quay:TPE-2", assignment.getAimedQuayRef().getValue());
+        assertEquals("FSR:Quay:TPE-1", assignment.getExpectedQuayRef().getValue());
+        // StopPointRef stays the actual (expected) quay.
+        assertEquals("FSR:Quay:TPE-1", tpe.getStopPointRef().getValue());
+    }
+
+    @Test
+    void givenPlannedTrackEqualsActual_whenBuild_thenNoStopAssignment() {
+        plannedTracks.put("TPE", "1"); // same as the actual TPE track → no change
+        final GTFSTrain train = createStandard4StopTrain();
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertTrue(tpe.getArrivalStopAssignments().isEmpty());
+        assertTrue(tpe.getDepartureStopAssignments().isEmpty());
+    }
+
+    @Test
+    void givenNoPlannedTrack_whenBuild_thenNoStopAssignment() {
+        final GTFSTrain train = createStandard4StopTrain(); // plannedTracks empty by default
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        for (final EstimatedCall call : evj.getEstimatedCalls().getEstimatedCalls()) {
+            assertTrue(call.getArrivalStopAssignments().isEmpty());
+            assertTrue(call.getDepartureStopAssignments().isEmpty());
+        }
     }
 
     // ===== Helper =====
