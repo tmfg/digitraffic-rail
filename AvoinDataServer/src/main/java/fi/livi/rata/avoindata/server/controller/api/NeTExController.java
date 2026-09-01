@@ -29,7 +29,7 @@ public class NeTExController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(summary = "Returns the NeTEx Nordic dataset (timetables and compositions)")
+    @Operation(summary = "Returns train timetables and routes in NeTEx Nordic")
     @RequestMapping(method = RequestMethod.GET, path = "FTR-netex.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTEx(final HttpServletResponse response) {

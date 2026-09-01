@@ -122,6 +122,34 @@ class NeTExEntityServiceTest {
     }
 
     @Test
+    void givenDieselRailcarSchedule_whenCreatingLines_thenSubmodeIsRegionalRail() {
+        // given
+        final Schedule hdm = createLongDistanceSchedule(1L, 423L, "HDM");
+        final Schedule h = createLongDistanceSchedule(2L, 496L, "H");
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(hdm, h),
+                emptyRouteData(), Map.of());
+
+        // then
+        assertEquals(List.of("regionalRail", "regionalRail"),
+                lines.stream().map(NeTExEntityService.NeTExLine::transportSubmode).toList());
+    }
+
+    @Test
+    void givenSleeperSchedule_whenCreatingLines_thenSubmodeIsNightRail() {
+        // given
+        final Schedule schedule = createLongDistanceSchedule(1L, 265L, "PYO");
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
+
+        // then
+        assertEquals("nightRail", lines.get(0).transportSubmode());
+    }
+
+    @Test
     void givenCommuterSchedule_whenCreatingLines_thenLineIdIsCorrect() {
         // given
         final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");

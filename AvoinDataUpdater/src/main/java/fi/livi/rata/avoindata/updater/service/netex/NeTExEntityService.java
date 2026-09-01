@@ -76,13 +76,21 @@ public class NeTExEntityService {
     }
 
     /**
-     * Only Commuter and Long-distance survive the passenger filter, so anything
-     * else means the filter has changed and the submode would be a guess.
-     * The Nordic profile does not allow suburbanRailway, so commuter trains use
-     * local, the same value Norwegian lokaltog carry.
+     * JETI files every passenger type except the commuter ones under
+     * Long-distance, so the submode has to come from the train type: HDM and H
+     * are diesel railcar services on regional corridors and PYO is the sleeper
+     * product. The Nordic profile does not allow suburbanRailway, so commuter
+     * trains use local, the same value Norwegian lokaltog carry.
      */
     private static String deriveTransportSubmode(final Schedule schedule) {
-        return "Commuter".equals(schedule.trainCategory.name) ? "local" : "longDistance";
+        if ("Commuter".equals(schedule.trainCategory.name)) {
+            return "local";
+        }
+        return switch (schedule.trainType.name) {
+            case "HDM", "H" -> "regionalRail";
+            case "PYO" -> "nightRail";
+            default -> "longDistance";
+        };
     }
 
     /**
