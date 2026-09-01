@@ -24,19 +24,24 @@ public class RipaService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final WebClient ripaWebClient;
+    private final WebClient palaWebClient;
 
     private final RestTemplate ripaRestTemplate;
 
     private final String liikeInterfaceUrl;
     private final String kojuApiUrl;
+    private final String palaApiUrl;
 
-    public RipaService(final WebClient ripaWebClient, final RestTemplate ripaRestTemplate,
+    public RipaService(final WebClient ripaWebClient, final WebClient palaWebClient, final RestTemplate ripaRestTemplate,
             final @Value("${updater.liikeinterface-url}") String liikeInterfaceUrl,
-            final @Value("${updater.koju-api-url}") String kojuApiUrl) {
+            final @Value("${updater.koju-api-url}") String kojuApiUrl,
+            final @Value("${updater.pala-api-url:}") String palaApiUrl) {
         this.ripaWebClient = ripaWebClient;
+        this.palaWebClient = palaWebClient;
         this.ripaRestTemplate = ripaRestTemplate;
         this.liikeInterfaceUrl = liikeInterfaceUrl;
         this.kojuApiUrl = kojuApiUrl;
+        this.palaApiUrl = palaApiUrl;
     }
 
     public <ENTITYTYPE> ENTITYTYPE getFromRipa(final String path, final Class<ENTITYTYPE> clazz) {
@@ -133,6 +138,23 @@ public class RipaService {
                 .body(Mono.just(parts), HashMap.class)
                 .retrieve().bodyToMono(clazz).block();
 
+    }
+
+    /**
+     * Fetch raw response body from the PALA API as a string.
+     *
+     * @param path relative path under the PALA base URL (e.g., "0.2/yksikot.json")
+     * @return raw JSON response body
+     */
+    public String getFromPalaAsString(final String path) {
+        log.info("method=getFromPalaAsString Fetching from api={}/{} type=String", palaApiUrl, path);
+        try {
+            return palaWebClient.get().uri(path).retrieve().bodyToMono(String.class).block(BLOCK_DURATION);
+        } catch (final Exception e) {
+            log.error("method=getFromPalaAsString Fetching from api={}/{} failed with error {}",
+                    palaApiUrl, path, e.getMessage());
+            throw e;
+        }
     }
 
     public static class ETagRef {

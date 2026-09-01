@@ -1,0 +1,1045 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "### Paikkatietolaskuri\n\nRajapinnan palauttama data ei välttämättä tarkalleen vastaa muualla julkaistua vastaavaa dataa.",
+    "version": "0.2",
+    "title": "Pala",
+    "contact": {
+      "name": "Fintraffic"
+    },
+    "license": {
+      "name": "Digitraffic is an open data service. All content from the service and the service documentation is licenced under the Creative Commons 4.0 BY license.",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "host": "pala.stg.raide.fintraffic.fi",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Ratatyöt",
+      "description": " "
+    },
+    {
+      "name": "Yksiköt",
+      "description": " "
+    }
+  ],
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "paths": {
+    "/0.2/ratatyot.{format}": {
+      "get": {
+        "tags": [
+          "Ratatyöt"
+        ],
+        "summary": "Ratatyöt",
+        "operationId": "ratatyotUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "bbox",
+            "in": "query",
+            "description": "Place - Bounding-box. Samassa koordinaatistossa kuin pyydetty vastaus / Bounding-box. Same coordinate system as the requested response",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "description": ": Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "tsv",
+              "xlsx",
+              "png",
+              "count",
+              "chart",
+              "dwg"
+            ]
+          },
+          {
+            "name": "presentation",
+            "in": "query",
+            "description": "Esitystapa / Presentation - Vaikuttaa geometrioihin ja rotaatioihin. map = kartta (oletus), diagram = kaavio / Has effect on geometries and rotations. map = *world map* (default), diagram = *schematic representation*",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "map",
+              "diagram"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": ": Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "srsName",
+            "in": "query",
+            "description": ": Vastauksen koordinaattien muoto / Response coordinate system. Default: epsg:3067",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "epsg:3067",
+              "epsg:4326",
+              "epsg:3857",
+              "crs:84"
+            ]
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": ": Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/RatatyoDto",
+                "originalRef": "RatatyoDto"
+              }
+            }
+          }
+        },
+        "responsesObject": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/RatatyoDto",
+                "originalRef": "RatatyoDto"
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/0.2/ratatyot/{ratatyoId}.{format}": {
+      "get": {
+        "tags": [
+          "Ratatyöt"
+        ],
+        "summary": "Ratatyö",
+        "operationId": "ratatyoUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "tsv",
+              "xlsx",
+              "png",
+              "count",
+              "chart",
+              "dwg"
+            ]
+          },
+          {
+            "name": "presentation",
+            "in": "query",
+            "description": "Esitystapa / Presentation - Vaikuttaa geometrioihin ja rotaatioihin. map = kartta (oletus), diagram = kaavio / Has effect on geometries and rotations. map = *world map* (default), diagram = *schematic representation*",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "map",
+              "diagram"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": ": Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "ratatyoId",
+            "in": "path",
+            "description": "ratatyoId",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "srsName",
+            "in": "query",
+            "description": ": Vastauksen koordinaattien muoto / Response coordinate system. Default: epsg:3067",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "epsg:3067",
+              "epsg:4326",
+              "epsg:3857",
+              "crs:84"
+            ]
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/RatatyoDto",
+              "originalRef": "RatatyoDto"
+            }
+          }
+        },
+        "responsesObject": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/RatatyoDto",
+              "originalRef": "RatatyoDto"
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/0.2/yksikot.{format}": {
+      "get": {
+        "tags": [
+          "Yksiköt"
+        ],
+        "summary": "Yksiköt",
+        "operationId": "yksikotUsingGET_2",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "bbox",
+            "in": "query",
+            "description": "Place - Bounding-box. Samassa koordinaatistossa kuin pyydetty vastaus / Bounding-box. Same coordinate system as the requested response",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "description": ": Tulosjoukon maksimikoko. Oletuksena rajoittamaton / Result set size. Unlimited by default",
+            "required": false,
+            "type": "integer",
+            "default": 1,
+            "format": "int32",
+            "enum": [
+              1,
+              10,
+              50,
+              100,
+              250,
+              500,
+              1000,
+              4000
+            ]
+          },
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "tsv",
+              "xlsx",
+              "png",
+              "count",
+              "chart",
+              "dwg"
+            ]
+          },
+          {
+            "name": "presentation",
+            "in": "query",
+            "description": "Esitystapa / Presentation - Vaikuttaa geometrioihin ja rotaatioihin. map = kartta (oletus), diagram = kaavio / Has effect on geometries and rotations. map = *world map* (default), diagram = *schematic representation*",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "map",
+              "diagram"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": ": Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "srsName",
+            "in": "query",
+            "description": ": Vastauksen koordinaattien muoto / Response coordinate system. Default: epsg:3067",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "epsg:3067",
+              "epsg:4326",
+              "epsg:3857",
+              "crs:84"
+            ]
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "description": ": Tulosjoukon alkuindeksi, oletuksena 1 / Result set start index. 1 by default",
+            "required": false,
+            "type": "integer",
+            "minimum": 1,
+            "format": "int32"
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/YksikkoDto",
+                "originalRef": "YksikkoDto"
+              }
+            }
+          }
+        },
+        "responsesObject": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/YksikkoDto",
+                "originalRef": "YksikkoDto"
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/0.2/yksikot/{junanumero}/{lahtopaiva}.{format}": {
+      "get": {
+        "tags": [
+          "Yksiköt"
+        ],
+        "summary": "Yksikkö",
+        "operationId": "yksikkoUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "cql_filter",
+            "in": "query",
+            "description": "ECQL-alijoukko, useita suodattimia voi erottaa sanalla ' AND ' / ECQL-subset, multiple filters can be separated with ' AND '. =, <>, <, >, <=, >=, _ [NOT] BETWEEN _ AND _, _ [NOT] LIKE '%', _ [NOT] ILIKE '%', _ [NOT] IN (_,_), _ IS [NOT] NULL, INTERSECTS(_,_)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "description": "Vaihtoehtoinen 'time'-parametrin kanssa. Aikaväli ilmaistuna suhteessa nykyhetkeen joko yhdellä (negaatio tarkoittaa ajassa taaksepäin) tai kahdella ISO8601-periodilla. / Alternative with 'time' parameter. Interval relative to current time expressed either with one (negation indicates backwards in time) or two ISO8601-periods. PyYmMwWdDThHmMsS or -PyYmMwWdDThHmMsS or PyYmMwWdDThHmMsS/PyYmMwWdDThHmMsS",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "description": "Vastauksen muoto / Response format",
+            "required": true,
+            "type": "string",
+            "default": "json",
+            "enum": [
+              "json",
+              "geojson",
+              "jsonl",
+              "html",
+              "csv",
+              "tsv",
+              "xlsx",
+              "png",
+              "count",
+              "chart",
+              "dwg"
+            ]
+          },
+          {
+            "name": "junanumero",
+            "in": "path",
+            "description": "junanumero",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "lahtopaiva",
+            "in": "path",
+            "description": "Päivämäärä / Date. yyyy-MM-dd",
+            "required": true,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "presentation",
+            "in": "query",
+            "description": "Esitystapa / Presentation - Vaikuttaa geometrioihin ja rotaatioihin. map = kartta (oletus), diagram = kaavio / Has effect on geometries and rotations. map = *world map* (default), diagram = *schematic representation*",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "map",
+              "diagram"
+            ]
+          },
+          {
+            "name": "propertyName",
+            "in": "query",
+            "description": ": Palautettavat kentät aakkosjärjestyksessä. '-'-etuliitteellä voi jättää kenttiä pois / Attributes to return, in alphabetic order. '-'-prefix can be used to exclude fields",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "csv"
+          },
+          {
+            "name": "srsName",
+            "in": "query",
+            "description": ": Vastauksen koordinaattien muoto / Response coordinate system. Default: epsg:3067",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "epsg:3067",
+              "epsg:4326",
+              "epsg:3857",
+              "crs:84"
+            ]
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/YksikkoDto",
+              "originalRef": "YksikkoDto"
+            }
+          }
+        },
+        "responsesObject": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/YksikkoDto",
+              "originalRef": "YksikkoDto"
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Api-Key": {
+      "type": "apiKey",
+      "name": "Api-Key",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "JulkinenTunniste": {
+      "type": "object",
+      "required": [
+        "finnishOID",
+        "fintrafficOID",
+        "vaylaOID"
+      ],
+      "properties": {
+        "finnishOID": {
+          "type": "boolean"
+        },
+        "fintrafficOID": {
+          "type": "boolean"
+        },
+        "vaylaOID": {
+          "type": "boolean"
+        }
+      },
+      "title": "JulkinenTunniste"
+    },
+    "KulkutietoLahdeDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "lhraiteet",
+        "raideosuudet",
+        "tunniste"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "lhraiteet": {
+          "type": "array",
+          "example": [
+            "1.2.246.586.1.2.3"
+          ],
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "items": {
+            "type": "string",
+            "format": "oid-fintraffic"
+          }
+        },
+        "raideosuudet": {
+          "type": "array",
+          "example": [
+            "1.2.246.586.1.2.3"
+          ],
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "items": {
+            "type": "string",
+            "format": "oid-fintraffic"
+          }
+        },
+        "raideosuus": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID - Käytä kenttää 'raideosuudet' / Please use 'raideosuudet' instead",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "tunniste": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "viestiId": {
+          "type": "string"
+        }
+      },
+      "title": "KulkutietoLahdeDto"
+    },
+    "KuplaLahdeDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "tunniste"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "koordinaatti": {
+          "type": "array",
+          "example": [
+            237856,
+            6553600
+          ],
+          "description": "Point - Koordinaattipiste / Coordinate point",
+          "items": {
+            "type": "number"
+          }
+        },
+        "nopeus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Speed - Nopeus 1 km/h tarkkuudella / Speed with an accuracy of 1 km/h"
+        },
+        "tarkkuus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Distance - Etäisyys millimetrin tarkkuudella / Distance with an accuracy of 1 millimetre"
+        },
+        "tunniste": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        }
+      },
+      "title": "KuplaLahdeDto"
+    },
+    "RatakmetaisyysData": {
+      "type": "object",
+      "required": [
+        "etaisyys",
+        "ratakm",
+        "ratanumero"
+      ],
+      "properties": {
+        "etaisyys": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Distance - Etäisyys millimetrin tarkkuudella / Distance with an accuracy of 1 millimetre"
+        },
+        "ratakm": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ratanumero": {
+          "type": "string",
+          "example": "002"
+        }
+      },
+      "title": "RatakmetaisyysData"
+    },
+    "RatatyoDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "epavarmuus",
+        "lahdeRatatyot",
+        "ratatyoId",
+        "sijainti",
+        "users"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "epavarmuus": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lahdeRatatyot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RatatyoLahdeDto",
+            "originalRef": "RatatyoLahdeDto"
+          }
+        },
+        "ratatyoId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sijainti": {
+          "$ref": "#/definitions/SijaintiDto",
+          "originalRef": "SijaintiDto"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RatatyoUserDto",
+            "originalRef": "RatatyoUserDto"
+          }
+        }
+      },
+      "title": "RatatyoDto"
+    },
+    "RatatyoLahdeDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "koordinaatti",
+        "tarkkuus"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "koordinaatti": {
+          "type": "array",
+          "example": [
+            237856,
+            6553600
+          ],
+          "description": "Point - Koordinaattipiste / Coordinate point",
+          "items": {
+            "type": "number"
+          }
+        },
+        "tarkkuus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Distance - Etäisyys millimetrin tarkkuudella / Distance with an accuracy of 1 millimetre"
+        }
+      },
+      "title": "RatatyoLahdeDto"
+    },
+    "RatatyoUserDto": {
+      "type": "object",
+      "required": [
+        "epavarmuus",
+        "lahdetiedot",
+        "sijainti",
+        "userId"
+      ],
+      "properties": {
+        "epavarmuus": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lahdetiedot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RatatyoUserLahdeDto",
+            "originalRef": "RatatyoUserLahdeDto"
+          }
+        },
+        "sijainti": {
+          "$ref": "#/definitions/SijaintiDto",
+          "originalRef": "SijaintiDto"
+        },
+        "userId": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "RatatyoUserDto"
+    },
+    "RatatyoUserLahdeDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "koordinaatti",
+        "tarkkuus"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "koordinaatti": {
+          "type": "array",
+          "example": [
+            237856,
+            6553600
+          ],
+          "description": "Point - Koordinaattipiste / Coordinate point",
+          "items": {
+            "type": "number"
+          }
+        },
+        "tarkkuus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Distance - Etäisyys millimetrin tarkkuudella / Distance with an accuracy of 1 millimetre"
+        }
+      },
+      "title": "RatatyoUserLahdeDto"
+    },
+    "SijaintiDto": {
+      "type": "object",
+      "required": [
+        "lhraiteet",
+        "raideosuudet",
+        "toimialueet"
+      ],
+      "properties": {
+        "etaisyysRadasta": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Distance - Etäisyys millimetrin tarkkuudella / Distance with an accuracy of 1 millimetre"
+        },
+        "koordinaatti": {
+          "type": "array",
+          "example": [
+            237856,
+            6553600
+          ],
+          "description": "Point - Koordinaattipiste / Coordinate point",
+          "items": {
+            "type": "number"
+          }
+        },
+        "lhraiteet": {
+          "type": "array",
+          "example": [
+            "1.2.246.586.1.2.3"
+          ],
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "items": {
+            "type": "string",
+            "format": "oid-fintraffic"
+          }
+        },
+        "raide": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "raideosuudet": {
+          "type": "array",
+          "example": [
+            "1.2.246.586.1.2.3"
+          ],
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "items": {
+            "type": "string",
+            "format": "oid-fintraffic"
+          }
+        },
+        "raideosuus": {
+          "type": "string",
+          "format": "oid-fintraffic",
+          "example": "1.2.246.586.1.2.3",
+          "description": "Fintraffic OID - Käytä kenttää 'raideosuudet' / Please use 'raideosuudet' instead",
+          "pattern": "1\\.2\\.246\\.586\\..*"
+        },
+        "ratakmsijainti": {
+          "$ref": "#/definitions/RatakmetaisyysData",
+          "originalRef": "RatakmetaisyysData"
+        },
+        "toimialueet": {
+          "type": "array",
+          "example": [
+            "1.2.246.586.1.2.3"
+          ],
+          "description": "Fintraffic OID - Objektin globaalisti yksilöivä ISO OID -muotoinen Fintraffic-tunniste / Globally unique Fintraffic-identifier in ISO OID format",
+          "items": {
+            "type": "string",
+            "format": "oid-fintraffic"
+          }
+        }
+      },
+      "title": "SijaintiDto",
+      "xml": {
+        "name": "SijaintiDto",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "YksikkoDto": {
+      "type": "object",
+      "required": [
+        "aikaleima",
+        "epavarmuus",
+        "junanumero",
+        "lahdeKulkutiedot",
+        "lahdeKupla",
+        "lahtopaiva",
+        "sijainti"
+      ],
+      "properties": {
+        "aikaleima": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-29T09:13:42Z",
+          "description": "Ajanhetki / Instant. yyyy-MM-dd'T'HH:mm:ss'Z'"
+        },
+        "epavarmuus": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "junanumero": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Train number - Junan numero yksilöi junan yhdessä lähtöpäivän kanssa / Train number identifies a train together with departure date"
+        },
+        "lahdeKulkutiedot": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KulkutietoLahdeDto",
+            "originalRef": "KulkutietoLahdeDto"
+          }
+        },
+        "lahdeKupla": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KuplaLahdeDto",
+            "originalRef": "KuplaLahdeDto"
+          }
+        },
+        "lahtopaiva": {
+          "type": "string",
+          "format": "date",
+          "example": "1982-01-22",
+          "description": "Päivämäärä / Date. yyyy-MM-dd"
+        },
+        "nopeus": {
+          "type": "integer",
+          "format": "int32",
+          "example": 42,
+          "description": "Speed - Nopeus 1 km/h tarkkuudella / Speed with an accuracy of 1 km/h"
+        },
+        "sijainti": {
+          "$ref": "#/definitions/SijaintiDto",
+          "originalRef": "SijaintiDto"
+        },
+        "suunta": {
+          "type": "number",
+          "example": 45.5,
+          "description": "Angle - Kulma (0-359) asteen tarkkuudella / Angle (0-359) with an accuracy of 1 degree"
+        }
+      },
+      "title": "YksikkoDto"
+    }
+  }
+}

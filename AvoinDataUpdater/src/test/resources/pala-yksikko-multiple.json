@@ -1,0 +1,50 @@
+{
+  "9931": {
+    "junanumero": 9931,
+    "lahtopaiva": "2026-07-06",
+    "aikaleima": "2026-07-06T08:34:29Z",
+    "nopeus": 74,
+    "suunta": 180,
+    "epavarmuus": 5,
+    "sijainti": {
+      "koordinaatti": [380012.416714, 6736100.100908],
+      "raideosuudet": [],
+      "lhraiteet": [],
+      "toimialueet": []
+    },
+    "lahdeKupla": [
+      {
+        "aikaleima": "2026-07-06T08:34:28Z",
+        "tunniste": "1.2.246.586.1.99.12345",
+        "koordinaatti": [380012.416714, 6736100.100908],
+        "nopeus": 74,
+        "tarkkuus": 5000
+      }
+    ],
+    "lahdeKulkutiedot": []
+  },
+  "23": {
+    "junanumero": 23,
+    "lahtopaiva": "2026-07-06",
+    "aikaleima": "2026-07-06T09:00:00Z",
+    "nopeus": 120,
+    "suunta": 90,
+    "epavarmuus": 3,
+    "sijainti": {
+      "koordinaatti": [327785, 6823456],
+      "raideosuudet": [],
+      "lhraiteet": [],
+      "toimialueet": []
+    },
+    "lahdeKupla": [
+      {
+        "aikaleima": "2026-07-06T09:00:00Z",
+        "tunniste": "1.2.246.586.1.99.67890",
+        "koordinaatti": [327785, 6823456],
+        "nopeus": 120,
+        "tarkkuus": 3000
+      }
+    ],
+    "lahdeKulkutiedot": []
+  }
+}

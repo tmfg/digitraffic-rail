@@ -5,6 +5,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.factory.TrainLocationFactory;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,5 +44,51 @@ public class TrainLocationNearTrackFilterServiceTest extends BaseTest {
                 Arguments.arguments("500m north of Tampere", 327785, 6823456 + 663, false),
                 Arguments.arguments("Uusikaipunki private track", 192063,6752583, true)
                 );
+    }
+
+    // --- Test 11: Calculated position also filtered (no bypass based on isGpsLocation) ---
+
+    @Test
+    public void calculatedPositionOnTrackShouldBeAccepted() {
+        // given — calculated position (isGpsLocation = false) with on-track coordinates (Helsinki)
+        final TrainLocation location = factory.create(385754, 6672611);
+        location.isGpsLocation = false;
+
+        // when/then — near-track filter runs for ALL positions, no bypass for calculated
+        Assertions.assertTrue(trainLocationNearTrackFilterService.isTrainLocationNearTrack(location),
+                "Calculated position on-track should be accepted (no bypass)");
+    }
+
+    @Test
+    public void calculatedPositionOffTrackShouldBeRejected() {
+        // given — calculated position (isGpsLocation = false) with off-track coordinates
+        final TrainLocation location = factory.create(386167, 6666698); // South of Helsinki, off-track
+        location.isGpsLocation = false;
+
+        // when/then — calculated positions are also filtered, no bypass
+        Assertions.assertFalse(trainLocationNearTrackFilterService.isTrainLocationNearTrack(location),
+                "Calculated position off-track should be rejected (no bypass)");
+    }
+
+    @Test
+    public void gpsPositionOnTrackShouldBeAccepted() {
+        // given — GPS position (isGpsLocation = true, default) with on-track coordinates
+        final TrainLocation location = factory.create(385754, 6672611);
+        location.isGpsLocation = true;
+
+        // when/then — existing behavior preserved
+        Assertions.assertTrue(trainLocationNearTrackFilterService.isTrainLocationNearTrack(location),
+                "GPS position on-track should be accepted");
+    }
+
+    @Test
+    public void gpsPositionOffTrackShouldBeRejected() {
+        // given — GPS position with off-track coordinates
+        final TrainLocation location = factory.create(386167, 6666698);
+        location.isGpsLocation = true;
+
+        // when/then — existing behavior preserved
+        Assertions.assertFalse(trainLocationNearTrackFilterService.isTrainLocationNearTrack(location),
+                "GPS position off-track should be rejected");
     }
 }

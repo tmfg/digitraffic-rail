@@ -1,0 +1,48 @@
+{
+  "9001": {
+    "junanumero": 9001,
+    "lahtopaiva": "2026-01-01",
+    "aikaleima": "2026-01-01T08:00:00Z",
+    "nopeus": 50,
+    "epavarmuus": 5,
+    "sijainti": {
+      "koordinaatti": [327785.0, 6823456.0],
+      "raideosuudet": [],
+      "lhraiteet": [],
+      "toimialueet": []
+    },
+    "lahdeKupla": [
+      {
+        "aikaleima": "2026-01-01T08:00:00Z",
+        "tunniste": "1.2.246.586.1.99.9001",
+        "koordinaatti": [327785.0, 6823456.0],
+        "nopeus": 50,
+        "tarkkuus": 11000
+      }
+    ],
+    "lahdeKulkutiedot": []
+  },
+  "9002": {
+    "junanumero": 9002,
+    "lahtopaiva": "2026-01-01",
+    "aikaleima": "2026-01-01T08:01:00Z",
+    "nopeus": 60,
+    "epavarmuus": 5,
+    "sijainti": {
+      "koordinaatti": [473333.0, 7589740.0],
+      "raideosuudet": [],
+      "lhraiteet": [],
+      "toimialueet": []
+    },
+    "lahdeKupla": [
+      {
+        "aikaleima": "2026-01-01T08:01:00Z",
+        "tunniste": "1.2.246.586.1.99.9002",
+        "koordinaatti": [473333.0, 7589740.0],
+        "nopeus": 60,
+        "tarkkuus": 7000
+      }
+    ],
+    "lahdeKulkutiedot": []
+  }
+}
