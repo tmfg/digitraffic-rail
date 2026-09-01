@@ -231,9 +231,15 @@ public class NeTExEntityService {
         return times;
     }
 
+    /**
+     * The baseline for the past-midnight rollover has to be the first stop we
+     * actually publish, not the first one flagged COMMERCIAL: an origin whose
+     * departure carries another stop type is still published, and measuring
+     * from a later stop pushes everything before it past 24:00.
+     */
     private Duration findFirstDeparture(final Schedule schedule) {
         for (final ScheduleRow row : schedule.scheduleRows) {
-            if (row.departure != null && row.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL) {
+            if (isCommercialStop(row) && row.departure != null) {
                 return row.departure.timestamp;
             }
         }

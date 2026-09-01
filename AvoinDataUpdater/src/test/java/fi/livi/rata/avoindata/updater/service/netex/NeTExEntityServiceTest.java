@@ -392,6 +392,27 @@ class NeTExEntityServiceTest {
         assertTrue(journeys.get(0).journeyPatternRef().startsWith("FTR:JourneyPattern:"));
     }
 
+    @Test
+    void givenOriginDepartureNotFlaggedCommercial_whenCreatingServiceJourneys_thenNoMidnightRollover() {
+        // given — an afternoon journey whose origin departure is not flagged
+        // COMMERCIAL, which is still published because the row has no arrival
+        final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
+        schedule.scheduleRows = createAfternoonStops();
+        schedule.scheduleRows.get(0).departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // when
+        final List<NeTExEntityService.NeTExServiceJourney> journeys = entityService
+                .createServiceJourneys(List.of(schedule), routeData);
+
+        // then — times stay on the operating day, none roll past 24:00
+        final var passingTimes = journeys.get(0).passingTimes();
+        assertEquals("12:06:00", passingTimes.get(0).departureTime());
+        assertEquals("12:07:00", passingTimes.get(1).arrivalTime());
+        assertEquals("12:08:00", passingTimes.get(1).departureTime());
+        assertEquals("12:20:00", passingTimes.get(2).arrivalTime());
+    }
+
     // --- Helpers ---
 
     private static NeTExRouteData emptyRouteData() {
@@ -487,5 +508,40 @@ class NeTExEntityServiceTest {
         for (int i = 0; i < schedule.scheduleRows.size(); i++) {
             schedule.scheduleRows.get(i).commercialTrack = tracks.get(i);
         }
+    }
+
+    /** HKI 12:06 → TPE 12:07/12:08 → OL 12:20, Helsinki local (UTC+2 on the reference date). */
+    private List<ScheduleRow> createAfternoonStops() {
+        final List<ScheduleRow> rows = new ArrayList<>();
+        final String[] stations = { "HKI", "TPE", "OL" };
+        final Duration[] arrivals = { null, Duration.ofHours(10).plusMinutes(7), Duration.ofHours(10).plusMinutes(20) };
+        final Duration[] departures = { Duration.ofHours(10).plusMinutes(6), Duration.ofHours(10).plusMinutes(8),
+                null };
+
+        for (int i = 0; i < stations.length; i++) {
+            final ScheduleRow row = new ScheduleRow();
+            row.id = i + 1;
+            row.station = new StationEmbeddable(stations[i], 100 + i, "FI");
+
+            if (arrivals[i] != null) {
+                final ScheduleRowPart arrival = new ScheduleRowPart();
+                arrival.id = i * 10 + 1;
+                arrival.timestamp = arrivals[i];
+                arrival.stopType = ScheduleRow.ScheduleRowStopType.COMMERCIAL;
+                arrival.scheduleRow = row;
+                row.arrival = arrival;
+            }
+            if (departures[i] != null) {
+                final ScheduleRowPart departure = new ScheduleRowPart();
+                departure.id = i * 10 + 2;
+                departure.timestamp = departures[i];
+                departure.stopType = ScheduleRow.ScheduleRowStopType.COMMERCIAL;
+                departure.scheduleRow = row;
+                row.departure = departure;
+            }
+
+            rows.add(row);
+        }
+        return rows;
     }
 }
