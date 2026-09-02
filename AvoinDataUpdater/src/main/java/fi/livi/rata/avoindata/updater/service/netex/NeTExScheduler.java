@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
  * before the GTFS generation to avoid resource contention.
  */
 @Component
+@ConditionalOnProperty(name = "updater.netex.enabled", havingValue = "true", matchIfMissing = true)
 public class NeTExScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExScheduler.class);

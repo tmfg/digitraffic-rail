@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Tag(name = "netex", description = "Returns data in NeTEx Nordic format")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "netex")
+@ConditionalOnProperty(name = "avoindataserver.netex.enabled", havingValue = "true", matchIfMissing = true)
 public class NeTExController {
 
     private static final String PACKAGE_FILENAME = "FTR-netex.zip";
