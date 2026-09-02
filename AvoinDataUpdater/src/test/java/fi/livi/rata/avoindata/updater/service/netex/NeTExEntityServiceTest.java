@@ -150,6 +150,19 @@ class NeTExEntityServiceTest {
     }
 
     @Test
+    void givenMuseumSchedule_whenCreatingLines_thenSubmodeIsTouristRailway() {
+        // given
+        final Schedule schedule = createLongDistanceSchedule(1L, 8801L, "MUS");
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                emptyRouteData(), Map.of());
+
+        // then
+        assertEquals("touristRailway", lines.get(0).transportSubmode());
+    }
+
+    @Test
     void givenCommuterSchedule_whenCreatingLines_thenLineIdIsCorrect() {
         // given
         final Schedule schedule = createCommuterSchedule(1L, 2105L, "Z");
@@ -510,7 +523,10 @@ class NeTExEntityServiceTest {
         }
     }
 
-    /** HKI 12:06 → TPE 12:07/12:08 → OL 12:20, Helsinki local (UTC+2 on the reference date). */
+    /**
+     * HKI 12:06 → TPE 12:07/12:08 → OL 12:20, Helsinki local (UTC+2 on the
+     * reference date).
+     */
     private List<ScheduleRow> createAfternoonStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
         final String[] stations = { "HKI", "TPE", "OL" };

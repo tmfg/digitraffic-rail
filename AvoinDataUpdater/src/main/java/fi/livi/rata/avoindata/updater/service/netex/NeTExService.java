@@ -39,7 +39,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 public class NeTExService {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExService.class);
-    private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
+    private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV");
 
     @Value("${updater.netex.peti.min-match-rate:0.95}")
     private double minMatchRate = 0.95;
@@ -323,11 +323,7 @@ public class NeTExService {
         return kept;
     }
 
-    /**
-     * Filters schedules to only include passenger trains.
-     * Matches GTFS logic: commuter trains, or commercial long-distance trains.
-     * Excludes: cargo, museum trains, types V/HV/MV/MUS.
-     */
+    /** Mirrors GTFSService.isPassengerTrain so both feeds publish the same journeys. */
     public List<Schedule> filterPassengerTrains(final List<Schedule> schedules) {
         final List<Schedule> result = new ArrayList<>();
         for (final Schedule schedule : schedules) {
