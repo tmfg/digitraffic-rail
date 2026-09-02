@@ -7,9 +7,9 @@ import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService.NeTExLine
 
 /**
  * Nordic-profile ZIP entry names. The profile only requires that common files
- * are prefixed with "_"; the rest follows the Norwegian reference layout,
- * trimmed of its repeated line id. The codespace prefix is kept because
- * consumers select group files by a leading three-letter codespace.
+ * are prefixed with "_"; the rest is codespace, public code and line name. The
+ * codespace prefix is kept because consumers select group files by a leading
+ * three-letter codespace.
  */
 public final class NeTExFileNaming {
 
@@ -28,8 +28,8 @@ public final class NeTExFileNaming {
     }
 
     /**
-     * Diacritics are stripped rather than emitted as UTF-8 entry names, matching
-     * the Norwegian dataset (Flåm -> Flam, Skøyen -> Skoyen).
+     * Diacritics are stripped rather than emitted as UTF-8 entry names so that
+     * ZIP readers agree on the entry name (Jyväskylä -> Jyvaskyla).
      */
     static String sanitise(final String value) {
         final String stripped = Normalizer.normalize(value, Normalizer.Form.NFD)
