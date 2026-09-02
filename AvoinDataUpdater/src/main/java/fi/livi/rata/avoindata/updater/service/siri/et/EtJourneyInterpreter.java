@@ -70,8 +70,7 @@ public class EtJourneyInterpreter {
             }
         }
 
-        final List<StopRef> stopRefs = new ArrayList<>(commercialStops.size());
-        final List<String> stopNames = new ArrayList<>(commercialStops.size());
+        final List<ResolvedStop> stops = new ArrayList<>(commercialStops.size());
         boolean monitored = false;
         for (final PairedStop stop : commercialStops) {
             final Optional<StopRef> stopRef = resolveStopRef(stop);
@@ -81,27 +80,27 @@ public class EtJourneyInterpreter {
             if (stopRef.isEmpty()) {
                 return new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_STOP);
             }
-            stopRefs.add(stopRef.get());
-            stopNames.add(stationNameLookup.nameFor(representativeRow(stop).stationShortCode).orElse(null));
+            final String stopName = stationNameLookup.nameFor(representativeRow(stop).stationShortCode).orElse(null);
+            stops.add(new ResolvedStop(stop, stopRef.get(), stopName));
             // If any stop has live data, the whole journey is considered monitored.
             monitored = monitored || hasLiveData(stop);
         }
 
-        final List<EtCall> calls = new ArrayList<>(commercialStops.size());
-        for (int i = 0; i < commercialStops.size(); i++) {
-            final PairedStop stop = commercialStops.get(i);
+        final List<EtCall> calls = new ArrayList<>(stops.size());
+        for (int i = 0; i < stops.size(); i++) {
+            final ResolvedStop current = stops.get(i);
             final int order = i + 1;
             // Partial-cancellation boundary: the last served stop before a cancelled stop departs 'cancelled'.
-            final boolean nextCancelled = i + 1 < commercialStops.size() && isCancelled(commercialStops.get(i + 1));
-            calls.add(toCall(train, stop, stopRefs.get(i), stopNames.get(i), order, nextCancelled));
+            final boolean nextCancelled = i + 1 < stops.size() && isCancelled(stops.get(i + 1).stop());
+            calls.add(toCall(train, current.stop(), current.stopRef(), current.stopName(), order, nextCancelled));
         }
 
         final ResolvedJourney j = resolved.get();
         return new InterpretResult.Emitted(new EtJourney(
                 j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(),
                 train.cancelled, monitored,
-                stopNames.isEmpty() ? null : stopNames.get(0),
-                stopNames.isEmpty() ? null : stopNames.get(stopNames.size() - 1),
+                stops.isEmpty() ? null : stops.get(0).stopName(),
+                stops.isEmpty() ? null : stops.get(stops.size() - 1).stopName(),
                 calls));
     }
 
@@ -259,4 +258,7 @@ public class EtJourneyInterpreter {
     }
 
     private record PairedStop(GTFSTimeTableRow arrival, GTFSTimeTableRow departure) {}
+
+    /** A commercial stop paired with its resolved PETI stop ref and station name, carried as one unit. */
+    private record ResolvedStop(PairedStop stop, StopRef stopRef, String stopName) {}
 }

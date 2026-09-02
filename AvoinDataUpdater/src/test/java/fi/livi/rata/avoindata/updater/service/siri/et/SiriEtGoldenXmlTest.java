@@ -114,7 +114,7 @@ class SiriEtGoldenXmlTest {
         service = new SiriEtService(
                 journeyRefResolver,
                 stationUicLookup,
-                new SiriStopResolver(petiStopSource),
+                new SiriStopResolver(petiStopSource.getMatcher()),
                 stationNameLookup,
                 plannedTrackLookup,
                 writingService,

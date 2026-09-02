@@ -107,7 +107,7 @@ class SiriEtServiceTest {
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
                         List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null)))
         );
-        siriStopResolver = new SiriStopResolver(petiStopSource);
+        siriStopResolver = new SiriStopResolver(petiStopSource.getMatcher());
 
         writingService = new SiriWritingService();
 
@@ -197,6 +197,21 @@ class SiriEtServiceTest {
                 deliveries.get(0).getEstimatedJourneyVersionFrames();
         assertNotNull(frames);
         assertFalse(frames.isEmpty());
+        return frames.get(0).getEstimatedVehicleJourneies();
+    }
+
+    /** EVJs tolerating an absent delivery/frame — an empty feed emits a bare delivery with no frame. */
+    private List<EstimatedVehicleJourney> getEvjsOrEmpty(final Siri siri) {
+        final List<EstimatedTimetableDeliveryStructure> deliveries =
+                siri.getServiceDelivery().getEstimatedTimetableDeliveries();
+        if (deliveries == null || deliveries.isEmpty()) {
+            return List.of();
+        }
+        final List<EstimatedVersionFrameStructure> frames =
+                deliveries.get(0).getEstimatedJourneyVersionFrames();
+        if (frames == null || frames.isEmpty()) {
+            return List.of();
+        }
         return frames.get(0).getEstimatedVehicleJourneies();
     }
 
@@ -602,7 +617,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — an unresolvable stop means the sequence cannot be complete, so the journey is not emitted
-        assertTrue(getEvjs(result).isEmpty());
+        assertTrue(getEvjsOrEmpty(result).isEmpty());
     }
 
     // ===== AREA 4 — Time fields =====
@@ -1077,12 +1092,9 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — no journey is emitted; we never publish an incomplete sequence
-        assertTrue(getEvjs(result).isEmpty());
+        assertTrue(getEvjsOrEmpty(result).isEmpty());
     }
 
-    // ===== AREA 11 — Pass 4: journey-level fields, call statuses & boarding activity =====
-
-    // --- ET-35: scheduled train → VehicleMode=rail, OperatorRef set, not monitored ---
     @Test
     void givenScheduledTrain_whenBuild_thenVehicleModeOperatorRefAndNotMonitored() {
         final GTFSTrain train = createStandard4StopTrain();
@@ -1236,8 +1248,6 @@ class SiriEtServiceTest {
             assertTrue(call.getDepartureStopAssignments().isEmpty());
         }
     }
-
-    // ===== Pass 5 — generation stats (rail.siri.et.generation wide event) =====
 
     @Test
     void givenResolvableTrain_whenBuildWithStats_thenEmittedAndStopRefCounts() {

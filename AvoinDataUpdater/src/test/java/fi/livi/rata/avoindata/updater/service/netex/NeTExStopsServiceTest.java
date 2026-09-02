@@ -145,8 +145,6 @@ class NeTExStopsServiceTest {
                 assertEquals("FTR:ScheduledStopPoint:HKI", stopsData.getScheduledStopPoints().get(0).id());
         }
 
-        // --- Pass 2: PassengerStopAssignment wiring scenarios ---
-
         @Test
         void givenEmptyPetiStopSource_whenCreatingStops_thenNoAssignmentsAndZeroCounts() {
                 // given — EmptyPetiStopSource (default setUp)
@@ -281,8 +279,6 @@ class NeTExStopsServiceTest {
                 assertEquals(1, stopsData.getStopAssignments().size());
                 assertEquals("FTR:PassengerStopAssignment:HKI", stopsData.getStopAssignments().get(0).id());
         }
-
-        // --- Pass 2b: Track-qualified ScheduledStopPoints and QuayRef scenarios ---
 
         @Test
         void givenStationAndTrack_whenCreatingStopsWithTrackContext_thenProducesTrackQualifiedSsp() {

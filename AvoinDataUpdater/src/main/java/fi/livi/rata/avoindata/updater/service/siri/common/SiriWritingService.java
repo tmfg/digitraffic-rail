@@ -32,7 +32,7 @@ public class SiriWritingService {
                     try {
                         jaxbContext = JAXBContext.newInstance(Siri.class);
                     } catch (final JAXBException e) {
-                        throw new RuntimeException("Failed to initialize JAXB context", e);
+                        throw new SiriMarshalException("Failed to initialize JAXB context", e);
                     }
                 }
             }
@@ -73,7 +73,7 @@ public class SiriWritingService {
             marshaller.marshal(siri, writer);
             return writer.toString();
         } catch (final JAXBException e) {
-            throw new RuntimeException("Failed to marshal SIRI XML", e);
+            throw new SiriMarshalException("Failed to marshal SIRI XML", e);
         }
     }
 
@@ -81,8 +81,9 @@ public class SiriWritingService {
         return marshalToXml(siri).getBytes(StandardCharsets.UTF_8);
     }
 
-    // Structural (JAXB-binding) check. The library's org.entur SiriValidator cannot load its bundled
-    // SIRI XSDs on JDK 25 (src-import.3.1 xml.xsd collision); real XSD/profile validation is TICKET-08/VACO.
+    // Structural (JAXB-binding) check only: well-formedness + bindability, not XSD/cardinality. Entur's
+    // SiriValidator is built/tested on Java 11 (their CI pins java-version: 11); on our JDK 25 its bundled-XSD
+    // loading fails (src-import.3.1 on the xml namespace import), so real XSD/profile validation stays with VACO.
     public boolean isSchemaValid(final byte[] xml) {
         try {
             final Object root = getJaxbContext().createUnmarshaller()

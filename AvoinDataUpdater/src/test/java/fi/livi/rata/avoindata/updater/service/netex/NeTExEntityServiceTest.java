@@ -308,8 +308,6 @@ class NeTExEntityServiceTest {
         assertEquals(1, journeys.size());
     }
 
-    // --- Pass 2b: Passing times carry station and track context ---
-
     @Test
     void givenScheduleWithTracks_whenCreatingServiceJourneys_thenPassingTimesCarryStationAndTrack() {
         // given — schedule with HKI (track "4"), TPE (track "1"), OL (track "2")

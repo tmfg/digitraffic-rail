@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallPoint;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallStatus;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
@@ -17,7 +18,9 @@ import uk.org.siri.siri21.DataFrameRefStructure;
 import uk.org.siri.siri21.DepartureBoardingActivityEnumeration;
 import uk.org.siri.siri21.DirectionRefStructure;
 import uk.org.siri.siri21.EstimatedCall;
+import uk.org.siri.siri21.EstimatedTimetableDeliveryStructure;
 import uk.org.siri.siri21.EstimatedVehicleJourney;
+import uk.org.siri.siri21.EstimatedVersionFrameStructure;
 import uk.org.siri.siri21.FramedVehicleJourneyRefStructure;
 import uk.org.siri.siri21.LineRef;
 import uk.org.siri.siri21.NaturalLanguagePlaceNameStructure;
@@ -25,24 +28,60 @@ import uk.org.siri.siri21.NaturalLanguageStringStructure;
 import uk.org.siri.siri21.OperatorRefStructure;
 import uk.org.siri.siri21.QuayRefStructure;
 import uk.org.siri.siri21.RecordedCall;
+import uk.org.siri.siri21.Siri;
 import uk.org.siri.siri21.StopAssignmentStructure;
 import uk.org.siri.siri21.StopPointRefStructure;
 import uk.org.siri.siri21.VehicleModesEnumeration;
 
 /**
- * Marshals an {@link EtJourney} into a SIRI {@code EstimatedVehicleJourney}. Pure translation — no
- * interpretation: it switches on the sealed {@link EtCall} to build a {@code RecordedCall} or
- * {@code EstimatedCall} and does the local-Helsinki time formatting.
+ * Owns <em>all</em> SIRI-ET XML construction: it assembles the delivery envelope and, for each
+ * {@link EtJourney} produced by {@link EtJourneyInterpreter}, the {@code EstimatedVehicleJourney}, then
+ * serializes the whole {@code Siri} document to bytes. Pure translation — no interpretation: it switches on
+ * the sealed {@link EtCall} to build a {@code RecordedCall} or {@code EstimatedCall} and does the
+ * local-Helsinki time formatting.
  */
 public class EtJourneyMarshaller {
 
+    private final SiriWritingService siriWritingService;
+    private final String producerRef;
     private final String dataSource;
 
-    public EtJourneyMarshaller(final String dataSource) {
+    public EtJourneyMarshaller(final SiriWritingService siriWritingService, final String producerRef,
+                               final String dataSource) {
+        this.siriWritingService = siriWritingService;
+        this.producerRef = producerRef;
         this.dataSource = dataSource;
     }
 
-    public EstimatedVehicleJourney marshal(final EtJourney journey, final ZonedDateTime now) {
+    /** Assembles the complete SIRI-ET {@code ServiceDelivery} document from the interpreted journeys. */
+    public Siri marshal(final List<EtJourney> journeys, final ZonedDateTime now) {
+        final Siri siri = siriWritingService.buildEnvelope(now, producerRef);
+
+        final EstimatedTimetableDeliveryStructure delivery = new EstimatedTimetableDeliveryStructure();
+        delivery.setVersion("2.0");
+        delivery.setResponseTimestamp(now.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
+
+        // An EstimatedJourneyVersionFrame must carry at least one journey to be schema-valid; on a no-traffic
+        // cycle we emit a bare delivery (no frame) rather than an invalid empty one.
+        if (!journeys.isEmpty()) {
+            final EstimatedVersionFrameStructure frame = new EstimatedVersionFrameStructure();
+            frame.setRecordedAtTime(now.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
+            for (final EtJourney journey : journeys) {
+                frame.getEstimatedVehicleJourneies().add(marshalJourney(journey, now));
+            }
+            delivery.getEstimatedJourneyVersionFrames().add(frame);
+        }
+
+        siri.getServiceDelivery().getEstimatedTimetableDeliveries().add(delivery);
+        return siri;
+    }
+
+    /** Serializes a built document to UTF-8 XML bytes — the single exit point for SIRI-ET serialization. */
+    public byte[] marshalToBytes(final Siri siri) {
+        return siriWritingService.marshalToBytes(siri);
+    }
+
+    private EstimatedVehicleJourney marshalJourney(final EtJourney journey, final ZonedDateTime now) {
         final EstimatedVehicleJourney evj = new EstimatedVehicleJourney();
 
         evj.setRecordedAtTime(toHelsinki(now));

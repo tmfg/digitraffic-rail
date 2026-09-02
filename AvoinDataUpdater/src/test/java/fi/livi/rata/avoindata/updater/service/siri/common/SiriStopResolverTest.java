@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
-import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,8 +23,7 @@ class SiriStopResolverTest {
         final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
                 List.of(quay7, quay8));
 
-        final PetiStopSource source = () -> List.of(stop);
-        resolver = new SiriStopResolver(source);
+        resolver = new SiriStopResolver(new PetiUicMatcher(List.of(stop)));
     }
 
     // --- STOP-01: Known station + known track → Quay id ---
@@ -81,94 +79,5 @@ class SiriStopResolverTest {
 
         // then
         assertEquals(Optional.empty(), result);
-    }
-
-    // --- STOP-06: resolveStopPlaceId returns StopPlace regardless of quays ---
-
-    @Test
-    void givenKnownStation_whenResolveStopPlaceId_thenReturnsStopPlace() {
-        // when
-        final Optional<StopRef> result = resolver.resolveStopPlaceId(361);
-
-        // then
-        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
-    }
-
-    // --- STOP-07: resolveStopPlaceId with unknown station → empty ---
-
-    @Test
-    void givenUnknownStation_whenResolveStopPlaceId_thenReturnsEmpty() {
-        // when
-        final Optional<StopRef> result = resolver.resolveStopPlaceId(999);
-
-        // then
-        assertEquals(Optional.empty(), result);
-    }
-
-    // ===== F3 — Prebuilt-matcher constructor tests =====
-
-    private SiriStopResolver createPrebuiltMatcherResolver() {
-        final PetiQuay quay7 = new PetiQuay("FSR:Quay:7", "1", null, null, null);
-        final PetiQuay quay8 = new PetiQuay("FSR:Quay:8", "2", null, null, null);
-        final PetiStop stop = new PetiStop("FSR:StopPlace:1", 1000361, "Tervola", true, null,
-                List.of(quay7, quay8));
-        final PetiUicMatcher matcher = new PetiUicMatcher(List.of(stop));
-        return new SiriStopResolver(matcher);
-    }
-
-    // --- STOP-F3-01: Prebuilt-matcher resolves quayId same as source-backed ---
-
-    @Test
-    void givenPrebuiltMatcher_whenResolveQuayId_thenReturnsSameAsSourceBacked() {
-        // given
-        final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
-
-        // when
-        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(361, "1");
-
-        // then
-        assertEquals(Optional.of(new StopRef("FSR:Quay:7")), result);
-    }
-
-    // --- STOP-F3-02: Prebuilt-matcher resolves stopPlaceId same as source-backed ---
-
-    @Test
-    void givenPrebuiltMatcher_whenResolveStopPlaceId_thenReturnsSameAsSourceBacked() {
-        // given
-        final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
-
-        // when
-        final Optional<StopRef> result = prebuiltResolver.resolveStopPlaceId(361);
-
-        // then
-        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
-    }
-
-    // --- STOP-F3-03: Prebuilt-matcher returns empty for unknown station ---
-
-    @Test
-    void givenPrebuiltMatcher_whenResolveUnknownStation_thenReturnsEmpty() {
-        // given
-        final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
-
-        // when
-        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(999, "1");
-
-        // then
-        assertEquals(Optional.empty(), result);
-    }
-
-    // --- STOP-F3-04: Prebuilt-matcher with null track falls back to StopPlace ---
-
-    @Test
-    void givenPrebuiltMatcher_whenResolveWithNullTrack_thenFallsBackToStopPlace() {
-        // given
-        final SiriStopResolver prebuiltResolver = createPrebuiltMatcherResolver();
-
-        // when
-        final Optional<StopRef> result = prebuiltResolver.resolveQuayId(361, null);
-
-        // then
-        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
     }
 }

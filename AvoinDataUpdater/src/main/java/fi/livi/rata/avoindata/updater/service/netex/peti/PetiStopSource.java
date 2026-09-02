@@ -4,8 +4,6 @@ import java.util.List;
 
 /**
  * Supplies PETI stop data to NeTEx generation.
- * Pass 2 default: EmptyPetiStopSource (returns empty list).
- * Pass 3 replaces with HTTP-backed CachingPetiStopSource.
  */
 public interface PetiStopSource {
 
