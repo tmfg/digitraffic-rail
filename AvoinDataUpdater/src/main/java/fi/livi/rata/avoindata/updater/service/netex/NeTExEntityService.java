@@ -3,9 +3,12 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -88,39 +91,93 @@ public class NeTExEntityService {
     }
 
     /**
-     * Names the Line after the longest route it serves, which is the variant that
-     * best describes the corridor. Ring lines, whose origin and destination are the
-     * same station, get their midpoint inserted so the name is not
-     * "Helsinki-Helsinki".
+     * Names the Line after its longest route, inserting the destination of every
+     * shorter working at the point it turns back, so that a line serving several
+     * turn-back points reads as the whole corridor rather than one variant of it.
+     * Ring lines, whose origin and destination are the same station, get their
+     * midpoint inserted so the name is not "Helsinki-Helsinki".
      */
     private String deriveLineName(final String lineId,
             final NeTExRouteData routeData,
             final Map<String, String> stationNamesByShortCode,
             final Schedule schedule) {
-        final NeTExRouteData.NeTExRoute longest = routeData.getRoutes().stream()
+        final List<NeTExRouteData.NeTExRoute> lineRoutes = routeData.getRoutes().stream()
                 .filter(route -> lineId.equals(route.lineRef()))
+                .toList();
+        final NeTExRouteData.NeTExRoute longest = lineRoutes.stream()
                 .max(Comparator.comparingInt(route -> route.routePointRefs().size()))
                 .orElse(null);
         if (longest == null) {
             return deriveLinePublicCode(schedule);
         }
 
-        final String[] endpoints = longest.name().split(" - ", 2);
-        if (endpoints.length < 2) {
+        final List<String> corridor = shortCodesOf(longest);
+        if (corridor.size() < 2) {
             return deriveLinePublicCode(schedule);
         }
-        final String origin = stationName(endpoints[0], stationNamesByShortCode);
-        final String destination = stationName(endpoints[1], stationNamesByShortCode);
+        final String origin = corridor.get(0);
+        final String terminus = corridor.get(corridor.size() - 1);
 
-        if (!origin.equals(destination)) {
-            return origin + "-" + destination;
+        if (origin.equals(terminus)) {
+            final List<String> parts = corridor.size() < 3
+                    ? List.of(origin, terminus)
+                    : List.of(origin, corridor.get(corridor.size() / 2), terminus);
+            return joinStationNames(parts, stationNamesByShortCode);
         }
-        final List<String> refs = longest.routePointRefs();
-        if (refs.size() < 3) {
-            return origin + "-" + destination;
+
+        final Map<String, Integer> positions = new HashMap<>();
+        for (int i = 0; i < corridor.size(); i++) {
+            positions.putIfAbsent(corridor.get(i), i);
         }
-        final String viaCode = shortCodeOf(refs.get(refs.size() / 2));
-        return origin + "-" + stationName(viaCode, stationNamesByShortCode) + "-" + destination;
+
+        final TreeMap<Integer, String> vias = new TreeMap<>();
+        for (final NeTExRouteData.NeTExRoute route : lineRoutes) {
+            if (route.id().equals(longest.id())) {
+                continue;
+            }
+            final List<String> stops = shortCodesOf(route);
+            if (!followsCorridor(stops, positions)) {
+                continue;
+            }
+            for (final String endpoint : List.of(stops.get(0), stops.get(stops.size() - 1))) {
+                if (!endpoint.equals(origin) && !endpoint.equals(terminus)) {
+                    vias.put(positions.get(endpoint), endpoint);
+                }
+            }
+        }
+
+        final List<String> parts = new ArrayList<>();
+        parts.add(origin);
+        parts.addAll(vias.values());
+        parts.add(terminus);
+        return joinStationNames(parts, stationNamesByShortCode);
+    }
+
+    /**
+     * Rejects routes running the other way and routes leaving the corridor, so that
+     * only turn-back points which sit on it can be placed in its order.
+     */
+    private static boolean followsCorridor(final List<String> stops, final Map<String, Integer> positions) {
+        int previous = -1;
+        for (final String stop : stops) {
+            final Integer at = positions.get(stop);
+            if (at == null || at <= previous) {
+                return false;
+            }
+            previous = at;
+        }
+        return true;
+    }
+
+    private static List<String> shortCodesOf(final NeTExRouteData.NeTExRoute route) {
+        return route.routePointRefs().stream().map(NeTExEntityService::shortCodeOf).toList();
+    }
+
+    private static String joinStationNames(final List<String> shortCodes,
+            final Map<String, String> stationNamesByShortCode) {
+        return shortCodes.stream()
+                .map(code -> stationName(code, stationNamesByShortCode))
+                .collect(Collectors.joining("-"));
     }
 
     private static String stationName(final String shortCode, final Map<String, String> stationNamesByShortCode) {

@@ -323,7 +323,9 @@ public class NeTExService {
         return kept;
     }
 
-    /** Mirrors GTFSService.isPassengerTrain so both feeds publish the same journeys. */
+    /**
+     * Mirrors GTFSService.isPassengerTrain so both feeds publish the same journeys.
+     */
     public List<Schedule> filterPassengerTrains(final List<Schedule> schedules) {
         final List<Schedule> result = new ArrayList<>();
         for (final Schedule schedule : schedules) {

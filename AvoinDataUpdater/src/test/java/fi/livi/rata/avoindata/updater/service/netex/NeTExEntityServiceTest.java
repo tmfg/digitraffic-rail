@@ -426,7 +426,93 @@ class NeTExEntityServiceTest {
         assertEquals("12:20:00", passingTimes.get(2).arrivalTime());
     }
 
+    // --- Line naming ---
+
+    @Test
+    void givenShorterWorking_whenCreatingLines_thenItsDestinationBecomesAVia() {
+        // given — some journeys turn back at Lappeenranta, the rest run to Joensuu
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "LH", "KV", "LR"),
+                List.of("HKI", "LH", "KV", "LR", "IMR", "JNS"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Lappeenranta-Joensuu", lines.get(0).name());
+    }
+
+    @Test
+    void givenRingLine_whenCreatingLines_thenMidpointIsUsedRatherThanTurnBacks() {
+        // given — a route returning to its origin
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "PSL", "KVS", "TKL", "HKI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Kivistö-Helsinki", lines.get(0).name());
+    }
+
+    @Test
+    void givenOppositeDirectionRoute_whenCreatingLines_thenItContributesNoVia() {
+        // given — the same corridor served both ways
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "LH", "KV", "JNS"),
+                List.of("JNS", "KV", "LH", "HKI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Joensuu", lines.get(0).name());
+    }
+
+    @Test
+    void givenRouteLeavingTheCorridor_whenCreatingLines_thenItContributesNoVia() {
+        // given — a branch that does not run along the longest route
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "TPE", "SK", "OL"),
+                List.of("HKI", "TPE", "PRI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Oulu", lines.get(0).name());
+    }
+
     // --- Helpers ---
+
+    private static final Map<String, String> FINNISH_STATION_NAMES = Map.ofEntries(
+            Map.entry("HKI", "Helsinki"), Map.entry("PSL", "Pasila"), Map.entry("KVS", "Kivistö"),
+            Map.entry("TKL", "Tikkurila"), Map.entry("LH", "Lahti"), Map.entry("KV", "Kouvola"),
+            Map.entry("LR", "Lappeenranta"), Map.entry("IMR", "Imatra"), Map.entry("JNS", "Joensuu"),
+            Map.entry("TPE", "Tampere"), Map.entry("SK", "Seinäjoki"), Map.entry("OL", "Oulu"),
+            Map.entry("PRI", "Pori"));
+
+    @SafeVarargs
+    private static NeTExRouteData routeDataFor(final String lineId, final List<String>... routes) {
+        final List<NeTExRouteData.NeTExRoute> built = new ArrayList<>();
+        for (int i = 0; i < routes.length; i++) {
+            final List<String> stations = routes[i];
+            built.add(new NeTExRouteData.NeTExRoute(
+                    "FTR:Route:" + i,
+                    stations.get(0) + " - " + stations.get(stations.size() - 1),
+                    lineId,
+                    stations.stream().map(code -> "FTR:RoutePoint:" + code).toList()));
+        }
+        return new NeTExRouteData(built, List.of(), Map.of());
+    }
 
     private static NeTExRouteData emptyRouteData() {
         return new NeTExRouteData(List.of(), List.of(), Map.of());
