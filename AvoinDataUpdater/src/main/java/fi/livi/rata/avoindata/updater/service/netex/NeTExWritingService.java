@@ -111,6 +111,8 @@ public class NeTExWritingService {
         private static final Logger log = LoggerFactory.getLogger(NeTExWritingService.class);
         private static final String SHARED_DATA_XML = NeTExFileNaming.SHARED_DATA_XML;
         private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
+        /** Station and quay coordinates both arrive as WGS84 degrees. */
+        private static final String LOCATION_SYSTEM = "EPSG:4326";
         // Latest arrival of a journey belonging to the previous operating day.
         private static final LocalTime SERVICE_DAY_END = LocalTime.of(4, 0);
         private static final ObjectFactory FACTORY = new ObjectFactory();
@@ -303,7 +305,8 @@ public class NeTExWritingService {
                                 .withFrameDefaults(new VersionFrameDefaultsStructure()
                                                 .withDefaultLocale(new LocaleStructure()
                                                                 .withTimeZone("Europe/Helsinki")
-                                                                .withDefaultLanguage("fi")));
+                                                                .withDefaultLanguage("fi"))
+                                                .withDefaultLocationSystem(LOCATION_SYSTEM));
         }
 
         private PublicationDeliveryStructure delivery(final ZonedDateTime generationTimestamp,

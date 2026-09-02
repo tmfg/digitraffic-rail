@@ -208,6 +208,8 @@ class NeTExDatasetLayoutTest {
                 build().forEach((fileName, xml) -> {
                         assertTrue(xml.contains("<Xmlns>FTR</Xmlns>"), fileName + " is missing codespaces");
                         assertTrue(xml.contains("Europe/Helsinki"), fileName + " is missing frame defaults");
+                        assertTrue(xml.contains("<DefaultLocationSystem>EPSG:4326</DefaultLocationSystem>"),
+                                        fileName + " does not declare the coordinate system");
                 });
         }
 
