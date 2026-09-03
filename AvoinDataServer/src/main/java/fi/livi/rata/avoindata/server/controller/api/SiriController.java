@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Tag(name = "siri", description = "Returns real-time data in SIRI Nordic format")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "siri")
+// No matchIfMissing: the endpoint is disabled unless explicitly enabled.
+@ConditionalOnProperty(name = "avoindataserver.siri.et.enabled", havingValue = "true")
 public class SiriController {
 
     private static final String ET_FILENAME = "siri-et.xml";
