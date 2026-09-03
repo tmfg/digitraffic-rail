@@ -48,7 +48,7 @@ class NeTExServiceTest {
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService, writingService,
-                petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null);
+                petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
     }
 
     // --- Filtering tests ---

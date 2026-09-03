@@ -25,6 +25,8 @@ public class SimpleTimeTableRow {
     @Column(insertable = false, updatable = false)
     public ZonedDateTime scheduledTime;
     @Column(insertable = false, updatable = false)
+    public ZonedDateTime actualTime;
+    @Column(insertable = false, updatable = false)
     public String stationShortCode;
     @Column(insertable = false, updatable = false)
     public TimeTableRow.TimeTableRowType type;
@@ -36,11 +38,17 @@ public class SimpleTimeTableRow {
 
     public SimpleTimeTableRow(final long attapId, final LocalDate departureDate, final long trainNumber, final String commercialTrack, final ZonedDateTime scheduledTime, final String stationShortCode,
                               final TimeTableRow.TimeTableRowType type) {
+        this(attapId, departureDate, trainNumber, commercialTrack, scheduledTime, stationShortCode, type, null);
+    }
+
+    public SimpleTimeTableRow(final long attapId, final LocalDate departureDate, final long trainNumber, final String commercialTrack, final ZonedDateTime scheduledTime, final String stationShortCode,
+                              final TimeTableRow.TimeTableRowType type, final ZonedDateTime actualTime) {
         id = new TimeTableRowId(attapId, departureDate, trainNumber);
         this.commercialTrack = commercialTrack;
         this.scheduledTime = scheduledTime;
         this.stationShortCode = stationShortCode;
         this.type = type;
+        this.actualTime = actualTime;
     }
 
     public Long getTrainNumber() { return id.trainNumber; }

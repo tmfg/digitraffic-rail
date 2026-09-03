@@ -23,10 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
+import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -58,6 +60,7 @@ public class NeTExService {
     private final StationRepository stationRepository;
     private final CommercialTrackResolver commercialTrackResolver;
     private final TimeTableRowService timeTableRowService;
+    private final HistoricalTrackSource historicalTrackSource;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
@@ -69,7 +72,8 @@ public class NeTExService {
             final TodaysScheduleService todaysScheduleService,
             final StationRepository stationRepository,
             final CommercialTrackResolver commercialTrackResolver,
-            final TimeTableRowService timeTableRowService) {
+            final TimeTableRowService timeTableRowService,
+            final HistoricalTrackSource historicalTrackSource) {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
@@ -81,38 +85,88 @@ public class NeTExService {
         this.stationRepository = stationRepository;
         this.commercialTrackResolver = commercialTrackResolver;
         this.timeTableRowService = timeTableRowService;
+        this.historicalTrackSource = historicalTrackSource;
     }
 
     /**
-     * RIPA's schedules endpoint rarely names a track, so the one its trains
-     * endpoint
-     * gives for the coming days is filled in first. Done on the schedules
-     * themselves, before any NeTEx entity is derived, so that the stop point ids
-     * and
-     * the stop assignments cannot disagree about which track a stop uses.
+     * The Nordic profile wants a quay on every stop assignment, and a quay can only
+     * be found once a stop names a track. RIPA's schedules endpoint rarely does, so
+     * the track is taken from the coming days first and from what the train last
+     * actually used second. Done on the schedules themselves, before any NeTEx
+     * entity is derived, so that the stop point ids and the stop assignments cannot
+     * disagree about which track a stop uses.
      */
     private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         final var byTrainNumber = commercialTrackResolver.byTrainNumber(timeTableRowService.getNextTenDays());
-        int filled = 0;
+        final List<TrackGap> gaps = new ArrayList<>();
+        int fromUpcoming = 0;
+
         for (final List<Schedule> schedules : List.of(adhocSchedules, regularSchedules)) {
             for (final Schedule schedule : schedules) {
                 final var rows = commercialTrackResolver.rowsForSchedule(schedule, byTrainNumber);
-                if (rows.isEmpty()) {
-                    continue;
-                }
                 for (final ScheduleRow row : schedule.scheduleRows) {
                     if (StringUtils.isNotBlank(row.commercialTrack)) {
                         continue;
                     }
-                    final var track = commercialTrackResolver.resolveTrack(row, rows);
-                    if (track.isPresent()) {
-                        row.commercialTrack = track.get();
-                        filled++;
+                    final var upcoming = commercialTrackResolver.resolveTrack(row, rows);
+                    if (upcoming.isPresent()) {
+                        row.commercialTrack = upcoming.get();
+                        fromUpcoming++;
+                    } else {
+                        gaps.add(new TrackGap(schedule.trainNumber, row));
                     }
                 }
             }
         }
-        log.info("method=fillMissingTracks filledTracks={}", filled);
+
+        final int fromHistory = fillFromHistory(gaps);
+        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} stillMissing={}",
+                fromUpcoming, fromHistory, gaps.size() - fromHistory);
+    }
+
+    /** Asks history only about the stops still without a track. */
+    private int fillFromHistory(final List<TrackGap> gaps) {
+        final Set<HistoricalTrackSource.StopKey> wanted = new HashSet<>();
+        for (final TrackGap gap : gaps) {
+            gap.keys().forEach(wanted::add);
+        }
+
+        final var tracks = historicalTrackSource.resolve(wanted);
+        int filled = 0;
+        for (final TrackGap gap : gaps) {
+            for (final var key : gap.keys()) {
+                final String track = tracks.get(key);
+                if (track != null) {
+                    gap.row().commercialTrack = track;
+                    filled++;
+                    break;
+                }
+            }
+        }
+        return filled;
+    }
+
+    /**
+     * The same schedule part is asked for first so the track comes from the same
+     * route; the station key only answers once a timetable change has retired the
+     * old part.
+     */
+    private record TrackGap(long trainNumber, ScheduleRow row) {
+        List<HistoricalTrackSource.StopKey> keys() {
+            final List<HistoricalTrackSource.StopKey> keys = new ArrayList<>();
+            if (row.arrival != null) {
+                keys.add(HistoricalTrackSource.forSchedulePart(trainNumber, row.arrival.id,
+                        TimeTableRow.TimeTableRowType.ARRIVAL));
+            }
+            if (row.departure != null) {
+                keys.add(HistoricalTrackSource.forSchedulePart(trainNumber, row.departure.id,
+                        TimeTableRow.TimeTableRowType.DEPARTURE));
+            }
+            keys.add(HistoricalTrackSource.forStation(trainNumber, row.station.stationShortCode,
+                    row.arrival != null ? TimeTableRow.TimeTableRowType.ARRIVAL
+                            : TimeTableRow.TimeTableRowType.DEPARTURE));
+            return keys;
+        }
     }
 
     /**

@@ -35,6 +35,7 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
+import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -211,7 +212,7 @@ class NeTExServiceMatchRateGuardTest {
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,
-                writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null);
+                writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -339,11 +340,14 @@ class NeTExServiceMatchRateGuardTest {
 
         final TimeTableRowService timeTableRowService = mock(TimeTableRowService.class);
         when(timeTableRowService.getNextTenDays()).thenReturn(List.of());
+        when(timeTableRowService.getDay(any())).thenReturn(List.of());
+
+        final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowService);
 
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
-                new CommercialTrackResolver(), timeTableRowService);
+                new CommercialTrackResolver(), timeTableRowService, historicalTrackSource);
 
         // Set minMatchRate via reflection
         final Field field = NeTExService.class.getDeclaredField("minMatchRate");
