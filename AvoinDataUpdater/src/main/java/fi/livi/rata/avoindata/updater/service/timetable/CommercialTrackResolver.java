@@ -1,6 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.timetable;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
@@ -40,12 +44,20 @@ public class CommercialTrackResolver {
                 .toList();
     }
 
+    /**
+     * Every day in the window carries the same stop and they can name different
+     * tracks, so the run nearest to now wins: it is both the likeliest to still hold
+     * and the only choice that does not vary between generations.
+     */
     public Optional<String> resolveTrack(final ScheduleRow scheduleRow,
             final List<SimpleTimeTableRow> rowsForSchedule) {
+        final ZonedDateTime now = DateProvider.nowInHelsinki();
         return rowsForSchedule.stream()
                 .filter(row -> matches(row, scheduleRow))
-                .map(row -> row.commercialTrack)
-                .findAny();
+                .min(Comparator
+                        .comparing((SimpleTimeTableRow row) -> Duration.between(now, row.scheduledTime).abs())
+                        .thenComparing(row -> row.scheduledTime))
+                .map(row -> row.commercialTrack);
     }
 
     private boolean matches(final SimpleTimeTableRow timeTableRow, final ScheduleRow scheduleRow) {

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
@@ -87,6 +88,32 @@ class CommercialTrackResolverTest {
         assertTrue(rows.isEmpty());
     }
 
+    @Test
+    void givenDaysDisagreeOnTrack_whenResolving_thenNearestDayWins() {
+        final ScheduleRow row = scheduleRow(100L, 101L);
+        final ZonedDateTime now = DateProvider.nowInHelsinki();
+
+        // deliberately out of chronological order: the answer must not depend on it
+        final var rows = List.of(
+                timeTableRowAt(100L, "9", now.plusDays(7)),
+                timeTableRowAt(100L, "4", now.plusDays(1)),
+                timeTableRowAt(100L, "5", now.plusDays(3)));
+
+        assertEquals("4", resolver.resolveTrack(row, rows).orElse(null));
+    }
+
+    @Test
+    void givenYesterdayIsNearerThanTheNextRun_whenResolving_thenYesterdayWins() {
+        final ScheduleRow row = scheduleRow(100L, 101L);
+        final ZonedDateTime now = DateProvider.nowInHelsinki();
+
+        final var rows = List.of(
+                timeTableRowAt(100L, "9", now.plusDays(6)),
+                timeTableRowAt(100L, "4", now.minusHours(20)));
+
+        assertEquals("4", resolver.resolveTrack(row, rows).orElse(null));
+    }
+
     private static ScheduleRow scheduleRow(final Long arrivalId, final Long departureId) {
         final ScheduleRow row = new ScheduleRow();
         final StationEmbeddable station = new StationEmbeddable();
@@ -129,5 +156,11 @@ class CommercialTrackResolverTest {
         return new SimpleTimeTableRow(attapId, TODAY, TRAIN, track,
                 ZonedDateTime.of(TODAY.atTime(8, 0), java.time.ZoneId.of("Europe/Helsinki")),
                 "HKI", type);
+    }
+
+    private static SimpleTimeTableRow timeTableRowAt(final long attapId, final String track,
+            final ZonedDateTime scheduledTime) {
+        return new SimpleTimeTableRow(attapId, scheduledTime.toLocalDate(), TRAIN, track, scheduledTime,
+                "HKI", TimeTableRow.TimeTableRowType.ARRIVAL);
     }
 }
