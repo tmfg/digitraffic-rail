@@ -45,6 +45,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * Tests for NeTExService match-rate guard logic.
  */
 class NeTExServiceMatchRateGuardTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     @Test
     void givenEmptyPetiSource_whenGenerating_thenGuardDoesNotThrow() {
@@ -206,7 +207,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,
@@ -321,7 +322,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);

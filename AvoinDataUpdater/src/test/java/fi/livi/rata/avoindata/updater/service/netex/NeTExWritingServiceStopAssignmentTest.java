@@ -22,12 +22,13 @@ import org.junit.jupiter.api.Test;
  * codespace.
  */
 class NeTExWritingServiceStopAssignmentTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
         private NeTExWritingService writingService;
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                writingService = new NeTExWritingService(new NeTExIdGenerator(), PETI_URL);
         }
 
         @Test

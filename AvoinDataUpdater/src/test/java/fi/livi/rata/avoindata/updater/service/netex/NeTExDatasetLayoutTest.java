@@ -31,6 +31,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
  * Nordic profile, and id uniqueness across the files of the dataset.
  */
 class NeTExDatasetLayoutTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
         private static final Pattern NETEX_ID = Pattern.compile("\\bid=\"(FTR:[^\"]+)\"");
 
@@ -38,7 +39,7 @@ class NeTExDatasetLayoutTest {
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                writingService = new NeTExWritingService(new NeTExIdGenerator(), PETI_URL);
         }
 
         @Test

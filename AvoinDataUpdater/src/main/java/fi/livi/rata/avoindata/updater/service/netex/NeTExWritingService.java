@@ -98,6 +98,7 @@ import org.rutebanken.netex.model.ValidityConditions_RelStructure;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.xml.bind.JAXBContext;
@@ -130,9 +131,12 @@ public class NeTExWritingService {
         private static final ObjectFactory FACTORY = new ObjectFactory();
 
         private final NeTExIdGenerator idGenerator;
+        private final String petiSourceUrl;
 
-        public NeTExWritingService(final NeTExIdGenerator idGenerator) {
+        public NeTExWritingService(final NeTExIdGenerator idGenerator,
+                        @Value("${updater.netex.peti.url:}") final String petiSourceUrl) {
                 this.idGenerator = idGenerator;
+                this.petiSourceUrl = petiSourceUrl;
         }
 
         private volatile JAXBContext jaxbContext;
@@ -308,12 +312,10 @@ public class NeTExWritingService {
                                                                                 .withId("ftr")
                                                                                 .withXmlns("FTR")
                                                                                 .withXmlnsUrl("https://rata.digitraffic.fi"),
-                                                                // FSR is PETI's/Fintraffic's codespace; we only
-                                                                // reference it. PETI's own
-                                                                // NeTEx export declares no XmlnsUrl for FSR.
                                                                 new Codespace()
                                                                                 .withId("fsr")
-                                                                                .withXmlns("FSR")))
+                                                                                .withXmlns("FSR")
+                                                                                .withXmlnsUrl(petiSourceUrl)))
                                 .withFrameDefaults(new VersionFrameDefaultsStructure()
                                                 .withDefaultLocale(new LocaleStructure()
                                                                 .withTimeZone("Europe/Helsinki")

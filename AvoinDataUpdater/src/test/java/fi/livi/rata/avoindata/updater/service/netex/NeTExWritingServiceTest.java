@@ -25,12 +25,13 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
  * Tests for NeTExWritingService — XML marshalling and ZIP output.
  */
 class NeTExWritingServiceTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
         private NeTExWritingService writingService;
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                writingService = new NeTExWritingService(new NeTExIdGenerator(), PETI_URL);
         }
 
         @Test
@@ -209,6 +210,23 @@ class NeTExWritingServiceTest {
                                 "ContactDetails needs an http(s) Url");
                 assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\"/>"),
                                 "the Network must name the authority responsible for it");
+        }
+
+        @Test
+        void givenValidData_whenWritingZip_thenFsrCodespacePointsAtThePetiExport() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then — an FSR id means nothing without saying which registry issued it
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"));
+                assertTrue(xml.contains("<XmlnsUrl>" + PETI_URL + "</XmlnsUrl>"));
         }
 
         @Test
