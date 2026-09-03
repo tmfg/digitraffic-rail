@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,7 @@ public class SiriEtGenerationService {
 
     @Transactional
     public void generate() {
-        final long start = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
         long trainsReceived = 0;
         SiriEtStats stats = SiriEtStats.empty();
         int outputSize = 0;
@@ -100,9 +101,9 @@ public class SiriEtGenerationService {
 
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(trainsReceived, stats), "NULL", stage,
-                    System.currentTimeMillis() - start, trainsReceived, stats, outputSize);
+                    stopWatch.getDuration().toMillis(), trainsReceived, stats, outputSize);
         } catch (final Exception e) {
-            logGenerationEvent("error", e.getClass().getSimpleName(), stage, System.currentTimeMillis() - start,
+            logGenerationEvent("error", e.getClass().getSimpleName(), stage, stopWatch.getDuration().toMillis(),
                     trainsReceived, stats, outputSize);
             // Companion line carries the message + stack trace; the wide line above stays scalar-only.
             log.error("event=rail.siri.generation operation=generateSiriEt outcome=error", e);

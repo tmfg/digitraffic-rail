@@ -13,7 +13,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +34,9 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+
+import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+
 import fi.livi.rata.avoindata.updater.service.netex.NeTExEntityService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService;
@@ -49,7 +51,6 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 
 class SiriEtGenerationServiceTest {
 
-    private static final ZoneId HELSINKI = ZoneId.of("Europe/Helsinki");
     private static final LocalDate TODAY = LocalDate.of(2026, 7, 15);
 
     private ScheduleProviderService scheduleProviderService;
@@ -58,22 +59,20 @@ class SiriEtGenerationServiceTest {
     private PetiStopSource petiStopSource;
     private GeneratedExportRepository generatedExportRepository;
     private NeTExService neTExService;
-    private NeTExEntityService neTExEntityService;
-    private NeTExIdGenerator neTExIdGenerator;
     private SiriWritingService siriWritingService;
 
     private SiriEtGenerationService service;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         scheduleProviderService = mock(ScheduleProviderService.class);
         stationRepository = mock(StationRepository.class);
         gtfsTrainRepository = mock(GTFSTrainRepository.class);
         petiStopSource = mock(PetiStopSource.class);
         generatedExportRepository = mock(GeneratedExportRepository.class);
         neTExService = mock(NeTExService.class);
-        neTExIdGenerator = new NeTExIdGenerator();
-        neTExEntityService = new NeTExEntityService(neTExIdGenerator, mock(NeTExTimeConverter.class));
+        final NeTExIdGenerator neTExIdGenerator = new NeTExIdGenerator();
+        final NeTExEntityService neTExEntityService = new NeTExEntityService(neTExIdGenerator, mock(NeTExTimeConverter.class));
         siriWritingService = new SiriWritingService();
 
         service = new SiriEtGenerationService(
@@ -120,12 +119,12 @@ class SiriEtGenerationServiceTest {
 
         final GTFSTrain train59 = createTrain(59L, TODAY);
         addStop(train59, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train59, "TPE",
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
         addStop(train59, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         when(gtfsTrainRepository.findBySourceVersionGreaterThan(0L)).thenReturn(List.of(train59));
     }
@@ -159,18 +158,18 @@ class SiriEtGenerationServiceTest {
 
         final GTFSTrain train59 = createTrain(59L, TODAY);
         addStop(train59, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train59, "TPE",
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
         addStop(train59, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         final GTFSTrain train999 = createTrain(999L, TODAY);
         addStop(train999, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train999, "OL",
-                ZonedDateTime.of(2026, 7, 15, 16, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 16, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         when(gtfsTrainRepository.findBySourceVersionGreaterThan(0L)).thenReturn(List.of(train59, train999));
     }
@@ -250,7 +249,7 @@ class SiriEtGenerationServiceTest {
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
         assertEquals(1, exports.size());
-        assertEquals("siri-et.xml", exports.get(0).fileName);
+        assertEquals("siri-et.xml", exports.getFirst().fileName);
     }
 
     // ===== GEN-02: Happy path — persisted bytes are schema-valid SIRI-ET XML =====
@@ -265,9 +264,9 @@ class SiriEtGenerationServiceTest {
 
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
-        assertNotNull(exports.get(0).data);
-        assertTrue(exports.get(0).data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data));
+        assertNotNull(exports.getFirst().data);
+        assertTrue(exports.getFirst().data.length > 0);
+        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data));
     }
 
     // ===== GEN-03: Happy path — persisted doc contains EstimatedVehicleJourney for train 59 =====
@@ -282,7 +281,7 @@ class SiriEtGenerationServiceTest {
 
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
-        final String xml = new String(exports.get(0).data);
+        final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
                 "Expected ServiceJourney id for train 59 in XML");
     }
@@ -308,10 +307,8 @@ class SiriEtGenerationServiceTest {
         service.generate();
 
         // then
-        @SuppressWarnings("unchecked")
-        final ArgumentCaptor<List<Schedule>> adhocCaptor = ArgumentCaptor.forClass(List.class);
-        @SuppressWarnings("unchecked")
-        final ArgumentCaptor<List<Schedule>> regularCaptor = ArgumentCaptor.forClass(List.class);
+        @SuppressWarnings("unchecked") final ArgumentCaptor<List<Schedule>> adhocCaptor = ArgumentCaptor.forClass(List.class);
+        @SuppressWarnings("unchecked") final ArgumentCaptor<List<Schedule>> regularCaptor = ArgumentCaptor.forClass(List.class);
         verify(neTExService).resolveWinningSchedules(adhocCaptor.capture(), regularCaptor.capture(),
                 any(), any(LocalDate.class), any(LocalDate.class));
         assertEquals(List.of(scheduleA), adhocCaptor.getValue());
@@ -358,7 +355,7 @@ class SiriEtGenerationServiceTest {
 
         // then
         final List<GeneratedExport> exports = capturePersistedExports();
-        final String xml = new String(exports.get(0).data);
+        final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
                 "Expected train 59 in output");
         assertFalse(xml.contains("999"),

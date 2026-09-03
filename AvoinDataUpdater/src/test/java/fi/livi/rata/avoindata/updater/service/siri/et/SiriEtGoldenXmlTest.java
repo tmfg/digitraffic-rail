@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,9 @@ import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
+
+import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import uk.org.siri.siri21.Siri;
 
@@ -52,9 +53,8 @@ import uk.org.siri.siri21.Siri;
  */
 class SiriEtGoldenXmlTest {
 
-    private static final ZoneId HELSINKI = SiriTimeConverter.HELSINKI_ZONE;
     private static final LocalDate DEPARTURE_DATE = LocalDate.of(2026, 7, 15);
-    private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, HELSINKI);
+    private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, ZONE_ID_HKI);
     private static final String PRODUCER_REF = "TEST";
     private static final String DATA_SOURCE = "FSR";
 
@@ -122,7 +122,9 @@ class SiriEtGoldenXmlTest {
                 DATA_SOURCE);
     }
 
-    /** Each scenario builds a train whose serialized document has a structurally distinct shape. */
+    /**
+     * Each scenario builds a train whose serialized document has a structurally distinct shape.
+     */
     static Stream<Arguments> scenarios() {
         return Stream.of(
                 Arguments.of("mixed", (Supplier<GTFSTrain>) SiriEtGoldenXmlTest::mixedRecordedAndEstimatedTrain),
@@ -297,7 +299,7 @@ class SiriEtGoldenXmlTest {
     }
 
     private static GTFSTimeTableRow row(final String shortCode, final TimeTableRow.TimeTableRowType type,
-            final ZonedDateTime scheduledTime, final String track) {
+                                        final ZonedDateTime scheduledTime, final String track) {
         final GTFSTimeTableRow r = new GTFSTimeTableRow();
         r.stationShortCode = shortCode;
         r.type = type;
@@ -308,18 +310,20 @@ class SiriEtGoldenXmlTest {
     }
 
     private static ZonedDateTime at(final int hour, final int minute) {
-        return ZonedDateTime.of(2026, 7, 15, hour, minute, 0, 0, HELSINKI);
+        return ZonedDateTime.of(2026, 7, 15, hour, minute, 0, 0, ZONE_ID_HKI);
     }
 
     private static String readGolden(final String resource) throws IOException {
-        try (InputStream in = SiriEtGoldenXmlTest.class.getResourceAsStream(resource)) {
+        try (final InputStream in = SiriEtGoldenXmlTest.class.getResourceAsStream(resource)) {
             assertNotNull(in, "Missing golden resource " + resource
                     + " — copy the matching target/siri-et-actual-*.xml there to create it.");
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
-    /** Collapse insignificant whitespace between elements so formatting differences don't fail the test. */
+    /**
+     * Collapse insignificant whitespace between elements so formatting differences don't fail the test.
+     */
     private static String normalizeXml(final String xml) {
         return xml.replaceAll("(?s)>\\s+<", "><").trim();
     }
