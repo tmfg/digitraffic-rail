@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,9 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -53,6 +56,8 @@ public class NeTExService {
     private final ScheduleProviderService scheduleProviderService;
     private final TodaysScheduleService todaysScheduleService;
     private final StationRepository stationRepository;
+    private final CommercialTrackResolver commercialTrackResolver;
+    private final TimeTableRowService timeTableRowService;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
@@ -62,7 +67,9 @@ public class NeTExService {
             final PetiStopSource petiStopSource,
             final ScheduleProviderService scheduleProviderService,
             final TodaysScheduleService todaysScheduleService,
-            final StationRepository stationRepository) {
+            final StationRepository stationRepository,
+            final CommercialTrackResolver commercialTrackResolver,
+            final TimeTableRowService timeTableRowService) {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
@@ -72,6 +79,40 @@ public class NeTExService {
         this.scheduleProviderService = scheduleProviderService;
         this.todaysScheduleService = todaysScheduleService;
         this.stationRepository = stationRepository;
+        this.commercialTrackResolver = commercialTrackResolver;
+        this.timeTableRowService = timeTableRowService;
+    }
+
+    /**
+     * RIPA's schedules endpoint rarely names a track, so the one its trains
+     * endpoint
+     * gives for the coming days is filled in first. Done on the schedules
+     * themselves, before any NeTEx entity is derived, so that the stop point ids
+     * and
+     * the stop assignments cannot disagree about which track a stop uses.
+     */
+    private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
+        final var byTrainNumber = commercialTrackResolver.byTrainNumber(timeTableRowService.getNextTenDays());
+        int filled = 0;
+        for (final List<Schedule> schedules : List.of(adhocSchedules, regularSchedules)) {
+            for (final Schedule schedule : schedules) {
+                final var rows = commercialTrackResolver.rowsForSchedule(schedule, byTrainNumber);
+                if (rows.isEmpty()) {
+                    continue;
+                }
+                for (final ScheduleRow row : schedule.scheduleRows) {
+                    if (StringUtils.isNotBlank(row.commercialTrack)) {
+                        continue;
+                    }
+                    final var track = commercialTrackResolver.resolveTrack(row, rows);
+                    if (track.isPresent()) {
+                        row.commercialTrack = track.get();
+                        filled++;
+                    }
+                }
+            }
+        }
+        log.info("method=fillMissingTracks filledTracks={}", filled);
     }
 
     /**
@@ -91,6 +132,8 @@ public class NeTExService {
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
             final List<Station> stations = stationRepository.findAll();
+
+            fillMissingTracks(adhocSchedules, regularSchedules);
 
             log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size());

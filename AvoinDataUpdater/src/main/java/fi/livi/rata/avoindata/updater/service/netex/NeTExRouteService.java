@@ -46,6 +46,16 @@ public class NeTExRouteService {
     }
 
     /**
+     * A Route carries only station-level RoutePoints, so its identity must not move
+     * when a train is reallocated to another platform.
+     */
+    public String computeStationHash(final List<StopWithTrack> stopsWithTrack) {
+        return stopsWithTrack.stream()
+                .map(StopWithTrack::stationShortCode)
+                .collect(Collectors.joining("_"));
+    }
+
+    /**
      * Creates routes and journey patterns with track-qualified SSP references.
      * Trains with identical (station+track) sequences share a JourneyPattern.
      * Route points remain station-level (not track-qualified).
@@ -67,9 +77,10 @@ public class NeTExRouteService {
             scheduleToPatternId.put(schedule.id, patternId);
 
             if (!patternMap.containsKey(patternId)) {
-                final String routeId = idGenerator.routeId(lineIdentifier, hash);
+                final String routeId = idGenerator.routeId(lineIdentifier,
+                        computeStationHash(commercialStopsWithTrack));
 
-                routeMap.put(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack));
+                routeMap.putIfAbsent(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack));
                 patternMap.put(patternId, buildJourneyPattern(patternId, routeId, commercialStopsWithTrack));
             }
         }

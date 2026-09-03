@@ -30,9 +30,11 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -208,7 +210,7 @@ class NeTExServiceMatchRateGuardTest {
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,
-                writingService, petiSource, null, todaysScheduleService, null);
+                writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -334,9 +336,13 @@ class NeTExServiceMatchRateGuardTest {
         final List<Station> stations = createStations(stationCodes);
         when(stationRepository.findAll()).thenReturn(stations);
 
+        final TimeTableRowService timeTableRowService = mock(TimeTableRowService.class);
+        when(timeTableRowService.getNextTenDays()).thenReturn(List.of());
+
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,
-                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository);
+                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
+                new CommercialTrackResolver(), timeTableRowService);
 
         // Set minMatchRate via reflection
         final Field field = NeTExService.class.getDeclaredField("minMatchRate");

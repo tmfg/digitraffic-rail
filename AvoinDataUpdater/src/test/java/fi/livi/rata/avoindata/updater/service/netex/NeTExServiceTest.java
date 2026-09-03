@@ -22,6 +22,7 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -46,7 +47,7 @@ class NeTExServiceTest {
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService, writingService,
-                petiStopSource, null, todaysScheduleService, null);
+                petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null);
     }
 
     // --- Filtering tests ---
