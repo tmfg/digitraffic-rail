@@ -410,7 +410,7 @@ public class NeTExWritingService {
                                 .withVersion("1")
                                 .withName(new MultilingualString().withValue("Finnish Railways"))
                                 .withTransportOrganisationRef(FACTORY.createAuthorityRef(
-                                                new AuthorityRef().withRef(AUTHORITY_ID)))
+                                                new AuthorityRef().withRef(AUTHORITY_ID).withVersion("1")))
                                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL));
 
                 final DestinationDisplaysInFrame_RelStructure destDisplays = new DestinationDisplaysInFrame_RelStructure();

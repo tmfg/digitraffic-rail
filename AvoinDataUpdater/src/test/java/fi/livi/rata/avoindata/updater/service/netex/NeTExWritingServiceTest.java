@@ -208,8 +208,9 @@ class NeTExWritingServiceTest {
                 assertTrue(xml.contains("<LegalName>Väylävirasto</LegalName>"));
                 assertTrue(xml.contains("<Url>https://vayla.fi/en/</Url>"),
                                 "ContactDetails needs an http(s) Url");
-                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\"/>"),
-                                "the Network must name the authority responsible for it");
+                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\" version=\"1\"/>"),
+                                "the Network must name the authority responsible for it, "
+                                                + "with a version or the reference reads as external");
         }
 
         @Test
