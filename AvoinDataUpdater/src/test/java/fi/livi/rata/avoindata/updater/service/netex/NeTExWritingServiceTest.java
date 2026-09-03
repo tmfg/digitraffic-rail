@@ -189,6 +189,29 @@ class NeTExWritingServiceTest {
         }
 
         @Test
+        void givenValidData_whenWritingZip_thenNetworkIsOwnedByTheInfrastructureAuthority() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then
+                final String xml = extractSharedXmlFromZip(zip);
+                assertTrue(xml.contains("<Authority version=\"1\" id=\"FTR:Authority:ftia\">"),
+                                "shared data should define the authority");
+                assertTrue(xml.contains("<Name>Finnish Transport Infrastructure Agency</Name>"));
+                assertTrue(xml.contains("<LegalName>Väylävirasto</LegalName>"));
+                assertTrue(xml.contains("<Url>https://vayla.fi/en/</Url>"),
+                                "ContactDetails needs an http(s) Url");
+                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\"/>"),
+                                "the Network must name the authority responsible for it");
+        }
+
+        @Test
         void givenValidData_whenWritingZip_thenCodespaceIsDefined() throws Exception {
                 // given
                 final var testData = createMinimalTestData();

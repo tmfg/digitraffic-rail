@@ -23,10 +23,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
+import org.rutebanken.netex.model.Authority;
+import org.rutebanken.netex.model.AuthorityRef;
 import org.rutebanken.netex.model.AvailabilityCondition;
 import org.rutebanken.netex.model.Codespace;
 import org.rutebanken.netex.model.Codespaces_RelStructure;
 import org.rutebanken.netex.model.CompositeFrame;
+import org.rutebanken.netex.model.ContactStructure;
 import org.rutebanken.netex.model.DayOfWeekEnumeration;
 import org.rutebanken.netex.model.DayType;
 import org.rutebanken.netex.model.DayTypeAssignment;
@@ -113,6 +116,15 @@ public class NeTExWritingService {
         private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
         /** Station and quay coordinates both arrive as WGS84 degrees. */
         private static final String LOCATION_SYSTEM = "EPSG:4326";
+        /**
+         * The state agency that owns the rail network; not derivable from schedules.
+         */
+        private static final String AUTHORITY_ID = "FTR:Authority:ftia";
+        private static final String AUTHORITY_NAME = "Finnish Transport Infrastructure Agency";
+        private static final String AUTHORITY_LEGAL_NAME = "Väylävirasto";
+        private static final String AUTHORITY_URL = "https://vayla.fi/en/";
+        private static final String AUTHORITY_PHONE = "+358 295 34 3000";
+        private static final String AUTHORITY_EMAIL = "ftia@ftia.fi";
         // Latest arrival of a journey belonging to the previous operating day.
         private static final LocalTime SERVICE_DAY_END = LocalTime.of(4, 0);
         private static final ObjectFactory FACTORY = new ObjectFactory();
@@ -356,6 +368,15 @@ public class NeTExWritingService {
          */
         private ResourceFrame buildSharedResourceFrame(final List<NeTExEntityService.NeTExOperator> operators) {
                 final OrganisationsInFrame_RelStructure organisations = new OrganisationsInFrame_RelStructure();
+                organisations.getOrganisation_().add(FACTORY.createAuthority(new Authority()
+                                .withId(AUTHORITY_ID)
+                                .withVersion("1")
+                                .withName(new MultilingualString().withValue(AUTHORITY_NAME))
+                                .withLegalName(new MultilingualString().withValue(AUTHORITY_LEGAL_NAME))
+                                .withContactDetails(new ContactStructure()
+                                                .withUrl(AUTHORITY_URL)
+                                                .withPhone(AUTHORITY_PHONE)
+                                                .withEmail(AUTHORITY_EMAIL))));
                 for (final var op : operators) {
                         organisations.getOrganisation_().add(FACTORY.createOperator(new Operator()
                                         .withId(op.id())
@@ -368,9 +389,7 @@ public class NeTExWritingService {
                 final ResourceFrame frame = new ResourceFrame()
                                 .withId("FTR:ResourceFrame:shared")
                                 .withVersion("1");
-                if (!operators.isEmpty()) {
-                        frame.withOrganisations(organisations);
-                }
+                frame.withOrganisations(organisations);
 
                 return frame;
         }
@@ -388,6 +407,8 @@ public class NeTExWritingService {
                                 .withId("FTR:Network:FIN")
                                 .withVersion("1")
                                 .withName(new MultilingualString().withValue("Finnish Railways"))
+                                .withTransportOrganisationRef(FACTORY.createAuthorityRef(
+                                                new AuthorityRef().withRef(AUTHORITY_ID)))
                                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL));
 
                 final DestinationDisplaysInFrame_RelStructure destDisplays = new DestinationDisplaysInFrame_RelStructure();
