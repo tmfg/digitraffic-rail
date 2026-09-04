@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.timetable;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,8 +55,12 @@ public class HistoricalTrackSource {
                 if (StringUtils.isBlank(row.commercialTrack) || row.actualTime == null) {
                     continue;
                 }
-                offer(found, wanted, stopKey(row), row.commercialTrack);
-                offer(found, wanted, stationKey(row), row.commercialTrack);
+                for (final StopKey key : keysAnsweredBy(row)) {
+                    if (wanted.contains(key)) {
+                        // days are walked newest first, so the first answer is the most recent
+                        found.putIfAbsent(key, row.commercialTrack);
+                    }
+                }
             }
         }
 
@@ -63,19 +68,10 @@ public class HistoricalTrackSource {
         return found;
     }
 
-    private static void offer(final Map<StopKey, String> found, final Set<StopKey> wanted, final StopKey key,
-            final String track) {
-        if (wanted.contains(key)) {
-            found.putIfAbsent(key, track);
-        }
-    }
-
-    private static StopKey stopKey(final SimpleTimeTableRow row) {
-        return new StopKey(row.getTrainNumber(), String.valueOf(row.getAttapId()), row.type);
-    }
-
-    private static StopKey stationKey(final SimpleTimeTableRow row) {
-        return new StopKey(row.getTrainNumber(), row.stationShortCode, row.type);
+    private static List<StopKey> keysAnsweredBy(final SimpleTimeTableRow row) {
+        return List.of(
+                forSchedulePart(row.getTrainNumber(), row.getAttapId(), row.type),
+                forStation(row.getTrainNumber(), row.stationShortCode, row.type));
     }
 
     /** Keyed on attapId to pin the same route, or on station to survive a timetable change. */
