@@ -43,7 +43,7 @@ class NeTExPublishedJourneyWriterTest {
     void givenDataset_whenPersistWindow_thenPersistsJourneyWithTracksFromDraft() {
         final PublishedJourneyDraft draft = new PublishedJourneyDraft(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:1", List.of(new PublishedTrack("HKI", "5")));
+                "FTR:JourneyPattern:1", List.of(new PublishedTrack("HKI", "5", 0)));
         final NeTExDataset dataset = dataset(List.of(draft));
 
         when(journeyRepo.getMaxDatasetVersion()).thenReturn(4L);
@@ -72,6 +72,29 @@ class NeTExPublishedJourneyWriterTest {
 
         // Datasets older than the retention period are pruned; recent stale ones are kept for debugging.
         verify(journeyRepo).deleteByGeneratedAtBefore(any(ZonedDateTime.class));
+    }
+
+    // A station served twice keeps a track row per visit, each carrying its 0-based visit index.
+    @Test
+    void givenDraftTracksWithVisitIndex_whenPersistWindow_thenVisitIndexPersisted() {
+        final PublishedJourneyDraft draft = new PublishedJourneyDraft(
+                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:1",
+                List.of(new PublishedTrack("TPE", "1", 0), new PublishedTrack("TPE", "2", 1)));
+        when(journeyRepo.getMaxDatasetVersion()).thenReturn(0L);
+
+        writer.persistWindow(dataset(List.of(draft)));
+
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<Collection<NeTExPublishedJourney>> captor = ArgumentCaptor.forClass(Collection.class);
+        verify(journeyRepo).persist(captor.capture());
+        final NeTExPublishedJourney journey = new ArrayList<>(captor.getValue()).get(0);
+
+        assertEquals(2, journey.tracks.size());
+        assertEquals("1", journey.tracks.get(0).plannedTrack);
+        assertEquals(0, journey.tracks.get(0).visitIndex);
+        assertEquals("2", journey.tracks.get(1).plannedTrack);
+        assertEquals(1, journey.tracks.get(1).visitIndex);
     }
 
     // A winner outside the [today-2, today+2] window is not persisted.

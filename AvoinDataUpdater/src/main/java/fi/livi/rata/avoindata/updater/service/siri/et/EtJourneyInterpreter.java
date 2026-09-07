@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -83,18 +85,30 @@ public class EtJourneyInterpreter {
 
         final List<ResolvedStop> stops = new ArrayList<>(commercialStops.size());
         boolean monitored = false;
+        int resolvedQuays = 0;
+        int unresolvedStops = 0;
+        InterpretResult.SkipReason firstUnresolvedReason = null;
         for (final PairedStop stop : commercialStops) {
             final Optional<StopRef> stopRef = resolveStopRef(stop);
-            // The Nordic profile requires us to assert IsCompleteStopSequence=true. If even one commercial stop can't
-            // be resolved to a Quay, we can't honestly claim a complete sequence, so we omit the entire journey rather
-            // than publish a hole. The reason (no PETI stop vs no quay) is recorded so operators can see which.
+            // Resolve every commercial stop (not only up to the first miss) so the wide-event match rate reflects
+            // each lookup, then drop the whole journey if any stop is unresolved — the Nordic profile requires a
+            // complete Quay sequence (IsCompleteStopSequence=true), so we omit rather than publish a hole. The
+            // first failure's reason (no PETI stop vs no quay) is recorded so operators can see which.
             if (stopRef.isEmpty()) {
-                return new InterpretResult.Skipped(unresolvedStopReason(stop));
+                unresolvedStops++;
+                if (firstUnresolvedReason == null) {
+                    firstUnresolvedReason = unresolvedStopReason(stop);
+                }
+                continue;
             }
+            resolvedQuays++;
             final String stopName = stationNameLookup.nameFor(representativeRow(stop).stationShortCode).orElse(null);
             stops.add(new ResolvedStop(stop, stopRef.get(), stopName));
             // If any stop has live data, the whole journey is considered monitored.
             monitored = monitored || hasLiveData(stop);
+        }
+        if (firstUnresolvedReason != null) {
+            return new InterpretResult.Skipped(firstUnresolvedReason, resolvedQuays, unresolvedStops);
         }
 
         final List<EtCall> calls = new ArrayList<>(stops.size());
@@ -108,13 +122,18 @@ public class EtJourneyInterpreter {
                 lastActualIndex = i;
             }
         }
+        final Map<String, Integer> visitCounts = new HashMap<>();
         for (int i = 0; i < stops.size(); i++) {
             final ResolvedStop current = stops.get(i);
             final int order = i + 1;
+            // 0-based occurrence of this station within the journey, so the planned track of the right visit is
+            // used when a station is served more than once.
+            final int visitIndex = visitCounts.merge(
+                    representativeRow(current.stop()).stationShortCode, 1, Integer::sum) - 1;
             // Partial-cancellation boundary: the last served stop before a cancelled stop departs 'cancelled'.
             final boolean nextCancelled = i + 1 < stops.size() && isCancelled(stops.get(i + 1).stop());
             calls.add(toCall(train, current.stop(), current.stopRef(), current.stopName(), order, nextCancelled,
-                    i <= lastActualIndex));
+                    i <= lastActualIndex, visitIndex));
         }
 
         final ResolvedJourney j = resolved.get();
@@ -127,7 +146,7 @@ public class EtJourneyInterpreter {
     }
 
     private EtCall toCall(final GTFSTrain train, final PairedStop stop, final StopRef stopRef, final String stopName,
-                          final int order, final boolean nextCancelled, final boolean past) {
+                          final int order, final boolean nextCancelled, final boolean past, final int visitIndex) {
         final boolean cancelled = isCancelled(stop);
         // Whether this stop has a realised time of its own. A past stop that has none is a "missed" call: it is
         // still a RecordedCall (behind the train's furthest actual) but carries the estimate as Expected*Time.
@@ -149,7 +168,7 @@ public class EtJourneyInterpreter {
                         hasActual ? stop.departure.actualTime : null,
                         departureStatus);
 
-        final QuayChange quayChange = computeQuayChange(train, stop, stopRef);
+        final QuayChange quayChange = computeQuayChange(train, stop, stopRef, visitIndex);
 
         if (past) {
             return new EtCall.Recorded(stopRef, order, cancelled, arrival, departure, stopName, quayChange);
@@ -163,10 +182,11 @@ public class EtJourneyInterpreter {
      * platform is known, and the planned quay genuinely differs from the actual quay. When the current platform
      * is unknown we do not assert a change (such a stop has no resolvable quay and its journey is dropped upstream).
      */
-    private QuayChange computeQuayChange(final GTFSTrain train, final PairedStop stop, final StopRef actualQuay) {
+    private QuayChange computeQuayChange(final GTFSTrain train, final PairedStop stop, final StopRef actualQuay,
+                                         final int visitIndex) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final Optional<String> plannedTrack = plannedTrackLookup.plannedTrack(
-                train.id.trainNumber, train.id.departureDate, representative.stationShortCode);
+                train.id.trainNumber, train.id.departureDate, representative.stationShortCode, visitIndex);
         // Need a planned track to resolve the planned quay; a null actual track means the current platform is
         // unknown, so the stop has no resolvable quay and never carries a change.
         if (plannedTrack.isEmpty() || actualTrackOf(representative) == null) {

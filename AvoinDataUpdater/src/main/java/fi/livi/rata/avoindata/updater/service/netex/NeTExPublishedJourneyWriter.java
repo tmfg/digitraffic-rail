@@ -80,7 +80,8 @@ public class NeTExPublishedJourneyWriter {
             final NeTExPublishedJourney journey = new NeTExPublishedJourney(draft.trainId(), draft.serviceJourneyId(),
                     draft.lineRef(), draft.operatorRef(), draft.journeyPatternRef(), newVersion, now);
             for (final PublishedJourneyDraft.PublishedTrack track : draft.tracks()) {
-                journey.addTrack(new NeTExPublishedJourneyTrack(track.stationShortCode(), track.plannedTrack()));
+                journey.addTrack(new NeTExPublishedJourneyTrack(track.stationShortCode(), track.plannedTrack(),
+                        track.visitIndex()));
             }
             journeys.add(journey);
         }

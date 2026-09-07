@@ -12,6 +12,6 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 public record PublishedJourneyDraft(TrainId trainId, String serviceJourneyId, String lineRef, String operatorRef,
         String journeyPatternRef, List<PublishedTrack> tracks) {
 
-    /** A planned commercial track for one station on the journey. */
-    public record PublishedTrack(String stationShortCode, String plannedTrack) {}
+    /** A planned commercial track for one station on the journey, tagged with the station's 0-based visit index. */
+    public record PublishedTrack(String stationShortCode, String plannedTrack, int visitIndex) {}
 }

@@ -278,10 +278,20 @@ public class NeTExService {
             if (serviceJourney == null) {
                 return;
             }
-            final List<PublishedJourneyDraft.PublishedTrack> tracks = serviceJourney.passingTimes().stream()
-                    .filter(pt -> pt.commercialTrack() != null && pt.stationShortCode() != null)
-                    .map(pt -> new PublishedJourneyDraft.PublishedTrack(pt.stationShortCode(), pt.commercialTrack()))
-                    .toList();
+            // Count each station's occurrences over the (commercial) passing times so a station served more than
+            // once keeps a planned track per visit; only stops with a known track are stored.
+            final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
+            final Map<String, Integer> visitCounts = new HashMap<>();
+            for (final var pt : serviceJourney.passingTimes()) {
+                if (pt.stationShortCode() == null) {
+                    continue;
+                }
+                final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
+                if (pt.commercialTrack() != null) {
+                    tracks.add(new PublishedJourneyDraft.PublishedTrack(
+                            pt.stationShortCode(), pt.commercialTrack(), visitIndex));
+                }
+            }
             drafts.add(new PublishedJourneyDraft(trainId, serviceJourneyId, serviceJourney.lineRef(),
                     serviceJourney.operatorRef(), serviceJourney.journeyPatternRef(), tracks));
         });

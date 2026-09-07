@@ -24,6 +24,11 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
@@ -102,9 +107,9 @@ class SiriEtGenerationServiceTest {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
-        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7"));
-        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1"));
-        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1"));
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
         return journey;
     }
 
@@ -362,5 +367,47 @@ class SiriEtGenerationServiceTest {
         service.generate();
 
         verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-13: PETI snapshot is warmed up before the matcher is taken =====
+
+    @Test
+    void givenGenerate_thenEnsuresPetiLoadedBeforeMatcher() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(petiStopSource).ensureLoaded();
+    }
+
+    // ===== GEN-14: Empty PETI snapshot → fail at prepare with a PETI_EMPTY reason, keep last-good (no persist) =====
+
+    @Test
+    void givenEmptyPetiSnapshot_whenGenerate_thenFailsAtPrepareWithPetiEmptyReason() {
+        seedPublished(publishedJourney59());
+        when(stationRepository.findAll()).thenReturn(List.of(
+                createStation("HKI", 1), createStation("TPE", 160), createStation("OL", 280)));
+        when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(List.of())); // empty PETI snapshot
+        when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any())).thenReturn(List.of(train59()));
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(SiriEtGenerationService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.generate();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        verify(generatedExportRepository, never()).persist(any());
+        final String wideEvent = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
+                .reduce((a, b) -> b)
+                .orElse("");
+        assertTrue(wideEvent.contains("rail.siri.journey_source.unavailable_reason=PETI_EMPTY"),
+                "wide event must attribute the failure to PETI_EMPTY: " + wideEvent);
+        assertTrue(wideEvent.contains("stage=prepare"), "must fail at the prepare stage: " + wideEvent);
     }
 }

@@ -116,6 +116,8 @@ public class SiriEtGenerationService {
         } catch (final Exception e) {
             if (e instanceof PublishedJourneysUnavailableException pjue) {
                 unavailableReason = pjue.reason().name();
+            } else if (e instanceof PetiUnavailableException) {
+                unavailableReason = PetiUnavailableException.REASON;
             }
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, stopWatch.getDuration().toMillis(),
                     trainsReceived, stats, outputSize, journeySourceVersion, journeySourceGeneratedAt,
@@ -149,7 +151,13 @@ public class SiriEtGenerationService {
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
 
+        // Warm the PETI snapshot on demand (mirrors NeTEx generation) so a restart before the daily refresh does
+        // not leave the feed stale.
+        petiStopSource.ensureLoaded();
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        if (matcher.matchedCount() == 0) {
+            throw new PetiUnavailableException("PETI stop snapshot is empty after warm-up");
+        }
         final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
 
         final List<GTFSTrain> trains = gtfsTrainRepository.findBySourceVersionAndIdIn(0L, dbSources.trainIds());
@@ -199,7 +207,7 @@ public class SiriEtGenerationService {
         }
 
         final Map<TrainId, ResolvedJourney> resolvedByTrainId = new HashMap<>();
-        final Map<TrainId, Map<String, String>> tracksByTrainId = new HashMap<>();
+        final Map<TrainId, Map<String, Map<Integer, String>>> tracksByTrainId = new HashMap<>();
         for (final NeTExPublishedJourney j : journeys) {
             resolvedByTrainId.put(j.trainId, new ResolvedJourney(
                     new ServiceJourneyId(j.serviceJourneyId),
@@ -210,7 +218,8 @@ public class SiriEtGenerationService {
             for (final NeTExPublishedJourneyTrack t : j.tracks) {
                 if (t.plannedTrack != null && t.stationShortCode != null) {
                     tracksByTrainId.computeIfAbsent(j.trainId, k -> new HashMap<>())
-                            .put(t.stationShortCode, t.plannedTrack);
+                            .computeIfAbsent(t.stationShortCode, k -> new HashMap<>())
+                            .put(t.visitIndex, t.plannedTrack);
                 }
             }
         }

@@ -17,6 +17,7 @@ CREATE TABLE `netex_published_journey` (
 -- versions of the parent journeys are deleted.
 CREATE TABLE `netex_published_journey_track` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `visit_index` int NOT NULL DEFAULT 0,
   `journey_id` bigint(20) unsigned NOT NULL,
   `station_short_code` varchar(8) NOT NULL,
   `planned_track` varchar(16) NOT NULL,

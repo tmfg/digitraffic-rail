@@ -50,11 +50,13 @@ public record SiriEtStats(
                         case UNRESOLVED_JOURNEY -> skippedUnresolvedJourney++;
                         case UNRESOLVED_STOP_NO_STOP -> {
                             skippedUnresolvedStopNoStop++;
-                            stopRefsUnresolved++;
+                            stopRefsQuay += skipped.resolvedQuays();
+                            stopRefsUnresolved += skipped.unresolvedStops();
                         }
                         case UNRESOLVED_STOP_NO_QUAY -> {
                             skippedUnresolvedStopNoQuay++;
-                            stopRefsUnresolved++;
+                            stopRefsQuay += skipped.resolvedQuays();
+                            stopRefsUnresolved += skipped.unresolvedStops();
                         }
                         case COMPLETED_CARRYOVER -> skippedCompletedCarryover++;
                     }

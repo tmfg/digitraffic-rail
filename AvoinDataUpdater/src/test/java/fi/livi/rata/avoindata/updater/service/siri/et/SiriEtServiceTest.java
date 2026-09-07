@@ -114,7 +114,7 @@ class SiriEtServiceTest {
 
         service = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode) -> Optional.ofNullable(plannedTracks.get(shortCode)));
+                (trainNumber, date, shortCode, visitIndex) -> Optional.ofNullable(plannedTracks.get(shortCode)));
     }
 
     private SiriEtService newService(final StationNameLookup stationNameLookup,
@@ -1266,7 +1266,7 @@ class SiriEtServiceTest {
     void givenNameLookupMiss_whenBuild_thenNoNamesEmitted() {
         final SiriEtService noNames = newService(
                 shortCode -> Optional.empty(),
-                (trainNumber, date, shortCode) -> Optional.empty());
+                (trainNumber, date, shortCode, visitIndex) -> Optional.empty());
         final GTFSTrain train = createStandard4StopTrain();
         final EstimatedVehicleJourney evj = getEvjs(noNames.buildEtDocument(List.of(train), NOW)).get(0);
 
@@ -1317,6 +1317,39 @@ class SiriEtServiceTest {
             assertTrue(call.getArrivalStopAssignments().isEmpty());
             assertTrue(call.getDepartureStopAssignments().isEmpty());
         }
+    }
+
+    @Test
+    void givenSameStationVisitedTwiceWithDifferentPlannedTracks_whenBuild_thenEachOccurrenceUsesItsOwnTrack() {
+        // TPE is served twice, each on its own planned track (visit 0 → 1, visit 1 → 2), so neither visit is a
+        // platform change. A station-only lookup would compare the first visit against the second visit's track
+        // and report a false change; keying by visit index keeps each occurrence correct.
+        final Map<String, String> plannedByVisit = new HashMap<>();
+        plannedByVisit.put("HKI#0", "7");
+        plannedByVisit.put("TPE#0", "1");
+        plannedByVisit.put("TPE#1", "2");
+        plannedByVisit.put("OL#0", "1");
+        final SiriEtService svc = newService(
+                shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
+                (trainNumber, date, shortCode, visitIndex) ->
+                        Optional.ofNullable(plannedByVisit.get(shortCode + "#" + visitIndex)));
+
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1"); // visit 0, actual track 1
+        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), "2"); // visit 1, actual track 2
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+
+        assertEquals(4, calls.size());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
+        assertTrue(calls.get(1).getArrivalStopAssignments().isEmpty(), "first TPE visit: no false platform change");
+        assertEquals("FSR:Quay:TPE-2", calls.get(2).getStopPointRef().getValue());
+        assertTrue(calls.get(2).getArrivalStopAssignments().isEmpty(), "second TPE visit: no false platform change");
     }
 
     @Test
@@ -1405,6 +1438,33 @@ class SiriEtServiceTest {
     }
 
     @Test
+    void givenSomeResolvedThenOneUnresolvedStop_whenBuildWithStats_thenMatchRateReflectsAll() {
+        // A journey that resolves 3 quays but is dropped at a 4th, unresolvable stop must still count the 3
+        // resolved lookups in the match rate (not report 0/1).
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7"); // → HKI-7
+        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1"); // → TPE-1
+        final GTFSTimeTableRow tkuArr = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 10, 30, 0, 0, ZONE_ID_HKI));
+        tkuArr.unknownTrack = true; // TKU stop place exists but no quay for an unknown platform → NO_QUAY
+        train.timeTableRows.add(tkuArr);
+        final GTFSTimeTableRow tkuDep = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 10, 35, 0, 0, ZONE_ID_HKI));
+        tkuDep.unknownTrack = true;
+        train.timeTableRows.add(tkuDep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1"); // → OL-1
+
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted()); // dropped: incomplete quay sequence
+        assertEquals(1, stats.skippedUnresolvedStopNoQuay());
+        assertEquals(3, stats.stopRefsQuay()); // HKI, TPE, OL resolved despite the drop
+        assertEquals(1, stats.stopRefsUnresolved()); // TKU
+        assertEquals(0.75, stats.matchRate().orElseThrow(), 0.0001);
+    }
+
+    @Test
     void givenNoTrains_whenBuildWithStats_thenEmptyStatsAndNoMatchRate() {
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(), NOW).stats();
 
@@ -1472,7 +1532,7 @@ class SiriEtServiceTest {
                 new JourneyPatternRef("FTR:JourneyPattern:59")));
         final SiriEtService svc = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode) -> Optional.empty());
+                (trainNumber, date, shortCode, visitIndex) -> Optional.empty());
         // Dated yesterday, still running (arrives today 13:00, NOW is today 12:00).
         final GTFSTrain train = overnightTrain(59L, yesterday,
                 ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), null, null);

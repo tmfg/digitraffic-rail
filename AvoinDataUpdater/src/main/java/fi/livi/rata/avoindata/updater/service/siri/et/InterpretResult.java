@@ -22,5 +22,17 @@ public sealed interface InterpretResult permits InterpretResult.Emitted, Interpr
 
     record Emitted(EtJourney journey) implements InterpretResult {}
 
-    record Skipped(SkipReason reason) implements InterpretResult {}
+    /**
+     * A skipped journey, with the per-journey stop-resolution tally so the wide-event {@code match_rate} reflects
+     * every commercial-stop lookup — including the quays a journey resolved before it was dropped at an
+     * unresolved stop. {@code resolvedQuays} / {@code unresolvedStops} are 0 for journey-level skips
+     * ({@code UNRESOLVED_JOURNEY}, {@code COMPLETED_CARRYOVER}).
+     */
+    record Skipped(SkipReason reason, int resolvedQuays, int unresolvedStops) implements InterpretResult {
+
+        /** A journey-level skip that resolved no stops. */
+        Skipped(final SkipReason reason) {
+            this(reason, 0, 0);
+        }
+    }
 }

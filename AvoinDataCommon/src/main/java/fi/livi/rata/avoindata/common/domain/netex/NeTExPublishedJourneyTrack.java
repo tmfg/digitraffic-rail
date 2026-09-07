@@ -18,12 +18,15 @@ public class NeTExPublishedJourneyTrack {
     public NeTExPublishedJourney journey;
     public String stationShortCode;
     public String plannedTrack;
+    /** 0-based occurrence of this station within the journey, so a station served twice keeps a track per visit. */
+    public int visitIndex;
 
     public NeTExPublishedJourneyTrack() {
     }
 
-    public NeTExPublishedJourneyTrack(final String stationShortCode, final String plannedTrack) {
+    public NeTExPublishedJourneyTrack(final String stationShortCode, final String plannedTrack, final int visitIndex) {
         this.stationShortCode = stationShortCode;
         this.plannedTrack = plannedTrack;
+        this.visitIndex = visitIndex;
     }
 }

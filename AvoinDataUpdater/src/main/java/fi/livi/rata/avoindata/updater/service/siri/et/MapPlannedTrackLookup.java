@@ -7,24 +7,30 @@ import java.util.Optional;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 /**
- * {@link PlannedTrackLookup} backed by a {@code (trainNumber, departureDate) -> stationShortCode ->
- * plannedTrack} map read from the DB. The DB read path uses this instead of re-resolving from RIPA.
+ * {@link PlannedTrackLookup} backed by a {@code (trainNumber, departureDate) -> stationShortCode -> visitIndex
+ * -> plannedTrack} map read from the DB. Keying by visit index (not station alone) keeps a distinct planned
+ * track for each visit when a journey serves the same station more than once. The DB read path uses this
+ * instead of re-resolving from RIPA.
  */
 public class MapPlannedTrackLookup implements PlannedTrackLookup {
 
-    private final Map<TrainId, Map<String, String>> byTrainId;
+    private final Map<TrainId, Map<String, Map<Integer, String>>> byTrainId;
 
-    public MapPlannedTrackLookup(final Map<TrainId, Map<String, String>> byTrainId) {
+    public MapPlannedTrackLookup(final Map<TrainId, Map<String, Map<Integer, String>>> byTrainId) {
         this.byTrainId = byTrainId;
     }
 
     @Override
     public Optional<String> plannedTrack(final long trainNumber, final LocalDate departureDate,
-                                         final String stationShortCode) {
-        final Map<String, String> byStation = byTrainId.get(new TrainId(trainNumber, departureDate));
+                                         final String stationShortCode, final int visitIndex) {
+        final Map<String, Map<Integer, String>> byStation = byTrainId.get(new TrainId(trainNumber, departureDate));
         if (byStation == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(byStation.get(stationShortCode));
+        final Map<Integer, String> byVisit = byStation.get(stationShortCode);
+        if (byVisit == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(byVisit.get(visitIndex));
     }
 }

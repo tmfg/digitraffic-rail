@@ -111,7 +111,7 @@ class SiriEtGoldenXmlTest {
 
         final StationNameLookup stationNameLookup = shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode));
         final PlannedTrackLookup plannedTrackLookup =
-                (trainNumber, date, shortCode) -> Optional.ofNullable(PLANNED_TRACKS.get(shortCode));
+                (trainNumber, date, shortCode, visitIndex) -> Optional.ofNullable(PLANNED_TRACKS.get(shortCode));
 
         writingService = new SiriWritingService();
         service = new SiriEtService(
