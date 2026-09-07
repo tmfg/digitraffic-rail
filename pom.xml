@@ -16,11 +16,11 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.boot.version>4.0.7</spring.boot.version>
         <spring.cloud.version>5.0.1</spring.cloud.version>
-        <com.google.guava.version>33.5.0-jre</com.google.guava.version>
+        <com.google.guava.version>33.6.0-jre</com.google.guava.version>
         <aws.advanced.jdbc.wrapper.version>3.2.0</aws.advanced.jdbc.wrapper.version>
         <!-- do no upgrade to 26.7.0 before db is updated to 8.4! -->
         <com.mysql.mysql-connector-j>9.6.0</com.mysql.mysql-connector-j>
-        <org.flywaydb.version>11.20.3</org.flywaydb.version>
+        <org.flywaydb.version>13.3.0</org.flywaydb.version>
         <org.springdoc.version>2.8.14</org.springdoc.version>
         <net.logstash.logback.version>9.0</net.logstash.logback.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
@@ -111,7 +111,7 @@
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
-                <version>11.0.24</version>
+                <version>11.0.25</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
