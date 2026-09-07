@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Siri version="2.1" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+<Siri version="2.0" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
     <ServiceDelivery>
         <ResponseTimestamp>2026-07-15T12:00:00</ResponseTimestamp>
         <ProducerRef>TEST</ProducerRef>
@@ -16,6 +16,7 @@
                         <DatedVehicleJourneyRef>FTR:ServiceJourney:59-12345</DatedVehicleJourneyRef>
                     </FramedVehicleJourneyRef>
                     <Cancellation>true</Cancellation>
+                    <JourneyPatternRef>FTR:JourneyPattern:59</JourneyPatternRef>
                     <VehicleMode>rail</VehicleMode>
                     <OriginName>Helsinki</OriginName>
                     <DestinationName>Oulu</DestinationName>

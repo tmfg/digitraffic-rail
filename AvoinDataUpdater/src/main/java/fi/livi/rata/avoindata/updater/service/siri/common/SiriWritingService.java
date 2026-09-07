@@ -1,27 +1,36 @@
 package fi.livi.rata.avoindata.updater.service.siri.common;
 
-import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.ValidationEvent;
 
+import org.entur.siri.validator.SiriValidationEventHandler;
+import org.entur.siri.validator.SiriValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.xml.sax.SAXException;
 
 import uk.org.siri.siri21.RequestorRef;
 import uk.org.siri.siri21.ServiceDelivery;
 import uk.org.siri.siri21.Siri;
 
 /**
- * Marshals SIRI 2.1 envelopes to XML and structurally validates them.
+ * Marshals SIRI envelopes to XML and validates them against the SIRI <strong>2.0</strong> XML Schema (via
+ * Entur's {@link SiriValidator}). Uses the SIRI 2.1 JAXB bindings (a backward-compatible superset) but declares
+ * {@code version="2.0"} and validates against the 2.0 schema, so any 2.1-only element we accidentally emit is
+ * rejected before publishing.
  */
 @Service
 public class SiriWritingService {
+
+    private static final Logger log = LoggerFactory.getLogger(SiriWritingService.class);
 
     private volatile JAXBContext jaxbContext;
 
@@ -42,7 +51,9 @@ public class SiriWritingService {
 
     public Siri buildEnvelope(final ZonedDateTime responseTimestamp, final String producerRef) {
         final Siri siri = new Siri();
-        siri.setVersion("2.1");
+        // Nordic SIRI profile is based on the SIRI 2.0 XML Schema and we emit no 2.1-only fields, so the
+        // envelope declares 2.0 (matching the EstimatedTimetableDelivery version).
+        siri.setVersion("2.0");
 
         final ServiceDelivery serviceDelivery = new ServiceDelivery();
         serviceDelivery.setResponseTimestamp(
@@ -81,16 +92,26 @@ public class SiriWritingService {
         return marshalToXml(siri).getBytes(StandardCharsets.UTF_8);
     }
 
-    // Structural (JAXB-binding) check only: well-formedness + bindability, not XSD/cardinality. Entur's
-    // SiriValidator is built/tested on Java 11 (their CI pins java-version: 11); on our JDK 25 its bundled-XSD
-    // loading fails (src-import.3.1 on the xml namespace import), so real XSD/profile validation stays with VACO.
+    /**
+     * Validates the marshalled document against the SIRI <strong>2.0</strong> XML Schema (Entur
+     * {@link SiriValidator}, {@code VERSION_2_0}). Returns {@code false} (and logs each event) on any schema
+     * violation, so a 2.1-only element or a cardinality breach is never published.
+     */
     public boolean isSchemaValid(final byte[] xml) {
+        final String xmlString = new String(xml, StandardCharsets.UTF_8);
         try {
-            final Object root = getJaxbContext().createUnmarshaller()
-                    .unmarshal(new ByteArrayInputStream(xml));
-            return root instanceof Siri
-                    || (root instanceof JAXBElement<?> element && element.getValue() instanceof Siri);
-        } catch (final JAXBException e) {
+            final SiriValidationEventHandler handler =
+                    SiriValidator.validateAndGetHandler(xmlString, SiriValidator.Version.VERSION_2_0);
+            if (!handler.isValid()) {
+                for (final ValidationEvent event : handler.events) {
+                    log.warn("event=rail.siri.validation outcome=invalid severity={} message=\"{}\"",
+                            event.getSeverity(), event.getMessage());
+                }
+                return false;
+            }
+            return true;
+        } catch (final JAXBException | SAXException e) {
+            log.error("event=rail.siri.validation outcome=error — SIRI 2.0 schema validation could not run", e);
             return false;
         }
     }

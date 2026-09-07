@@ -12,8 +12,12 @@ public sealed interface InterpretResult permits InterpretResult.Emitted, Interpr
     enum SkipReason {
         /** No winning schedule — the train is not in the published timetable. */
         UNRESOLVED_JOURNEY,
-        /** A commercial stop could not be resolved to a PETI quay, so the incomplete journey is dropped. */
-        UNRESOLVED_STOP
+        /** A commercial stop's station could not be mapped to a PETI stop place at all (station/PETI coverage gap). */
+        UNRESOLVED_STOP_NO_STOP,
+        /** A commercial stop's station has a PETI stop place, but no {@code FSR:Quay} for its platform/track. */
+        UNRESOLVED_STOP_NO_QUAY,
+        /** A previous operating day's train that has already finished (or gone stale) — not a current deviation. */
+        COMPLETED_CARRYOVER
     }
 
     record Emitted(EtJourney journey) implements InterpretResult {}

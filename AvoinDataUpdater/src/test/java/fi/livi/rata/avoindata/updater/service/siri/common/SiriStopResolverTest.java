@@ -48,26 +48,26 @@ class SiriStopResolverTest {
         assertEquals(Optional.of(new StopRef("FSR:Quay:8")), result);
     }
 
-    // --- STOP-03: Known station + null track → StopPlace fallback ---
+    // --- STOP-03: Known station + null track → empty ---
 
     @Test
-    void givenKnownStationAndNullTrack_whenResolveQuayId_thenReturnsStopPlace() {
+    void givenKnownStationAndNullTrack_whenResolveQuayId_thenReturnsEmpty() {
         // when
         final Optional<StopRef> result = resolver.resolveQuayId(361, null);
 
         // then
-        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
+        assertEquals(Optional.empty(), result);
     }
 
-    // --- STOP-04: Known station + unknown track → StopPlace fallback ---
+    // --- STOP-04: Known station + unknown track → empty ---
 
     @Test
-    void givenKnownStationAndUnknownTrack_whenResolveQuayId_thenReturnsStopPlace() {
+    void givenKnownStationAndUnknownTrack_whenResolveQuayId_thenReturnsEmpty() {
         // when
         final Optional<StopRef> result = resolver.resolveQuayId(361, "99");
 
         // then
-        assertEquals(Optional.of(new StopRef("FSR:StopPlace:1")), result);
+        assertEquals(Optional.empty(), result);
     }
 
     // --- STOP-05: Unknown station → empty ---

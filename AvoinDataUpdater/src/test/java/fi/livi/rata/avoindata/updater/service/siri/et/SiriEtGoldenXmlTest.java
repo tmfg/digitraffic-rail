@@ -32,6 +32,7 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
@@ -60,7 +61,8 @@ class SiriEtGoldenXmlTest {
 
     private static final ResolvedJourney RESOLVED_59 =
             new ResolvedJourney(new ServiceJourneyId("FTR:ServiceJourney:59-12345"), new DataFrameRef("2026-07-15"),
-                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"));
+                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"),
+                    new JourneyPatternRef("FTR:JourneyPattern:59"));
 
     private static final Map<String, Integer> UIC_MAP = Map.of(
             "HKI", 1,
@@ -74,8 +76,9 @@ class SiriEtGoldenXmlTest {
             "TKU", "Turku",
             "OL", "Oulu");
 
-    // Planned tracks match the actual tracks the normal scenarios use, so only the quay-change scenario
-    // (whose train departs from a different actual track) produces a StopAssignment.
+    // Planned tracks match the actual tracks the normal scenarios use; the quay-change scenario's train departs
+    // from a different actual track, so the golden carries an ArrivalStopAssignment (aimed vs. expected quay) on
+    // the changed stop — StopAssignment is valid on an EstimatedCall in SIRI 2.0.
     private static final Map<String, String> PLANNED_TRACKS = Map.of(
             "HKI", "7",
             "TPE", "1",
@@ -264,8 +267,9 @@ class SiriEtGoldenXmlTest {
 
     /**
      * A fully upcoming journey whose intermediate stop uses a different actual track (TPE-2) than planned
-     * (TPE-1), so its call carries a {@code StopAssignment} (aimed TPE-1, expected TPE-2). The other stops
-     * keep their planned tracks → no assignment.
+     * (TPE-1). The quay change is emitted as an {@code ArrivalStopAssignment} (AimedQuayRef TPE-1 /
+     * ExpectedQuayRef TPE-2) — valid on an EstimatedCall in SIRI 2.0 — while {@code StopPointRef} serves the
+     * actual quay (TPE-2).
      */
     private static GTFSTrain quayChangeTrain() {
         final GTFSTrain train = train(false);

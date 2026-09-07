@@ -38,10 +38,10 @@ class SiriWritingServiceTest {
         assertTrue(xml.contains("<Siri"));
     }
 
-    // --- WRITE-02: Envelope contains version="2.1" ---
+    // --- WRITE-02: Envelope contains version="2.0" ---
 
     @Test
-    void givenEnvelope_whenMarshalToXml_thenContainsVersion21() {
+    void givenEnvelope_whenMarshalToXml_thenContainsVersion20() {
         // given
         final ZonedDateTime now = ZonedDateTime.of(2026, 7, 10, 18, 0, 0, 0, ZoneOffset.UTC);
         final Siri envelope = writingService.buildEnvelope(now, "XXX");
@@ -50,7 +50,7 @@ class SiriWritingServiceTest {
         final String xml = writingService.marshalToXml(envelope);
 
         // then
-        assertTrue(xml.contains("version=\"2.1\""));
+        assertTrue(xml.contains("version=\"2.0\""));
     }
 
     // --- WRITE-03: Envelope contains ServiceDelivery with ResponseTimestamp ---

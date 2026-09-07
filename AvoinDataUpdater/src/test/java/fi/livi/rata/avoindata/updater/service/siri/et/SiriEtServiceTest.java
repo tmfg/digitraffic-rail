@@ -8,6 +8,7 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
@@ -52,7 +53,8 @@ class SiriEtServiceTest {
 
     private static final ResolvedJourney RESOLVED_59 =
             new ResolvedJourney(new ServiceJourneyId("FTR:ServiceJourney:59-12345"), new DataFrameRef("2026-07-15"),
-                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"));
+                    new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"),
+                    new JourneyPatternRef("FTR:JourneyPattern:59"));
 
     private static final Map<String, Integer> UIC_MAP = Map.of(
             "HKI", 1,
@@ -249,6 +251,19 @@ class SiriEtServiceTest {
         assertEquals("FTR:ServiceJourney:59-12345", evj.getFramedVehicleJourneyRef().getDatedVehicleJourneyRef());
     }
 
+    // --- ET-02b: JourneyPatternRef emitted from the resolved (persisted) journey ---
+
+    @Test
+    void givenTrain_whenBuild_thenJourneyPatternRefFromResolver() {
+        final GTFSTrain train = createStandard4StopTrain();
+
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertNotNull(evj.getJourneyPatternRef());
+        assertEquals("FTR:JourneyPattern:59", evj.getJourneyPatternRef().getValue());
+    }
+
     // --- ET-03: LineRef from resolver ---
 
     @Test
@@ -362,6 +377,65 @@ class SiriEtServiceTest {
         final EstimatedVehicleJourney evj = getEvjs(result).get(0);
         assertEquals(2, evj.getRecordedCalls().getRecordedCalls().size());
         assertEquals(2, evj.getEstimatedCalls().getEstimatedCalls().size());
+    }
+
+    // --- ET-07b: A past stop with no actual (before the furthest actual) is a "missed" RecordedCall ---
+    // It stays in RecordedCalls (chronological prefix) and carries the estimate as ExpectedArrivalTime, with
+    // no ActualArrivalTime — the SIRI-2.0 way of signalling the actual is unavailable / the call was missed.
+    @Test
+    void givenPastStopWithoutActualBeforeAnActual_whenBuild_thenMissedRecordedCallWithExpectedTime() {
+        final GTFSTrain train = createTrain(59L, false);
+        // HKI origin — served (actual departure)
+        final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+        dep1.commercialTrack = "7";
+        train.timeTableRows.add(dep1);
+        // TPE middle — MISSED: no actual, only estimates
+        final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+        arr2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI);
+        arr2.commercialTrack = "1";
+        train.timeTableRows.add(arr2);
+        final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+        dep2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, HELSINKI);
+        dep2.commercialTrack = "1";
+        train.timeTableRows.add(dep2);
+        // TKU middle — served (actuals) AFTER the missed TPE, which is what makes TPE a past/missed call
+        final GTFSTimeTableRow arr3 = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI));
+        arr3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 2, 0, 0, HELSINKI);
+        arr3.commercialTrack = "3";
+        train.timeTableRows.add(arr3);
+        final GTFSTimeTableRow dep3 = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI));
+        dep3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 6, 0, 0, HELSINKI);
+        dep3.commercialTrack = "3";
+        train.timeTableRows.add(dep3);
+        // OL terminus — upcoming
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
+        final List<EstimatedCall> estimated = evj.getEstimatedCalls().getEstimatedCalls();
+        // HKI, TPE (missed) and TKU are all in the past; only OL is upcoming.
+        assertEquals(3, recorded.size());
+        assertEquals(1, estimated.size());
+        // The split stays a continuous chronological prefix/suffix.
+        assertEquals(2, recorded.get(1).getOrder().intValue());
+        assertEquals(4, estimated.get(0).getOrder().intValue());
+        // The missed TPE carries the estimate as Expected*Time, with no Actual*Time.
+        final RecordedCall tpe = recorded.get(1);
+        assertNull(tpe.getActualArrivalTime());
+        assertNotNull(tpe.getExpectedArrivalTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI).toInstant(),
+                tpe.getExpectedArrivalTime().toInstant());
+        assertNull(tpe.getActualDepartureTime());
+        assertNotNull(tpe.getExpectedDepartureTime());
     }
 
     // --- ET-08: Continuous Order across Recorded and Estimated ---
@@ -538,10 +612,10 @@ class SiriEtServiceTest {
         assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
     }
 
-    // --- ET-12: Unknown/null track → StopPlace ref ---
+    // --- ET-12: Null track → no Quay → whole journey dropped ---
 
     @Test
-    void givenNullTrack_whenBuild_thenStopPointRefIsStopPlace() {
+    void givenNullTrack_whenBuild_thenJourneyDropped() {
         // given — stop at TPE, track null
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
@@ -561,17 +635,14 @@ class SiriEtServiceTest {
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
-        final var calls = evj.getEstimatedCalls().getEstimatedCalls();
-        // TPE is second call (index 1)
-        assertEquals("FSR:StopPlace:TPE", calls.get(1).getStopPointRef().getValue());
+        // then — a stop with no resolvable Quay drops the whole journey
+        assertTrue(getEvjsOrEmpty(result).isEmpty());
     }
 
-    // --- ET-13: unknownTrack=true → StopPlace ref (track ignored) ---
+    // --- ET-13: unknownTrack=true → no Quay → whole journey dropped ---
 
     @Test
-    void givenUnknownTrackTrue_whenBuild_thenStopPointRefIsStopPlace() {
+    void givenUnknownTrackTrue_whenBuild_thenJourneyDropped() {
         // given — stop at TKU, track "3" but unknownTrack=true
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
@@ -592,11 +663,8 @@ class SiriEtServiceTest {
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
-        final var calls = evj.getEstimatedCalls().getEstimatedCalls();
-        // TKU is second call (index 1); should be StopPlace since unknownTrack=true
-        assertEquals("FSR:StopPlace:TKU", calls.get(1).getStopPointRef().getValue());
+        // then — unknownTrack leaves the stop without a Quay, so the whole journey is dropped
+        assertTrue(getEvjsOrEmpty(result).isEmpty());
     }
 
     // --- ET-14: Station not in UIC lookup → whole journey omitted (complete-sequence rule) ---
@@ -1210,20 +1278,23 @@ class SiriEtServiceTest {
         }
     }
 
-    // ===== Group C — platform (quay) change → StopAssignment =====
+    // ===== Group C — platform (quay) change → ArrivalStopAssignment (valid on EstimatedCall in SIRI 2.0) =====
 
+    // A genuine quay change is emitted as an ArrivalStopAssignment (aimed = planned quay, expected = actual quay);
+    // StopPointRef always serves the actual (current) quay. StopAssignment is valid on an EstimatedCall in 2.0.
     @Test
-    void givenPlannedTrackDiffersFromActual_whenBuild_thenStopAssignmentEmitted() {
+    void givenPlannedTrackDiffersFromActual_whenBuild_thenArrivalStopAssignmentEmitted() {
         plannedTracks.put("TPE", "2"); // planned quay TPE-2; the train's actual TPE track is "1"
         final GTFSTrain train = createStandard4StopTrain();
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
 
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(1, tpe.getArrivalStopAssignments().size());
+        assertTrue(tpe.getDepartureStopAssignments().isEmpty());
         final StopAssignmentStructure assignment = tpe.getArrivalStopAssignments().get(0);
-        assertEquals("FSR:Quay:TPE-2", assignment.getAimedQuayRef().getValue());
-        assertEquals("FSR:Quay:TPE-1", assignment.getExpectedQuayRef().getValue());
-        // StopPointRef stays the actual (expected) quay.
+        assertEquals("FSR:Quay:TPE-2", assignment.getAimedQuayRef().getValue()); // planned
+        assertEquals("FSR:Quay:TPE-1", assignment.getExpectedQuayRef().getValue()); // actual
+        // StopPointRef stays the actual (current) quay.
         assertEquals("FSR:Quay:TPE-1", tpe.getStopPointRef().getValue());
     }
 
@@ -1257,7 +1328,8 @@ class SiriEtServiceTest {
         assertEquals(1, stats.journeysEmitted());
         assertEquals(0, stats.journeysCancelled());
         assertEquals(0, stats.skippedUnresolvedJourney());
-        assertEquals(0, stats.skippedUnresolvedStop());
+        assertEquals(0, stats.skippedUnresolvedStopNoStop());
+        assertEquals(0, stats.skippedUnresolvedStopNoQuay());
         assertEquals(4, stats.callsTotal());
         assertEquals(0, stats.callsRecorded());
         assertEquals(4, stats.callsEstimated());
@@ -1298,11 +1370,12 @@ class SiriEtServiceTest {
 
         assertEquals(0, stats.journeysEmitted());
         assertEquals(1, stats.skippedUnresolvedJourney());
-        assertEquals(0, stats.skippedUnresolvedStop());
+        assertEquals(0, stats.skippedUnresolvedStopNoStop());
+        assertEquals(0, stats.skippedUnresolvedStopNoQuay());
     }
 
     @Test
-    void givenUnresolvableStop_whenBuildWithStats_thenSkippedUnresolvedStop() {
+    void givenUnresolvableStop_whenBuildWithStats_thenSkippedNoStop() {
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "XXX", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "1"); // not in UIC map
         addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
@@ -1310,23 +1383,26 @@ class SiriEtServiceTest {
 
         assertEquals(0, stats.journeysEmitted());
         assertEquals(0, stats.skippedUnresolvedJourney());
-        assertEquals(1, stats.skippedUnresolvedStop());
+        assertEquals(1, stats.skippedUnresolvedStopNoStop()); // XXX has no PETI stop place
+        assertEquals(0, stats.skippedUnresolvedStopNoQuay());
         assertEquals(1, stats.stopRefsUnresolved());
     }
 
     @Test
-    void givenUnknownTrack_whenBuildWithStats_thenStopPlaceCounted() {
+    void givenUnknownTrack_whenBuildWithStats_thenSkippedNoQuay() {
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow hkiDep = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
                 ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        hkiDep.unknownTrack = true; // → FSR:StopPlace fallback
+        hkiDep.unknownTrack = true; // HKI has a PETI stop place, but no known platform → no Quay → journey dropped
         train.timeTableRows.add(hkiDep);
         addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
-        assertEquals(1, stats.journeysEmitted());
-        assertEquals(1, stats.stopRefsStopPlace()); // HKI unknown track
-        assertEquals(1, stats.stopRefsQuay());       // OL-1
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(0, stats.skippedUnresolvedStopNoStop());
+        assertEquals(1, stats.skippedUnresolvedStopNoQuay()); // HKI stop place exists, platform/quay unknown
+        assertEquals(1, stats.stopRefsUnresolved());
+        assertEquals(0, stats.stopRefsStopPlace()); // no StopPlace refs are ever emitted
     }
 
     @Test
@@ -1336,6 +1412,105 @@ class SiriEtServiceTest {
         assertEquals(0, stats.journeysEmitted());
         assertEquals(0, stats.callsTotal());
         assertTrue(stats.matchRate().isEmpty());
+    }
+
+    // ===== AREA — operating-day carryover (previous day's trains at the midnight boundary) =====
+
+    // A yesterday-dated overnight train still en route (final stop not yet reached) is kept.
+    @Test
+    void givenYesterdayTrainStillRunning_whenBuildWithStats_thenEmitted() {
+        final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, HELSINKI), null, null); // arrives 13:00, NOW is 12:00
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(1, stats.journeysEmitted());
+        assertEquals(0, stats.skippedCompletedCarryover());
+    }
+
+    // A yesterday-dated train that already reached its terminus (final stop has an actual time) is dropped.
+    @Test
+    void givenYesterdayTrainCompleted_whenBuildWithStats_thenSkippedCarryover() {
+        final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
+                ZonedDateTime.of(2026, 7, 15, 9, 0, 0, 0, HELSINKI), null,
+                ZonedDateTime.of(2026, 7, 15, 9, 5, 0, 0, HELSINKI)); // actual arrival → completed
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(1, stats.skippedCompletedCarryover());
+    }
+
+    // A yesterday-dated train with no live data whose final stop time is well past is dropped as stale.
+    @Test
+    void givenYesterdayTrainStale_whenBuildWithStats_thenSkippedCarryover() {
+        final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
+                ZonedDateTime.of(2026, 7, 14, 20, 0, 0, 0, HELSINKI), null, null); // scheduled far in the past
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(0, stats.journeysEmitted());
+        assertEquals(1, stats.skippedCompletedCarryover());
+    }
+
+    // A today-dated train is always kept, even if all its stop times are already in the past.
+    @Test
+    void givenTodayTrainWithPastTimes_whenBuildWithStats_thenEmitted() {
+        final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), null, null); // 08:00, before NOW 12:00
+        final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
+
+        assertEquals(1, stats.journeysEmitted());
+        assertEquals(0, stats.skippedCompletedCarryover());
+    }
+
+    // A yesterday-dated (overnight) train carries its OWN departure date in FramedVehicleJourneyRef, not "today".
+    @Test
+    void givenOvernightTrain_whenBuild_thenFramedRefUsesTrainsOwnDate() {
+        final LocalDate yesterday = DEPARTURE_DATE.minusDays(1);
+        // Production PublishedJourneyRefResolver keys by (trainNumber, date); echo the date so we can assert it flows through.
+        journeyRefResolver = (trainNumber, date) -> Optional.of(new ResolvedJourney(
+                new ServiceJourneyId("FTR:ServiceJourney:59-" + date),
+                new DataFrameRef(date.toString()),
+                new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"),
+                new JourneyPatternRef("FTR:JourneyPattern:59")));
+        final SiriEtService svc = newService(
+                shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
+                (trainNumber, date, shortCode) -> Optional.empty());
+        // Dated yesterday, still running (arrives today 13:00, NOW is today 12:00).
+        final GTFSTrain train = overnightTrain(59L, yesterday,
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, HELSINKI), null, null);
+
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+
+        assertEquals(yesterday.toString(),
+                evj.getFramedVehicleJourneyRef().getDataFrameRef().getValue());
+        assertEquals("FTR:ServiceJourney:59-" + yesterday,
+                evj.getFramedVehicleJourneyRef().getDatedVehicleJourneyRef());
+    }
+
+    private GTFSTrain createTrainOn(final long trainNumber, final LocalDate date) {
+        final GTFSTrain train = new GTFSTrain();
+        train.id = new TrainId(trainNumber, date);
+        train.cancelled = false;
+        train.timeTableRows = new ArrayList<>();
+        return train;
+    }
+
+    /** Origin (HKI) → terminus (OL) train; the terminus arrival's scheduled/estimate/actual times are set explicitly. */
+    private GTFSTrain overnightTrain(final long trainNumber, final LocalDate departureDate,
+                                     final ZonedDateTime lastArrivalScheduled,
+                                     final ZonedDateTime lastArrivalEstimate,
+                                     final ZonedDateTime lastArrivalActual) {
+        final GTFSTrain train = createTrainOn(trainNumber, departureDate);
+        final GTFSTimeTableRow origin = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
+                lastArrivalScheduled.minusHours(5));
+        origin.commercialTrack = "7";
+        train.timeTableRows.add(origin);
+        final GTFSTimeTableRow terminus = createRow(train, "OL", TimeTableRow.TimeTableRowType.ARRIVAL,
+                lastArrivalScheduled);
+        terminus.commercialTrack = "1";
+        terminus.liveEstimateTime = lastArrivalEstimate;
+        terminus.actualTime = lastArrivalActual;
+        train.timeTableRows.add(terminus);
+        return train;
     }
 
     // ===== Helper =====

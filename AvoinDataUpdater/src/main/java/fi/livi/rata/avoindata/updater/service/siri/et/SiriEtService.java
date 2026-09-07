@@ -41,21 +41,21 @@ public class SiriEtService {
     }
 
     public Siri buildEtDocument(final List<GTFSTrain> trains, final ZonedDateTime now) {
-        return marshaller.marshal(emitted(interpret(trains)), now);
+        return marshaller.marshal(emitted(interpret(trains, now)), now);
     }
 
     /** Builds the document + serialized bytes and the per-cycle {@link SiriEtStats} that back the wide event. */
     public SiriEtResult buildEtDocumentWithStats(final List<GTFSTrain> trains, final ZonedDateTime now) {
-        final List<InterpretResult> results = interpret(trains);
+        final List<InterpretResult> results = interpret(trains, now);
         final SiriEtStats stats = SiriEtStats.from(results);
         final Siri document = marshaller.marshal(emitted(results), now);
         return new SiriEtResult(document, marshaller.marshalToBytes(document), stats);
     }
 
-    private List<InterpretResult> interpret(final List<GTFSTrain> trains) {
+    private List<InterpretResult> interpret(final List<GTFSTrain> trains, final ZonedDateTime now) {
         final List<InterpretResult> results = new ArrayList<>(trains.size());
         for (final GTFSTrain train : trains) {
-            results.add(interpreter.interpret(train));
+            results.add(interpreter.interpret(train, now));
         }
         return results;
     }

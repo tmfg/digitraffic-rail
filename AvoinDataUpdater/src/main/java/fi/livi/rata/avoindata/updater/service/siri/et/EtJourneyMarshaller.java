@@ -22,6 +22,7 @@ import uk.org.siri.siri21.EstimatedTimetableDeliveryStructure;
 import uk.org.siri.siri21.EstimatedVehicleJourney;
 import uk.org.siri.siri21.EstimatedVersionFrameStructure;
 import uk.org.siri.siri21.FramedVehicleJourneyRefStructure;
+import uk.org.siri.siri21.JourneyPatternRef;
 import uk.org.siri.siri21.LineRef;
 import uk.org.siri.siri21.NaturalLanguagePlaceNameStructure;
 import uk.org.siri.siri21.NaturalLanguageStringStructure;
@@ -101,6 +102,12 @@ public class EtJourneyMarshaller {
         fvjRef.setDatedVehicleJourneyRef(journey.serviceJourneyId().value());
         evj.setFramedVehicleJourneyRef(fvjRef);
 
+        if (journey.journeyPatternRef() != null) {
+            final JourneyPatternRef jpRef = new JourneyPatternRef();
+            jpRef.setValue(journey.journeyPatternRef().value());
+            evj.setJourneyPatternRef(jpRef);
+        }
+
         evj.setDataSource(dataSource);
         evj.getVehicleModes().add(VehicleModesEnumeration.RAIL);
         if (journey.operatorRef() != null) {
@@ -146,7 +153,10 @@ public class EtJourneyMarshaller {
         final RecordedCall out = new RecordedCall();
         out.setStopPointRef(stopPointRef(call.stopRef().value()));
         out.setOrder(BigInteger.valueOf(call.order()));
-        // RecordedCallStructure has no RequestStop / PredictionInaccurate in the Nordic profile (EstimatedCall only).
+        // SIRI 2.0 RecordedCall carries times only: ArrivalStatus/DepartureStatus, the boarding-activity fields
+        // AND ArrivalStopAssignment/DepartureStopAssignment were all added to RecordedCall in SIRI 2.1, so none
+        // are emitted here (they stay on EstimatedCall, where 2.0 supports them). The deviation shows in Aimed vs
+        // Actual times; a missing actual falls back to Expected.
         if (call.cancelled()) {
             out.setCancellation(true);
         }
@@ -158,8 +168,11 @@ public class EtJourneyMarshaller {
         if (arrival != null) {
             out.setAimedArrivalTime(toHelsinki(arrival.aimed()));
             out.setActualArrivalTime(toHelsinki(arrival.actual()));
-            out.setArrivalStatus(status(arrival.status()));
-            out.setArrivalBoardingActivity(arrivalBoarding(arrival.status()));
+            // No actual time → fall back to the estimate; an ExpectedArrivalTime without an Actual is the 2.0
+            // "handle as missed" signal.
+            if (arrival.actual() == null && arrival.expected() != null) {
+                out.setExpectedArrivalTime(toHelsinki(arrival.expected()));
+            }
         }
         final CallPoint departure = call.departure();
         if (departure != null) {
@@ -168,10 +181,7 @@ public class EtJourneyMarshaller {
             if (departure.actual() == null && departure.expected() != null) {
                 out.setExpectedDepartureTime(toHelsinki(departure.expected()));
             }
-            out.setDepartureStatus(status(departure.status()));
-            out.setDepartureBoardingActivity(departureBoarding(departure.status()));
         }
-        addStopAssignment(call, out.getArrivalStopAssignments(), out.getDepartureStopAssignments());
         return out;
     }
 
@@ -213,9 +223,10 @@ public class EtJourneyMarshaller {
     }
 
     /**
-     * Adds a {@code StopAssignment} (aimed + expected quay) for a genuine platform change. It sits on the
-     * arrival side when the call has an arrival (per the profile example); the origin (arrival-only-absent)
-     * carries it on departure.
+     * Adds a {@code StopAssignment} (aimed + expected quay) for a genuine platform change on an
+     * {@code EstimatedCall} — SIRI 2.0 permits it there (unlike {@code RecordedCall}, where it is a 2.1 feature).
+     * It sits on the arrival side when the call has an arrival (per the profile example); the origin
+     * (arrival-only-absent) carries it on departure. Never both (the profile requires one or the other).
      */
     private static void addStopAssignment(final EtCall call, final List<StopAssignmentStructure> arrivalAssignments,
                                           final List<StopAssignmentStructure> departureAssignments) {

@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,13 +32,16 @@ import fi.livi.rata.avoindata.updater.service.siri.et.model.QuayChange;
  *
  * <p>Returns an {@link InterpretResult.Skipped} when the journey does not resolve to a published
  * {@code ServiceJourney} ({@code UNRESOLVED_JOURNEY}), or when any commercial stop cannot be resolved to a PETI
- * {@code FSR:Quay} ({@code UNRESOLVED_STOP}) — because the profile requires a complete stop sequence, an
- * incomplete journey is skipped rather than emitted.
+ * {@code FSR:Quay} ({@code UNRESOLVED_STOP_NO_STOP} / {@code UNRESOLVED_STOP_NO_QUAY}) — because the profile
+ * requires a complete stop sequence, an incomplete journey is skipped rather than emitted.
  */
 public class EtJourneyInterpreter {
 
     // Deviations within a minute are treated as on-time.
     private static final long ON_TIME_TOLERANCE_SECONDS = 60;
+
+    // How long after its final stop's expected time a carried-over previous-day journey is still emitted.
+    private static final Duration CARRYOVER_GRACE = Duration.ofMinutes(15);
 
     private final JourneyRefResolver journeyRefResolver;
     private final StationUicLookup stationUicLookup;
@@ -56,7 +61,7 @@ public class EtJourneyInterpreter {
         this.plannedTrackLookup = plannedTrackLookup;
     }
 
-    public InterpretResult interpret(final GTFSTrain train) {
+    public InterpretResult interpret(final GTFSTrain train, final ZonedDateTime now) {
         final Optional<ResolvedJourney> resolved =
                 journeyRefResolver.resolve(train.id.trainNumber, train.id.departureDate);
         if (resolved.isEmpty()) {
@@ -70,15 +75,21 @@ public class EtJourneyInterpreter {
             }
         }
 
+        // A previous operating day's train only belongs in today's ET while it is genuinely still running; a
+        // completed or stale carryover is dropped rather than re-published every cycle.
+        if (train.id.departureDate.isBefore(now.toLocalDate()) && !isStillRunning(commercialStops, now)) {
+            return new InterpretResult.Skipped(InterpretResult.SkipReason.COMPLETED_CARRYOVER);
+        }
+
         final List<ResolvedStop> stops = new ArrayList<>(commercialStops.size());
         boolean monitored = false;
         for (final PairedStop stop : commercialStops) {
             final Optional<StopRef> stopRef = resolveStopRef(stop);
             // The Nordic profile requires us to assert IsCompleteStopSequence=true. If even one commercial stop can't
             // be resolved to a Quay, we can't honestly claim a complete sequence, so we omit the entire journey rather
-            // than publish a hole.
+            // than publish a hole. The reason (no PETI stop vs no quay) is recorded so operators can see which.
             if (stopRef.isEmpty()) {
-                return new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_STOP);
+                return new InterpretResult.Skipped(unresolvedStopReason(stop));
             }
             final String stopName = stationNameLookup.nameFor(representativeRow(stop).stationShortCode).orElse(null);
             stops.add(new ResolvedStop(stop, stopRef.get(), stopName));
@@ -87,17 +98,28 @@ public class EtJourneyInterpreter {
         }
 
         final List<EtCall> calls = new ArrayList<>(stops.size());
+        // The train's furthest realised call: every stop at or before it is in the past (a RecordedCall), even
+        // one with no actual time of its own — such a stop is a "missed"/not-yet-recorded call carrying the
+        // estimate. Everything after is still upcoming. This keeps RecordedCalls the chronological prefix and
+        // EstimatedCalls the suffix, instead of interleaving them by per-stop actual presence.
+        int lastActualIndex = -1;
+        for (int i = 0; i < stops.size(); i++) {
+            if (hasAnyActualTime(stops.get(i).stop())) {
+                lastActualIndex = i;
+            }
+        }
         for (int i = 0; i < stops.size(); i++) {
             final ResolvedStop current = stops.get(i);
             final int order = i + 1;
             // Partial-cancellation boundary: the last served stop before a cancelled stop departs 'cancelled'.
             final boolean nextCancelled = i + 1 < stops.size() && isCancelled(stops.get(i + 1).stop());
-            calls.add(toCall(train, current.stop(), current.stopRef(), current.stopName(), order, nextCancelled));
+            calls.add(toCall(train, current.stop(), current.stopRef(), current.stopName(), order, nextCancelled,
+                    i <= lastActualIndex));
         }
 
         final ResolvedJourney j = resolved.get();
         return new InterpretResult.Emitted(new EtJourney(
-                j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(),
+                j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(), j.journeyPatternRef(),
                 train.cancelled, monitored,
                 stops.isEmpty() ? null : stops.get(0).stopName(),
                 stops.isEmpty() ? null : stops.get(stops.size() - 1).stopName(),
@@ -105,15 +127,17 @@ public class EtJourneyInterpreter {
     }
 
     private EtCall toCall(final GTFSTrain train, final PairedStop stop, final StopRef stopRef, final String stopName,
-                          final int order, final boolean nextCancelled) {
+                          final int order, final boolean nextCancelled, final boolean past) {
         final boolean cancelled = isCancelled(stop);
-        final boolean recorded = hasAnyActualTime(stop);
+        // Whether this stop has a realised time of its own. A past stop that has none is a "missed" call: it is
+        // still a RecordedCall (behind the train's furthest actual) but carries the estimate as Expected*Time.
+        final boolean hasActual = hasAnyActualTime(stop);
 
         final CallPoint arrival = stop.arrival == null ? null
                 : new CallPoint(
                         stop.arrival.scheduledTime,
-                        recorded ? null : stop.arrival.liveEstimateTime,
-                        recorded ? stop.arrival.actualTime : null,
+                        hasActual ? null : stop.arrival.liveEstimateTime,
+                        hasActual ? stop.arrival.actualTime : null,
                         cancelled ? CallStatus.CANCELLED : timeStatus(stop.arrival));
 
         final CallStatus departureStatus = (cancelled || nextCancelled) ? CallStatus.CANCELLED
@@ -122,12 +146,12 @@ public class EtJourneyInterpreter {
                 : new CallPoint(
                         stop.departure.scheduledTime,
                         stop.departure.liveEstimateTime,
-                        recorded ? stop.departure.actualTime : null,
+                        hasActual ? stop.departure.actualTime : null,
                         departureStatus);
 
         final QuayChange quayChange = computeQuayChange(train, stop, stopRef);
 
-        if (recorded) {
+        if (past) {
             return new EtCall.Recorded(stopRef, order, cancelled, arrival, departure, stopName, quayChange);
         }
         return new EtCall.Estimated(stopRef, order, cancelled, arrival, departure,
@@ -137,14 +161,14 @@ public class EtJourneyInterpreter {
     /**
      * Detects a platform change: returns a {@link QuayChange} only when the planned track is known, the current
      * platform is known, and the planned quay genuinely differs from the actual quay. When the current platform
-     * is unknown ({@code actualQuay} is only a {@code StopPlace} fallback) we do not assert a change.
+     * is unknown we do not assert a change (such a stop has no resolvable quay and its journey is dropped upstream).
      */
     private QuayChange computeQuayChange(final GTFSTrain train, final PairedStop stop, final StopRef actualQuay) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final Optional<String> plannedTrack = plannedTrackLookup.plannedTrack(
                 train.id.trainNumber, train.id.departureDate, representative.stationShortCode);
         // Need a planned track to resolve the planned quay; a null actual track means the current platform is
-        // unknown, so actualQuay is only a StopPlace fallback and we must not assert a change.
+        // unknown, so the stop has no resolvable quay and never carries a change.
         if (plannedTrack.isEmpty() || actualTrackOf(representative) == null) {
             return null;
         }
@@ -166,6 +190,16 @@ public class EtJourneyInterpreter {
             return Optional.empty();
         }
         return siriStopResolver.resolveQuayId(uic.getAsInt(), actualTrackOf(representative));
+    }
+
+    /** Why a commercial stop didn't resolve: no PETI stop place for the station, or a stop place but no quay. */
+    private InterpretResult.SkipReason unresolvedStopReason(final PairedStop stop) {
+        final GTFSTimeTableRow representative = representativeRow(stop);
+        final OptionalInt uic = stationUicLookup.uicFor(representative.stationShortCode);
+        if (uic.isEmpty() || !siriStopResolver.hasStopPlace(uic.getAsInt())) {
+            return InterpretResult.SkipReason.UNRESOLVED_STOP_NO_STOP;
+        }
+        return InterpretResult.SkipReason.UNRESOLVED_STOP_NO_QUAY;
     }
 
     private static GTFSTimeTableRow representativeRow(final PairedStop stop) {
@@ -221,6 +255,25 @@ public class EtJourneyInterpreter {
     private static boolean hasLiveData(final PairedStop stop) {
         return (stop.arrival != null && stop.arrival.hasEstimateOrActualTime())
                 || (stop.departure != null && stop.departure.hasEstimateOrActualTime());
+    }
+
+    /**
+     * A carried-over previous-day journey is still running until its final commercial stop is served. A small
+     * grace window keeps a just-arrived train briefly, and drops journeys whose data went stale without ever
+     * completing (final stop never got an actual time and its expected time is well in the past).
+     */
+    private static boolean isStillRunning(final List<PairedStop> commercialStops, final ZonedDateTime now) {
+        if (commercialStops.isEmpty()) {
+            return false;
+        }
+        final PairedStop last = commercialStops.get(commercialStops.size() - 1);
+        final GTFSTimeTableRow lastRow = last.arrival != null ? last.arrival : last.departure;
+        if (lastRow.actualTime != null) {
+            return false;
+        }
+        final ZonedDateTime effective = lastRow.liveEstimateTime != null ? lastRow.liveEstimateTime
+                : lastRow.scheduledTime;
+        return effective != null && !effective.isBefore(now.minus(CARRYOVER_GRACE));
     }
 
     /**

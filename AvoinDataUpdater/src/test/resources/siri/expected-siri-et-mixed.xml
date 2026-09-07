@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Siri version="2.1" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+<Siri version="2.0" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
     <ServiceDelivery>
         <ResponseTimestamp>2026-07-15T12:00:00</ResponseTimestamp>
         <ProducerRef>TEST</ProducerRef>
@@ -15,6 +15,7 @@
                         <DataFrameRef>2026-07-15</DataFrameRef>
                         <DatedVehicleJourneyRef>FTR:ServiceJourney:59-12345</DatedVehicleJourneyRef>
                     </FramedVehicleJourneyRef>
+                    <JourneyPatternRef>FTR:JourneyPattern:59</JourneyPatternRef>
                     <VehicleMode>rail</VehicleMode>
                     <OriginName>Helsinki</OriginName>
                     <DestinationName>Oulu</DestinationName>
@@ -28,8 +29,6 @@
                             <StopPointName>Helsinki</StopPointName>
                             <AimedDepartureTime>2026-07-15T08:00:00</AimedDepartureTime>
                             <ActualDepartureTime>2026-07-15T08:01:00</ActualDepartureTime>
-                            <DepartureStatus>delayed</DepartureStatus>
-                            <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
                         </RecordedCall>
                         <RecordedCall>
                             <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
@@ -37,12 +36,8 @@
                             <StopPointName>Tampere</StopPointName>
                             <AimedArrivalTime>2026-07-15T09:30:00</AimedArrivalTime>
                             <ActualArrivalTime>2026-07-15T09:33:00</ActualArrivalTime>
-                            <ArrivalStatus>delayed</ArrivalStatus>
-                            <ArrivalBoardingActivity>alighting</ArrivalBoardingActivity>
                             <AimedDepartureTime>2026-07-15T09:35:00</AimedDepartureTime>
                             <ExpectedDepartureTime>2026-07-15T09:38:00</ExpectedDepartureTime>
-                            <DepartureStatus>delayed</DepartureStatus>
-                            <DepartureBoardingActivity>boarding</DepartureBoardingActivity>
                         </RecordedCall>
                     </RecordedCalls>
                     <EstimatedCalls>

@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.siri.et.model;
 import java.util.List;
 
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
@@ -16,5 +17,6 @@ import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
  * when unavailable) for the SIRI {@code OriginName} / {@code DestinationName} fields.
  */
 public record EtJourney(ServiceJourneyId serviceJourneyId, DataFrameRef dataFrameRef, LineId lineId,
-                        OperatorRef operatorRef, boolean cancelled, boolean monitored,
+                        OperatorRef operatorRef, JourneyPatternRef journeyPatternRef,
+                        boolean cancelled, boolean monitored,
                         String originName, String destinationName, List<EtCall> calls) {}

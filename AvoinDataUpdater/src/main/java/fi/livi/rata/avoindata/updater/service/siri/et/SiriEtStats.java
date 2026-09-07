@@ -16,7 +16,9 @@ public record SiriEtStats(
         long journeysEmitted,
         long journeysCancelled,
         long skippedUnresolvedJourney,
-        long skippedUnresolvedStop,
+        long skippedUnresolvedStopNoStop,
+        long skippedUnresolvedStopNoQuay,
+        long skippedCompletedCarryover,
         long callsRecorded,
         long callsEstimated,
         long stopRefsQuay,
@@ -24,7 +26,7 @@ public record SiriEtStats(
         long stopRefsUnresolved) {
 
     public static SiriEtStats empty() {
-        return new SiriEtStats(0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return new SiriEtStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     /** Folds one cycle's interpretation results into the counters — the sole place these tallies live. */
@@ -32,7 +34,9 @@ public record SiriEtStats(
         long emitted = 0;
         long cancelled = 0;
         long skippedUnresolvedJourney = 0;
-        long skippedUnresolvedStop = 0;
+        long skippedUnresolvedStopNoStop = 0;
+        long skippedUnresolvedStopNoQuay = 0;
+        long skippedCompletedCarryover = 0;
         long callsRecorded = 0;
         long callsEstimated = 0;
         long stopRefsQuay = 0;
@@ -44,10 +48,15 @@ public record SiriEtStats(
                 case InterpretResult.Skipped skipped -> {
                     switch (skipped.reason()) {
                         case UNRESOLVED_JOURNEY -> skippedUnresolvedJourney++;
-                        case UNRESOLVED_STOP -> {
-                            skippedUnresolvedStop++;
+                        case UNRESOLVED_STOP_NO_STOP -> {
+                            skippedUnresolvedStopNoStop++;
                             stopRefsUnresolved++;
                         }
+                        case UNRESOLVED_STOP_NO_QUAY -> {
+                            skippedUnresolvedStopNoQuay++;
+                            stopRefsUnresolved++;
+                        }
+                        case COMPLETED_CARRYOVER -> skippedCompletedCarryover++;
                     }
                 }
                 case InterpretResult.Emitted emittedResult -> {
@@ -72,11 +81,13 @@ public record SiriEtStats(
             }
         }
 
-        return new SiriEtStats(emitted, cancelled, skippedUnresolvedJourney, skippedUnresolvedStop,
-                callsRecorded, callsEstimated, stopRefsQuay, stopRefsStopPlace, stopRefsUnresolved);
+        return new SiriEtStats(emitted, cancelled, skippedUnresolvedJourney, skippedUnresolvedStopNoStop,
+                skippedUnresolvedStopNoQuay, skippedCompletedCarryover, callsRecorded, callsEstimated, stopRefsQuay,
+                stopRefsStopPlace, stopRefsUnresolved);
     }
 
-    // FSR:Quay:... when the track resolved, FSR:StopPlace:... on the track-unknown fallback.
+    // Stop refs are always FSR:Quay, so
+    // stopRefsStopPlace stays 0 — kept as a regression guard: a StopPlace ref in output would flip it non-zero.
     private static boolean isQuay(final StopRef stopRef) {
         return stopRef.value().contains(":Quay:");
     }
