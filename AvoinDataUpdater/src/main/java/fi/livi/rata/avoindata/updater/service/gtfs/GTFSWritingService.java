@@ -34,8 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.common.collect.Lists;
 import com.google.transit.realtime.GtfsRealtime;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GTFSRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Calendar;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.CalendarDate;
@@ -52,7 +52,7 @@ public class GTFSWritingService {
     private String gtfsDir;
 
     @Autowired
-    private GTFSRepository gtfsRepository;
+    private GeneratedExportRepository gtfsRepository;
 
     @Transactional
     public List<File> writeGTFSFiles(final GTFSDto gtfsDto) throws IOException {
@@ -60,7 +60,7 @@ public class GTFSWritingService {
     }
 
     private void persist(final byte[] data, final String fileName) {
-        final GTFS gtfs = new GTFS();
+        final GeneratedExport gtfs = new GeneratedExport();
         gtfs.data = data;
         gtfs.created = DateProvider.nowInHelsinki();
         gtfs.fileName = fileName;

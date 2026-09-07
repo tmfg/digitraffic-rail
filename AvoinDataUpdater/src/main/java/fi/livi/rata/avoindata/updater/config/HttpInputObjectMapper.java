@@ -41,7 +41,6 @@ import fi.livi.rata.avoindata.common.domain.trackwork.TrackWorkPart;
 import fi.livi.rata.avoindata.common.domain.trafficrestriction.TrafficRestrictionNotification;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessageRule;
 import fi.livi.rata.avoindata.updater.deserializers.CauseDeserializer;
@@ -64,7 +63,6 @@ import fi.livi.rata.avoindata.updater.deserializers.TrackWorkPartDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrafficRestrictionNotificationDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrainCategoryDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrainDeserializer;
-import fi.livi.rata.avoindata.updater.deserializers.TrainLocationDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrainRunningMessageRuleDeserializer;
 import fi.livi.rata.avoindata.updater.deserializers.TrainTypeDeserializer;
@@ -157,9 +155,6 @@ public class HttpInputObjectMapper {
     private ScheduleExceptionDeserializer scheduleExceptionDeserializer;
 
     @Autowired
-    private TrainLocationDeserializer trainLocationDeserializer;
-
-    @Autowired
     private TimeTablePeriodDeserializer timetablePeriodDeserializer;
 
     @Autowired
@@ -205,8 +200,6 @@ public class HttpInputObjectMapper {
         module.addDeserializer(ScheduleRow.class, scheduleRowDeserializer);
         module.addDeserializer(ScheduleRowPart.class, scheduleRowPartDeserializer);
         module.addDeserializer(ScheduleException.class, scheduleExceptionDeserializer);
-
-        module.addDeserializer(TrainLocation.class, trainLocationDeserializer);
 
         module.addDeserializer(TimeTablePeriod.class, timetablePeriodDeserializer);
         module.addDeserializer(TimeTablePeriodChangeDate.class, timeTablePeriodChangeDateDeserializer);

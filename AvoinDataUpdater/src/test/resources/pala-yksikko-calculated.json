@@ -1,0 +1,25 @@
+{
+  "1": {
+    "junanumero": 1,
+    "lahtopaiva": "2026-07-06",
+    "aikaleima": "2026-07-06T08:34:29Z",
+    "nopeus": 60,
+    "suunta": 22,
+    "epavarmuus": 416,
+    "sijainti": {
+      "koordinaatti": [327785, 6823456],
+      "raideosuudet": ["1.2.246.586.1.36.4893906"],
+      "lhraiteet": [],
+      "toimialueet": ["1.2.246.586.1.48.1540542"]
+    },
+    "lahdeKupla": [],
+    "lahdeKulkutiedot": [
+      {
+        "aikaleima": "2026-07-06T08:34:00Z",
+        "tunniste": "1.2.246.586.1.99.99999",
+        "raideosuudet": ["1.2.246.586.1.36.4893906"],
+        "lhraiteet": []
+      }
+    ]
+  }
+}

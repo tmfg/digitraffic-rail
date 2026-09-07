@@ -1,0 +1,2 @@
+ALTER TABLE train_location
+  ADD COLUMN is_gps_location BOOLEAN NOT NULL DEFAULT TRUE;

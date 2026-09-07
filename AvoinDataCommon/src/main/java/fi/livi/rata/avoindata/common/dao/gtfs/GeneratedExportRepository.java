@@ -7,13 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GTFS;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 
 @Repository
-public interface GTFSRepository extends CustomGeneralRepository<GTFS, Long> {
-    GTFS findFirstByFileNameOrderByIdDesc(String s);
+public interface GeneratedExportRepository extends CustomGeneralRepository<GeneratedExport, Long> {
+    GeneratedExport findFirstByFileNameOrderByIdDesc(String s);
 
-    @Query("delete from GTFS gtfs where gtfs.created < ?1")
+    @Query("delete from GeneratedExport gtfs where gtfs.created < ?1")
     @Modifying
     Integer deleteOldZips(ZonedDateTime deleteBefore);
 }

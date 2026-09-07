@@ -11,6 +11,11 @@ on:
         description: "Branch/tag/SHA of digitraffic-rail-private"
         required: true
         default: "master"
+      diff-only:
+        description: "Only run diff"
+        required: true
+        type: boolean
+        default: false
       install-server:
         description: Install avoindata-server
         required: true
@@ -21,6 +26,11 @@ on:
         required: true
         type: boolean
         default: true
+      install-mqtt:
+        description: Install Mosquitto
+        required: true
+        type: boolean
+        default: false
       config-repo-branch:
         description: "Config repo branch"
         default: master
@@ -39,7 +49,7 @@ jobs:
       git_sha: ${{ steps.git_sha.outputs.sha_short }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.ref }}
       - name: Set git sha output
@@ -57,26 +67,27 @@ jobs:
           echo "| config-repo-branch | ${{ github.event.inputs.config-repo-branch }} |" >> $GITHUB_STEP_SUMMARY
           echo "| install-server | ${{ github.event.inputs.install-server }} |" >> $GITHUB_STEP_SUMMARY
           echo "| install-updater | ${{ github.event.inputs.install-updater }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| install-mqtt | ${{ github.event.inputs.install-mqtt }} |" >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           java-version: 25
           distribution: corretto
           cache: maven
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.1
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
       - name: Build updater
         if: github.event.inputs.install-updater == 'true'
         run: |
@@ -101,25 +112,25 @@ jobs:
           mvn -DoutputName=server-sbom cyclonedx:makeBom
       - name: Upload server.jar
         if: github.event.inputs.install-server == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: server.jar
           path: server.jar
       - name: Upload updater.jar
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: updater.jar
           path: updater.jar
       - name: Upload server SBOM
         if: github.event.inputs.install-server == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: server-sbom.json
           path: AvoinDataServer/target/server-sbom.json
       - name: Upload updater SBOM
         if: github.event.inputs.install-updater == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: updater-sbom.json
           path: AvoinDataUpdater/target/updater-sbom.json
@@ -135,32 +146,32 @@ jobs:
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout CI-repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           ref: ${{ inputs.config-repo-branch }}
           path: digitraffic-ci
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.1
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: gh-actions-install-image-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
       - name: Download updater jar
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         if: github.event.inputs.install-updater == 'true'
         with:
           name: updater.jar
           path: digitraffic-ci/aws
       - name: Download server jar
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         if: github.event.inputs.install-server == 'true'
         with:
           name: server.jar
@@ -174,15 +185,27 @@ jobs:
             --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=updater.jar \
-            --build-arg PROPERTY_FILE=conf/avoindataupdater-${{ github.event.inputs.env }}.properties \
-            --build-arg LOGCONF_FILE=conf/avoindataupdater-logback.xml \
+            --build-arg PROPERTY_FILE=conf/rail/avoindataupdater-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/rail/avoindataupdater-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataupdater .
           
-          docker push ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-updater-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
+
+      - name: Put updater image tag in Parameter Store
+        if: ${{ github.event.inputs.install-updater == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/avoindata-updater/image-tag" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Build docker image for server
         if: github.event.inputs.install-server == 'true'
         run: |
@@ -192,15 +215,62 @@ jobs:
             --no-cache \
             --build-arg ENV=${{ github.event.inputs.env }} \
             --build-arg JAR_FILE=server.jar \
-            --build-arg PROPERTY_FILE=conf/avoindataserver-${{ github.event.inputs.env }}.properties \
-            --build-arg LOGCONF_FILE=conf/avoindataserver-logback.xml \
+            --build-arg PROPERTY_FILE=conf/rail/avoindataserver-${{ github.event.inputs.env }}.properties \
+            --build-arg LOGCONF_FILE=conf/rail/avoindataserver-logback.xml \
             --platform linux/arm64 \
             --output type=docker \
-            --tag ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }} \
+            --tag ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
             --pull=true \
             --file=docker/Dockerfile-rail-avoindataserver .
 
-          docker push ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }}
+          docker push ${{ secrets.ECR_URL }}/dt-rail-avoindata-server-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
+
+      - name: Put server image tag in Parameter Store
+        if: ${{ github.event.inputs.install-server == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/avoindata-server/image-tag" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Build mqtt image
+        run: |
+          cd digitraffic-ci/aws/mqtt
+          
+          docker buildx build \
+           --no-cache \
+           --build-arg ENVIRONMENT=rail \
+           --platform linux/arm64 \
+           --output type=docker \
+           --tag ${{ secrets.ECR_URL }}/dt-rail-mqtt-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }} \
+           --pull=true \
+           --file=Dockerfile-rail .
+          
+          docker push ${{ secrets.ECR_URL }}/dt-rail-mqtt-repository:${{ needs.build.outputs.git_sha }}-${{ github.run_id }}
+
+      - name: Put mqtt image tag in Parameter Store
+        if: ${{ github.event.inputs.install-mqtt == 'true' }}
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/mqtt/image-tag" \
+            --value "${{ needs.build.outputs.git_sha }}-${{ github.run_id }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
+        with:
+          status: failure
+          text: FAILED Rail deploy/install
+          fields: repo, job, took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
   install:
     if: github.repository != 'tmfg/digitraffic-rail'
@@ -211,103 +281,94 @@ jobs:
       actions: read
     runs-on: ubuntu-24.04
     environment: ${{ github.event.inputs.env }}
-    outputs:
-      revision_updater: ${{ steps.updater-revision.outputs.revision_updater }}
-      revision_server: ${{ steps.server-revision.outputs.revision_server }}
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.1
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Update updater task-def
-        if: github.event.inputs.install-updater == 'true'
-        id: updater-task-def
-        uses: tmfg/digitraffic-actions@update-task-def/v2
-        with:
-          task-def-file-name: rail-${{ github.event.inputs.env }}-avoindataupdater
-          family-name: avoindata-updater
-          image-arn: ${{ secrets.ECR_URL }}/avoindata-updater:${{ needs.build.outputs.git_sha }}
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
-          ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
-          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-      - name: Set updater output
-        if: github.event.inputs.install-updater == 'true'
-        id: updater-revision
-        run: echo "revision_updater=${{ steps.updater-task-def.outputs.revision }}" >> $GITHUB_OUTPUT
-      - name: Update server task-def
-        if: github.event.inputs.install-server == 'true'
-        id: server-task-def
-        uses: tmfg/digitraffic-actions@update-task-def/v2
-        with:
-          task-def-file-name: rail-${{ github.event.inputs.env }}-avoindataserver
-          family-name: avoindata-server
-          image-arn: ${{ secrets.ECR_URL }}/avoindata-server:${{ needs.build.outputs.git_sha }}
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          ci-repo-url: ${{ secrets.CONFIG_REPO_NAME }}
-          ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
-          ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
-      - name: Set server output
-        if: github.event.inputs.install-server == 'true'
-        id: server-revision
-        run: echo "revision_server=${{ steps.server-task-def.outputs.revision }}" >> $GITHUB_OUTPUT
-  deploy:
-    needs: [install]
-    if: ${{ always() && github.repository != 'tmfg/digitraffic-rail' && contains(needs.*.result, 'success') && !(contains(needs.*.result, 'failure')) }}
-    permissions:
-      id-token: write
-      contents: read
-      actions: read
-    runs-on: ubuntu-24.04
-    environment: ${{ github.event.inputs.env }}
-    steps:
-      - name: Update avoindata-server ECS service
-        if: github.event.inputs.install-server == 'true'
-        uses: tmfg/digitraffic-actions@ecs-service-update/v1
-        with:
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          task-definition: avoindata-server:${{ needs.install.outputs.revision_server }}
-          service-name: avoindata-server
-          cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
-      - name: Update avoindata-updater ECS service
-        if: github.event.inputs.install-updater == 'true'
-        uses: tmfg/digitraffic-actions@ecs-service-update/v1
-        with:
-          aws-role: ${{ secrets.AWS_ROLE }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          task-definition: avoindata-updater:${{ needs.install.outputs.revision_updater }}
-          service-name: avoindata-updater
-          cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: 1
-
-      - name: Download server-SBOM
-        if: github.event.inputs.install-server == 'true'
-        uses: actions/download-artifact@v8
-        with:
-          name: server-sbom.json
-
-      - name: Download updater-SBOM
-        if: github.event.inputs.install-updater == 'true'
-        uses: actions/download-artifact@v8
-        with:
-          name: updater-sbom.json
-
       - name: Checkout CI-repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ secrets.CONFIG_REPO_NAME }}
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           ref: ${{ inputs.config-repo-branch }}
           path: digitraffic-ci
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-install-rail-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 10
+      - name: Build CI/CDK Infra project
+        working-directory: digitraffic-ci/aws/cdk/infra
+        run: |
+          pnpm install
+          pnpm build:ci
+
+      - name: Get stacks to deploy
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: get-stacks
+        env:
+          ENV: ${{ github.event.inputs.env }}
+          INSTALL_SERVER: ${{ github.event.inputs.install-server }}
+          INSTALL_UPDATER: ${{ github.event.inputs.install-updater }}
+          INSTALL_MQTT: ${{ github.event.inputs.install-mqtt }}
+        with:
+          script: |
+            const envSuffix = process.env.ENV === 'prod' ? 'Prod' : 'Test';
+            const stacks = [];
+            
+            if (process.env.INSTALL_SERVER === 'true') {
+              stacks.push(`AvoindataServer${envSuffix}`);
+            }
+            if (process.env.INSTALL_UPDATER === 'true') {
+              stacks.push(`AvoindataUpdater${envSuffix}`);
+            }
+            if (process.env.INSTALL_MQTT === 'true') {
+              stacks.push(`MqttService${envSuffix}`);
+            }
+
+            return stacks.join(',');
+          result-encoding: string
+
+      - name: Diff and deploy
+        env:
+          DEPLOY_ALL_CHANGES: true
+          DIFF_ONLY: ${{ github.event.inputs['diff-only'] }}
+          # the value of AWS_PROFILE is only used by the stack code, local AWS profile configurations are not being set up
+          AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+        working-directory: digitraffic-ci/aws/cdk/infra/scripts
+        run: |
+          pnpm install
+          pnpm build
+          pnpm run start:diff-and-deploy ${{steps.get-stacks.outputs.result}}      
+
+      - name: Download server-SBOM
+        if: github.event.inputs.install-server == 'true' && github.event.inputs['diff-only'] == 'false'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: server-sbom.json
+      - name: Download updater-SBOM
+        if: github.event.inputs.install-updater == 'true' && github.event.inputs['diff-only'] == 'false'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: updater-sbom.json
+      - name: Checkout CI-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
       - name: Read SBOM config
         id: sbom-config
+        if: github.event.inputs['diff-only'] == 'false'
         run: |
           echo "config<<EOF" >> $GITHUB_OUTPUT
           cat digitraffic-ci/aws/sbom/rail.json >> $GITHUB_OUTPUT
@@ -318,17 +379,18 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT      
 
       - name: Configure AWS credentials for SBOM install
-        uses: aws-actions/configure-aws-credentials@v6.1.1
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        if: github.event.inputs['diff-only'] == 'false'
         with:
           role-to-assume: ${{ fromJson(steps.sbom-config.outputs.common).sbomUploadRoleArn }}
           role-session-name: gh-actions-upload-sbom-rail-${{ github.event.inputs.env }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Upload server SBOM
-        if: github.event.inputs.install-server == 'true'
+        if: github.event.inputs.install-server == 'true' && github.event.inputs['diff-only'] == 'false'
         run: |
           aws s3 cp server-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['server'] }}/${{ github.run_id }}-${{ github.sha }}.json
       - name: Upload updater SBOM
-        if: github.event.inputs.install-updater == 'true'
+        if: github.event.inputs.install-updater == 'true' && github.event.inputs['diff-only'] == 'false'
         run: |
           aws s3 cp updater-sbom.json s3://${{ fromJson(steps.sbom-config.outputs.common).bucketArn }}/${{ fromJson(steps.sbom-config.outputs.config)[github.event.inputs.env]['updater'] }}/${{ github.run_id }}-${{ github.sha }}.json
 

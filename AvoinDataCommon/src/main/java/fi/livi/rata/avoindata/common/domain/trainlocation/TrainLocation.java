@@ -33,9 +33,11 @@ public class TrainLocation {
 
     public Integer accuracy;
 
+    public boolean isGpsLocation = true;
+
     @Transient
     @JsonIgnore
-    public Point liikeLocation;
+    public Point locationEpsg3067;
 
     @Override
     public String toString() {

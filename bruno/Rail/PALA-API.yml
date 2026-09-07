@@ -1,0 +1,24 @@
+info:
+  name: PALA-API
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{updater.pala-api-url}}/0.2/yksikot.json"
+  headers:
+    - name: API-KEY
+      value: "{{updater.reason.api-key}}"
+    - name: Host
+      value: "{{updater.pala-api-host}}"
+  params:
+    - name: duration
+      value: -PT6H
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

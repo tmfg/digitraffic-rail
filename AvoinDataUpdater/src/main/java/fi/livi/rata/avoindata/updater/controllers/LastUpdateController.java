@@ -25,7 +25,7 @@ public class LastUpdateController {
     @Autowired
     private WebClient webClient;
 
-    @RequestMapping("/last-updated")
+    @RequestMapping("/api/v1/last-updated")
     @ResponseBody
     public Map<LastUpdateService.LastUpdatedType, IsUpToDateService.IsToUpToDateDto> getLastUpdated(final HttpServletResponse response) {
         response.setHeader("Cache-Control", String.format("max-age=%d, public", 1));

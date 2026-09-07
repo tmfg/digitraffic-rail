@@ -2,10 +2,9 @@ package fi.livi.rata.avoindata.updater.service.stopsector;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.CsvUtil;
-import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +34,7 @@ public class SectorMap {
             final String sector = t[8];
 
             final String type = trainType.isEmpty() ? locomotiveType : trainType;
-            final boolean isSouth = StringUtils.equals(directionString, "SOUTH");
+            final boolean isSouth = Strings.CS.equals(directionString, "SOUTH");
             final int wagonCount = Integer.parseInt(wagonCountString);
 
             return new StopSector(station, track, type, isSouth, wagonCount, sector);
