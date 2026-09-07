@@ -3,9 +3,10 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -61,7 +62,7 @@ class SiriTimeConverterTest {
     void givenHelsinkiDuringAutumnOverlap_whenConvertToSiriDateTime_thenRendersValidIsoWithoutOffset() {
         // given — 00:30 Helsinki on fall-back night (overlap period)
         final ZonedDateTime helsinkiInstant = ZonedDateTime.of(2026, 10, 25, 0, 30, 0, 0,
-                ZoneId.of("Europe/Helsinki"));
+                DateProvider.ZONE_ID_HKI);
 
         // when
         final String result = converter.toSiriDateTime(helsinkiInstant);

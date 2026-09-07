@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import uk.org.siri.siri21.RequestorRef;
 import uk.org.siri.siri21.ServiceDelivery;
 import uk.org.siri.siri21.Siri;
@@ -57,7 +58,7 @@ public class SiriWritingService {
 
         final ServiceDelivery serviceDelivery = new ServiceDelivery();
         serviceDelivery.setResponseTimestamp(
-                responseTimestamp.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
+                responseTimestamp.withZoneSameInstant(DateProvider.ZONE_ID_HKI));
 
         final RequestorRef ref = new RequestorRef();
         ref.setValue(producerRef);
@@ -76,7 +77,9 @@ public class SiriWritingService {
                     new org.w3._2001.xmlschema.Adapter1() {
                         @Override
                         public String marshal(final ZonedDateTime v) {
-                            if (v == null) return null;
+                            if (v == null) {
+                                return null;
+                            }
                             return v.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                         }
                     });

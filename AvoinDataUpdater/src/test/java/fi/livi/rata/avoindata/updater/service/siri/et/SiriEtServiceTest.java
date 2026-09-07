@@ -14,7 +14,6 @@ import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,13 +40,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SiriEtServiceTest {
 
-    private static final ZoneId HELSINKI = SiriTimeConverter.HELSINKI_ZONE;
     private static final LocalDate DEPARTURE_DATE = LocalDate.of(2026, 7, 15);
-    private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, HELSINKI);
+    private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, ZONE_ID_HKI);
     private static final String PRODUCER_REF = "TEST";
     private static final String DATA_SOURCE = "FSR";
 
@@ -175,17 +174,17 @@ class SiriEtServiceTest {
         final GTFSTrain train = createTrain(59L, false);
         // Origin: DEPARTURE only
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         // Middle stops: ARRIVAL + DEPARTURE
         addStop(train, "TPE",
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
         addStop(train, "TKU",
-                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI), "3");
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), "3");
         // Terminus: ARRIVAL only
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         return train;
     }
 
@@ -320,12 +319,12 @@ class SiriEtServiceTest {
         // given — 3-stop train, no actualTime on any row
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "TPE",
-                ZonedDateTime.of(2026, 7, 15, 15, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 15, 35, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 15, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 15, 35, 0, 0, ZONE_ID_HKI), "1");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 18, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 18, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -347,28 +346,28 @@ class SiriEtServiceTest {
         final GTFSTrain train = createTrain(59L, false);
         // Origin
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         // Stop 2
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI);
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         // Stop 3 — no actuals
         addStop(train, "TKU",
-                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI), "3");
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), "3");
         // Terminus — no actuals
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -387,35 +386,35 @@ class SiriEtServiceTest {
         final GTFSTrain train = createTrain(59L, false);
         // HKI origin — served (actual departure)
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         // TPE middle — MISSED: no actual, only estimates
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, ZONE_ID_HKI);
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         // TKU middle — served (actuals) AFTER the missed TPE, which is what makes TPE a past/missed call
         final GTFSTimeTableRow arr3 = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI));
-        arr3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 2, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI));
+        arr3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 2, 0, 0, ZONE_ID_HKI);
         arr3.commercialTrack = "3";
         train.timeTableRows.add(arr3);
         final GTFSTimeTableRow dep3 = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI));
-        dep3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 6, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI));
+        dep3.actualTime = ZonedDateTime.of(2026, 7, 15, 11, 6, 0, 0, ZONE_ID_HKI);
         dep3.commercialTrack = "3";
         train.timeTableRows.add(dep3);
         // OL terminus — upcoming
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
@@ -432,7 +431,7 @@ class SiriEtServiceTest {
         final RecordedCall tpe = recorded.get(1);
         assertNull(tpe.getActualArrivalTime());
         assertNotNull(tpe.getExpectedArrivalTime());
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI).toInstant(),
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI).toInstant(),
                 tpe.getExpectedArrivalTime().toInstant());
         assertNull(tpe.getActualDepartureTime());
         assertNotNull(tpe.getExpectedDepartureTime());
@@ -445,24 +444,24 @@ class SiriEtServiceTest {
         // given — same 4-stop train from ET-07
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         addStop(train, "TKU",
-                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI), "3");
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), "3");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -484,16 +483,16 @@ class SiriEtServiceTest {
         // given — a 3-stop future train whose rows are added in scrambled order
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow olArr = createRow(train, "OL", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI));
         olArr.commercialTrack = "1";
         final GTFSTimeTableRow hkiDep = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
         hkiDep.commercialTrack = "7";
         final GTFSTimeTableRow tpeArr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
         tpeArr.commercialTrack = "1";
         final GTFSTimeTableRow tpeDep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         tpeDep.commercialTrack = "1";
         train.timeTableRows.add(olArr);
         train.timeTableRows.add(tpeDep);
@@ -522,23 +521,23 @@ class SiriEtServiceTest {
         // given — stop 2 has arrival.actualTime set, departure.actualTime null
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         // Stop 2: arrival has actualTime, departure does not
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 37, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 37, 0, 0, ZONE_ID_HKI);
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -559,23 +558,23 @@ class SiriEtServiceTest {
         // given — 3-stop train, all rows with actualTime
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI);
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         final GTFSTimeTableRow arr3 = createRow(train, "OL", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI));
-        arr3.actualTime = ZonedDateTime.of(2026, 7, 15, 14, 2, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI));
+        arr3.actualTime = ZonedDateTime.of(2026, 7, 15, 14, 2, 0, 0, ZONE_ID_HKI);
         arr3.commercialTrack = "1";
         train.timeTableRows.add(arr3);
 
@@ -599,9 +598,9 @@ class SiriEtServiceTest {
         // given — stop at HKI, track "7"
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -619,18 +618,18 @@ class SiriEtServiceTest {
         // given — stop at TPE, track null
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         // TPE with null track
         final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
         arr.commercialTrack = null;
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         dep.commercialTrack = null;
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -646,19 +645,19 @@ class SiriEtServiceTest {
         // given — stop at TKU, track "3" but unknownTrack=true
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         final GTFSTimeTableRow arr = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI));
         arr.commercialTrack = "3";
         arr.unknownTrack = true;
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI));
         dep.commercialTrack = "3";
         dep.unknownTrack = true;
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -674,12 +673,12 @@ class SiriEtServiceTest {
         // given — stop at "XXX" (not in UIC map)
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "XXX",
-                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 10, 5, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 10, 5, 0, 0, ZONE_ID_HKI), "1");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -697,19 +696,19 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI);
         arr.commercialTrack = "1";
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, ZONE_ID_HKI);
         dep.commercialTrack = "1";
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -717,10 +716,10 @@ class SiriEtServiceTest {
         // then
         final EstimatedVehicleJourney evj = getEvjs(result).get(0);
         final EstimatedCall call = evj.getEstimatedCalls().getEstimatedCalls().get(1); // TPE
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI), call.getAimedArrivalTime());
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, HELSINKI), call.getExpectedArrivalTime());
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), call.getAimedDepartureTime());
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, HELSINKI), call.getExpectedDepartureTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI), call.getAimedArrivalTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI), call.getExpectedArrivalTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), call.getAimedDepartureTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 38, 0, 0, ZONE_ID_HKI), call.getExpectedDepartureTime());
     }
 
     // --- ET-16: EstimatedCall with no liveEstimate → expectedTime is null ---
@@ -730,12 +729,12 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "TPE",
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -754,22 +753,22 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
-        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         dep1.commercialTrack = "7";
         train.timeTableRows.add(dep1);
         final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
-        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
         arr2.commercialTrack = "1";
         train.timeTableRows.add(arr2);
         final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
-        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI);
         dep2.commercialTrack = "1";
         train.timeTableRows.add(dep2);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -777,8 +776,8 @@ class SiriEtServiceTest {
         // then
         final EstimatedVehicleJourney evj = getEvjs(result).get(0);
         final RecordedCall call = evj.getRecordedCalls().getRecordedCalls().get(1); // TPE
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI), call.getActualArrivalTime());
-        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, HELSINKI), call.getActualDepartureTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI), call.getActualArrivalTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI), call.getActualDepartureTime());
     }
 
     // --- ET-18: Helsinki zone correctness — UTC source emits Helsinki local ---
@@ -859,19 +858,19 @@ class SiriEtServiceTest {
         // given — middle stop (TPE) rows are cancelled
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
         arr.commercialTrack = "1";
         arr.cancelled = true;
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         dep.commercialTrack = "1";
         dep.cancelled = true;
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -894,9 +893,9 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -915,9 +914,9 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -937,9 +936,9 @@ class SiriEtServiceTest {
         // given — only origin (DEPARTURE) + terminus (ARRIVAL)
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -958,20 +957,20 @@ class SiriEtServiceTest {
         // given — 4-row train: middle stop has commercialStop=false
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         // Non-commercial stop
         final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
         arr.commercialStop = false;
         arr.commercialTrack = "1";
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         dep.commercialStop = false;
         dep.commercialTrack = "1";
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -988,19 +987,19 @@ class SiriEtServiceTest {
         // given — middle stop has commercialStop=null on both rows
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
-                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
         arr.commercialStop = null;
         arr.commercialTrack = "1";
         train.timeTableRows.add(arr);
         final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
         dep.commercialStop = null;
         dep.commercialTrack = "1";
         train.timeTableRows.add(dep);
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -1017,9 +1016,9 @@ class SiriEtServiceTest {
         // given — train 999 is not resolvable by the stub JourneyRefResolver
         final GTFSTrain train = createTrain(999L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -1046,14 +1045,14 @@ class SiriEtServiceTest {
         // given — 2 trains, both resolvable (both trainNumber=59 for simplicity)
         final GTFSTrain train1 = createTrain(59L, false);
         addStop(train1, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train1, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         final GTFSTrain train2 = createTrain(59L, false);
         addStop(train2, "TPE", null,
-                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI), "1");
         addStop(train2, "TKU",
-                ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, HELSINKI), null, "3");
+                ZonedDateTime.of(2026, 7, 15, 12, 0, 0, 0, ZONE_ID_HKI), null, "3");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train1, train2), NOW);
@@ -1070,14 +1069,14 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain trainA = createTrain(59L, false);
         addStop(trainA, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(trainA, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         final GTFSTrain trainB = createTrain(999L, false); // unresolvable
         addStop(trainB, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 9, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 9, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(trainB, "OL",
-                ZonedDateTime.of(2026, 7, 15, 15, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 15, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(trainA, trainB), NOW);
@@ -1097,9 +1096,9 @@ class SiriEtServiceTest {
         final GTFSTrain train = createStandard4StopTrain();
         // Add some actuals to get mixed Recorded/Estimated
         train.timeTableRows.get(0).actualTime =
-                ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         train.timeTableRows.get(1).actualTime =
-                ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -1149,12 +1148,12 @@ class SiriEtServiceTest {
         // given — one station ("XXX") not in StationUicLookup
         final GTFSTrain train = createTrain(59L, false);
         addStop(train, "HKI", null,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
         addStop(train, "XXX",
-                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 10, 5, 0, 0, HELSINKI), "1");
+                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 10, 5, 0, 0, ZONE_ID_HKI), "1");
         addStop(train, "OL",
-                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
         final Siri result = service.buildEtDocument(List.of(train), NOW);
@@ -1178,7 +1177,7 @@ class SiriEtServiceTest {
     void givenTrainWithLiveEstimate_whenBuild_thenMonitoredTrue() {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(5).liveEstimateTime =
-                ZonedDateTime.of(2026, 7, 15, 14, 6, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 14, 6, 0, 0, ZONE_ID_HKI);
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
         assertTrue(evj.isMonitored());
     }
@@ -1203,7 +1202,7 @@ class SiriEtServiceTest {
     void givenLateDeparture_whenBuild_thenDepartureStatusDelayed() {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(2).liveEstimateTime = // TPE departure, 5 min late
-                ZonedDateTime.of(2026, 7, 15, 9, 40, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 9, 40, 0, 0, ZONE_ID_HKI);
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(CallStatusEnumeration.DELAYED, tpe.getDepartureStatus());
@@ -1214,7 +1213,7 @@ class SiriEtServiceTest {
     void givenEarlyArrival_whenBuild_thenArrivalStatusEarly() {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(3).liveEstimateTime = // TKU arrival, 2 min early
-                ZonedDateTime.of(2026, 7, 15, 10, 58, 0, 0, HELSINKI);
+                ZonedDateTime.of(2026, 7, 15, 10, 58, 0, 0, ZONE_ID_HKI);
         final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
         final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(2);
         assertEquals(CallStatusEnumeration.EARLY, tku.getArrivalStatus());
@@ -1342,8 +1341,8 @@ class SiriEtServiceTest {
     @Test
     void givenMixedActuals_whenBuildWithStats_thenRecordedEstimatedSplit() {
         final GTFSTrain train = createStandard4StopTrain();
-        train.timeTableRows.get(0).actualTime = ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI); // HKI dep
-        train.timeTableRows.get(1).actualTime = ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI); // TPE arr
+        train.timeTableRows.get(0).actualTime = ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI); // HKI dep
+        train.timeTableRows.get(1).actualTime = ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI); // TPE arr
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(2, stats.callsRecorded()); // HKI, TPE
@@ -1364,8 +1363,8 @@ class SiriEtServiceTest {
     @Test
     void givenUnresolvableJourney_whenBuildWithStats_thenSkippedUnresolvedJourney() {
         final GTFSTrain train = createTrain(999L, false); // resolver only knows train 59
-        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
-        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(0, stats.journeysEmitted());
@@ -1377,8 +1376,8 @@ class SiriEtServiceTest {
     @Test
     void givenUnresolvableStop_whenBuildWithStats_thenSkippedNoStop() {
         final GTFSTrain train = createTrain(59L, false);
-        addStop(train, "XXX", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "1"); // not in UIC map
-        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        addStop(train, "XXX", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "1"); // not in UIC map
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(0, stats.journeysEmitted());
@@ -1392,10 +1391,10 @@ class SiriEtServiceTest {
     void givenUnknownTrack_whenBuildWithStats_thenSkippedNoQuay() {
         final GTFSTrain train = createTrain(59L, false);
         final GTFSTimeTableRow hkiDep = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI));
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
         hkiDep.unknownTrack = true; // HKI has a PETI stop place, but no known platform → no Quay → journey dropped
         train.timeTableRows.add(hkiDep);
-        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(0, stats.journeysEmitted());
@@ -1420,7 +1419,7 @@ class SiriEtServiceTest {
     @Test
     void givenYesterdayTrainStillRunning_whenBuildWithStats_thenEmitted() {
         final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
-                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, HELSINKI), null, null); // arrives 13:00, NOW is 12:00
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), null, null); // arrives 13:00, NOW is 12:00
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(1, stats.journeysEmitted());
@@ -1431,8 +1430,8 @@ class SiriEtServiceTest {
     @Test
     void givenYesterdayTrainCompleted_whenBuildWithStats_thenSkippedCarryover() {
         final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
-                ZonedDateTime.of(2026, 7, 15, 9, 0, 0, 0, HELSINKI), null,
-                ZonedDateTime.of(2026, 7, 15, 9, 5, 0, 0, HELSINKI)); // actual arrival → completed
+                ZonedDateTime.of(2026, 7, 15, 9, 0, 0, 0, ZONE_ID_HKI), null,
+                ZonedDateTime.of(2026, 7, 15, 9, 5, 0, 0, ZONE_ID_HKI)); // actual arrival → completed
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(0, stats.journeysEmitted());
@@ -1443,7 +1442,7 @@ class SiriEtServiceTest {
     @Test
     void givenYesterdayTrainStale_whenBuildWithStats_thenSkippedCarryover() {
         final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE.minusDays(1),
-                ZonedDateTime.of(2026, 7, 14, 20, 0, 0, 0, HELSINKI), null, null); // scheduled far in the past
+                ZonedDateTime.of(2026, 7, 14, 20, 0, 0, 0, ZONE_ID_HKI), null, null); // scheduled far in the past
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(0, stats.journeysEmitted());
@@ -1454,7 +1453,7 @@ class SiriEtServiceTest {
     @Test
     void givenTodayTrainWithPastTimes_whenBuildWithStats_thenEmitted() {
         final GTFSTrain train = overnightTrain(59L, DEPARTURE_DATE,
-                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), null, null); // 08:00, before NOW 12:00
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), null, null); // 08:00, before NOW 12:00
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
         assertEquals(1, stats.journeysEmitted());
@@ -1476,7 +1475,7 @@ class SiriEtServiceTest {
                 (trainNumber, date, shortCode) -> Optional.empty());
         // Dated yesterday, still running (arrives today 13:00, NOW is today 12:00).
         final GTFSTrain train = overnightTrain(59L, yesterday,
-                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, HELSINKI), null, null);
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), null, null);
 
         final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
 

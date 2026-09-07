@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
+import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +51,6 @@ import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
  */
 class SiriEtGenerationServiceTest {
 
-    private static final ZoneId HELSINKI = ZoneId.of("Europe/Helsinki");
     // Trains are dated "today" (Helsinki) so they are current-operating-day journeys, never stale carryovers.
     private static final LocalDate TODAY = DateProvider.dateInHelsinki();
     private static final long DATASET_VERSION = 5L;
@@ -131,17 +130,17 @@ class SiriEtGenerationServiceTest {
 
     private static GTFSTrain train59() {
         final GTFSTrain train = createTrain(59L, TODAY);
-        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, HELSINKI), "7");
-        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, HELSINKI),
-                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, HELSINKI), "1");
-        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, HELSINKI), null, "1");
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
         return train;
     }
 
     private static GTFSTrain train999() {
         final GTFSTrain train = createTrain(999L, TODAY);
-        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, HELSINKI), "7");
-        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 16, 0, 0, 0, HELSINKI), null, "1");
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 16, 0, 0, 0, ZONE_ID_HKI), null, "1");
         return train;
     }
 

@@ -1,20 +1,19 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpHeaders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
-import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "siri", description = "Returns real-time data in SIRI Nordic format")
 @RestController
@@ -35,26 +34,27 @@ public class SiriController {
     }
 
     @Operation(summary = "Returns SIRI Nordic Estimated Timetable (ET) real-time XML")
-    @RequestMapping(method = RequestMethod.GET, path = "et", produces = "application/xml")
+    @RequestMapping(method = RequestMethod.GET, path = "et", produces = MediaType.APPLICATION_XML_VALUE)
     @Transactional(readOnly = true)
-    public byte[] getSiriEt(final HttpServletResponse response) {
-        return getExport(response, ET_FILENAME);
+    public ResponseEntity<byte[]> getSiriEt() {
+        return getExport(ET_FILENAME);
     }
 
-    private byte[] getExport(final HttpServletResponse response, final String fileName) {
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_SECONDS);
-
+    private ResponseEntity<byte[]> getExport(final String fileName) {
         final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(fileName);
         if (export == null) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return new byte[0];
+            return ResponseEntity.notFound().build();
         }
 
-        response.addHeader("x-is-fresh",
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(String.format("max-age=%d, public", CACHE_SECONDS));
+        headers.add("x-is-fresh",
                 Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
-        response.addHeader("x-timestamp", export.created.toString());
-        response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
-
-        return export.data;
+        headers.add("x-timestamp", export.created.toString());
+        headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_XML)
+                .headers(headers)
+                .body(export.data);
     }
 }

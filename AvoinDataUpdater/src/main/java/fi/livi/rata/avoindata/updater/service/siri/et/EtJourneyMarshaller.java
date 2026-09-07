@@ -5,7 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import fi.livi.rata.avoindata.updater.service.siri.common.SiriTimeConverter;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallPoint;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallStatus;
@@ -54,19 +54,21 @@ public class EtJourneyMarshaller {
         this.dataSource = dataSource;
     }
 
-    /** Assembles the complete SIRI-ET {@code ServiceDelivery} document from the interpreted journeys. */
+    /**
+     * Assembles the complete SIRI-ET {@code ServiceDelivery} document from the interpreted journeys.
+     */
     public Siri marshal(final List<EtJourney> journeys, final ZonedDateTime now) {
         final Siri siri = siriWritingService.buildEnvelope(now, producerRef);
 
         final EstimatedTimetableDeliveryStructure delivery = new EstimatedTimetableDeliveryStructure();
         delivery.setVersion("2.0");
-        delivery.setResponseTimestamp(now.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
+        delivery.setResponseTimestamp(now.withZoneSameInstant(DateProvider.ZONE_ID_HKI));
 
         // An EstimatedJourneyVersionFrame must carry at least one journey to be schema-valid; on a no-traffic
         // cycle we emit a bare delivery (no frame) rather than an invalid empty one.
         if (!journeys.isEmpty()) {
             final EstimatedVersionFrameStructure frame = new EstimatedVersionFrameStructure();
-            frame.setRecordedAtTime(now.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE));
+            frame.setRecordedAtTime(now.withZoneSameInstant(DateProvider.ZONE_ID_HKI));
             for (final EtJourney journey : journeys) {
                 frame.getEstimatedVehicleJourneies().add(marshalJourney(journey, now));
             }
@@ -77,7 +79,9 @@ public class EtJourneyMarshaller {
         return siri;
     }
 
-    /** Serializes a built document to UTF-8 XML bytes — the single exit point for SIRI-ET serialization. */
+    /**
+     * Serializes a built document to UTF-8 XML bytes — the single exit point for SIRI-ET serialization.
+     */
     public byte[] marshalToBytes(final Siri siri) {
         return siriWritingService.marshalToBytes(siri);
     }
@@ -130,8 +134,8 @@ public class EtJourneyMarshaller {
         final List<EstimatedCall> estimatedCalls = new ArrayList<>();
         for (final EtCall call : journey.calls()) {
             switch (call) {
-                case EtCall.Recorded recorded -> recordedCalls.add(marshalRecorded(recorded));
-                case EtCall.Estimated estimated -> estimatedCalls.add(marshalEstimated(estimated));
+                case final EtCall.Recorded recorded -> recordedCalls.add(marshalRecorded(recorded));
+                case final EtCall.Estimated estimated -> estimatedCalls.add(marshalEstimated(estimated));
             }
         }
         if (!recordedCalls.isEmpty()) {
@@ -293,6 +297,6 @@ public class EtJourneyMarshaller {
         if (time == null) {
             return null;
         }
-        return time.withZoneSameInstant(SiriTimeConverter.HELSINKI_ZONE);
+        return time.withZoneSameInstant(DateProvider.ZONE_ID_HKI);
     }
 }
