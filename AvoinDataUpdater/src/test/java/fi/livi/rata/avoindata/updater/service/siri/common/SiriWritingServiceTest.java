@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -84,14 +85,12 @@ class SiriWritingServiceTest {
         assertFalse(xml.contains("<ProducerRef>DT</ProducerRef>"));
     }
 
-    // --- WRITE-05: Empty envelope passes XSD validation ---
-
+    // --- WRITE-05: A complete SIRI-ET document passes XSD validation ---
+    
     @Test
-    void givenValidEnvelope_whenValidateSchema_thenReturnsTrue() {
-        // given
-        final ZonedDateTime now = ZonedDateTime.of(2026, 7, 10, 18, 0, 0, 0, ZoneOffset.UTC);
-        final Siri envelope = writingService.buildEnvelope(now, "XXX");
-        final byte[] bytes = writingService.marshalToBytes(envelope);
+    void givenValidSiriEtDocument_whenValidateSchema_thenReturnsTrue() throws IOException {
+        // given — a complete, schema-valid SIRI-ET document
+        final byte[] bytes = getClass().getResourceAsStream("/siri/expected-siri-et-mixed.xml").readAllBytes();
 
         // when
         final boolean valid = writingService.isSchemaValid(bytes);
