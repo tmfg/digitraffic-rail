@@ -85,8 +85,9 @@ public class NeTExStopsService {
                     ? AssignmentResult.none()
                     : buildAssignment(pair, station, matcher);
 
-            stopPoints.add(buildScheduledStopPoint(pair, station, result.quay()));
-            addStationLevelArtifacts(station, seenStations, routePoints, destinationDisplays);
+            final var stopPoint = buildScheduledStopPoint(pair, station, result.quay());
+            stopPoints.add(stopPoint);
+            addStationLevelArtifacts(station, stopPoint.id(), seenStations, routePoints, destinationDisplays);
 
             if (!petiSourceEmpty) {
                 result.assignment().ifPresent(stopAssignments::add);
@@ -134,12 +135,19 @@ public class NeTExStopsService {
                         station.latitude, station.longitude));
     }
 
-    private void addStationLevelArtifacts(final Station station, final Set<String> seenStations,
+    /**
+     * A RoutePoint has no geography of its own, so it borrows a ScheduledStopPoint of
+     * the station. Any of them will do, and only ones we have actually created are
+     * offered, because a station whose every stop names a track has no station-level
+     * point to point at.
+     */
+    private void addStationLevelArtifacts(final Station station, final String stopPointId,
+            final Set<String> seenStations,
             final List<NeTExStopsData.NeTExRoutePoint> routePoints,
             final List<NeTExStopsData.NeTExDestinationDisplay> destinationDisplays) {
         if (seenStations.add(station.shortCode)) {
             routePoints.add(new NeTExStopsData.NeTExRoutePoint(
-                    idGenerator.routePointId(station.shortCode), station.shortCode));
+                    idGenerator.routePointId(station.shortCode), station.shortCode, stopPointId));
             destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
                     idGenerator.destinationDisplayId(station.shortCode), publicStationName(station.name)));
         }

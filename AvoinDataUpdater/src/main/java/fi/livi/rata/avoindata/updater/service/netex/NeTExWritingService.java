@@ -440,7 +440,7 @@ public class NeTExWritingService {
                         routePointsStructure.getRoutePoint().add(new RoutePoint()
                                         .withId(rp.id())
                                         .withVersion("1")
-                                        .withProjections(routePointProjection(rp.stationShortCode())));
+                                        .withProjections(routePointProjection(rp)));
                 }
                 frame.withRoutePoints(routePointsStructure);
 
@@ -659,19 +659,19 @@ public class NeTExWritingService {
         }
 
         /**
-         * A RoutePoint carries no geography of its own, so it is projected onto the
-         * station-level ScheduledStopPoint that does.
+         * A RoutePoint carries no geography of its own, so it is projected onto a
+         * ScheduledStopPoint of the same station, which does.
          */
-        private Projections_RelStructure routePointProjection(final String stationShortCode) {
+        private Projections_RelStructure routePointProjection(final NeTExStopsData.NeTExRoutePoint routePoint) {
                 return new Projections_RelStructure()
                                 .withProjectionRefOrProjection(FACTORY.createPointProjection(
                                                 new PointProjection()
-                                                                .withId(idGenerator.pointProjectionId(stationShortCode))
+                                                                .withId(idGenerator.pointProjectionId(
+                                                                                routePoint.stationShortCode()))
                                                                 .withVersion("1")
                                                                 .withProjectedPointRef(new PointRefStructure()
-                                                                                .withRef(idGenerator
-                                                                                                .scheduledStopPointId(
-                                                                                                                stationShortCode))
+                                                                                .withRef(routePoint
+                                                                                                .projectedStopPointId())
                                                                                 .withVersion("1"))));
         }
 
