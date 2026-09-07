@@ -148,15 +148,11 @@ public class EtJourneyInterpreter {
     private EtCall toCall(final GTFSTrain train, final PairedStop stop, final StopRef stopRef, final String stopName,
                           final int order, final boolean nextCancelled, final boolean past, final int visitIndex) {
         final boolean cancelled = isCancelled(stop);
-        // Whether this stop has a realised time of its own. A past stop that has none is a "missed" call: it is
-        // still a RecordedCall (behind the train's furthest actual) but carries the estimate as Expected*Time.
-        final boolean hasActual = hasAnyActualTime(stop);
-
         final CallPoint arrival = stop.arrival == null ? null
                 : new CallPoint(
                         stop.arrival.scheduledTime,
-                        hasActual ? null : stop.arrival.liveEstimateTime,
-                        hasActual ? stop.arrival.actualTime : null,
+                        stop.arrival.liveEstimateTime,
+                        stop.arrival.actualTime,
                         cancelled ? CallStatus.CANCELLED : timeStatus(stop.arrival));
 
         final CallStatus departureStatus = (cancelled || nextCancelled) ? CallStatus.CANCELLED
@@ -165,7 +161,7 @@ public class EtJourneyInterpreter {
                 : new CallPoint(
                         stop.departure.scheduledTime,
                         stop.departure.liveEstimateTime,
-                        hasActual ? stop.departure.actualTime : null,
+                        stop.departure.actualTime,
                         departureStatus);
 
         final QuayChange quayChange = computeQuayChange(train, stop, stopRef, visitIndex);

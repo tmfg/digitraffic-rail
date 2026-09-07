@@ -53,8 +53,9 @@ class SiriControllerIntegrationTest extends MockMvcBaseTest {
 
         mockMvc.perform(get(SIRI_ET_URL).accept(MediaType.APPLICATION_XML))
                 .andExpect(status().isOk())
-                // NB: a global ContentTypeInterceptor overrides the response content type to application/json
-                // app-wide, so we assert on the served bytes + headers rather than the content type.
+                // The SIRI path is excluded from the global ContentTypeInterceptor, so the controller's
+                // application/xml content type is preserved (not overridden to application/json).
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_XML))
                 .andExpect(content().bytes(xml))
                 .andExpect(header().string("x-is-fresh", "true"))
                 .andExpect(header().exists("x-timestamp"))

@@ -9,7 +9,7 @@ CREATE TABLE `netex_published_journey` (
   `dataset_version` bigint(20) unsigned NOT NULL,
   `generated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_npj_version_date` (`dataset_version`,`departure_date`)
+  UNIQUE KEY `uq_npj_version_date_train` (`dataset_version`,`departure_date`,`train_number`)
 );
 
 -- Planned tracks belong to a journey (3NF): reference the parent row via FK instead of duplicating

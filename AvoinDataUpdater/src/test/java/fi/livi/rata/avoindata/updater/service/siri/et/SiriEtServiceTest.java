@@ -551,6 +551,49 @@ class SiriEtServiceTest {
         assertNotNull(stop2.getExpectedDepartureTime());
     }
 
+    // --- ET-09b: RecordedCall with a departure actual but no arrival actual keeps the arrival estimate ---
+    // Regression: the two call sides are selected independently, so an actual departure must not suppress the
+    // arrival's estimate. A whole-stop "has actual" flag used to drop ExpectedArrivalTime here, leaving a
+    // RecordedCall with neither an actual nor an expected arrival time.
+
+    @Test
+    void givenDepartureActualButNoArrivalActual_whenBuild_thenArrivalKeepsExpectedTime() {
+        // given — stop 2 (TPE): arrival has only a live estimate, departure has an actualTime
+        final GTFSTrain train = createTrain(59L, false);
+        final GTFSTimeTableRow dep1 = createRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI));
+        dep1.actualTime = ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
+        dep1.commercialTrack = "7";
+        train.timeTableRows.add(dep1);
+        final GTFSTimeTableRow arr2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr2.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI);
+        arr2.commercialTrack = "1";
+        train.timeTableRows.add(arr2);
+        final GTFSTimeTableRow dep2 = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep2.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI);
+        dep2.commercialTrack = "1";
+        train.timeTableRows.add(dep2);
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — stop 2 is a RecordedCall (departure realised); its arrival keeps the estimate, has no actual
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
+        assertTrue(recorded.size() >= 2);
+        final RecordedCall stop2 = recorded.get(1);
+        assertNull(stop2.getActualArrivalTime());
+        assertNotNull(stop2.getExpectedArrivalTime());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI).toInstant(),
+                stop2.getExpectedArrivalTime().toInstant());
+        assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI).toInstant(),
+                stop2.getActualDepartureTime().toInstant());
+    }
+
     // --- ET-10: All stops have actualTime → all RecordedCalls ---
 
     @Test
