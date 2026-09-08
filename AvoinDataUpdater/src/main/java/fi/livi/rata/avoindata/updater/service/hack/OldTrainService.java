@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OldTrainService {
@@ -51,20 +52,26 @@ public class OldTrainService {
 
         try {
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                log.info("method=updateOldTrains Checking for updated old trains. Date: {}", date);
+                log.debug("method=updateOldTrains Checking for updated old trains. Date: {}", date);
 
                 final List<Train> trainResponse = getChangedTrains(date);
 
-                trainLockExecutor.executeInLock("oldTrains", () -> {
-
-                    if (!trainResponse.isEmpty()) {
+                if(!trainResponse.isEmpty()) {
+                    trainLockExecutor.executeInLock("oldTrains", () -> {
                         log.info("method=updateOldTrains Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
 
                         trainPersistService.updateEntities(trainResponse);
-                    }
 
-                    return trainResponse;
-                });
+                        return trainResponse;
+                    });
+
+                    // sleep, so we don't block the train locker executor totally
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(200);
+                    } catch (final InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.OLD_TRAINS);
