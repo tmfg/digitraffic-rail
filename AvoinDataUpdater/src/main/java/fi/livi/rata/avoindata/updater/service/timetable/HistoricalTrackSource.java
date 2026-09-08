@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,9 @@ public class HistoricalTrackSource {
                 today.minusDays(historyDays), today.minusDays(1), trainNumbers);
 
         for (final TrackObservation observation : observations) {
+            if (StringUtils.isBlank(observation.commercialTrack())) {
+                continue;
+            }
             for (final StopKey key : keysAnsweredBy(observation)) {
                 if (wanted.contains(key)) {
                     // newest first, so the first answer for a key is the most recent

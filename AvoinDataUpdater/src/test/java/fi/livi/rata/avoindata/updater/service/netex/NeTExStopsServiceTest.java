@@ -54,6 +54,21 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenBlankAndNullTracksAtOneStation_whenCreatingStops_thenOneStopPointIsProduced() {
+                final Station station = createStation("HKI", "Helsinki asema", 1, true,
+                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
+
+                final NeTExStopsData stopsData = stopsService.createStopsData(List.of(station),
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", null),
+                                                new NeTExStopsService.StationTrackPair("HKI", ""),
+                                                new NeTExStopsService.StationTrackPair("HKI", "  ")));
+
+                assertEquals(List.of("FTR:ScheduledStopPoint:HKI"),
+                                stopsData.getScheduledStopPoints().stream()
+                                                .map(NeTExStopsData.NeTExScheduledStopPoint::id).toList());
+        }
+
+        @Test
         void givenStation_whenCreatingStops_thenScheduledStopPointUsesPublicName() {
                 // given
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,

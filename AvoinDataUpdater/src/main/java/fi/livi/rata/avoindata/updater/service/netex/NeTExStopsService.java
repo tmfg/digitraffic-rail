@@ -1,14 +1,15 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -72,6 +73,7 @@ public class NeTExStopsService {
         int quayNoTrackCount = 0;
 
         final var seenStations = new LinkedHashSet<String>();
+        final Map<String, String> projectionTargets = new HashMap<>();
 
         for (final StationTrackPair pair : uniquePairs) {
             final Station station = stationByShortCode.get(pair.stationShortCode());
@@ -87,7 +89,14 @@ public class NeTExStopsService {
 
             final var stopPoint = buildScheduledStopPoint(pair, station, result.quay());
             stopPoints.add(stopPoint);
-            addStationLevelArtifacts(station, stopPoint.id(), seenStations, routePoints, destinationDisplays);
+            // lowest id wins so the projection target cannot drift between generations;
+            // a station-level point sorts ahead of every platform of the same station
+            projectionTargets.merge(station.shortCode, stopPoint.id(),
+                    (a, b) -> a.compareTo(b) <= 0 ? a : b);
+            if (seenStations.add(station.shortCode)) {
+                destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
+                        idGenerator.destinationDisplayId(station.shortCode), publicStationName(station.name)));
+            }
 
             if (!petiSourceEmpty) {
                 result.assignment().ifPresent(stopAssignments::add);
@@ -107,6 +116,13 @@ public class NeTExStopsService {
                     case UNMATCHED -> unmatchedCount++;
                 }
             }
+        }
+
+        for (final String shortCode : seenStations) {
+            final Station station = stationByShortCode.get(shortCode);
+            routePoints.add(new NeTExStopsData.NeTExRoutePoint(
+                    idGenerator.routePointId(shortCode), shortCode, publicStationName(station.name),
+                    station.latitude, station.longitude, projectionTargets.get(shortCode)));
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,
@@ -136,23 +152,9 @@ public class NeTExStopsService {
     }
 
     /**
-     * A RoutePoint has no geography of its own, so it borrows a ScheduledStopPoint of
-     * the station. Any of them will do, and only ones we have actually created are
-     * offered, because a station whose every stop names a track has no station-level
-     * point to point at.
+     * A RoutePoint is the station, so it carries the station centroid; the profile also
+     * requires it to name a ScheduledStopPoint it corresponds to.
      */
-    private void addStationLevelArtifacts(final Station station, final String stopPointId,
-            final Set<String> seenStations,
-            final List<NeTExStopsData.NeTExRoutePoint> routePoints,
-            final List<NeTExStopsData.NeTExDestinationDisplay> destinationDisplays) {
-        if (seenStations.add(station.shortCode)) {
-            routePoints.add(new NeTExStopsData.NeTExRoutePoint(
-                    idGenerator.routePointId(station.shortCode), station.shortCode, stopPointId));
-            destinationDisplays.add(new NeTExStopsData.NeTExDestinationDisplay(
-                    idGenerator.destinationDisplayId(station.shortCode), publicStationName(station.name)));
-        }
-    }
-
     private AssignmentResult buildAssignment(final StationTrackPair pair, final Station station,
             final PetiUicMatcher matcher) {
         final Optional<PetiStop> petiMatch = matcher.match(station.uicCode);
@@ -211,8 +213,12 @@ public class NeTExStopsService {
     }
 
     /**
-     * A (station, track) pair extracted from schedule data.
+     * A (station, track) pair extracted from schedule data. A blank track is held as
+     * null so that two pairs are equal exactly when they name the same stop point.
      */
     public record StationTrackPair(String stationShortCode, String commercialTrack) {
+        public StationTrackPair {
+            commercialTrack = StringUtils.isBlank(commercialTrack) ? null : commercialTrack;
+        }
     }
 }

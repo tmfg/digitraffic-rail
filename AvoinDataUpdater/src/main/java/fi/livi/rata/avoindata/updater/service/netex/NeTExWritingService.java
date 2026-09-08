@@ -440,6 +440,10 @@ public class NeTExWritingService {
                         routePointsStructure.getRoutePoint().add(new RoutePoint()
                                         .withId(rp.id())
                                         .withVersion("1")
+                                        .withName(new MultilingualString().withValue(rp.name()))
+                                        .withLocation(new LocationStructure()
+                                                        .withLatitude(rp.latitude())
+                                                        .withLongitude(rp.longitude()))
                                         .withProjections(routePointProjection(rp)));
                 }
                 frame.withRoutePoints(routePointsStructure);
@@ -659,8 +663,8 @@ public class NeTExWritingService {
         }
 
         /**
-         * A RoutePoint carries no geography of its own, so it is projected onto a
-         * ScheduledStopPoint of the same station, which does.
+         * SERVICE_FRAME_3 requires every RoutePoint to name the ScheduledStopPoint it
+         * corresponds to, even though ours carries its own location.
          */
         private Projections_RelStructure routePointProjection(final NeTExStopsData.NeTExRoutePoint routePoint) {
                 return new Projections_RelStructure()
