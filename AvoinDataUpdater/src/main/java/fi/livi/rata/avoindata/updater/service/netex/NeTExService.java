@@ -52,6 +52,7 @@ public class NeTExService {
     private final NeTExEntityService entityService;
     private final NeTExCalendarService calendarService;
     private final NeTExRouteService routeService;
+    private final SiblingTrackSource siblingTrackSource;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
     private final PetiStopSource petiStopSource;
@@ -65,6 +66,7 @@ public class NeTExService {
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
             final NeTExRouteService routeService,
+            final SiblingTrackSource siblingTrackSource,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
             final PetiStopSource petiStopSource,
@@ -77,6 +79,7 @@ public class NeTExService {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
+        this.siblingTrackSource = siblingTrackSource;
         this.stopsService = stopsService;
         this.writingService = writingService;
         this.petiStopSource = petiStopSource;
@@ -120,8 +123,9 @@ public class NeTExService {
         }
 
         final int fromHistory = fillFromHistory(gaps);
-        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} stillMissing={}",
-                fromUpcoming, fromHistory, gaps.size() - fromHistory);
+        final int fromSiblings = siblingTrackSource.fill(List.of(adhocSchedules, regularSchedules));
+        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} fromSiblings={} stillMissing={}",
+                fromUpcoming, fromHistory, fromSiblings, gaps.size() - fromHistory - fromSiblings);
     }
 
     /** Asks history only about the stops still without a track. */

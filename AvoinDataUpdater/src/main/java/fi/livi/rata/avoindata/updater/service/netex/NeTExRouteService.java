@@ -141,7 +141,7 @@ public class NeTExRouteService {
         return stops;
     }
 
-    private boolean isCommercialStop(final ScheduleRow row) {
+    public boolean isCommercialStop(final ScheduleRow row) {
         // First stop (no arrival) and last stop (no departure) are always commercial
         if (row.arrival == null || row.departure == null) {
             return true;

@@ -213,7 +213,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService,
+                routeService, new SiblingTrackSource(routeService), stopsService,
                 writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
@@ -349,7 +349,7 @@ class NeTExServiceMatchRateGuardTest {
         final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowRepository);
 
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService,
+                routeService, new SiblingTrackSource(routeService), stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
                 new CommercialTrackResolver(), timeTableRowService, historicalTrackSource);
 

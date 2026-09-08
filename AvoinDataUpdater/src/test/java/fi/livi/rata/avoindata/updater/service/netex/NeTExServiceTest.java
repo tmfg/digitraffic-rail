@@ -47,7 +47,7 @@ class NeTExServiceTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService, writingService,
+                routeService, new SiblingTrackSource(routeService), stopsService, writingService,
                 petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
     }
 
