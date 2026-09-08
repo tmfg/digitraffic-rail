@@ -119,10 +119,8 @@ public class NeTExStopsService {
         }
 
         for (final String shortCode : seenStations) {
-            final Station station = stationByShortCode.get(shortCode);
             routePoints.add(new NeTExStopsData.NeTExRoutePoint(
-                    idGenerator.routePointId(shortCode), shortCode, publicStationName(station.name),
-                    station.latitude, station.longitude, projectionTargets.get(shortCode)));
+                    idGenerator.routePointId(shortCode), shortCode, projectionTargets.get(shortCode)));
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,

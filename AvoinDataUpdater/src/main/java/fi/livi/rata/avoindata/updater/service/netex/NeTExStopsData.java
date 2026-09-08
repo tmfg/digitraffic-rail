@@ -97,8 +97,7 @@ public class NeTExStopsData {
             BigDecimal longitude) {
     }
 
-    public record NeTExRoutePoint(String id, String stationShortCode, String name, BigDecimal latitude,
-            BigDecimal longitude, String projectedStopPointId) {
+    public record NeTExRoutePoint(String id, String stationShortCode, String projectedStopPointId) {
     }
 
     public record NeTExDestinationDisplay(String id, String frontText) {
