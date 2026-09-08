@@ -30,7 +30,7 @@ public class HistoricalTrackSource {
 
     private final TimeTableRowRepository timeTableRowRepository;
 
-    @Value("${updater.netex.track-history-days:60}")
+    @Value("${updater.netex.track-history-days:14}")
     private int historyDays;
 
     public HistoricalTrackSource(final TimeTableRowRepository timeTableRowRepository) {
