@@ -5,17 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
+import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 
 /**
  * Track a train was last seen to use, for stops the schedule and the coming days
@@ -27,19 +27,18 @@ public class HistoricalTrackSource {
 
     private static final Logger log = LoggerFactory.getLogger(HistoricalTrackSource.class);
 
-    private final TimeTableRowService timeTableRowService;
+    private final TimeTableRowRepository timeTableRowRepository;
 
     @Value("${updater.netex.track-history-days:60}")
     private int historyDays;
 
-    public HistoricalTrackSource(final TimeTableRowService timeTableRowService) {
-        this.timeTableRowService = timeTableRowService;
+    public HistoricalTrackSource(final TimeTableRowRepository timeTableRowRepository) {
+        this.timeTableRowRepository = timeTableRowRepository;
     }
 
     /**
-     * Reads one day at a time, most recent first, and stops as soon as every stop
-     * asked about has an answer. A train that runs daily is answered by yesterday
-     * alone, so the older days are only read for stops that have not run recently.
+     * Asks only about the trains that have a gap, because reading whole days would
+     * drag the rest of the country's timetable through the generation transaction.
      */
     public Map<StopKey, String> resolve(final Set<StopKey> wanted) {
         final Map<StopKey, String> found = new HashMap<>();
@@ -47,31 +46,29 @@ public class HistoricalTrackSource {
             return found;
         }
 
+        final Set<Long> trainNumbers = wanted.stream().map(StopKey::trainNumber).collect(Collectors.toSet());
         final LocalDate today = DateProvider.dateInHelsinki();
-        int daysRead = 0;
-        for (int back = 1; back <= historyDays && found.size() < wanted.size(); back++) {
-            daysRead++;
-            for (final SimpleTimeTableRow row : timeTableRowService.getDay(today.minusDays(back))) {
-                if (StringUtils.isBlank(row.commercialTrack) || row.actualTime == null) {
-                    continue;
-                }
-                for (final StopKey key : keysAnsweredBy(row)) {
-                    if (wanted.contains(key)) {
-                        // days are walked newest first, so the first answer is the most recent
-                        found.putIfAbsent(key, row.commercialTrack);
-                    }
+        final List<TrackObservation> observations = timeTableRowRepository.findObservedTracks(
+                today.minusDays(historyDays), today.minusDays(1), trainNumbers);
+
+        for (final TrackObservation observation : observations) {
+            for (final StopKey key : keysAnsweredBy(observation)) {
+                if (wanted.contains(key)) {
+                    // newest first, so the first answer for a key is the most recent
+                    found.putIfAbsent(key, observation.commercialTrack());
                 }
             }
         }
 
-        log.info("method=resolve wanted={} resolved={} daysRead={}", wanted.size(), found.size(), daysRead);
+        log.info("method=resolve wanted={} trains={} observations={} resolved={} days={}",
+                wanted.size(), trainNumbers.size(), observations.size(), found.size(), historyDays);
         return found;
     }
 
-    private static List<StopKey> keysAnsweredBy(final SimpleTimeTableRow row) {
+    private static List<StopKey> keysAnsweredBy(final TrackObservation observation) {
         return List.of(
-                forSchedulePart(row.getTrainNumber(), row.getAttapId(), row.type),
-                forStation(row.getTrainNumber(), row.stationShortCode, row.type));
+                forSchedulePart(observation.trainNumber(), observation.attapId(), observation.type()),
+                forStation(observation.trainNumber(), observation.stationShortCode(), observation.type()));
     }
 
     /** Keyed on attapId to pin the same route, or on station to survive a timetable change. */

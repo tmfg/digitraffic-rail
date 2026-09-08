@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
@@ -340,9 +342,11 @@ class NeTExServiceMatchRateGuardTest {
 
         final TimeTableRowService timeTableRowService = mock(TimeTableRowService.class);
         when(timeTableRowService.getNextTenDays()).thenReturn(List.of());
-        when(timeTableRowService.getDay(any())).thenReturn(List.of());
 
-        final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowService);
+        final TimeTableRowRepository timeTableRowRepository = mock(TimeTableRowRepository.class);
+        when(timeTableRowRepository.findObservedTracks(any(), any(), anyCollection())).thenReturn(List.of());
+
+        final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowRepository);
 
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, stopsService,

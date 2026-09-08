@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.common.dao.train;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.gtfs.SimpleTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 
 @Repository
@@ -30,6 +32,27 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
             ZonedDateTime scheduledTimeStart,
             @Param("scheduledTimeEnd")
             ZonedDateTime scheduledTimeEnd);
+
+    /**
+     * Narrowed by (departure_date, train_number) so the null checks only ever sift
+     * rows of the handful of trains asked about.
+     */
+    @Query("""
+            SELECT new fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation( \
+            sttr.id.trainNumber, sttr.id.attapId, sttr.stationShortCode, sttr.type, \
+            sttr.commercialTrack, sttr.scheduledTime) \
+            FROM SimpleTimeTableRow sttr \
+            WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
+            sttr.id.trainNumber IN :trainNumbers AND \
+            sttr.commercialTrack IS NOT NULL AND sttr.actualTime IS NOT NULL \
+            ORDER BY sttr.scheduledTime DESC""")
+    List<TrackObservation> findObservedTracks(
+            @Param("departureDateStart")
+            LocalDate departureDateStart,
+            @Param("departureDateEnd")
+            LocalDate departureDateEnd,
+            @Param("trainNumbers")
+            Collection<Long> trainNumbers);
 
     @Query("""
             SELECT sttr \

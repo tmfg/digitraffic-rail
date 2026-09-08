@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -26,17 +24,6 @@ public class TimeTableRowService {
                         currentDateTime.plusDays(10).toLocalDate(),
                         currentDateTime,
                         currentDateTime.plusDays(10));
-    }
-
-    /** Rows of one operating day, whose journeys may run well past midnight. */
-    public List<SimpleTimeTableRow> getDay(final LocalDate day) {
-        final ZonedDateTime dayStart = day.atStartOfDay(ZoneId.of("Europe/Helsinki"));
-        return timeTableRowRepository.
-                findSimpleByScheduledTimeBetween(
-                        day,
-                        day,
-                        dayStart.minusDays(1),
-                        dayStart.plusDays(2));
     }
 
 }
