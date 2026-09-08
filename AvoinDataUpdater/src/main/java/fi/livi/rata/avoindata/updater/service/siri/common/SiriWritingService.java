@@ -33,21 +33,14 @@ public class SiriWritingService {
 
     private static final Logger log = LoggerFactory.getLogger(SiriWritingService.class);
 
-    private volatile JAXBContext jaxbContext;
+    private final JAXBContext jaxbContext;
 
-    private JAXBContext getJaxbContext() {
-        if (jaxbContext == null) {
-            synchronized (this) {
-                if (jaxbContext == null) {
-                    try {
-                        jaxbContext = JAXBContext.newInstance(Siri.class);
-                    } catch (final JAXBException e) {
-                        throw new SiriMarshalException("Failed to initialize JAXB context", e);
-                    }
-                }
-            }
+    public SiriWritingService() {
+        try {
+            this.jaxbContext = JAXBContext.newInstance(Siri.class);
+        } catch (final JAXBException e) {
+            throw new SiriMarshalException("Failed to initialize JAXB context", e);
         }
-        return jaxbContext;
     }
 
     public Siri buildEnvelope(final ZonedDateTime responseTimestamp, final String producerRef) {
@@ -70,7 +63,7 @@ public class SiriWritingService {
 
     public String marshalToXml(final Siri siri) {
         try {
-            final Marshaller marshaller = getJaxbContext().createMarshaller();
+            final Marshaller marshaller = jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
             marshaller.setAdapter(org.w3._2001.xmlschema.Adapter1.class,
