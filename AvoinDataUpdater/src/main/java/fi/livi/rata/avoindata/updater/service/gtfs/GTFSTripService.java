@@ -84,7 +84,7 @@ public class GTFSTripService {
 
         final Set<Trip> toBeRemoved = new HashSet<>();
         for (final Trip trip : trips) {
-            if (trip.stopTimes.isEmpty() || trip.calendar.endDate.isBefore(now)) {
+            if (trip.stopTimes.size() < 2 || trip.calendar.endDate.isBefore(now)) {
                 toBeRemoved.add(trip);
             } else {
                 trip.headsign = stopMap.get(Iterables.getLast(trip.stopTimes).stopId).name;

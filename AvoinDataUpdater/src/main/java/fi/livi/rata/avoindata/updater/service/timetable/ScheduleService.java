@@ -80,8 +80,8 @@ public class ScheduleService {
                 // sleep, so we don't block the train locker executor totally
                 try {
                     // if it takes longer to extract, sleep a bit longer too
-                    final var sleepTime = 200 + Math.max(12000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
-                    Thread.sleep(sleepTime);
+                    final var sleepTime = 300 + Math.max(12000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
+                    TimeUnit.MILLISECONDS.sleep(sleepTime);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 }
