@@ -29,7 +29,7 @@ public class HistoricalTrackSource {
 
     private final TimeTableRowService timeTableRowService;
 
-    @Value("${updater.netex.track-history-days:14}")
+    @Value("${updater.netex.track-history-days:60}")
     private int historyDays;
 
     public HistoricalTrackSource(final TimeTableRowService timeTableRowService) {
