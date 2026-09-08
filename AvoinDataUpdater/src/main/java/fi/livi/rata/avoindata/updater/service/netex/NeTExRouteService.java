@@ -9,8 +9,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
  * Derives Routes and JourneyPatterns from schedule data.
@@ -131,14 +134,15 @@ public class NeTExRouteService {
     }
 
     private boolean isCommercialStop(final ScheduleRow row) {
-        // First stop (no arrival) and last stop (no departure) are always commercial
-        if (row.arrival == null || row.departure == null) {
-            return true;
+        // Must select the same stops as the SIRI-ET feed — see CommercialStopRule.
+        return CommercialStopRule.isCommercialStop(leg(row.arrival), leg(row.departure));
+    }
+
+    private static Leg leg(final ScheduleRowPart part) {
+        if (part == null) {
+            return Leg.ABSENT;
         }
-        if (row.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL) {
-            return true;
-        }
-        return row.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL;
+        return part.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL ? Leg.COMMERCIAL : Leg.NON_COMMERCIAL;
     }
 
     private String deriveLineIdentifier(final Schedule schedule) {

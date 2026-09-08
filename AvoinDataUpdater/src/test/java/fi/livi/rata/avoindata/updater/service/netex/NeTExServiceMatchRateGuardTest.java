@@ -173,16 +173,13 @@ class NeTExServiceMatchRateGuardTest {
                     .orElseThrow(() -> new AssertionError(
                             "Expected rail.netex.generation success event in log, got: " + appender.list));
 
-            // then — green phase renames fields from "peti_stations_*" to
-            // "peti_stop_assignments_*"
-            // Currently the log uses peti_stations_total → this assertion FAILS in red
-            // phase
-            assertTrue(generationLog.contains("peti_stop_assignments_total="),
-                    "Log should contain 'peti_stop_assignments_total=' but was: " + generationLog);
-            assertTrue(generationLog.contains("peti_stop_assignments_matched="),
-                    "Log should contain 'peti_stop_assignments_matched=' but was: " + generationLog);
-            assertTrue(generationLog.contains("peti_stop_assignments_unmatched="),
-                    "Log should contain 'peti_stop_assignments_unmatched=' but was: " + generationLog);
+            // then — the wide event carries the namespaced PETI stop-assignment counts
+            assertTrue(generationLog.contains("rail.netex.peti.stop_assignments_total="),
+                    "Log should contain 'rail.netex.peti.stop_assignments_total=' but was: " + generationLog);
+            assertTrue(generationLog.contains("rail.netex.peti.stop_assignments_matched="),
+                    "Log should contain 'rail.netex.peti.stop_assignments_matched=' but was: " + generationLog);
+            assertTrue(generationLog.contains("rail.netex.peti.stop_assignments_unmatched="),
+                    "Log should contain 'rail.netex.peti.stop_assignments_unmatched=' but was: " + generationLog);
             assertFalse(generationLog.contains("peti_stations_total="),
                     "Log should NOT contain legacy 'peti_stations_total=' but was: " + generationLog);
         } finally {

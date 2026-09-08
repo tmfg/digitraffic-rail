@@ -353,8 +353,6 @@ class NeTExRouteServiceTest {
         assertNotEquals(routeData.getJourneyPatternIdForSchedule(1L), routeData.getJourneyPatternIdForSchedule(2L));
     }
 
-    // --- Pass 2b: Track-qualified journey pattern scenarios ---
-
     @Test
     void givenScheduleWithTracks_whenCreatingTrackAwareRouteData_thenStopRefsAreTrackQualified() {
         // given — schedule with stops HKI (track "4"), TPE (track "1"), OL (track "2")

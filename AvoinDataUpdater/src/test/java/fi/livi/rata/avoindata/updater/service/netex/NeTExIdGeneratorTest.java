@@ -208,8 +208,6 @@ class NeTExIdGeneratorTest {
         assertTrue(lineId.startsWith("FTR:"));
     }
 
-    // --- Pass 2: PassengerStopAssignment ID ---
-
     @Test
     void givenStationShortCode_whenGeneratingPassengerStopAssignmentId_thenFollowsConvention() {
         // given
@@ -221,8 +219,6 @@ class NeTExIdGeneratorTest {
         // then
         assertEquals("FTR:PassengerStopAssignment:HKI", result);
     }
-
-    // --- Pass 2b: Track-qualified IDs ---
 
     @Test
     void givenStationAndTrack_whenGeneratingScheduledStopPointId_thenReturnsTrackQualifiedId() {

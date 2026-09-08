@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.common.dao.gtfs;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,16 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
             " and train.trainCategoryId in (1, 2) and train.trainTypeId not in (81, 52, 53)" +
             " and train.id.departureDate in (current_date, (current_date - 1 day))")
     List<GTFSTrain> findBySourceVersionGreaterThan(final long version);
+
+    /// Live trains for the exact (trainNumber, departureDate) set the published NeTEx refers to. SIRI-ET drives
+    /// the fetch from the persisted journey refs rather than re-applying the GTFS passenger filter: the
+    /// published set is already passenger-filtered and winning-schedule resolved by NeTEx, so binding it here
+    /// makes "only emit published journeys" structural. The sourceVersion guard drops not-yet-sourced rows.
+    @Query("select train from GTFSTrain train" +
+            " where train.sourceVersion > :version" +
+            " and train.id in :ids")
+    List<GTFSTrain> findBySourceVersionAndIdIn(@Param("version") final long version,
+            @Param("ids") final Collection<TrainId> ids);
 
     /// generate (next) stop_id from the first commercial, not cancelled row
     /// that does not have actual_time yet and the estimate is in the future

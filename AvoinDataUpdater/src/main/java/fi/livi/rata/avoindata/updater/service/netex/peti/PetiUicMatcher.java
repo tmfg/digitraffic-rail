@@ -50,6 +50,11 @@ public class PetiUicMatcher {
         return Optional.ofNullable(result);
     }
 
+    /** Whether a PETI StopPlace exists for the given national station UIC */
+    public boolean hasStopPlace(final int stationUicCode) {
+        return stopsByNationalUic.containsKey(stationUicCode);
+    }
+
     /**
      * @return number of PetiStops that were successfully indexed (have valid normalized UIC keys)
      */

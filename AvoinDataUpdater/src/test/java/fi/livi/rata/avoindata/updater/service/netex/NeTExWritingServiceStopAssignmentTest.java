@@ -148,8 +148,6 @@ class NeTExWritingServiceStopAssignmentTest {
                 });
         }
 
-        // --- Pass 2b: QuayRef emission tests ---
-
         @Test
         void givenAssignmentWithQuayRef_whenWritingZip_thenXmlContainsQuayRefElement() throws Exception {
                 // given — assignment with quayRef set
