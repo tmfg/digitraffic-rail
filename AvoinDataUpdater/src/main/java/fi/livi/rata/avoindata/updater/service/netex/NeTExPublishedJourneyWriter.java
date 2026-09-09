@@ -34,20 +34,14 @@ public class NeTExPublishedJourneyWriter {
 
     private final NeTExPublishedJourneyRepository journeyRepo;
 
-    private final boolean enabled;
-    private final int lookbackDays;
-    private final int lookaheadDays;
+    private final PublishedJourneyWindow window;
     private final int retentionDays;
 
     public NeTExPublishedJourneyWriter(final NeTExPublishedJourneyRepository journeyRepo,
-            @Value("${updater.netex.persist-journeys.enabled:true}") final boolean enabled,
-            @Value("${updater.netex.persist-journeys.lookback-days:2}") final int lookbackDays,
-            @Value("${updater.netex.persist-journeys.lookahead-days:2}") final int lookaheadDays,
+            final PublishedJourneyWindow window,
             @Value("${updater.netex.persist-journeys.retention-days:14}") final int retentionDays) {
         this.journeyRepo = journeyRepo;
-        this.enabled = enabled;
-        this.lookbackDays = lookbackDays;
-        this.lookaheadDays = lookaheadDays;
+        this.window = window;
         this.retentionDays = retentionDays;
     }
 
@@ -56,17 +50,13 @@ public class NeTExPublishedJourneyWriter {
      * under a new dataset version, then prunes versions older than the retention period. A no-op when disabled.
      */
     public void persistWindow(final NeTExDataset dataset) {
-        if (!enabled) {
+        if (!window.enabled()) {
             return;
         }
         final long startTime = System.currentTimeMillis();
 
-        final LocalDate today = DateProvider.dateInHelsinki();
-        // Always cover at least the SIRI operating-day window (its single source of truth), so widening it can
-        // never leave SIRI reading a day this writer didn't persist.
-        final int effectiveLookback = Math.max(lookbackDays, OperatingDayWindow.LOOKBACK_DAYS);
-        final LocalDate windowStart = today.minusDays(effectiveLookback);
-        final LocalDate windowEnd = today.plusDays(lookaheadDays);
+        final LocalDate windowStart = window.start();
+        final LocalDate windowEnd = window.end();
 
         final long newVersion = Optional.ofNullable(journeyRepo.getMaxDatasetVersion()).orElse(0L) + 1;
         final ZonedDateTime now = DateProvider.nowInHelsinki();

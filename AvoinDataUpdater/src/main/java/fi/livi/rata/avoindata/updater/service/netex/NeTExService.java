@@ -64,6 +64,7 @@ public class NeTExService {
     private final CommercialTrackResolver commercialTrackResolver;
     private final TimeTableRowService timeTableRowService;
     private final HistoricalTrackSource historicalTrackSource;
+    private final PublishedJourneyWindow publishedJourneyWindow;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
@@ -77,7 +78,8 @@ public class NeTExService {
             final StationRepository stationRepository,
             final CommercialTrackResolver commercialTrackResolver,
             final TimeTableRowService timeTableRowService,
-            final HistoricalTrackSource historicalTrackSource) {
+            final HistoricalTrackSource historicalTrackSource,
+            final PublishedJourneyWindow publishedJourneyWindow) {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
@@ -91,6 +93,7 @@ public class NeTExService {
         this.commercialTrackResolver = commercialTrackResolver;
         this.timeTableRowService = timeTableRowService;
         this.historicalTrackSource = historicalTrackSource;
+        this.publishedJourneyWindow = publishedJourneyWindow;
     }
 
     /**
@@ -359,6 +362,9 @@ public class NeTExService {
         final List<PublishedJourneyDraft> publishedJourneys = buildPublishedJourneyDrafts(winningByTrainDate,
                 serviceJourneys);
 
+        log.info("method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
+                publishedJourneys.size(), winningByTrainDate.size());
+
         return new NeTExDataset(allFiltered, publishedJourneys, stopsData, routeData,
                 lines, operators, serviceJourneys, calendar, operatingDays);
     }
@@ -367,14 +373,26 @@ public class NeTExService {
      * Joins each winning {@code (train, date)} schedule to its built {@code ServiceJourney} once, producing the
      * per-journey drafts the writer persists. Doing the id-join here (rather than in the writer) keeps the
      * persisted shape — refs plus planned tracks — explicit at the point the data is computed.
+     *
+     * <p>Restricted to the persisted window: the feed spans years, so joining every day would build hundreds of
+     * thousands of drafts for the writer to discard.
      */
     private List<PublishedJourneyDraft> buildPublishedJourneyDrafts(final Map<TrainId, Schedule> winningByTrainDate,
             final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys) {
+        if (!publishedJourneyWindow.enabled()) {
+            return List.of();
+        }
+        final LocalDate windowStart = publishedJourneyWindow.start();
+        final LocalDate windowEnd = publishedJourneyWindow.end();
+
         final Map<String, NeTExEntityService.NeTExServiceJourney> serviceJourneysById = serviceJourneys.stream()
                 .collect(Collectors.toMap(NeTExEntityService.NeTExServiceJourney::id, sj -> sj, (a, b) -> a));
 
         final List<PublishedJourneyDraft> drafts = new ArrayList<>();
         winningByTrainDate.forEach((trainId, schedule) -> {
+            if (trainId.departureDate.isBefore(windowStart) || trainId.departureDate.isAfter(windowEnd)) {
+                return;
+            }
             final String serviceJourneyId = entityService.serviceJourneyIdFor(schedule);
             final NeTExEntityService.NeTExServiceJourney serviceJourney = serviceJourneysById.get(serviceJourneyId);
             if (serviceJourney == null) {
