@@ -429,8 +429,7 @@ class NeTExWritingServiceTest {
         private TestData createMinimalTestData() {
                 final NeTExStopsData stopsData = new NeTExStopsData(
                                 List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI",
-                                                "Helsinki", "HKI",
-                                                new BigDecimal("60.172133"), new BigDecimal("24.941662"))),
+                                                "Helsinki", "HKI")),
                                 List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI",
                                                 "FTR:ScheduledStopPoint:HKI")),
                                 List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI",

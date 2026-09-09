@@ -87,7 +87,7 @@ public class NeTExStopsService {
                     ? AssignmentResult.none()
                     : buildAssignment(pair, station, matcher);
 
-            final var stopPoint = buildScheduledStopPoint(pair, station, result.quay());
+            final var stopPoint = buildScheduledStopPoint(pair, station);
             stopPoints.add(stopPoint);
             // lowest id wins so the projection target cannot drift between generations;
             // a station-level point sorts ahead of every platform of the same station
@@ -137,16 +137,12 @@ public class NeTExStopsService {
         return stationName == null ? null : stationName.replaceAll("\\s+asema$", "");
     }
 
+    /** No location: it resolves through the assignment's quay, or its stop place. */
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
-            final Station station, final Optional<PetiQuay> quay) {
-        final String sspId = idGenerator.scheduledStopPointId(pair.stationShortCode(), pair.commercialTrack());
-        // a station-level point is the station, so it keeps the station centroid
-        return quay.filter(PetiQuay::hasLocation)
-                .map(q -> new NeTExStopsData.NeTExScheduledStopPoint(
-                        sspId, publicStationName(station.name), station.shortCode, q.latitude(), q.longitude()))
-                .orElseGet(() -> new NeTExStopsData.NeTExScheduledStopPoint(
-                        sspId, publicStationName(station.name), station.shortCode,
-                        station.latitude, station.longitude));
+            final Station station) {
+        return new NeTExStopsData.NeTExScheduledStopPoint(
+                idGenerator.scheduledStopPointId(pair.stationShortCode(), pair.commercialTrack()),
+                publicStationName(station.name), station.shortCode);
     }
 
     /**

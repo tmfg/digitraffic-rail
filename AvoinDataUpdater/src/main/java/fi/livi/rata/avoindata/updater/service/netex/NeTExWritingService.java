@@ -428,10 +428,7 @@ public class NeTExWritingService {
                                         .withId(stop.id())
                                         .withVersion("1")
                                         .withName(new MultilingualString().withValue(stop.name()))
-                                        .withPrivateCode(new PrivateCodeStructure().withValue(stop.privateCode()))
-                                        .withLocation(new LocationStructure()
-                                                        .withLatitude(stop.latitude())
-                                                        .withLongitude(stop.longitude())));
+                                        .withPrivateCode(new PrivateCodeStructure().withValue(stop.privateCode())));
                 }
                 frame.withScheduledStopPoints(stopPoints);
 

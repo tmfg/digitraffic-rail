@@ -93,8 +93,7 @@ public class NeTExStopsData {
         return quayNoTrackCount;
     }
 
-    public record NeTExScheduledStopPoint(String id, String name, String privateCode, BigDecimal latitude,
-            BigDecimal longitude) {
+    public record NeTExScheduledStopPoint(String id, String name, String privateCode) {
     }
 
     public record NeTExRoutePoint(String id, String stationShortCode, String projectedStopPointId) {

@@ -83,21 +83,6 @@ class NeTExStopsServiceTest {
         }
 
         @Test
-        void givenStation_whenCreatingStops_thenScheduledStopPointContainsCoordinates() {
-                // given
-                final Station station = createStation("HKI", "Helsinki asema", 1, true,
-                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
-
-                // when
-                final NeTExStopsData stopsData = stopsService.createStopsData(List.of(station),
-                                nullTrackPairs(List.of(station)));
-
-                // then
-                assertEquals(new BigDecimal("60.172133"), stopsData.getScheduledStopPoints().get(0).latitude());
-                assertEquals(new BigDecimal("24.941662"), stopsData.getScheduledStopPoints().get(0).longitude());
-        }
-
-        @Test
         void givenStation_whenCreatingStops_thenPrivateCodeIsShortCode() {
                 // given
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,
@@ -319,51 +304,6 @@ class NeTExStopsServiceTest {
                 final boolean hasTrackQualifiedSsp = stopsData.getScheduledStopPoints().stream()
                                 .anyMatch(ssp -> "FTR:ScheduledStopPoint:HKI-4".equals(ssp.id()));
                 assertTrue(hasTrackQualifiedSsp, "Expected track-qualified SSP 'FTR:ScheduledStopPoint:HKI-4'");
-        }
-
-        @Test
-        void givenQuayWithLocation_whenCreatingStops_thenSspUsesQuayCoordinatesNotStationCentroid() {
-                // given — the quay sits on the platform, away from the station centroid
-                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
-                                List.of(quayAt("FSR:Quay:7", "4", "60.172500", "24.942000")));
-                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
-                                fixturePetiSource(List.of(petiStop)));
-                final Station station = createStation("HKI", "Helsinki asema", 1, true,
-                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
-
-                // when
-                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
-                                List.of(new NeTExStopsService.StationTrackPair("HKI", "4")));
-
-                // then
-                final var ssp = stopsData.getScheduledStopPoints().stream()
-                                .filter(s -> "FTR:ScheduledStopPoint:HKI-4".equals(s.id()))
-                                .findFirst()
-                                .orElseThrow();
-                assertEquals(new BigDecimal("60.172500"), ssp.latitude());
-                assertEquals(new BigDecimal("24.942000"), ssp.longitude());
-        }
-
-        @Test
-        void givenQuayWithoutLocation_whenCreatingStops_thenSspFallsBackToStationCentroid() {
-                // given — PETI knows the quay but not where it is
-                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
-                                List.of(quay("FSR:Quay:7", "4")));
-                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
-                                fixturePetiSource(List.of(petiStop)));
-                final Station station = createStation("HKI", "Helsinki asema", 1, true,
-                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
-
-                // when
-                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
-                                List.of(new NeTExStopsService.StationTrackPair("HKI", "4")));
-
-                // then
-                final var ssp = stopsData.getScheduledStopPoints().stream()
-                                .filter(s -> "FTR:ScheduledStopPoint:HKI-4".equals(s.id()))
-                                .findFirst()
-                                .orElseThrow();
-                assertEquals(new BigDecimal("60.172133"), ssp.latitude());
         }
 
         @Test
