@@ -34,8 +34,9 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
             ZonedDateTime scheduledTimeEnd);
 
     /**
-     * Narrowed by (departure_date, train_number) so the null checks only ever sift
-     * rows of the handful of trains asked about.
+     * A stop the train was booked to make and that was not cancelled. Not every such
+     * stop reports an actual time, so requiring one would discard platforms that are
+     * recorded.
      */
     @Query("""
             SELECT new fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation( \
@@ -44,7 +45,8 @@ public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTabl
             FROM SimpleTimeTableRow sttr \
             WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
             sttr.id.trainNumber IN :trainNumbers AND \
-            sttr.commercialTrack IS NOT NULL AND sttr.actualTime IS NOT NULL \
+            sttr.commercialTrack IS NOT NULL AND \
+            sttr.trainStopping = true AND sttr.cancelled = false \
             ORDER BY sttr.scheduledTime DESC""")
     List<TrackObservation> findObservedTracks(
             @Param("departureDateStart")

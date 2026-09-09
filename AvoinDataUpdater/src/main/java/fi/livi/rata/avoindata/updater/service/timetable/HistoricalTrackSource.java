@@ -20,8 +20,8 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 /**
  * Track a train was last seen to use, for stops the schedule and the coming days
- * leave without one. Only rows with an actual time count, so a stop the train
- * never made cannot donate a track.
+ * leave without one. Only stops the train was booked to make and that were not
+ * cancelled count.
  */
 @Component
 public class HistoricalTrackSource {
