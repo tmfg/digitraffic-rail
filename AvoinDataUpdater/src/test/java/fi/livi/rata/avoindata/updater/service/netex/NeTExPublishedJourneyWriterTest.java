@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,7 @@ class NeTExPublishedJourneyWriterTest {
     @BeforeEach
     void setUp() {
         journeyRepo = mock(NeTExPublishedJourneyRepository.class);
-        writer = new NeTExPublishedJourneyWriter(journeyRepo, true, 2, 2, 14);
+        writer = new NeTExPublishedJourneyWriter(journeyRepo, true, 2, 2);
     }
 
     // Consumes the pre-joined drafts (no RIPA, no id re-join) and persists each as a journey with its planned
@@ -69,9 +68,6 @@ class NeTExPublishedJourneyWriterTest {
         assertEquals("HKI", journey.tracks.get(0).stationShortCode);
         assertEquals("5", journey.tracks.get(0).plannedTrack);
         assertEquals(journey, journey.tracks.get(0).journey);
-
-        // Datasets older than the retention period are pruned; recent stale ones are kept for debugging.
-        verify(journeyRepo).deleteByGeneratedAtBefore(any(ZonedDateTime.class));
     }
 
     // A station served twice keeps a track row per visit, each carrying its 0-based visit index.
@@ -97,6 +93,18 @@ class NeTExPublishedJourneyWriterTest {
         assertEquals(1, journey.tracks.get(1).visitIndex);
     }
 
+    // Pruning is a separate scheduled job, so the write path must not delete anything.
+    @Test
+    void givenDataset_whenPersistWindow_thenDoesNotPrune() {
+        final PublishedJourneyDraft draft = new PublishedJourneyDraft(
+                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:1", List.of());
+
+        writer.persistWindow(dataset(List.of(draft)));
+
+        verify(journeyRepo, never()).deleteByGeneratedAtBefore(any());
+    }
+
     // A winner outside the [today-2, today+2] window is not persisted.
     @Test
     void givenTrainOutsideWindow_whenPersistWindow_thenSkipped() {
@@ -116,7 +124,7 @@ class NeTExPublishedJourneyWriterTest {
     @Test
     void givenDisabled_whenPersistWindow_thenNoop() {
         final NeTExPublishedJourneyWriter disabled =
-                new NeTExPublishedJourneyWriter(journeyRepo, false, 2, 2, 14);
+                new NeTExPublishedJourneyWriter(journeyRepo, false, 2, 2);
 
         disabled.persistWindow(dataset(List.of()));
 
