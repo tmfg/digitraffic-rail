@@ -28,6 +28,7 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
@@ -583,7 +584,7 @@ public class NeTExService {
         final var seen = new LinkedHashSet<NeTExStopsService.StationTrackPair>();
         for (final Schedule schedule : schedules) {
             for (final ScheduleRow row : schedule.scheduleRows) {
-                if (routeService.isCommercialStop(row)) {
+                if (CommercialStopRule.isCommercialStop(row)) {
                     seen.add(new NeTExStopsService.StationTrackPair(
                             row.station.stationShortCode, row.commercialTrack));
                 }

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
@@ -59,7 +60,7 @@ public class SiblingTrackSource {
                 final String routeKey = routeService.computeStationHash(
                         routeService.extractCommercialStopsWithTrack(schedule));
                 for (final ScheduleRow row : schedule.scheduleRows) {
-                    if (routeService.isCommercialStop(row)) {
+                    if (CommercialStopRule.isCommercialStop(row)) {
                         action.accept(routeKey, row);
                     }
                 }
