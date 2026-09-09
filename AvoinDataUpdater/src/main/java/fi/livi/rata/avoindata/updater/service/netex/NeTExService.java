@@ -105,6 +105,7 @@ public class NeTExService {
      * disagree about which track a stop uses.
      */
     private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
+        final long upcomingStart = System.currentTimeMillis();
         final var byTrainNumber = commercialTrackResolver.byTrainNumber(timeTableRowService.getNextTenDays());
         final List<TrackGap> gaps = new ArrayList<>();
         int fromUpcoming = 0;
@@ -127,10 +128,16 @@ public class NeTExService {
             }
         }
 
+        final long historyStart = System.currentTimeMillis();
         final int fromHistory = fillFromHistory(gaps);
+        final long siblingsStart = System.currentTimeMillis();
         final int fromSiblings = siblingTrackSource.fill(List.of(adhocSchedules, regularSchedules));
-        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} fromSiblings={} stillMissing={}",
-                fromUpcoming, fromHistory, fromSiblings, gaps.size() - fromHistory - fromSiblings);
+        final long doneAt = System.currentTimeMillis();
+
+        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} fromSiblings={} stillMissing={} "
+                + "upcomingMs={} historyMs={} siblingsMs={}",
+                fromUpcoming, fromHistory, fromSiblings, gaps.size() - fromHistory - fromSiblings,
+                historyStart - upcomingStart, siblingsStart - historyStart, doneAt - siblingsStart);
     }
 
     /** Asks history only about the stops still without a track. */
@@ -193,14 +200,20 @@ public class NeTExService {
 
         try {
             final LocalDate start = feedStart();
+            final long adhocStart = System.currentTimeMillis();
             final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
+            final long regularStart = System.currentTimeMillis();
             final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
+            final long stationsStart = System.currentTimeMillis();
             final List<Station> stations = stationRepository.findAll();
+            final long tracksStart = System.currentTimeMillis();
+
+            log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={} "
+                    + "adhocMs={} regularMs={} stationsMs={}",
+                    adhocSchedules.size(), regularSchedules.size(), stations.size(),
+                    regularStart - adhocStart, stationsStart - regularStart, tracksStart - stationsStart);
 
             fillMissingTracks(adhocSchedules, regularSchedules);
-
-            log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={}",
-                    adhocSchedules.size(), regularSchedules.size(), stations.size());
 
             stage = Stage.GENERATE;
             final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations);
