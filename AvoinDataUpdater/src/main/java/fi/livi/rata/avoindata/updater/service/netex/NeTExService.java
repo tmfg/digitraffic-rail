@@ -242,7 +242,7 @@ public class NeTExService {
         final int petiTotal = result != null ? result.matchedCount() + result.unmatchedCount() : 0;
         final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
         final String line = StringUtil.format(
-                "event=rail.netex.generation outcome={} error.type={} stage={} duration_ms={} "
+                "method=generateNeTEx event=rail.netex.generation outcome={} error.type={} stage={} duration_ms={} "
                         + "rail.netex.scheduled_stop_points={} rail.netex.routes={} rail.netex.lines={} "
                         + "rail.netex.service_journeys={} rail.netex.peti.stop_assignments_total={} "
                         + "rail.netex.peti.stop_assignments_matched={} rail.netex.peti.stop_assignments_unmatched={} "

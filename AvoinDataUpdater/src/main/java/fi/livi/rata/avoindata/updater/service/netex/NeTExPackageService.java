@@ -74,10 +74,22 @@ public class NeTExPackageService {
             log.info("method=generatePackage persisted {} size={} bytes files={} durationMs={}",
                     PACKAGE_FILENAME, timetable.zip().length, timetable.files().size(), durationMs);
         } catch (final RuntimeException e) {
-            log.error("event=rail.netex.package outcome=error error.type={} error.message=\"{}\" durationMs={} "
+            final Throwable root = rootCause(e);
+            log.error("method=generatePackage event=rail.netex.package outcome=error error.type={} "
+                    + "error.message=\"{}\" error.root.type={} error.root.message=\"{}\" durationMs={} "
                     + "message=\"NeTEx package not published\"",
-                    e.getClass().getName(), e.getMessage(), System.currentTimeMillis() - startTime, e);
+                    e.getClass().getName(), e.getMessage(), root.getClass().getName(), root.getMessage(),
+                    System.currentTimeMillis() - startTime, e);
             throw e;
         }
+    }
+
+    /** Spring and Hibernate wrap the message that names the offending column several layers deep. */
+    private static Throwable rootCause(final Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }

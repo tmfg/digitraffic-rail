@@ -21,7 +21,7 @@ public class PublishedJourneyWindow {
     private final int lookaheadDays;
 
     public PublishedJourneyWindow(
-            @Value("${updater.netex.persist-journeys.enabled:true}") final boolean enabled,
+            @Value("${updater.netex.persist-journeys.enabled:false}") final boolean enabled,
             @Value("${updater.netex.persist-journeys.lookback-days:2}") final int lookbackDays,
             @Value("${updater.netex.persist-journeys.lookahead-days:2}") final int lookaheadDays) {
         this.enabled = enabled;
