@@ -194,6 +194,27 @@ class NeTExServiceTest {
     }
 
     @Test
+    void givenATrainPassesThroughAStation_whenGenerating_thenNoStopPointIsMadeForIt() {
+        final List<String> codes = List.of("HKI", "TPE", "OL");
+        final List<Station> stations = createStations(codes);
+
+        final Schedule stopping = createFullSchedule(1L, 59L, "IC", "Long-distance", codes);
+        stopping.scheduleRows.get(1).commercialTrack = "1";
+        final int withStop = netExService.generateNeTEx(List.of(), List.of(stopping), stations)
+                .scheduledStopPoints();
+
+        final Schedule passing = createFullSchedule(1L, 59L, "IC", "Long-distance", codes);
+        final ScheduleRow tpe = passing.scheduleRows.get(1);
+        tpe.arrival.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        tpe.departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        tpe.commercialTrack = "902";
+        final int withPassing = netExService.generateNeTEx(List.of(), List.of(passing), stations)
+                .scheduledStopPoints();
+
+        assertEquals(withStop - 1, withPassing, "a passing track must not become a stop point");
+    }
+
+    @Test
     void givenBothRegularAndAdhocSchedules_whenGenerating_thenBothIncludedInOutput() {
         // given
         final Schedule regular = createFullSchedule(1L, 59L, "IC", "Long-distance",

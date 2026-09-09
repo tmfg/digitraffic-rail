@@ -448,12 +448,18 @@ public class NeTExService {
     /**
      * Extracts unique (stationShortCode, commercialTrack) pairs from schedule rows.
      */
+    /**
+     * Only commercial stops, because journey patterns reference only those: a stop
+     * point built from a train passing through is a place no passenger can board.
+     */
     private List<NeTExStopsService.StationTrackPair> extractStationTrackPairs(final List<Schedule> schedules) {
         final var seen = new LinkedHashSet<NeTExStopsService.StationTrackPair>();
         for (final Schedule schedule : schedules) {
             for (final ScheduleRow row : schedule.scheduleRows) {
-                seen.add(new NeTExStopsService.StationTrackPair(
-                        row.station.stationShortCode, row.commercialTrack));
+                if (routeService.isCommercialStop(row)) {
+                    seen.add(new NeTExStopsService.StationTrackPair(
+                            row.station.stationShortCode, row.commercialTrack));
+                }
             }
         }
         return new ArrayList<>(seen);
