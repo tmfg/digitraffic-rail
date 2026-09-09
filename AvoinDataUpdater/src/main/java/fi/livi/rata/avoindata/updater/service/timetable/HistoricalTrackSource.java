@@ -64,7 +64,7 @@ public class HistoricalTrackSource {
             }
         }
 
-        log.info("method=resolve wanted={} trains={} observations={} resolved={} days={}",
+        log.info("pipeline=netex-static method=resolve wanted={} trains={} observations={} resolved={} days={}",
                 wanted.size(), trainNumbers.size(), observations.size(), found.size(), historyDays);
         return found;
     }

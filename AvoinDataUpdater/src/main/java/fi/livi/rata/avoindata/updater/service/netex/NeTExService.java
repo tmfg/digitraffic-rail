@@ -134,8 +134,8 @@ public class NeTExService {
         final int fromSiblings = siblingTrackSource.fill(List.of(adhocSchedules, regularSchedules));
         final long doneAt = System.currentTimeMillis();
 
-        log.info("method=fillMissingTracks fromUpcoming={} fromHistory={} fromSiblings={} stillMissing={} "
-                + "upcomingMs={} historyMs={} siblingsMs={}",
+        log.info("pipeline=netex-static method=fillMissingTracks fromUpcoming={} fromHistory={} "
+                + "fromSiblings={} stillMissing={} upcomingMs={} historyMs={} siblingsMs={}",
                 fromUpcoming, fromHistory, fromSiblings, gaps.size() - fromHistory - fromSiblings,
                 historyStart - upcomingStart, siblingsStart - historyStart, doneAt - siblingsStart);
     }
@@ -194,7 +194,7 @@ public class NeTExService {
      */
     @Transactional
     public NeTExGenerationResult generateNeTEx() {
-        log.info("method=generateNeTEx starting NeTEx generation");
+        log.info("pipeline=netex-static method=generateNeTEx starting NeTEx generation");
         final long startTime = System.currentTimeMillis();
         Stage stage = Stage.FETCH;
 
@@ -208,8 +208,8 @@ public class NeTExService {
             final List<Station> stations = stationRepository.findAll();
             final long tracksStart = System.currentTimeMillis();
 
-            log.info("method=generateNeTEx fetched data adhocSchedules={} regularSchedules={} stations={} "
-                    + "adhocMs={} regularMs={} stationsMs={}",
+            log.info("pipeline=netex-static method=generateNeTEx fetched data adhocSchedules={} "
+                    + "regularSchedules={} stations={} adhocMs={} regularMs={} stationsMs={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size(),
                     regularStart - adhocStart, stationsStart - regularStart, tracksStart - stationsStart);
 
@@ -224,7 +224,7 @@ public class NeTExService {
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
-            log.error("method=generateNeTEx failed, durationMs={}", durationMs, e);
+            log.error("pipeline=netex-static method=generateNeTEx failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx generation failed", e);
         }
     }
@@ -242,7 +242,8 @@ public class NeTExService {
         final int petiTotal = result != null ? result.matchedCount() + result.unmatchedCount() : 0;
         final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
         final String line = StringUtil.format(
-                "method=generateNeTEx event=rail.netex.generation outcome={} error.type={} stage={} duration_ms={} "
+                "pipeline=netex-static method=generateNeTEx event=rail.netex.generation outcome={} "
+                        + "error.type={} stage={} duration_ms={} "
                         + "rail.netex.scheduled_stop_points={} rail.netex.routes={} rail.netex.lines={} "
                         + "rail.netex.service_journeys={} rail.netex.peti.stop_assignments_total={} "
                         + "rail.netex.peti.stop_assignments_matched={} rail.netex.peti.stop_assignments_unmatched={} "
@@ -310,7 +311,8 @@ public class NeTExService {
         // Resolve which schedules are "in effect" among passenger trains only
         final Set<Long> winningScheduleIds = resolveWinningScheduleIds(passengerAdhoc, passengerRegular);
 
-        log.info("method=computeDataset resolved winningScheduleIds={} from passengerAdhoc={} passengerRegular={}",
+        log.info("pipeline=netex-static method=computeDataset resolved winningScheduleIds={} from "
+                + "passengerAdhoc={} passengerRegular={}",
                 winningScheduleIds.size(), passengerAdhoc.size(), passengerRegular.size());
 
         final List<Schedule> allFiltered = new ArrayList<>();
@@ -332,7 +334,8 @@ public class NeTExService {
         petiStopSource.ensureLoaded();
         final int petiStopPlaces = petiStopSource.getStops().size();
         final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
-        log.info("method=computeDataset peti_fetch_outcome={} peti_stop_places={} peti_quays={}",
+        log.info("pipeline=netex-static method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
+                + "peti_quays={}",
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
@@ -369,13 +372,14 @@ public class NeTExService {
         final List<LocalDate> operatingDays = calendar.datesOf(
                 serviceJourneys.stream().map(NeTExEntityService.NeTExServiceJourney::id).toList());
 
-        log.info("method=computeDataset calendar dayTypes={} operatingPeriods={} dayTypeAssignments={}",
+        log.info("pipeline=netex-static method=computeDataset calendar dayTypes={} operatingPeriods={} "
+                + "dayTypeAssignments={}",
                 calendar.dayTypes().size(), calendar.operatingPeriods().size(), calendar.assignments().size());
 
         final List<PublishedJourneyDraft> publishedJourneys = buildPublishedJourneyDrafts(winningByTrainDate,
                 serviceJourneys);
 
-        log.info("method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
+        log.info("pipeline=netex-static method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
                 publishedJourneys.size(), winningByTrainDate.size());
 
         return new NeTExDataset(allFiltered, publishedJourneys, stopsData, routeData,
@@ -577,7 +581,8 @@ public class NeTExService {
         if (!droppedByStation.isEmpty()) {
             // Self-correcting: the schedules return once the station metadata catches up, so this is a WARN
             // (visibility) rather than an ERROR (action required).
-            log.warn("method=dropUnpublishableStops droppedSchedules={} stationsNotPublishable={}",
+            log.warn("pipeline=netex-static method=dropUnpublishableStops droppedSchedules={} "
+                    + "stationsNotPublishable={}",
                     schedules.size() - kept.size(), droppedByStation);
         }
         return kept;

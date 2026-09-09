@@ -86,7 +86,8 @@ public class NeTExPublishedJourneyWriter {
 
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
-                "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} tracks={} "
+                "pipeline=netex-static event=rail.netex.publish_journeys outcome={} dataset_version={} "
+                        + "journeys={} tracks={} "
                         + "window_start={} window_end={} pruned_rows={} retention_days={} duration_ms={}",
                 outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd, prunedRows, retentionDays,
                 System.currentTimeMillis() - startTime);

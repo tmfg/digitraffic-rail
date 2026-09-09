@@ -201,7 +201,8 @@ public class NeTExWritingService {
                 final NeTExDatasetPartition partition = NeTExDatasetPartition.partition(
                                 lines, routeData, serviceJourneys);
                 if (!partition.orphans().isEmpty()) {
-                        log.warn("method=buildDataset dropped orphaned entities routes={} journeyPatterns={} "
+                        log.warn("pipeline=netex-static method=buildDataset dropped orphaned entities "
+                                        + "routes={} journeyPatterns={} "
                                         + "serviceJourneys={}",
                                         partition.orphans().routes().size(),
                                         partition.orphans().journeyPatterns().size(),
