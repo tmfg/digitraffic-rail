@@ -3,24 +3,21 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
@@ -91,28 +88,42 @@ public class GTFSService {
                 ).toList();
     }
 
+    private boolean hasAtLeastTwoStops(final Trip trip) {
+        return trip.stopTimes.size() >= 2;
+    }
+
+    private List<Trip> filterOutTripsWithLessThanTwoStops(final GTFSDto gtfsDto) {
+        return gtfsDto.trips.stream()
+                .filter(this::hasAtLeastTwoStops)
+                .toList();
+    }
+
+    private Set<String> collectStopIds(final List<Trip> trips) {
+        return trips.stream()
+                .flatMap(trip -> trip.stopTimes.stream())
+                .flatMap(stopTime -> Stream.of(stopTime.getStopCodeWithPlatform(), stopTime.stopId))
+                .collect(Collectors.toSet());
+    }
+
     public GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
                               final boolean filterOutNonStopsAndMuseumTrains) throws IOException {
         // filter out museum trains when desired
-        final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream().filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
+        final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream()
+                .filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
 
         final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, passengerRegularSchedules);
 
         if (filterOutNonStopsAndMuseumTrains) {
-            final Set<String> stopIds = new HashSet<>();
-
             for (final Trip trip : gtfsDto.trips) {
-                // gather used stop-ids to include also those stops that are used but are not set for
-                // passenger traffic
-                final var stopTimes = this.filterOutNonStops(trip.stopTimes);
-
-                trip.stopTimes = stopTimes;
-                stopIds.addAll(stopTimes.stream().map(StopTime::getStopCodeWithPlatform).toList());
-                stopIds.addAll(stopTimes.stream().map(s -> s.stopId).toList());
+                trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
             }
 
+            // first filter out invalid trips
+            gtfsDto.trips = filterOutTripsWithLessThanTwoStops(gtfsDto);
+            // and then filter the stop-ids
+            final Set<String> stopIds = collectStopIds(gtfsDto.trips);
             gtfsDto.stops = filterStops(gtfsDto, stopIds);
         }
 

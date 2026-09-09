@@ -4,8 +4,6 @@ import java.util.List;
 
 /**
  * Supplies PETI stop data to NeTEx generation.
- * Pass 2 default: EmptyPetiStopSource (returns empty list).
- * Pass 3 replaces with HTTP-backed CachingPetiStopSource.
  */
 public interface PetiStopSource {
 
@@ -26,5 +24,10 @@ public interface PetiStopSource {
     /** Convenience: build a matcher from current stops. */
     default PetiUicMatcher getMatcher() {
         return new PetiUicMatcher(getStops());
+    }
+
+    /** Age of the current snapshot in seconds, or -1 when never loaded / not applicable (static sources). */
+    default long getSnapshotAgeSeconds() {
+        return -1L;
     }
 }

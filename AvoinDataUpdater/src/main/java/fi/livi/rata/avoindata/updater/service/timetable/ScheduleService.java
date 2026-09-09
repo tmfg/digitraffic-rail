@@ -81,7 +81,7 @@ public class ScheduleService {
                 try {
                     // if it takes longer to extract, sleep a bit longer too
                     final var sleepTime = 300 + Math.max(12000, stopWatchForDate.getTime(TimeUnit.SECONDS) * 100);
-                    Thread.sleep(sleepTime);
+                    TimeUnit.MILLISECONDS.sleep(sleepTime);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 }

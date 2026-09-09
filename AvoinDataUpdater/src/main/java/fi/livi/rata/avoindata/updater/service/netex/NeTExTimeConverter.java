@@ -3,11 +3,12 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 import org.springframework.stereotype.Service;
+
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 /**
  * Converts schedule times (UTC Duration from midnight) to NeTEx Nordic local
@@ -17,8 +18,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class NeTExTimeConverter {
-
-    public static final ZoneId HELSINKI_ZONE = ZoneId.of("Europe/Helsinki");
 
     /**
      * Converts a UTC Duration timestamp to NeTEx local time string.
@@ -42,7 +41,7 @@ public class NeTExTimeConverter {
 
         final ZonedDateTime utcDateTime = ZonedDateTime.of(referenceDate, LocalTime.of(hours % 24, minutes, seconds),
                 ZoneOffset.UTC);
-        final ZonedDateTime helsinkiDateTime = utcDateTime.withZoneSameInstant(HELSINKI_ZONE);
+        final ZonedDateTime helsinkiDateTime = utcDateTime.withZoneSameInstant(DateProvider.ZONE_ID_HKI);
         return helsinkiDateTime.toLocalTime();
     }
 

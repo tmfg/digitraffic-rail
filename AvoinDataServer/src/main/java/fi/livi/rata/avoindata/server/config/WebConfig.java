@@ -34,7 +34,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(databaseInitializionInterceptor);
         registry.addInterceptor(executeTimeInterceptor);
         registry.addInterceptor(parameterValidationInterceptor);
-        registry.addInterceptor(contentTypeInterceptor);
+        // SIRI serves application/xml; this interceptor otherwise forces application/json onto every response.
+        registry.addInterceptor(contentTypeInterceptor).excludePathPatterns(CONTEXT_PATH + "siri/**");
 
         registry.addWebRequestInterceptor(osivInterceptor);
     }

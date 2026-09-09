@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.dao;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -13,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -122,5 +126,34 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final TimeTableRow ttr = t.timeTableRows.get(4);
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+    }
+
+    /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx
+     * refers to. Proves MySQL executes the row-value tuple IN at real-time operating-day scale (~200 ids)
+     * and returns exactly the requested, sourced trains. */
+    @Test
+    public void findBySourceVersionAndIdInReturnsRequestedIdsAtOperatingDayScale() {
+        final LocalDate today = LocalDate.now();
+        final Train wanted1 = createSourcedTrain(new TrainId(9001L, today));
+        final Train wanted2 = createSourcedTrain(new TrainId(9002L, today));
+        createSourcedTrain(new TrainId(9003L, today)); // exists but not requested → must be excluded
+
+        final List<TrainId> ids = new ArrayList<>();
+        ids.add(wanted1.id);
+        ids.add(wanted2.id);
+        for (long n = 10_000; n < 10_198; n++) { // ~200 ids total, the rest non-existent
+            ids.add(new TrainId(n, today));
+        }
+
+        final List<GTFSTrain> result = gtfsTrainRepository.findBySourceVersionAndIdIn(0L, ids);
+
+        assertThatCollection(result).extracting(gtfsTrain -> gtfsTrain.id)
+                .containsExactlyInAnyOrder(wanted1.id, wanted2.id);
+    }
+
+    private Train createSourcedTrain(final TrainId id) {
+        final Train train = trainFactory.createBaseTrain(id);
+        train.sourceVersion = 1L; // stamped from payload version in production; the query keeps sourceVersion > 0
+        return trainRepository.save(train);
     }
 }
