@@ -244,7 +244,16 @@
             <artifactId>netex-validator-java</artifactId>
             <version>12.0.4</version>
             <scope>test</scope>
-		</dependency>
+            <exclusions>
+                <!-- Unused here: it arrives under the validator's GeoTIFF raster reader. Its presence
+                     alone makes Spring choose JCache over the cache manager the application runs with,
+                     and JCache rejects any cache name not declared up front. -->
+                <exclusion>
+                    <groupId>org.ehcache</groupId>
+                    <artifactId>ehcache</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- SIRI 2.1 XML model (JAXB classes from SIRI XSD, sibling of netex-java-model) -->
         <dependency>
             <groupId>org.entur</groupId>
