@@ -34,14 +34,20 @@ public class NeTExPublishedJourneyWriter {
 
     private final NeTExPublishedJourneyRepository journeyRepo;
 
-    private final PublishedJourneyWindow window;
+    private final boolean enabled;
+    private final int lookbackDays;
+    private final int lookaheadDays;
     private final int retentionDays;
 
     public NeTExPublishedJourneyWriter(final NeTExPublishedJourneyRepository journeyRepo,
-            final PublishedJourneyWindow window,
+            @Value("${updater.netex.persist-journeys.enabled:true}") final boolean enabled,
+            @Value("${updater.netex.persist-journeys.lookback-days:2}") final int lookbackDays,
+            @Value("${updater.netex.persist-journeys.lookahead-days:2}") final int lookaheadDays,
             @Value("${updater.netex.persist-journeys.retention-days:14}") final int retentionDays) {
         this.journeyRepo = journeyRepo;
-        this.window = window;
+        this.enabled = enabled;
+        this.lookbackDays = lookbackDays;
+        this.lookaheadDays = lookaheadDays;
         this.retentionDays = retentionDays;
     }
 
@@ -50,13 +56,17 @@ public class NeTExPublishedJourneyWriter {
      * under a new dataset version, then prunes versions older than the retention period. A no-op when disabled.
      */
     public void persistWindow(final NeTExDataset dataset) {
-        if (!window.enabled()) {
+        if (!enabled) {
             return;
         }
         final long startTime = System.currentTimeMillis();
 
-        final LocalDate windowStart = window.start();
-        final LocalDate windowEnd = window.end();
+        final LocalDate today = DateProvider.dateInHelsinki();
+        // Always cover at least the SIRI operating-day window (its single source of truth), so widening it can
+        // never leave SIRI reading a day this writer didn't persist.
+        final int effectiveLookback = Math.max(lookbackDays, OperatingDayWindow.LOOKBACK_DAYS);
+        final LocalDate windowStart = today.minusDays(effectiveLookback);
+        final LocalDate windowEnd = today.plusDays(lookaheadDays);
 
         final long newVersion = Optional.ofNullable(journeyRepo.getMaxDatasetVersion()).orElse(0L) + 1;
         final ZonedDateTime now = DateProvider.nowInHelsinki();
@@ -86,8 +96,7 @@ public class NeTExPublishedJourneyWriter {
 
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
-                "pipeline=netex-static event=rail.netex.publish_journeys outcome={} dataset_version={} "
-                        + "journeys={} tracks={} "
+                "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} tracks={} "
                         + "window_start={} window_end={} pruned_rows={} retention_days={} duration_ms={}",
                 outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd, prunedRows, retentionDays,
                 System.currentTimeMillis() - startTime);

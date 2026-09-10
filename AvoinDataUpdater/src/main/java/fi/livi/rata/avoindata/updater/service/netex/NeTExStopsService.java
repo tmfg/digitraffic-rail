@@ -180,7 +180,7 @@ public class NeTExStopsService {
 
         // the schedule names a track PETI does not know, so the assignment loses its
         // quay and the stop is only locatable to the station
-        log.error("pipeline=netex-static method=buildAssignment PETI quay not found for track station={} "
+        log.error("event=generateNeTEx method=buildAssignment PETI quay not found for track station={} "
                 + "uic={} track={} stopPlace={} stopPlaceName={} petiTracks={} assignment={}",
                 pair.stationShortCode(), station.uicCode, track,
                 matched.stopPlaceId(), matched.name(),

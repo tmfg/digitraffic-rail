@@ -55,6 +55,7 @@ public class NeTExService {
     private final NeTExCalendarService calendarService;
     private final NeTExRouteService routeService;
     private final SiblingTrackSource siblingTrackSource;
+    private final LineTrackSource lineTrackSource;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
     private final PetiStopSource petiStopSource;
@@ -64,12 +65,15 @@ public class NeTExService {
     private final CommercialTrackResolver commercialTrackResolver;
     private final TimeTableRowService timeTableRowService;
     private final HistoricalTrackSource historicalTrackSource;
-    private final PublishedJourneyWindow publishedJourneyWindow;
+
+    @Value("${updater.netex.persist-journeys.enabled:true}")
+    private boolean persistJourneysEnabled = true;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
             final NeTExRouteService routeService,
             final SiblingTrackSource siblingTrackSource,
+            final LineTrackSource lineTrackSource,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
             final PetiStopSource petiStopSource,
@@ -78,12 +82,12 @@ public class NeTExService {
             final StationRepository stationRepository,
             final CommercialTrackResolver commercialTrackResolver,
             final TimeTableRowService timeTableRowService,
-            final HistoricalTrackSource historicalTrackSource,
-            final PublishedJourneyWindow publishedJourneyWindow) {
+            final HistoricalTrackSource historicalTrackSource) {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
         this.siblingTrackSource = siblingTrackSource;
+        this.lineTrackSource = lineTrackSource;
         this.stopsService = stopsService;
         this.writingService = writingService;
         this.petiStopSource = petiStopSource;
@@ -93,7 +97,6 @@ public class NeTExService {
         this.commercialTrackResolver = commercialTrackResolver;
         this.timeTableRowService = timeTableRowService;
         this.historicalTrackSource = historicalTrackSource;
-        this.publishedJourneyWindow = publishedJourneyWindow;
     }
 
     /**
@@ -132,12 +135,16 @@ public class NeTExService {
         final int fromHistory = fillFromHistory(gaps);
         final long siblingsStart = System.currentTimeMillis();
         final int fromSiblings = siblingTrackSource.fill(List.of(adhocSchedules, regularSchedules));
+        final long lineStart = System.currentTimeMillis();
+        final int fromLine = lineTrackSource.fill(List.of(adhocSchedules, regularSchedules));
         final long doneAt = System.currentTimeMillis();
 
-        log.info("pipeline=netex-static method=fillMissingTracks fromUpcoming={} fromHistory={} "
-                + "fromSiblings={} stillMissing={} upcomingMs={} historyMs={} siblingsMs={}",
-                fromUpcoming, fromHistory, fromSiblings, gaps.size() - fromHistory - fromSiblings,
-                historyStart - upcomingStart, siblingsStart - historyStart, doneAt - siblingsStart);
+        log.info("event=generateNeTEx method=fillMissingTracks fromUpcoming={} fromHistory={} "
+                + "fromSiblings={} fromLine={} stillMissing={} upcomingMs={} historyMs={} siblingsMs={} lineMs={}",
+                fromUpcoming, fromHistory, fromSiblings, fromLine,
+                gaps.size() - fromHistory - fromSiblings - fromLine,
+                historyStart - upcomingStart, siblingsStart - historyStart, lineStart - siblingsStart,
+                doneAt - lineStart);
     }
 
     /** Asks history only about the stops still without a track. */
@@ -178,9 +185,13 @@ public class NeTExService {
                 keys.add(HistoricalTrackSource.forSchedulePart(trainNumber, row.departure.id,
                         TimeTableRow.TimeTableRowType.DEPARTURE));
             }
+            // Both types: a schedule row carries one track for the whole station visit, so an
+            // observation of either direction answers it, and a train that only departs a station
+            // today may arrive there once the timetable changes.
             keys.add(HistoricalTrackSource.forStation(trainNumber, row.station.stationShortCode,
-                    row.arrival != null ? TimeTableRow.TimeTableRowType.ARRIVAL
-                            : TimeTableRow.TimeTableRowType.DEPARTURE));
+                    TimeTableRow.TimeTableRowType.ARRIVAL));
+            keys.add(HistoricalTrackSource.forStation(trainNumber, row.station.stationShortCode,
+                    TimeTableRow.TimeTableRowType.DEPARTURE));
             return keys;
         }
     }
@@ -194,7 +205,7 @@ public class NeTExService {
      */
     @Transactional
     public NeTExGenerationResult generateNeTEx() {
-        log.info("pipeline=netex-static method=generateNeTEx starting NeTEx generation");
+        log.info("event=generateNeTEx method=generateNeTEx starting NeTEx generation");
         final long startTime = System.currentTimeMillis();
         Stage stage = Stage.FETCH;
 
@@ -208,7 +219,7 @@ public class NeTExService {
             final List<Station> stations = stationRepository.findAll();
             final long tracksStart = System.currentTimeMillis();
 
-            log.info("pipeline=netex-static method=generateNeTEx fetched data adhocSchedules={} "
+            log.info("event=generateNeTEx method=generateNeTEx fetched data adhocSchedules={} "
                     + "regularSchedules={} stations={} adhocMs={} regularMs={} stationsMs={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size(),
                     regularStart - adhocStart, stationsStart - regularStart, tracksStart - stationsStart);
@@ -224,7 +235,7 @@ public class NeTExService {
         } catch (final Exception e) {
             final long durationMs = System.currentTimeMillis() - startTime;
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
-            log.error("pipeline=netex-static method=generateNeTEx failed, durationMs={}", durationMs, e);
+            log.error("event=generateNeTEx method=generateNeTEx failed, durationMs={}", durationMs, e);
             throw new RuntimeException("NeTEx generation failed", e);
         }
     }
@@ -242,7 +253,7 @@ public class NeTExService {
         final int petiTotal = result != null ? result.matchedCount() + result.unmatchedCount() : 0;
         final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
         final String line = StringUtil.format(
-                "pipeline=netex-static method=generateNeTEx event=rail.netex.generation outcome={} "
+                "event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome={} "
                         + "error.type={} stage={} duration_ms={} "
                         + "rail.netex.scheduled_stop_points={} rail.netex.routes={} rail.netex.lines={} "
                         + "rail.netex.service_journeys={} rail.netex.peti.stop_assignments_total={} "
@@ -311,7 +322,7 @@ public class NeTExService {
         // Resolve which schedules are "in effect" among passenger trains only
         final Set<Long> winningScheduleIds = resolveWinningScheduleIds(passengerAdhoc, passengerRegular);
 
-        log.info("pipeline=netex-static method=computeDataset resolved winningScheduleIds={} from "
+        log.info("event=generateNeTEx method=computeDataset resolved winningScheduleIds={} from "
                 + "passengerAdhoc={} passengerRegular={}",
                 winningScheduleIds.size(), passengerAdhoc.size(), passengerRegular.size());
 
@@ -334,7 +345,7 @@ public class NeTExService {
         petiStopSource.ensureLoaded();
         final int petiStopPlaces = petiStopSource.getStops().size();
         final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
-        log.info("pipeline=netex-static method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
+        log.info("event=generateNeTEx method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
                 + "peti_quays={}",
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
@@ -372,14 +383,14 @@ public class NeTExService {
         final List<LocalDate> operatingDays = calendar.datesOf(
                 serviceJourneys.stream().map(NeTExEntityService.NeTExServiceJourney::id).toList());
 
-        log.info("pipeline=netex-static method=computeDataset calendar dayTypes={} operatingPeriods={} "
+        log.info("event=generateNeTEx method=computeDataset calendar dayTypes={} operatingPeriods={} "
                 + "dayTypeAssignments={}",
                 calendar.dayTypes().size(), calendar.operatingPeriods().size(), calendar.assignments().size());
 
         final List<PublishedJourneyDraft> publishedJourneys = buildPublishedJourneyDrafts(winningByTrainDate,
                 serviceJourneys);
 
-        log.info("pipeline=netex-static method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
+        log.info("event=generateNeTEx method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
                 publishedJourneys.size(), winningByTrainDate.size());
 
         return new NeTExDataset(allFiltered, publishedJourneys, stopsData, routeData,
@@ -391,25 +402,20 @@ public class NeTExService {
      * per-journey drafts the writer persists. Doing the id-join here (rather than in the writer) keeps the
      * persisted shape — refs plus planned tracks — explicit at the point the data is computed.
      *
-     * <p>Restricted to the persisted window: the feed spans years, so joining every day would build hundreds of
-     * thousands of drafts for the writer to discard.
+     * <p>Skipped entirely when journey persistence is off, so the run does not join a draft per train per day
+     * for a writer that will not store any of them.
      */
     private List<PublishedJourneyDraft> buildPublishedJourneyDrafts(final Map<TrainId, Schedule> winningByTrainDate,
             final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys) {
-        if (!publishedJourneyWindow.enabled()) {
+        if (!persistJourneysEnabled) {
             return List.of();
         }
-        final LocalDate windowStart = publishedJourneyWindow.start();
-        final LocalDate windowEnd = publishedJourneyWindow.end();
 
         final Map<String, NeTExEntityService.NeTExServiceJourney> serviceJourneysById = serviceJourneys.stream()
                 .collect(Collectors.toMap(NeTExEntityService.NeTExServiceJourney::id, sj -> sj, (a, b) -> a));
 
         final List<PublishedJourneyDraft> drafts = new ArrayList<>();
         winningByTrainDate.forEach((trainId, schedule) -> {
-            if (trainId.departureDate.isBefore(windowStart) || trainId.departureDate.isAfter(windowEnd)) {
-                return;
-            }
             final String serviceJourneyId = entityService.serviceJourneyIdFor(schedule);
             final NeTExEntityService.NeTExServiceJourney serviceJourney = serviceJourneysById.get(serviceJourneyId);
             if (serviceJourney == null) {
@@ -581,7 +587,7 @@ public class NeTExService {
         if (!droppedByStation.isEmpty()) {
             // Self-correcting: the schedules return once the station metadata catches up, so this is a WARN
             // (visibility) rather than an ERROR (action required).
-            log.warn("pipeline=netex-static method=dropUnpublishableStops droppedSchedules={} "
+            log.warn("event=generateNeTEx method=dropUnpublishableStops droppedSchedules={} "
                     + "stationsNotPublishable={}",
                     schedules.size() - kept.size(), droppedByStation);
         }

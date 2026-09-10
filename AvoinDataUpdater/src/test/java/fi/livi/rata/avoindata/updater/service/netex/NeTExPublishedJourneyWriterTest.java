@@ -34,7 +34,7 @@ class NeTExPublishedJourneyWriterTest {
     @BeforeEach
     void setUp() {
         journeyRepo = mock(NeTExPublishedJourneyRepository.class);
-        writer = new NeTExPublishedJourneyWriter(journeyRepo, new PublishedJourneyWindow(true, 2, 2), 14);
+        writer = new NeTExPublishedJourneyWriter(journeyRepo, true, 2, 2, 14);
     }
 
     // Consumes the pre-joined drafts (no RIPA, no id re-join) and persists each as a journey with its planned
@@ -116,7 +116,7 @@ class NeTExPublishedJourneyWriterTest {
     @Test
     void givenDisabled_whenPersistWindow_thenNoop() {
         final NeTExPublishedJourneyWriter disabled =
-                new NeTExPublishedJourneyWriter(journeyRepo, new PublishedJourneyWindow(false, 2, 2), 14);
+                new NeTExPublishedJourneyWriter(journeyRepo, false, 2, 2, 14);
 
         disabled.persistWindow(dataset(List.of()));
 

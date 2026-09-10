@@ -148,9 +148,9 @@ public class ManualUpdateController {
     @RequestMapping("/netex")
     @ResponseBody
     public boolean generateNeTEx() {
-        logger.info("pipeline=netex-static method=generateNeTEx Starting manual NeTEx dataset generation");
+        logger.info("event=generateNeTEx method=generateNeTEx Starting manual NeTEx dataset generation");
         netexPackageService.generatePackage();
-        logger.info("pipeline=netex-static method=generateNeTEx End manual NeTEx dataset generation");
+        logger.info("event=generateNeTEx method=generateNeTEx End manual NeTEx dataset generation");
         return true;
     }
 }

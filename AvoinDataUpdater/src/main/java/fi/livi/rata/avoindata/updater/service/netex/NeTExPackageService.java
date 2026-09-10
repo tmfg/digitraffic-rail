@@ -50,13 +50,13 @@ public class NeTExPackageService {
      * after logging so the caller still sees the run as failed.
      */
     public void generatePackage() {
-        log.info("pipeline=netex-static method=generatePackage starting NeTEx dataset generation");
+        log.info("event=generateNeTEx method=generatePackage starting NeTEx dataset generation");
         final long startTime = System.currentTimeMillis();
 
         try {
             final NeTExService.NeTExGenerationResult timetable = neTExService.generateNeTEx();
             if (timetable == null) {
-                log.warn("pipeline=netex-static method=generatePackage no timetable data, skipping package");
+                log.warn("event=generateNeTEx method=generatePackage no timetable data, skipping package");
                 return;
             }
 
@@ -71,12 +71,12 @@ public class NeTExPackageService {
             });
 
             final long durationMs = System.currentTimeMillis() - startTime;
-            log.info("pipeline=netex-static method=generatePackage persisted {} size={} bytes files={} "
+            log.info("event=generateNeTEx method=generatePackage persisted {} size={} bytes files={} "
                     + "durationMs={}",
                     PACKAGE_FILENAME, timetable.zip().length, timetable.files().size(), durationMs);
         } catch (final RuntimeException e) {
             final Throwable root = rootCause(e);
-            log.error("pipeline=netex-static method=generatePackage event=rail.netex.package outcome=error "
+            log.error("event=generateNeTEx method=generatePackage wide_event=rail.netex.package outcome=error "
                     + "error.type={} "
                     + "error.message=\"{}\" error.root.type={} error.root.message=\"{}\" durationMs={} "
                     + "message=\"NeTEx package not published\"",

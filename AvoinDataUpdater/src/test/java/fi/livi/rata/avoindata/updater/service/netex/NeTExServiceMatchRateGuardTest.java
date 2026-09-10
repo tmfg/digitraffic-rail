@@ -210,9 +210,9 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, new SiblingTrackSource(routeService), stopsService,
+                routeService, new SiblingTrackSource(routeService), new LineTrackSource(), stopsService,
                 writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null,
-                null, new PublishedJourneyWindow(true, 2, 2));
+                null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -347,10 +347,9 @@ class NeTExServiceMatchRateGuardTest {
         final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowRepository);
 
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, new SiblingTrackSource(routeService), stopsService,
+                routeService, new SiblingTrackSource(routeService), new LineTrackSource(), stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
-                new CommercialTrackResolver(), timeTableRowService, historicalTrackSource,
-                new PublishedJourneyWindow(true, 2, 2));
+                new CommercialTrackResolver(), timeTableRowService, historicalTrackSource);
 
         // Set minMatchRate via reflection
         final Field field = NeTExService.class.getDeclaredField("minMatchRate");

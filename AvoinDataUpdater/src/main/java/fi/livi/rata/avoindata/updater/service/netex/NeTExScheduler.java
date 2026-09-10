@@ -24,8 +24,8 @@ public class NeTExScheduler {
 
     @Scheduled(cron = "${updater.netex.cron:0 0 4 * * *}", zone = "UTC")
     public void generateNeTExPackages() {
-        log.info("pipeline=netex-static method=generateNeTExPackages Starting scheduled NeTEx dataset generation");
+        log.info("event=generateNeTEx method=generateNeTExPackages Starting scheduled NeTEx dataset generation");
         neTExPackageService.generatePackage();
-        log.info("pipeline=netex-static method=generateNeTExPackages Finished scheduled NeTEx dataset generation");
+        log.info("event=generateNeTEx method=generateNeTExPackages Finished scheduled NeTEx dataset generation");
     }
 }
