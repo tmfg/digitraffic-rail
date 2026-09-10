@@ -50,7 +50,6 @@ import org.rutebanken.netex.model.Line;
 import org.rutebanken.netex.model.LineRefStructure;
 import org.rutebanken.netex.model.LinesInFrame_RelStructure;
 import org.rutebanken.netex.model.LocaleStructure;
-import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.Network;
 import org.rutebanken.netex.model.ObjectFactory;
