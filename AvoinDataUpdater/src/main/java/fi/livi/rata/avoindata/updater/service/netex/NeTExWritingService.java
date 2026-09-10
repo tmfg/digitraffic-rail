@@ -114,8 +114,6 @@ public class NeTExWritingService {
         private static final Logger log = LoggerFactory.getLogger(NeTExWritingService.class);
         private static final String SHARED_DATA_XML = NeTExFileNaming.SHARED_DATA_XML;
         private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
-        /** Station and quay coordinates both arrive as WGS84 degrees. */
-        private static final String LOCATION_SYSTEM = "EPSG:4326";
         /**
          * The state agency that owns the rail network; not derivable from schedules.
          */
@@ -319,8 +317,7 @@ public class NeTExWritingService {
                                 .withFrameDefaults(new VersionFrameDefaultsStructure()
                                                 .withDefaultLocale(new LocaleStructure()
                                                                 .withTimeZone("Europe/Helsinki")
-                                                                .withDefaultLanguage("fi"))
-                                                .withDefaultLocationSystem(LOCATION_SYSTEM));
+                                                                .withDefaultLanguage("fi")));
         }
 
         private PublicationDeliveryStructure delivery(final ZonedDateTime generationTimestamp,
