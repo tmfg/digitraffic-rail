@@ -263,6 +263,36 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenNoTrackAndSingleQuayStopPlace_whenCreatingStops_thenTakesTheOnlyQuay() {
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:7", 1_000_001, "Dragsvik", true, null,
+                                List.of(quay("FSR:Quay:70", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(petiStop)));
+                final Station station = createStation("DRA", "Dragsvik", 1, true,
+                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
+
+                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
+                                nullTrackPairs(List.of(station)));
+
+                assertEquals("FSR:Quay:70", stopsData.getStopAssignments().get(0).quayRef());
+        }
+
+        @Test
+        void givenNoTrackAndSeveralQuays_whenCreatingStops_thenLeavesQuayUnset() {
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:8", 1_000_001, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:81", "1"), quay("FSR:Quay:82", "2")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(petiStop)));
+                final Station station = createStation("HKI", "Helsinki asema", 1, true,
+                                new BigDecimal("60.172133"), new BigDecimal("24.941662"));
+
+                final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
+                                nullTrackPairs(List.of(station)));
+
+                assertNull(stopsData.getStopAssignments().get(0).quayRef());
+        }
+
+        @Test
         void givenMatchingPetiStop_whenCreatingStops_thenAssignmentIdFollowsPattern() {
                 // given
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null, List.of());

@@ -162,11 +162,17 @@ public class NeTExStopsService {
         final String assignmentId = idGenerator.passengerStopAssignmentId(pair.stationShortCode(), track);
 
         if (track == null || track.isBlank()) {
+            // A stop place with a single quay leaves nothing to choose between, so the stop still
+            // gets its platform even though no source could say which track the train uses.
+            final Optional<PetiQuay> onlyQuay = matched.quays().size() == 1
+                    ? Optional.of(matched.quays().get(0))
+                    : Optional.empty();
             return new AssignmentResult(
                     Optional.of(new NeTExStopsData.NeTExStopAssignment(
-                            assignmentId, sspId, matched.stopPlaceId(), null)),
-                    Optional.empty(),
-                    MatchOutcome.MATCHED_NO_TRACK);
+                            assignmentId, sspId, matched.stopPlaceId(),
+                            onlyQuay.map(PetiQuay::quayId).orElse(null))),
+                    onlyQuay,
+                    onlyQuay.isPresent() ? MatchOutcome.MATCHED_QUAY : MatchOutcome.MATCHED_NO_TRACK);
         }
 
         final Optional<PetiQuay> quay = matched.resolveQuay(track);
