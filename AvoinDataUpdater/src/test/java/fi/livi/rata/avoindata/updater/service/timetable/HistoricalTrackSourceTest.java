@@ -67,14 +67,6 @@ class HistoricalTrackSourceTest {
     }
 
     @Test
-    void givenOnlyAnotherSchedulePartAtTheStation_whenResolving_thenTheStationKeyAnswers() {
-        observed(observation(777L, "HKI", "9", 1));
-
-        final var stationKey = HistoricalTrackSource.forStation(TRAIN, "HKI", ARRIVAL);
-        assertEquals("9", source.resolve(Set.of(stationKey)).get(stationKey));
-    }
-
-    @Test
     void givenAnotherTrain_whenResolving_thenNothingIsUsed() {
         observed(new TrackObservation(999L, 100L, "HKI", ARRIVAL, "4", daysAgo(1)));
 
@@ -86,7 +78,6 @@ class HistoricalTrackSourceTest {
     void givenGapsOnTwoTrains_whenResolving_thenOnlyThoseTrainsAreAskedAbout() {
         source.resolve(Set.of(
                 HistoricalTrackSource.forSchedulePart(TRAIN, 100L, ARRIVAL),
-                HistoricalTrackSource.forStation(TRAIN, "HKI", ARRIVAL),
                 HistoricalTrackSource.forSchedulePart(123L, 200L, ARRIVAL)));
 
         @SuppressWarnings("unchecked")

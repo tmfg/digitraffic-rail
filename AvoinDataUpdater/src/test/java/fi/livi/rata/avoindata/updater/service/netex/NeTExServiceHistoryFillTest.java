@@ -38,8 +38,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * Filling a track from what the train was last seen on, when the schedule parts have
- * been renumbered by a timetable change so only the station can answer.
+ * Filling a track from what the train was last seen on, matched on the exact schedule
+ * part ({@code attapId}).
  */
 class NeTExServiceHistoryFillTest {
 
@@ -47,14 +47,14 @@ class NeTExServiceHistoryFillTest {
     private static final List<String> STATIONS = List.of("HKI", "PSL", "TPE");
 
     /**
-     * A stop the train both arrives at and departs from carries one track, so a departure
-     * observation has to answer it. Keying the station lookup on arrival alone left every
-     * intermediate stop of a renumbered train without a platform.
+     * A departure observation of the exact schedule part fills the stop: a row that both
+     * arrives and departs carries one track, so either part answers it.
      */
     @Test
-    void givenOnlyDepartureObserved_whenFillingIntermediateStop_thenTrackIsTaken() throws Exception {
+    void givenExactSchedulePartObserved_whenFillingIntermediateStop_thenTrackIsTaken() throws Exception {
         final Schedule schedule = createSchedule();
-        final TrackObservation departureOnly = new TrackObservation(59L, 9999L, "PSL",
+        // PSL (index 1) departs on schedule part (attapId) 5
+        final TrackObservation departureOnly = new TrackObservation(59L, 5L, "PSL",
                 TimeTableRow.TimeTableRowType.DEPARTURE, "5", ZonedDateTime.now());
 
         createService(schedule, List.of(departureOnly)).generateNeTEx();
@@ -92,8 +92,7 @@ class NeTExServiceHistoryFillTest {
 
         final NeTExService service = new NeTExService(
                 new NeTExEntityService(idGenerator, new NeTExTimeConverter()),
-                new NeTExCalendarService(idGenerator), routeService, new SiblingTrackSource(routeService),
-                new LineTrackSource(),
+                new NeTExCalendarService(idGenerator), routeService, new IdentityTrackSource(),
                 new NeTExStopsService(idGenerator, petiSource), new NeTExWritingService(idGenerator, PETI_URL),
                 petiSource, scheduleProviderService, new TodaysScheduleService(), stationRepository,
                 new CommercialTrackResolver(), timeTableRowService,
@@ -121,7 +120,7 @@ class NeTExServiceHistoryFillTest {
         return stations;
     }
 
-    /** Schedule part ids deliberately do not match the observation, so only the station key can answer. */
+    /** Long-distance IC schedule; PSL (index 1) has arrival part 4 and departure part 5. */
     private static Schedule createSchedule() {
         final Schedule schedule = new Schedule();
         schedule.id = 1L;

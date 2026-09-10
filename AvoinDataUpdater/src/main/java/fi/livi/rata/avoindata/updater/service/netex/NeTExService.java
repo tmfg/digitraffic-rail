@@ -54,8 +54,7 @@ public class NeTExService {
     private final NeTExEntityService entityService;
     private final NeTExCalendarService calendarService;
     private final NeTExRouteService routeService;
-    private final SiblingTrackSource siblingTrackSource;
-    private final LineTrackSource lineTrackSource;
+    private final IdentityTrackSource identityTrackSource;
     private final NeTExStopsService stopsService;
     private final NeTExWritingService writingService;
     private final PetiStopSource petiStopSource;
@@ -72,8 +71,7 @@ public class NeTExService {
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
             final NeTExRouteService routeService,
-            final SiblingTrackSource siblingTrackSource,
-            final LineTrackSource lineTrackSource,
+            final IdentityTrackSource identityTrackSource,
             final NeTExStopsService stopsService,
             final NeTExWritingService writingService,
             final PetiStopSource petiStopSource,
@@ -86,8 +84,7 @@ public class NeTExService {
         this.entityService = entityService;
         this.calendarService = calendarService;
         this.routeService = routeService;
-        this.siblingTrackSource = siblingTrackSource;
-        this.lineTrackSource = lineTrackSource;
+        this.identityTrackSource = identityTrackSource;
         this.stopsService = stopsService;
         this.writingService = writingService;
         this.petiStopSource = petiStopSource;
@@ -102,10 +99,11 @@ public class NeTExService {
     /**
      * The Nordic profile wants a quay on every stop assignment, and a quay can only
      * be found once a stop names a track. RIPA's schedules endpoint rarely does, so
-     * the track is taken from the coming days first and from what the train last
-     * actually used second. Done on the schedules themselves, before any NeTEx
-     * entity is derived, so that the stop point ids and the stop assignments cannot
-     * disagree about which track a stop uses.
+     * the track is taken from the coming days first, from what the train last
+     * actually used second, and finally borrowed from another journey of the same
+     * service identity. Done on the schedules themselves, before any NeTEx entity is
+     * derived, so that the stop point ids and the stop assignments cannot disagree
+     * about which track a stop uses.
      */
     private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         final long upcomingStart = System.currentTimeMillis();
@@ -133,18 +131,15 @@ public class NeTExService {
 
         final long historyStart = System.currentTimeMillis();
         final int fromHistory = fillFromHistory(gaps);
-        final long siblingsStart = System.currentTimeMillis();
-        final int fromSiblings = siblingTrackSource.fill(List.of(adhocSchedules, regularSchedules));
-        final long lineStart = System.currentTimeMillis();
-        final int fromLine = lineTrackSource.fill(List.of(adhocSchedules, regularSchedules));
+        final long identityStart = System.currentTimeMillis();
+        final int fromIdentity = identityTrackSource.fill(List.of(adhocSchedules, regularSchedules));
         final long doneAt = System.currentTimeMillis();
 
         log.info("event=generateNeTEx method=fillMissingTracks fromUpcoming={} fromHistory={} "
-                + "fromSiblings={} fromLine={} stillMissing={} upcomingMs={} historyMs={} siblingsMs={} lineMs={}",
-                fromUpcoming, fromHistory, fromSiblings, fromLine,
-                gaps.size() - fromHistory - fromSiblings - fromLine,
-                historyStart - upcomingStart, siblingsStart - historyStart, lineStart - siblingsStart,
-                doneAt - lineStart);
+                + "fromIdentity={} stillMissing={} upcomingMs={} historyMs={} identityMs={}",
+                fromUpcoming, fromHistory, fromIdentity,
+                gaps.size() - fromHistory - fromIdentity,
+                historyStart - upcomingStart, identityStart - historyStart, doneAt - identityStart);
     }
 
     /** Asks history only about the stops still without a track. */
@@ -169,11 +164,7 @@ public class NeTExService {
         return filled;
     }
 
-    /**
-     * The same schedule part is asked for first so the track comes from the same
-     * route; the station key only answers once a timetable change has retired the
-     * old part.
-     */
+    /** History is asked only about the exact schedule part, which pins the same route. */
     private record TrackGap(long trainNumber, ScheduleRow row) {
         List<HistoricalTrackSource.StopKey> keys() {
             final List<HistoricalTrackSource.StopKey> keys = new ArrayList<>();
@@ -185,13 +176,6 @@ public class NeTExService {
                 keys.add(HistoricalTrackSource.forSchedulePart(trainNumber, row.departure.id,
                         TimeTableRow.TimeTableRowType.DEPARTURE));
             }
-            // Both types: a schedule row carries one track for the whole station visit, so an
-            // observation of either direction answers it, and a train that only departs a station
-            // today may arrive there once the timetable changes.
-            keys.add(HistoricalTrackSource.forStation(trainNumber, row.station.stationShortCode,
-                    TimeTableRow.TimeTableRowType.ARRIVAL));
-            keys.add(HistoricalTrackSource.forStation(trainNumber, row.station.stationShortCode,
-                    TimeTableRow.TimeTableRowType.DEPARTURE));
             return keys;
         }
     }

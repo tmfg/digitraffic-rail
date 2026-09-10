@@ -71,19 +71,13 @@ public class HistoricalTrackSource {
 
     private static List<StopKey> keysAnsweredBy(final TrackObservation observation) {
         return List.of(
-                forSchedulePart(observation.trainNumber(), observation.attapId(), observation.type()),
-                forStation(observation.trainNumber(), observation.stationShortCode(), observation.type()));
+                forSchedulePart(observation.trainNumber(), observation.attapId(), observation.type()));
     }
 
-    /** Keyed on attapId to pin the same route, or on station to survive a timetable change. */
+    /** Keyed on attapId to pin the exact schedule part, so the track comes from the same route. */
     public static StopKey forSchedulePart(final long trainNumber, final long attapId,
             final TimeTableRow.TimeTableRowType type) {
         return new StopKey(trainNumber, String.valueOf(attapId), type);
-    }
-
-    public static StopKey forStation(final long trainNumber, final String stationShortCode,
-            final TimeTableRow.TimeTableRowType type) {
-        return new StopKey(trainNumber, stationShortCode, type);
     }
 
     public record StopKey(long trainNumber, String discriminator, TimeTableRow.TimeTableRowType type) {

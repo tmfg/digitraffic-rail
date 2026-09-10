@@ -50,7 +50,6 @@ public class NeTExPackageService {
      * after logging so the caller still sees the run as failed.
      */
     public void generatePackage() {
-        log.info("event=generateNeTEx method=generatePackage starting NeTEx dataset generation");
         final long startTime = System.currentTimeMillis();
 
         try {
