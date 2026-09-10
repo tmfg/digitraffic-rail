@@ -51,5 +51,10 @@ class NeTExSchedulerBeanWiringTest {
         NeTExPackageService neTExPackageService() {
             return mock(NeTExPackageService.class);
         }
+
+        @Bean
+        NeTExPublishedJourneyCleanupService neTExPublishedJourneyCleanupService() {
+            return mock(NeTExPublishedJourneyCleanupService.class);
+        }
     }
 }

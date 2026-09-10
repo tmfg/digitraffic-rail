@@ -37,23 +37,21 @@ public class NeTExPublishedJourneyWriter {
     private final boolean enabled;
     private final int lookbackDays;
     private final int lookaheadDays;
-    private final int retentionDays;
 
     public NeTExPublishedJourneyWriter(final NeTExPublishedJourneyRepository journeyRepo,
             @Value("${updater.netex.persist-journeys.enabled:true}") final boolean enabled,
             @Value("${updater.netex.persist-journeys.lookback-days:2}") final int lookbackDays,
-            @Value("${updater.netex.persist-journeys.lookahead-days:2}") final int lookaheadDays,
-            @Value("${updater.netex.persist-journeys.retention-days:14}") final int retentionDays) {
+            @Value("${updater.netex.persist-journeys.lookahead-days:2}") final int lookaheadDays) {
         this.journeyRepo = journeyRepo;
         this.enabled = enabled;
         this.lookbackDays = lookbackDays;
         this.lookaheadDays = lookaheadDays;
-        this.retentionDays = retentionDays;
     }
 
     /**
      * Persists the published journey refs for the real-time window {@code [today-lookback, today+lookahead]}
-     * under a new dataset version, then prunes versions older than the retention period. A no-op when disabled.
+     * under a new dataset version. A no-op when disabled. Old versions are pruned separately by
+     * {@link NeTExPublishedJourneyCleanupService}.
      */
     public void persistWindow(final NeTExDataset dataset) {
         if (!enabled) {
@@ -86,19 +84,18 @@ public class NeTExPublishedJourneyWriter {
             journeys.add(journey);
         }
 
-        // Insert the new version (tracks cascade), then drop versions older than the retention period so recent
-        // stale datasets stay queryable for debugging (SIRI only ever reads the newest version). The FK cascade
-        // removes their tracks.
+        // Insert the new version (tracks cascade). Versions older than the retention period are dropped by the
+        // separate cleanup job, so recent stale datasets stay queryable for debugging (SIRI only ever reads the
+        // newest version).
         journeyRepo.persist(journeys);
-        final int prunedRows = journeyRepo.deleteByGeneratedAtBefore(now.minusDays(retentionDays));
 
         final int trackCount = journeys.stream().mapToInt(j -> j.tracks.size()).sum();
 
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
                 "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} tracks={} "
-                        + "window_start={} window_end={} pruned_rows={} retention_days={} duration_ms={}",
-                outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd, prunedRows, retentionDays,
+                        + "window_start={} window_end={} duration_ms={}",
+                outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd,
                 System.currentTimeMillis() - startTime);
         if (journeys.isEmpty()) {
             log.warn(line);
