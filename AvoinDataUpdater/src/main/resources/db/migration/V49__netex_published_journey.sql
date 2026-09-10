@@ -1,11 +1,12 @@
+-- A journey_pattern_ref length grows with the number of commercial stops.
 CREATE TABLE `netex_published_journey` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `train_number` bigint(20) NOT NULL,
   `departure_date` date NOT NULL,
   `service_journey_id` varchar(128) NOT NULL,
-  `line_id` varchar(128) NOT NULL,
-  `operator_ref` varchar(128) DEFAULT NULL,
-  `journey_pattern_ref` varchar(128) DEFAULT NULL,
+  `line_id` varchar(300) NOT NULL,
+  `operator_ref` varchar(300) NOT NULL,
+  `journey_pattern_ref` TEXT NOT NULL,
   `dataset_version` bigint(20) unsigned NOT NULL,
   `generated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),

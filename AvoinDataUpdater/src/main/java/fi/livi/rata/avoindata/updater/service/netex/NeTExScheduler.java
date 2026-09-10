@@ -17,9 +17,12 @@ public class NeTExScheduler {
     private static final Logger log = LoggerFactory.getLogger(NeTExScheduler.class);
 
     private final NeTExPackageService neTExPackageService;
+    private final NeTExPublishedJourneyCleanupService publishedJourneyCleanupService;
 
-    public NeTExScheduler(final NeTExPackageService neTExPackageService) {
+    public NeTExScheduler(final NeTExPackageService neTExPackageService,
+            final NeTExPublishedJourneyCleanupService publishedJourneyCleanupService) {
         this.neTExPackageService = neTExPackageService;
+        this.publishedJourneyCleanupService = publishedJourneyCleanupService;
     }
 
     @Scheduled(cron = "${updater.netex.cron:0 0 4 * * *}", zone = "UTC")
@@ -27,5 +30,11 @@ public class NeTExScheduler {
         log.info("method=generateNeTExPackages Starting scheduled NeTEx dataset generation");
         neTExPackageService.generatePackage();
         log.info("method=generateNeTExPackages Finished scheduled NeTEx dataset generation");
+    }
+
+    /** Runs before the generation so a prune failure cannot hold up publishing. */
+    @Scheduled(cron = "${updater.netex.persist-journeys.cleanup-cron:0 30 3 * * *}", zone = "UTC")
+    public void deleteOldPublishedJourneys() {
+        publishedJourneyCleanupService.deleteOldJourneys();
     }
 }
