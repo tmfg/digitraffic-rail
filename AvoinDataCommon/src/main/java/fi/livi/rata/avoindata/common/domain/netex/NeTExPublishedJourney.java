@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
@@ -29,6 +30,10 @@ public class NeTExPublishedJourney {
     public ZonedDateTime generatedAt;
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Rows are inserted in journey stop order (see NeTExPublishedJourneyWriter); ordering by id preserves that
+    // sequence so the first/last element is reliably the journey's origin/destination stop (SIRI-VM OriginRef
+    // /DestinationRef derivation), not left to the database's unspecified default row order.
+    @OrderBy("id ASC")
     public List<NeTExPublishedJourneyTrack> tracks = new ArrayList<>();
 
     public NeTExPublishedJourney() {

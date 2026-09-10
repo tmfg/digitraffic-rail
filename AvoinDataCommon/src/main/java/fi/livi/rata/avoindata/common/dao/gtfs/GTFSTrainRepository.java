@@ -33,10 +33,38 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
 
     /// generate (next) stop_id from the first commercial, not cancelled row
     /// that does not have actual_time yet and the estimate is in the future
+    /// delay_seconds is the live estimate's real-time delay against that same upcoming stop's scheduled time
+    /// (SIRI-VM/Nordic profile carries both position and delay - see Handbook N801 5.1); null when no upcoming
+    /// stop was resolved.
+    ///
+    /// Design intent of the `actual_time is null` filter: it was written purely so GTFS-Realtime gets the
+    /// correct "next station" short code for a `VehiclePosition`/`TripUpdate` - the row is joined to the
+    /// location only for that purpose. It was not designed with SIRI-VM's `VehicleAtStop` in mind, but the row
+    /// selection happens to already encode it as a side effect (see below), since "the next relevant station,
+    /// whether approaching or currently dwelling at it" is exactly what both consumers need.
+    ///
+    /// vehicle_at_stop: `time_table_row.type` is stored by JPA ordinal (ARRIVAL=0, DEPARTURE=1). Since the
+    /// resolved row is always the *earliest not-yet-happened* commercial row, its type tells us whether the
+    /// train is currently approaching a stop (resolved row is that stop's ARRIVAL - it hasn't happened yet, so
+    /// not at the stop) or already dwelling there / not yet departed the origin (that stop's ARRIVAL is either
+    /// already actual or doesn't exist for the origin, so the earliest not-yet-happened row is its DEPARTURE) -
+    /// see SIRI-VM MonitoredCallStructure.VehicleAtStop in docs/SIRI-VM-IMPLEMENTATION-PLAN.md for the derivation.
+    ///
+    /// Worked example (station TPE with ARRIVAL 10:00 / DEPARTURE 10:02):
+    /// - Approaching TPE: both TPE rows still have actual_time = null (train hasn't arrived, let alone left) ->
+    ///   both compete in the window; ARRIVAL wins on `scheduled_time asc` (10:00 < 10:02) -> resolved row is
+    ///   ARRIVAL (type=0) -> vehicle_at_stop = false.
+    /// - Dwelling at TPE: ARRIVAL's actual_time is now set (it happened), so it drops out of the filter
+    ///   entirely; only DEPARTURE (actual_time still null) remains eligible for TPE -> resolved row is DEPARTURE
+    ///   (type=1) -> vehicle_at_stop = true. StopPointRef is unchanged (same station on both rows).
+    /// - Not yet departed the origin station (which has no ARRIVAL row at all): the same DEPARTURE-only
+    ///   situation applies from the very start -> vehicle_at_stop = true there too.
     @Query(value = """
-select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack, ut as unknownTrack from (
-    select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, tr.unknown_track ut, rank()
-    over (partition by id order by scheduled_time asc, type desc) as r
+select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack, ut as unknownTrack, delay_seconds as delaySeconds, vehicle_at_stop as vehicleAtStop from (
+    select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, tr.unknown_track ut,
+    timestampdiff(SECOND, tr.scheduled_time, tr.live_estimate_time) as delay_seconds,
+    case when tr.type is null then null when tr.type = 1 then true else false end as vehicle_at_stop, rank()
+    over (partition by id order by scheduled_time, type desc) as r
     from train_location tl
     left join time_table_row tr
         on tl.departure_date = tr.departure_date

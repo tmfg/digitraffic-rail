@@ -16,14 +16,14 @@ public interface TrainLocationRepository extends CustomGeneralRepository<TrainLo
     @Query("select max(tl.id) " +
             "   from TrainLocation tl " +
             "   where tl.trainLocationId.timestamp >= ?1 " +
-            "   group by tl.trainLocationId.departureDate,tl.trainLocationId.trainNumber")
+            "   group by tl.trainLocationId.departureDate, tl.trainLocationId.trainNumber")
     List<Long> findLatest(final ZonedDateTime timestampAfter);
 
     @Query("select max(tl.id) " +
             "   from TrainLocation tl " +
             "   where tl.trainLocationId.timestamp >= ?1 " +
-            "   and (trainLocationId.trainNumber < 2000 or trainLocationId.trainNumber between 8000 and 9999)" +
-            "   group by tl.trainLocationId.departureDate,tl.trainLocationId.trainNumber")
+            "   and (tl.trainLocationId.trainNumber < 2000 or tl.trainLocationId.trainNumber between 8000 and 9999)" +
+            "   group by tl.trainLocationId.departureDate, tl.trainLocationId.trainNumber")
     // temporary fix, see DPO-2412
     List<Long> findLatestForPassengerTrains(final ZonedDateTime timestampAfter);
 

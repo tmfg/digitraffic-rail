@@ -22,3 +22,6 @@ AvoinDataUpdater/src/main/resources/application-localhost.properties
 /AvoinDataUpdater/trips.txt
 /AvoinDataUpdater/translations.txt
 /**/application-localhost*.properties
+
+# Docs: PDFs live in Confluence (canonical source), not in git
+/docs/*.pdf
