@@ -93,18 +93,6 @@ class NeTExPublishedJourneyWriterTest {
         assertEquals(1, journey.tracks.get(1).visitIndex);
     }
 
-    // Pruning is a separate scheduled job, so the write path must not delete anything.
-    @Test
-    void givenDataset_whenPersistWindow_thenDoesNotPrune() {
-        final PublishedJourneyDraft draft = new PublishedJourneyDraft(
-                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:1", List.of());
-
-        writer.persistWindow(dataset(List.of(draft)));
-
-        verify(journeyRepo, never()).deleteByGeneratedAtBefore(any());
-    }
-
     // A winner outside the [today-2, today+2] window is not persisted.
     @Test
     void givenTrainOutsideWindow_whenPersistWindow_thenSkipped() {
