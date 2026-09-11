@@ -183,8 +183,7 @@ each service gets:
   (investigated in depth — PALA optionally carries a track-km linear position (`ratakmsijainti`) that could
   feed this, but its production reliability is unverified and no station↔track-km reference dataset exists
   to pair it with; see "ProgressBetweenStops investigation" in `SIRI-VM-IMPLEMENTATION-PLAN.md` for the full
-  analysis and rejected alternatives), `MonitoredCall.DestinationDisplay` (would only duplicate the
-  now-implemented `DestinationName` with no distinct source). `DirectionRef` is optional in VM (unlike ET) and is
+  analysis and rejected alternatives). `DirectionRef` is optional in VM (unlike ET) and is
   omitted entirely rather than emitting a meaningless `"0"`. See the field-by-field table in
   `SIRI-VM-IMPLEMENTATION-PLAN.md` → "SIRI-VM Data Mapping" for the full implemented/not-implemented breakdown
   with reasoning per field. Revisit any of these if a real data source becomes available (e.g. a heading sensor,
