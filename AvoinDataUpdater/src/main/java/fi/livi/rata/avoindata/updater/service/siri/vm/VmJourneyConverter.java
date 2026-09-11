@@ -15,27 +15,25 @@ import fi.livi.rata.avoindata.updater.service.siri.et.StationNameLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.StationUicLookup;
 import fi.livi.rata.avoindata.updater.service.siri.vm.model.VmActivity;
 
-/**
- * Interprets a live {@link GTFSTrainLocation} into the domain {@link VmActivity} IR: it decides <em>what the
- * real-time position situation is</em> (journey ref, upcoming-stop quay) without touching any SIRI/JAXB type.
- * Marshalling is a separate concern ({@link VmJourneyMarshaller}).
- *
- * <p>Reuses the same {@link JourneyRefResolver} / {@link StationUicLookup} / {@link SiriStopResolver} /
- * {@link StationNameLookup} collaborators as SIRI-ET, since both services resolve the same published-journey
- * and PETI-quay data — only the interpretation differs.
- *
- * <p>Returns {@link Optional#empty()} when the location's train does not resolve to a published
- * {@code ServiceJourney}: the Nordic profile ties every real-time item to the plan, so an unresolvable
- * position is dropped rather than emitted with a synthetic journey reference.
- */
-public class VmJourneyInterpreter {
+/// Converts a live {@link GTFSTrainLocation} into the domain {@link VmActivity} IR: it decides <em>what the
+/// real-time position situation is</em> (journey ref, upcoming-stop quay) without touching any SIRI/JAXB type.
+/// Marshalling is a separate concern ({@link VmJourneyMarshaller}).
+///
+/// Reuses the same {@link JourneyRefResolver} / {@link StationUicLookup} / {@link SiriStopResolver} /
+/// {@link StationNameLookup} collaborators as SIRI-ET, since both services resolve the same published-journey
+/// and PETI-quay data — only the conversion differs.
+///
+/// Returns {@link Optional#empty()} when the location's train does not resolve to a published
+/// {@code ServiceJourney}: the Nordic profile ties every real-time item to the plan, so an unresolvable
+/// position is dropped rather than emitted with a synthetic journey reference.
+public class VmJourneyConverter {
 
     private final JourneyRefResolver journeyRefResolver;
     private final StationUicLookup stationUicLookup;
     private final SiriStopResolver siriStopResolver;
     private final StationNameLookup stationNameLookup;
 
-    public VmJourneyInterpreter(final JourneyRefResolver journeyRefResolver,
+    public VmJourneyConverter(final JourneyRefResolver journeyRefResolver,
                                  final StationUicLookup stationUicLookup,
                                  final SiriStopResolver siriStopResolver,
                                  final StationNameLookup stationNameLookup) {
@@ -45,24 +43,24 @@ public class VmJourneyInterpreter {
         this.stationNameLookup = stationNameLookup;
     }
 
-    public Optional<VmActivity> interpret(final GTFSTrainLocation location) {
-        final Optional<ResolvedJourney> resolved =
+    public Optional<VmActivity> convert(final GTFSTrainLocation location) {
+        final Optional<ResolvedJourney> resolvedJourney =
                 journeyRefResolver.resolve(location.getTrainNumber(), location.getDepartureDate());
-        if (resolved.isEmpty()) {
+        if (resolvedJourney.isEmpty()) {
             return Optional.empty();
         }
 
         final MonitoredCall monitoredCall = resolveMonitoredCall(location);
-        final ResolvedEndpoint origin = resolveEndpoint(resolved.get().origin());
-        final ResolvedEndpoint destination = resolveEndpoint(resolved.get().destination());
+        final ResolvedEndpoint origin = resolveEndpoint(resolvedJourney.get().origin());
+        final ResolvedEndpoint destination = resolveEndpoint(resolvedJourney.get().destination());
         // getSpeed() is km/h; SIRI/GTFS-Realtime both report vehicle speed in m/s.
         final double speedMetersPerSecond = location.getSpeed() / 3.6;
 
-        return Optional.of(new VmActivity(location.getTrainNumber(), resolved.get(), location.getTimestamp(),
+        return Optional.of(new VmActivity(location.getTrainNumber(), resolvedJourney.get(), location.getTimestamp(),
                 location.getX(), location.getY(), speedMetersPerSecond,
                 monitoredCall.stopRef(), monitoredCall.stopName(), location.getDelaySeconds(),
                 origin.stopRef(), origin.stopName(), destination.stopRef(), destination.stopName(),
-                monitoredCall.stopRef() != null ? location.getVehicleAtStop() : null));
+                location.getVehicleAtStop()));
     }
 
     /**

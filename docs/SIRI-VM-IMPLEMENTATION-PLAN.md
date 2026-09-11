@@ -248,3 +248,17 @@ This implementation follows general Java best practices:
 - SIRI Introduction: `docs/PUBLIC-Introduction-070926-122019.pdf`
 - GitHub Examples: https://github.com/entur/profile-examples/tree/master/siri/vehicle-monitoring
 - Outline Example: https://raw.githubusercontent.com/entur/profile-examples/master/siri/siri-vm-outline.xml
+
+## Follow-up: Consistency Improvements
+
+### SIRI-ET Refactoring (Deferred)
+
+VM code now uses the `*Converter` / `converter` naming pattern consistently with the `convertLocationsToActivities()` method. 
+For consistency across the codebase, ET code should be refactored similarly:
+
+- Rename `EtJourneyInterpreter` → `EtJourneyConverter`
+- Rename field `interpreter` → `converter` in `SiriEtService`
+- Rename/adjust method names from `interpret(...)` to `convert(...)` where appropriate
+
+This is a cosmetic refactoring without functional impact and should be deferred to avoid unnecessary scope creep.
+It does not affect any external APIs or test contracts.

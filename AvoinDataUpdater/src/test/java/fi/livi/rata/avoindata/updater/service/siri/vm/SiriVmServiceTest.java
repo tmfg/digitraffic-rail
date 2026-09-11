@@ -70,11 +70,11 @@ class SiriVmServiceTest {
                         List.of(new PetiQuay("FSR:Quay:OL-3", "3", null, null, null))));
 
         writingService = new SiriWritingService();
-        final VmJourneyInterpreter interpreter = new VmJourneyInterpreter(
+        final VmJourneyConverter converter = new VmJourneyConverter(
                 journeyRefResolver, stationUicLookup, new SiriStopResolver(petiStopSource.getMatcher()),
                 stationNameLookup);
         final VmJourneyMarshaller marshaller = new VmJourneyMarshaller(writingService, "TEST", "FSR");
-        service = new SiriVmService(interpreter, marshaller);
+        service = new SiriVmService(converter, marshaller);
     }
 
     @Test

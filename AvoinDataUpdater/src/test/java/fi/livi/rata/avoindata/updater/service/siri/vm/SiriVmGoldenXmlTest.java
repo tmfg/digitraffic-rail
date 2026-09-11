@@ -92,11 +92,11 @@ class SiriVmGoldenXmlTest {
                         List.of(new PetiQuay("FSR:Quay:OL-3", "3", null, null, null))));
 
         writingService = new SiriWritingService();
-        final VmJourneyInterpreter interpreter = new VmJourneyInterpreter(
+        final VmJourneyConverter converter = new VmJourneyConverter(
                 journeyRefResolver, stationUicLookup, new SiriStopResolver(petiStopSource.getMatcher()),
                 stationNameLookup);
         final VmJourneyMarshaller marshaller = new VmJourneyMarshaller(writingService, PRODUCER_REF, DATA_SOURCE);
-        service = new SiriVmService(interpreter, marshaller);
+        service = new SiriVmService(converter, marshaller);
     }
 
     static Stream<Arguments> scenarios() {

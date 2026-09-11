@@ -28,11 +28,9 @@ import uk.org.siri.siri21.VehicleModesEnumeration;
 import uk.org.siri.siri21.VehicleMonitoringDeliveryStructure;
 import uk.org.siri.siri21.VehicleRef;
 
-/**
- * Owns <em>all</em> SIRI-VM XML construction: it assembles the delivery envelope and, for each
- * {@link VmActivity} produced by {@link VmJourneyInterpreter}, the {@code VehicleActivity}, then serializes the
- * whole {@code Siri} document to bytes. Pure translation — no interpretation.
- */
+/// Owns <em>all</em> SIRI-VM XML construction: it assembles the delivery envelope and, for each
+/// {@link VmActivity} produced by {@link VmJourneyConverter}, the {@code VehicleActivity}, then serializes the
+/// whole {@code Siri} document to bytes. Pure translation — no conversion.
 public class VmJourneyMarshaller {
 
     // How long a reported position stays usable before a client should stop trusting it. Same order of
@@ -49,9 +47,7 @@ public class VmJourneyMarshaller {
         this.dataSource = dataSource;
     }
 
-    /**
-     * Assembles the complete SIRI-VM {@code ServiceDelivery} document from the interpreted vehicle activities.
-     */
+    /// Assembles the complete SIRI-VM {@code ServiceDelivery} document from the converted vehicle activities.
     public Siri marshal(final List<VmActivity> activities, final ZonedDateTime now) {
         final Siri siri = siriWritingService.buildEnvelope(now, producerRef);
 

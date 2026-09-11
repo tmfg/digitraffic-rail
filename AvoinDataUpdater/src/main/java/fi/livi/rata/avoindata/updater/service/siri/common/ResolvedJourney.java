@@ -5,7 +5,7 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
  *
  * @param origin      the journey's first commercial stop (station + planned track), or {@code null} when the
  *                    published journey has no tracks. Currently only consumed by SIRI-VM (see
- *                    {@code VmJourneyInterpreter}) to resolve the optional {@code OriginRef}/{@code OriginName}.
+ *                    {@code VmJourneyConverter}) to resolve the optional {@code OriginRef}/{@code OriginName}.
  * @param destination the journey's last commercial stop, or {@code null}; consumed the same way for
  *                    {@code DestinationRef}/{@code DestinationName}.
  */

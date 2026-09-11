@@ -174,11 +174,11 @@ public class SiriVmGenerationService {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(locationIds);
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
-        final VmJourneyInterpreter interpreter =
-                new VmJourneyInterpreter(journeyRefResolver, stationUicLookup, siriStopResolver, stationNameLookup);
+        final VmJourneyConverter converter =
+                new VmJourneyConverter(journeyRefResolver, stationUicLookup, siriStopResolver, stationNameLookup);
         final VmJourneyMarshaller marshaller =
                 new VmJourneyMarshaller(siriWritingService, NeTExIdGenerator.CODESPACE, NeTExIdGenerator.CODESPACE);
-        final SiriVmService vmService = new SiriVmService(interpreter, marshaller);
+        final SiriVmService vmService = new SiriVmService(converter, marshaller);
 
         return new VmGenerationContext(vmService, locations, now,
                 dbSources.datasetVersion(), dbSources.newestGeneratedAt());
