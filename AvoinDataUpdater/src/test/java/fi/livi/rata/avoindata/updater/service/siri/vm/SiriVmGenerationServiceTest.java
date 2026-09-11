@@ -1,0 +1,567 @@
+package fi.livi.rata.avoindata.updater.service.siri.vm;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
+import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
+import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
+import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+/**
+ * SIRI-VM generation has a hard dependency on the NeTEx-published journey refs in the DB: it reads the
+ * journey/line refs and planned tracks from {@link NeTExPublishedJourneyRepository} and fails the cycle — with
+ * no live fallback — when they are missing, absent for the operating days, or stale.
+ * <p>
+ * It also loads live train locations from {@link TrainLocationRepository} and resolves each location to a
+ * published journey, emitting a VehicleActivity for each successful resolution.
+ */
+class SiriVmGenerationServiceTest {
+
+    // Trains are dated "today" (Helsinki) so they are current-operating-day journeys, never stale carryovers.
+    private static final LocalDate TODAY = DateProvider.dateInHelsinki();
+    private static final long DATASET_VERSION = 5L;
+
+    private StationRepository stationRepository;
+    private TrainLocationRepository trainLocationRepository;
+    private GTFSTrainRepository gtfsTrainRepository;
+    private PetiStopSource petiStopSource;
+    private GeneratedExportRepository generatedExportRepository;
+    private SiriWritingService siriWritingService;
+    private NeTExPublishedJourneyRepository publishedJourneyRepository;
+
+    private SiriVmGenerationService service;
+
+    @BeforeEach
+    void setUp() {
+        stationRepository = mock(StationRepository.class);
+        trainLocationRepository = mock(TrainLocationRepository.class);
+        gtfsTrainRepository = mock(GTFSTrainRepository.class);
+        petiStopSource = mock(PetiStopSource.class);
+        generatedExportRepository = mock(GeneratedExportRepository.class);
+        siriWritingService = new SiriWritingService();
+        publishedJourneyRepository = mock(NeTExPublishedJourneyRepository.class);
+
+        service = new SiriVmGenerationService(
+                stationRepository,
+                trainLocationRepository,
+                gtfsTrainRepository,
+                petiStopSource,
+                siriWritingService,
+                generatedExportRepository,
+                publishedJourneyRepository);
+    }
+
+    // ===== HELPERS =====
+
+    /**
+     * The full happy path: train 59 published in the DB, stations, PETI quays, and a live location.
+     */
+    private void setupHappyPath() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        setupLiveLocation(location59());
+    }
+
+    /**
+     * Stub the newest published dataset version to contain the given journeys.
+     */
+    private void seedPublished(final NeTExPublishedJourney... journeys) {
+        when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(DATASET_VERSION);
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(eq(DATASET_VERSION), any()))
+                .thenReturn(List.of(journeys));
+    }
+
+    /**
+     * The NeTEx-published refs for train 59 on TODAY, with planned tracks matching its live stops.
+     */
+    private static NeTExPublishedJourney publishedJourney59() {
+        final NeTExPublishedJourney journey = new NeTExPublishedJourney(
+                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+        return journey;
+    }
+
+    /**
+     * Setup stations and PETI quays for the happy path.
+     */
+    private void setupStationsAndPeti() {
+        final List<Station> stations = List.of(
+                createStation("HKI", 1),
+                createStation("TPE", 160),
+                createStation("OL", 280));
+        when(stationRepository.findAll()).thenReturn(stations);
+
+        final PetiUicMatcher matcher = new PetiUicMatcher(List.of(
+                new PetiStop("FSR:StopPlace:HKI", 1000001, "Helsinki", true, null,
+                        List.of(new PetiQuay("FSR:Quay:HKI-7", "7", null, null, null))),
+                new PetiStop("FSR:StopPlace:TPE", 1000160, "Tampere", true, null,
+                        List.of(new PetiQuay("FSR:Quay:TPE-1", "1", null, null, null))),
+                new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
+                        List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null)))));
+        when(petiStopSource.getMatcher()).thenReturn(matcher);
+        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(300L);
+    }
+
+    /**
+     * Setup a live location for train 59 at station TPE.
+     */
+    private void setupLiveLocation(final TestGTFSTrainLocation location) {
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L));
+        when(gtfsTrainRepository.getTrainLocations(List.of(1L))).thenReturn(List.of(location));
+    }
+
+    /**
+     * A live train location for train 59 at station TPE, within the LOCATION_MAX_AGE_MINUTES window.
+     */
+    private static TestGTFSTrainLocation location59() {
+        return new TestGTFSTrainLocation(
+                1L,
+                TODAY,
+                59L,
+                ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI),  // between TPE arrival and departure
+                25.759588,
+                61.437778,
+                60,
+                10,
+                "TPE",
+                "1",
+                false,
+                180,
+                false);
+    }
+
+    /**
+     * Another live train location for train 99 (unpublished train).
+     */
+    private static TestGTFSTrainLocation location99() {
+        return new TestGTFSTrainLocation(
+                2L,
+                TODAY,
+                99L,
+                ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI),
+                25.759588,
+                61.437778,
+                80,
+                10,
+                "HKI",
+                "7",
+                false,
+                0,
+                true);
+    }
+
+    private static Station createStation(final String shortCode, final int uicCode) {
+        final Station station = new Station();
+        station.shortCode = shortCode;
+        station.uicCode = uicCode;
+        station.passengerTraffic = true;
+        return station;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<GeneratedExport> capturePersistedExports() {
+        final ArgumentCaptor<Collection<GeneratedExport>> captor = ArgumentCaptor.forClass(Collection.class);
+        verify(generatedExportRepository).persist(captor.capture());
+        return new ArrayList<>(captor.getValue());
+    }
+
+    // ===== GEN-VM-01: Happy path — persists GeneratedExport with fileName "siri-vm.xml" =====
+
+    @Test
+    void givenHappyPath_whenGenerate_thenPersistsWithCorrectFileName() {
+        setupHappyPath();
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        assertEquals(1, exports.size());
+        assertEquals("siri-vm.xml", exports.get(0).fileName);
+    }
+
+    // ===== GEN-VM-02: Happy path — persisted bytes are schema-valid SIRI-VM XML =====
+
+    @Test
+    void givenHappyPath_whenGenerate_thenPersistedBytesAreValidSiriXml() {
+        setupHappyPath();
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        assertNotNull(exports.get(0).data);
+        assertTrue(exports.get(0).data.length > 0);
+        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data));
+    }
+
+    // ===== GEN-VM-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====
+
+    @Test
+    void givenHappyPath_whenGenerate_thenDocContainsEvjForTrain59() {
+        setupHappyPath();
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.get(0).data);
+        assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
+                "Expected published ServiceJourney id for train 59 in XML");
+    }
+
+    // ===== GEN-VM-04: Journey refs are read from the published dataset for the operating-day window =====
+
+    @Test
+    void givenGenerate_thenReadsPublishedJourneysForOperatingDayWindow() {
+        setupHappyPath();
+        final LocalDate yesterday = TODAY.minusDays(1);
+
+        service.generate();
+
+        @SuppressWarnings("unchecked") final ArgumentCaptor<Collection<LocalDate>> datesCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(publishedJourneyRepository)
+                .findByDatasetVersionAndDepartureDatesFetchTracks(eq(DATASET_VERSION), datesCaptor.capture());
+        assertTrue(datesCaptor.getValue().contains(TODAY), "lookup window must include today");
+        assertTrue(datesCaptor.getValue().contains(yesterday), "lookup window must include yesterday");
+    }
+
+    // ===== GEN-VM-05: StationUicLookup built from StationRepository.findAll() =====
+
+    @Test
+    void givenStations_whenGenerate_thenStationRepositoryFindAllCalled() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(stationRepository).findAll();
+    }
+
+    // ===== GEN-VM-06: Prebuilt PetiUicMatcher is obtained once per cycle =====
+
+    @Test
+    void givenPetiStopSource_whenGenerate_thenGetMatcherCalledExactlyOnce() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(petiStopSource, times(1)).getMatcher();
+    }
+
+    // ===== GEN-VM-07: Live locations with no published journey are skipped =====
+
+    @Test
+    void givenLocationWithNoPublishedJourney_whenGenerate_thenOnlyPublishedTrainInOutput() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L, 2L));
+        when(gtfsTrainRepository.getTrainLocations(List.of(1L, 2L)))
+                .thenReturn(List.of(location59(), location99()));
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.get(0).data);
+        assertTrue(xml.contains("FTR:ServiceJourney:59-12345"), "Expected train 59 in output");
+        assertFalse(xml.contains("99"), "Train 99 should not appear (no published journey)");
+    }
+
+    // ===== GEN-VM-08: Live locations are fetched using findLatestForPassengerTrains =====
+
+    @Test
+    void givenGenerate_thenFetchesLatestLocationsWithinAgeWindow() {
+        setupHappyPath();
+
+        service.generate();
+
+        @SuppressWarnings("unchecked") final ArgumentCaptor<ZonedDateTime> timeCaptor = ArgumentCaptor.forClass(ZonedDateTime.class);
+        verify(trainLocationRepository).findLatestForPassengerTrains(timeCaptor.capture());
+        // Verify the cutoff time is roughly 30 minutes in the past
+        final ZonedDateTime capturedTime = timeCaptor.getValue();
+        final long diffMinutes = java.time.Duration.between(capturedTime, DateProvider.nowInHelsinki()).toMinutes();
+        assertTrue(diffMinutes >= 25 && diffMinutes <= 35,
+                "cutoff time should be ~30 minutes in the past (got " + diffMinutes + " minutes)");
+    }
+
+    // ===== GEN-VM-09: Published-journey repository error → no persist, no throw =====
+
+    @Test
+    void givenPublishedRepoException_whenGenerate_thenNoPersistAndNoThrow() {
+        when(publishedJourneyRepository.getMaxDatasetVersion()).thenThrow(new RuntimeException("DB down"));
+
+        assertDoesNotThrow(() -> service.generate());
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-10: StationRepository error → no persist, no throw =====
+
+    @Test
+    void givenStationRepoException_whenGenerate_thenNoPersistAndNoThrow() {
+        seedPublished(publishedJourney59());
+        when(stationRepository.findAll()).thenThrow(new RuntimeException("DB down"));
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L));
+
+        assertDoesNotThrow(() -> service.generate());
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-11: No published NeTEx at all → cycle fails, nothing published (hard dependency) =====
+
+    @Test
+    void givenNoPublishedNeTEx_whenGenerate_thenFailsWithoutPublishing() {
+        when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(null);
+        setupStationsAndPeti();
+        setupLiveLocation(location59());
+
+        service.generate();
+
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-12: Published rows exist but none for the operating days → fails, nothing published =====
+
+    @Test
+    void givenNoPublishedJourneysForOperatingDays_whenGenerate_thenFailsWithoutPublishing() {
+        when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(DATASET_VERSION);
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(eq(DATASET_VERSION), any()))
+                .thenReturn(List.of());
+        setupStationsAndPeti();
+        setupLiveLocation(location59());
+
+        service.generate();
+
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-13: Published journeys older than the freshness limit → fails, nothing published =====
+
+    @Test
+    void givenStalePublishedJourneys_whenGenerate_thenFailsWithoutPublishing() {
+        final NeTExPublishedJourney stale = new NeTExPublishedJourney(
+                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki().minusHours(30));
+        seedPublished(stale);
+        setupStationsAndPeti();
+        setupLiveLocation(location59());
+
+        service.generate();
+
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-14: PETI snapshot is warmed up before the matcher is taken =====
+
+    @Test
+    void givenGenerate_thenEnsuresPetiLoadedBeforeMatcher() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(petiStopSource).ensureLoaded();
+    }
+
+    // ===== GEN-VM-15: Empty PETI snapshot → fail at prepare with a PETI_EMPTY reason, keep last-good (no persist) =====
+
+    @Test
+    void givenEmptyPetiSnapshot_whenGenerate_thenFailsAtPrepareWithPetiEmptyReason() {
+        seedPublished(publishedJourney59());
+        when(stationRepository.findAll()).thenReturn(List.of(
+                createStation("HKI", 1), createStation("TPE", 160), createStation("OL", 280)));
+        when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(List.of())); // empty PETI snapshot
+        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(0L);
+        setupLiveLocation(location59());
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(SiriVmGenerationService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.generate();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        verify(generatedExportRepository, never()).persist(any());
+        final String wideEvent = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
+                .reduce((a, b) -> b)
+                .orElse("");
+        assertTrue(wideEvent.contains("rail.siri.journey_source.unavailable_reason=PETI_EMPTY"),
+                "wide event must attribute the failure to PETI_EMPTY: " + wideEvent);
+        assertTrue(wideEvent.contains("stage=prepare"), "must fail at the prepare stage: " + wideEvent);
+    }
+
+    // ===== GEN-VM-16: Empty locations (no recent live data) → success with zero activities emitted =====
+
+    @Test
+    void givenNoRecentLocations_whenGenerate_thenSucceedsWithZeroActivities() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of()); // no locations
+        when(gtfsTrainRepository.getTrainLocations(List.of())).thenReturn(List.of());
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        assertEquals(1, exports.size());
+        assertEquals("siri-vm.xml", exports.get(0).fileName);
+    }
+
+    // ===== GEN-VM-17: Statistics are emitted correctly (locations received vs activities emitted) =====
+
+    @Test
+    void givenHappyPath_whenGenerate_thenStatisticsAreCorrect() {
+        setupHappyPath();
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(SiriVmGenerationService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.generate();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        final String wideEvent = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(m -> m.contains("rail.siri.locations.received="))
+                .reduce((a, b) -> b)
+                .orElse("");
+        assertTrue(wideEvent.contains("rail.siri.locations.received=1"),
+                "Expected 1 location received: " + wideEvent);
+        assertTrue(wideEvent.contains("rail.siri.activities.emitted=1"),
+                "Expected 1 activity emitted: " + wideEvent);
+        assertTrue(wideEvent.contains("outcome=success"),
+                "Expected success outcome: " + wideEvent);
+    }
+
+    // ===== GEN-VM-18: Multiple locations resolved from published journeys are emitted =====
+
+    @Test
+    void givenMultipleLocationsForPublishedTrains_whenGenerate_thenBothEmitted() {
+        // Add another published journey for train 60
+        final NeTExPublishedJourney journey60 = new NeTExPublishedJourney(
+                new TrainId(60L, TODAY), "FTR:ServiceJourney:60-67890", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:60", DATASET_VERSION, DateProvider.nowInHelsinki());
+        journey60.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
+        journey60.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+
+        seedPublished(publishedJourney59(), journey60);
+        setupStationsAndPeti();
+
+        // Location for train 59 at TPE
+        final TestGTFSTrainLocation loc59 = location59();
+        // Location for train 60 at OL
+        final TestGTFSTrainLocation loc60 = new TestGTFSTrainLocation(
+                3L, TODAY, 60L,
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI),
+                25.759588, 61.437778, 70, 10, "OL", "1", false, 0, false);
+
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L, 3L));
+        when(gtfsTrainRepository.getTrainLocations(List.of(1L, 3L))).thenReturn(List.of(loc59, loc60));
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.get(0).data);
+        assertTrue(xml.contains("FTR:ServiceJourney:59-12345"), "Expected train 59 in output");
+        assertTrue(xml.contains("FTR:ServiceJourney:60-67890"), "Expected train 60 in output");
+    }
+
+    // ===== GEN-VM-19: TrainLocationRepository error → no persist, no throw =====
+
+    @Test
+    void givenTrainLocationRepoException_whenGenerate_thenNoPersistAndNoThrow() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        when(trainLocationRepository.findLatestForPassengerTrains(any()))
+                .thenThrow(new RuntimeException("DB connection lost"));
+
+        assertDoesNotThrow(() -> service.generate());
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-20: GTFSTrainRepository error → no persist, no throw =====
+
+    @Test
+    void givenGtfsTrainRepoException_whenGenerate_thenNoPersistAndNoThrow() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L));
+        when(gtfsTrainRepository.getTrainLocations(any()))
+                .thenThrow(new RuntimeException("DB connection lost"));
+
+        assertDoesNotThrow(() -> service.generate());
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-21: Invalid SIRI output from marshalling → no persist, no throw =====
+
+    @Test
+    void givenInvalidSiriOutput_whenGenerate_thenNoPersistandNoThrow() {
+        setupHappyPath();
+        // Create a mock SiriWritingService that returns invalid schema
+        final SiriWritingService invalidService = mock(SiriWritingService.class);
+        when(invalidService.isSchemaValid(any())).thenReturn(false);
+
+        final SiriVmGenerationService serviceWithInvalidWriter = new SiriVmGenerationService(
+                stationRepository,
+                trainLocationRepository,
+                gtfsTrainRepository,
+                petiStopSource,
+                invalidService,
+                generatedExportRepository,
+                publishedJourneyRepository);
+
+        assertDoesNotThrow(() -> serviceWithInvalidWriter.generate());
+        verify(generatedExportRepository, never()).persist(any());
+    }
+
+    // ===== GEN-VM-22: Export is created with current timestamp =====
+
+    @Test
+    void givenHappyPath_whenGenerate_thenExportHasCurrentTimestamp() {
+        setupHappyPath();
+
+        final ZonedDateTime beforeGeneration = DateProvider.nowInHelsinki();
+        service.generate();
+        final ZonedDateTime afterGeneration = DateProvider.nowInHelsinki();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        assertNotNull(exports.get(0).created);
+        assertTrue(exports.get(0).created.isAfter(beforeGeneration) || exports.get(0).created.isEqual(beforeGeneration),
+                "created timestamp should be after/equal generation start");
+        assertTrue(exports.get(0).created.isBefore(afterGeneration) || exports.get(0).created.isEqual(afterGeneration),
+                "created timestamp should be before/equal generation end");
+    }
+}

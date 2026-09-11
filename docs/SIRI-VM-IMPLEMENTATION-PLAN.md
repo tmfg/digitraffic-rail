@@ -246,8 +246,8 @@ This implementation follows general Java best practices:
 - SIRI-VM Specification: `docs/PUBLIC-SIRI-VM-070926-124123.pdf`
 - SIRI General: `docs/PUBLIC-General information SIRI-070926-122346.pdf`
 - SIRI Introduction: `docs/PUBLIC-Introduction-070926-122019.pdf`
-- GitHub Examples: https://github.com/entur/profile-examples/tree/master/siri/vehicle-monitoring
-- Outline Example: https://raw.githubusercontent.com/entur/profile-examples/master/siri/siri-vm-outline.xml
+- GitHub Examples: https://github.com/entur/profile-norway-examples/tree/master/siri/vehicle-monitoring
+- Outline Example: https://raw.githubusercontent.com/entur/profile-norway-examples/master/siri/siri-vm-outline.xml
 
 ## Follow-up: Consistency Improvements
 
