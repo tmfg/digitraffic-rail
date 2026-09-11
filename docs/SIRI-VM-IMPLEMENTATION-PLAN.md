@@ -262,3 +262,24 @@ For consistency across the codebase, ET code should be refactored similarly:
 
 This is a cosmetic refactoring without functional impact and should be deferred to avoid unnecessary scope creep.
 It does not affect any external APIs or test contracts.
+
+### GTFSTrainLocation Boolean vs Primitive Types (Consideration)
+
+Currently, `GTFSTrainLocation` uses `Boolean` (nullable) for two fields:
+
+- **`getUnknownTrack()`** — Wrapped `Boolean`
+  - Usages: `BooleanUtils.isTrue(location.getUnknownTrack())` everywhere (GTFS, VM, Udot)
+  - Semantics: `null` and `false` are treated identically ("track is known")
+  - **Could be:** `boolean` primitive without loss of meaning
+
+- **`getVehicleAtStop()`** — Wrapped `Boolean`
+  - Current semantics: `null` means "no upcoming stop resolved", `true`/`false` means known state
+  - Database derivation: Ties directly to `time_table_row.type` presence/value
+  - **Could be:** `boolean` (since `null` → `false` when no stop is resolved)
+
+**Recommendation for future work:**
+- Convert both `getUnknownTrack()` and `getVehicleAtStop()` to `boolean` primitives
+- Update all call sites to remove `BooleanUtils.isTrue()` guards
+- Verify SIRI XML marshalling correctly handles `false` values (vs. missing elements for `null`)
+
+This is low-priority housekeeping; current `Boolean` usage works correctly but is more verbose than necessary.
