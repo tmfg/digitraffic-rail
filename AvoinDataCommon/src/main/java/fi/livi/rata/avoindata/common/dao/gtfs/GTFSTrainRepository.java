@@ -64,7 +64,7 @@ select id, departure_date as departureDate, train_number as trainNumber, timesta
     select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, tr.unknown_track ut,
     timestampdiff(SECOND, tr.scheduled_time, tr.live_estimate_time) as delay_seconds,
     case when tr.type is null then null when tr.type = 1 then true else false end as vehicle_at_stop, rank()
-    over (partition by id order by scheduled_time, type desc) as r
+    over (partition by id order by scheduled_time, type) as r
     from train_location tl
     left join time_table_row tr
         on tl.departure_date = tr.departure_date
