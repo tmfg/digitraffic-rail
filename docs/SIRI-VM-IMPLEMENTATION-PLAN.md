@@ -38,7 +38,7 @@ The implementation will follow the existing SIRI-ET pattern:
 
 1. A service layer (`SiriVmGenerationService` / `SiriVmService`) generates XML exports from train data
 2. Data is persisted in `GeneratedExport` table with filename `siri-vm.xml`
-3. `SiriController` serves the XML via HTTP endpoint `/api/v1/siri/vm`
+3. `SiriVmController` serves the XML via HTTP endpoint `/api/v1/siri/vm`
 4. Feature flag `avoindataserver.siri.vm.enabled` controls endpoint availability
 
 ### Why an interpreter → domain IR (`VmActivity`) → marshaller pipeline, instead of one method
