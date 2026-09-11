@@ -30,10 +30,9 @@ public class NeTExPublishedJourney {
     public ZonedDateTime generatedAt;
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, orphanRemoval = true)
-    // Rows are inserted in journey stop order (see NeTExPublishedJourneyWriter); ordering by id preserves that
-    // sequence so the first/last element is reliably the journey's origin/destination stop (SIRI-VM OriginRef
-    // /DestinationRef derivation), not left to the database's unspecified default row order.
-    @OrderBy("id ASC")
+    // Order by visitIndex ensures the first/last element is reliably the journey's origin/destination stop
+    // (SIRI-VM OriginRef/DestinationRef derivation), regardless of database row insertion order or id generation.
+    @OrderBy("visitIndex ASC")
     public List<NeTExPublishedJourneyTrack> tracks = new ArrayList<>();
 
     public NeTExPublishedJourney() {
