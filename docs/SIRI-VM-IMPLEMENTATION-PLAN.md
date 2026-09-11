@@ -283,3 +283,14 @@ Currently, `GTFSTrainLocation` uses `Boolean` (nullable) for two fields:
 - Verify SIRI XML marshalling correctly handles `false` values (vs. missing elements for `null`)
 
 This is low-priority housekeeping; current `Boolean` usage works correctly but is more verbose than necessary.
+
+### Origin/Destination endpoint derivation on published journeys (Follow-up)
+
+The current VM journey-endpoint derivation still assumes the first and last stored published track represent the
+journey's true origin/destination. That is only safe when the endpoint stops themselves have known tracks.
+
+If a real endpoint stop has an unknown track, the published track list can skip it and the VM `OriginRef` /
+`DestinationRef` derivation may point to the next/previous known stop instead.
+
+This should be revisited in a dedicated follow-up by preserving endpoint identity separately from the stored
+track list, or by another equivalent approach that does not substitute another stop.

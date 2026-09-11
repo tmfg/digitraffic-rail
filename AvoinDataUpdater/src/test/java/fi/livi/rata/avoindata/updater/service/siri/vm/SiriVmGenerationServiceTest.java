@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -190,11 +189,11 @@ class SiriVmGenerationServiceTest {
         return station;
     }
 
-    @SuppressWarnings("unchecked")
     private List<GeneratedExport> capturePersistedExports() {
+        @SuppressWarnings("unchecked")
         final ArgumentCaptor<Collection<GeneratedExport>> captor = ArgumentCaptor.forClass(Collection.class);
         verify(generatedExportRepository).persist(captor.capture());
-        return new ArrayList<>(captor.getValue());
+        return List.copyOf(captor.getValue());
     }
 
     // ===== GEN-VM-01: Happy path — persists GeneratedExport with fileName "siri-vm.xml" =====
@@ -207,7 +206,7 @@ class SiriVmGenerationServiceTest {
 
         final List<GeneratedExport> exports = capturePersistedExports();
         assertEquals(1, exports.size());
-        assertEquals("siri-vm.xml", exports.get(0).fileName);
+        assertEquals("siri-vm.xml", exports.getFirst().fileName);
     }
 
     // ===== GEN-VM-02: Happy path — persisted bytes are schema-valid SIRI-VM XML =====
@@ -219,9 +218,9 @@ class SiriVmGenerationServiceTest {
         service.generate();
 
         final List<GeneratedExport> exports = capturePersistedExports();
-        assertNotNull(exports.get(0).data);
-        assertTrue(exports.get(0).data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data));
+        assertNotNull(exports.getFirst().data);
+        assertTrue(exports.getFirst().data.length > 0);
+        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data));
     }
 
     // ===== GEN-VM-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====
@@ -233,7 +232,7 @@ class SiriVmGenerationServiceTest {
         service.generate();
 
         final List<GeneratedExport> exports = capturePersistedExports();
-        final String xml = new String(exports.get(0).data);
+        final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"),
                 "Expected published ServiceJourney id for train 59 in XML");
     }
@@ -246,8 +245,8 @@ class SiriVmGenerationServiceTest {
         final LocalDate yesterday = TODAY.minusDays(1);
 
         service.generate();
-
-        @SuppressWarnings("unchecked") final ArgumentCaptor<Collection<LocalDate>> datesCaptor = ArgumentCaptor.forClass(Collection.class);
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<Collection<LocalDate>> datesCaptor = ArgumentCaptor.forClass(Collection.class);
         verify(publishedJourneyRepository)
                 .findByDatasetVersionAndDepartureDatesFetchTracks(eq(DATASET_VERSION), datesCaptor.capture());
         assertTrue(datesCaptor.getValue().contains(TODAY), "lookup window must include today");
@@ -289,7 +288,7 @@ class SiriVmGenerationServiceTest {
         service.generate();
 
         final List<GeneratedExport> exports = capturePersistedExports();
-        final String xml = new String(exports.get(0).data);
+        final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"), "Expected train 59 in output");
         assertFalse(xml.contains("99"), "Train 99 should not appear (no published journey)");
     }
@@ -302,7 +301,7 @@ class SiriVmGenerationServiceTest {
 
         service.generate();
 
-        @SuppressWarnings("unchecked") final ArgumentCaptor<ZonedDateTime> timeCaptor = ArgumentCaptor.forClass(ZonedDateTime.class);
+        final ArgumentCaptor<ZonedDateTime> timeCaptor = ArgumentCaptor.forClass(ZonedDateTime.class);
         verify(trainLocationRepository).findLatestForPassengerTrains(timeCaptor.capture());
         // Verify the cutoff time is roughly 30 minutes in the past
         final ZonedDateTime capturedTime = timeCaptor.getValue();
@@ -413,8 +412,8 @@ class SiriVmGenerationServiceTest {
         final String wideEvent = appender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
-                .reduce((a, b) -> b)
-                .orElse("");
+                .toList()
+                .getLast();
         assertTrue(wideEvent.contains("rail.siri.journey_source.unavailable_reason=PETI_EMPTY"),
                 "wide event must attribute the failure to PETI_EMPTY: " + wideEvent);
         assertTrue(wideEvent.contains("stage=prepare"), "must fail at the prepare stage: " + wideEvent);
@@ -433,7 +432,7 @@ class SiriVmGenerationServiceTest {
 
         final List<GeneratedExport> exports = capturePersistedExports();
         assertEquals(1, exports.size());
-        assertEquals("siri-vm.xml", exports.get(0).fileName);
+        assertEquals("siri-vm.xml", exports.getFirst().fileName);
     }
 
     // ===== GEN-VM-17: Statistics are emitted correctly (locations received vs activities emitted) =====
@@ -455,8 +454,8 @@ class SiriVmGenerationServiceTest {
         final String wideEvent = appender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .filter(m -> m.contains("rail.siri.locations.received="))
-                .reduce((a, b) -> b)
-                .orElse("");
+                .toList()
+                .getLast();
         assertTrue(wideEvent.contains("rail.siri.locations.received=1"),
                 "Expected 1 location received: " + wideEvent);
         assertTrue(wideEvent.contains("rail.siri.activities.emitted=1"),
@@ -493,7 +492,7 @@ class SiriVmGenerationServiceTest {
         service.generate();
 
         final List<GeneratedExport> exports = capturePersistedExports();
-        final String xml = new String(exports.get(0).data);
+        final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"), "Expected train 59 in output");
         assertTrue(xml.contains("FTR:ServiceJourney:60-67890"), "Expected train 60 in output");
     }
@@ -543,7 +542,7 @@ class SiriVmGenerationServiceTest {
                 generatedExportRepository,
                 publishedJourneyRepository);
 
-        assertDoesNotThrow(() -> serviceWithInvalidWriter.generate());
+        assertDoesNotThrow(serviceWithInvalidWriter::generate);
         verify(generatedExportRepository, never()).persist(any());
     }
 
@@ -558,10 +557,30 @@ class SiriVmGenerationServiceTest {
         final ZonedDateTime afterGeneration = DateProvider.nowInHelsinki();
 
         final List<GeneratedExport> exports = capturePersistedExports();
-        assertNotNull(exports.get(0).created);
-        assertTrue(exports.get(0).created.isAfter(beforeGeneration) || exports.get(0).created.isEqual(beforeGeneration),
+        assertNotNull(exports.getFirst().created);
+        assertTrue(exports.getFirst().created.isAfter(beforeGeneration) || exports.getFirst().created.isEqual(beforeGeneration),
                 "created timestamp should be after/equal generation start");
-        assertTrue(exports.get(0).created.isBefore(afterGeneration) || exports.get(0).created.isEqual(afterGeneration),
+        assertTrue(exports.getFirst().created.isBefore(afterGeneration) || exports.getFirst().created.isEqual(afterGeneration),
                 "created timestamp should be before/equal generation end");
+    }
+
+    @Test
+    void givenUnknownEndpointTracks_whenGenerate_thenKeepsEndpointIdentity() {
+        final NeTExPublishedJourney journey = new NeTExPublishedJourney(
+                new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", null, 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", null, 0));
+        seedPublished(journey);
+        setupStationsAndPeti();
+        setupLiveLocation(location59());
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.getFirst().data);
+        assertTrue(xml.contains("FSR:StopPlace:HKI"), "origin stop identity must still be present");
+        assertTrue(xml.contains("FSR:StopPlace:OL"), "destination stop identity must still be present");
     }
 }

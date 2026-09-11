@@ -10,7 +10,7 @@ import java.time.ZonedDateTime;
 /// `LiveTrainController#getLiveTrainsByVersion` (which queries `live_time_table_train`/`Train`, i.e.
 /// actual/predicted/scheduled stop times only — no GPS position). `GTFSTrainLocation` is consumed only by
 /// the GTFS-Realtime `VehiclePosition` feed (`GTFSRealtimeService`/`FeedMessageService`) and by SIRI-VM
-/// (`SiriVmGenerationService`/`VmJourneyInterpreter`); it is not used anywhere in the `Train`/`LiveTimeTableTrain`
+/// (`SiriVmGenerationService`/`VmJourneyConverter`); it is not used anywhere in the `Train`/`LiveTimeTableTrain`
 /// timetable pipeline.
 ///
 /// See `AvoinDataCommon/.../dao/gtfs/GTFSTrainRepository#getTrainLocations` for the native query producing
