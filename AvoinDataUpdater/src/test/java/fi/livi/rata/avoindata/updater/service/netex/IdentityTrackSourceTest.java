@@ -67,6 +67,17 @@ class IdentityTrackSourceTest {
         assertEquals("8", skips.scheduleRows.get(1).commercialTrack);
     }
 
+    /** Cross-line last resort: a station's platform known only from another line is borrowed, same direction. */
+    @Test
+    void givenStationResolvedByAnotherLine_whenThisLineHasNone_thenBorrowsCrossLine() {
+        final Schedule otherLine = commuter("K", List.of("HKI", "PSL", "MÄK"), List.of("1", "2", "3"));
+        final Schedule blank = commuter("E", List.of("HKI", "PSL", "MÄK"), Arrays.asList(null, null, null));
+
+        source.fill(List.of(List.of(otherLine, blank)));
+
+        assertEquals("3", blank.scheduleRows.get(2).commercialTrack);
+    }
+
     @Test
     void givenTwoPlatformsSeen_whenBorrowing_thenTakesTheMostUsed() {
         final Schedule a = commuter("K", List.of("HKI", "KE"), List.of("5", "2"));

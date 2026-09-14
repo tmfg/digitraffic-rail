@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,11 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
  * every period. A line uses different platforms in each direction, so the key also carries the
  * direction of travel \u2014 derived from a per-line canonical stop order, not the immediate
  * neighbour, so every journey going the same way shares a key even when their exact next stop
- * differs (skip-stops, short turns). When no same-direction sibling has a platform, it falls back to
- * {@code (line, station)} across both directions.</li>
+ * differs (skip-stops, short turns). It tries, in order, {@code (line, station, direction)}, then
+ * {@code (line, station)} across both directions, then {@code (station, direction)} across all
+ * lines — the last for a station whose platform is known from another line but not this one. That
+ * cross-line direction is only used for lines oriented against a shared anchor (HKI/PSL) so
+ * "forward" means the same way for every line.</li>
  * <li><b>every other train</b> keys on train type + number (IC:1, PYO:2), which is itself a single
  * directed service \u2014 so no direction is needed and adding one would fragment the pool.</li>
  * </ul>
@@ -41,7 +45,7 @@ public class IdentityTrackSource {
 
     /** Fills blank tracks in place and returns how many were filled. */
     public int fill(final List<List<Schedule>> schedulesByKind) {
-        final Map<String, List<String>> lineOrder = buildLineOrders(schedulesByKind);
+        final Map<String, LineOrder> lineOrder = buildLineOrders(schedulesByKind);
 
         final Map<String, Map<String, Integer>> seen = new HashMap<>();
         forEachStop(schedulesByKind, lineOrder, (keys, row) -> {
@@ -71,22 +75,28 @@ public class IdentityTrackSource {
     }
 
     private void forEachStop(final List<List<Schedule>> schedulesByKind,
-            final Map<String, List<String>> lineOrder,
+            final Map<String, LineOrder> lineOrder,
             final BiConsumer<List<String>, ScheduleRow> action) {
         for (final List<Schedule> schedules : schedulesByKind) {
             for (final Schedule schedule : schedules) {
                 final List<ScheduleRow> stops = commercialStops(schedule);
                 if (StringUtils.isNotBlank(schedule.commuterLineId)) {
                     final String line = "L:" + schedule.commuterLineId;
-                    final List<String> order = lineOrder.get(schedule.commuterLineId);
+                    final LineOrder lo = lineOrder.get(schedule.commuterLineId);
                     for (int i = 0; i < stops.size(); i++) {
                         final String station = stops.get(i).station.stationShortCode;
-                        final String dir = directionAt(order, stops, i);
-                        final List<String> keys = new ArrayList<>(2);
+                        final String dir = lo == null ? null : directionAt(lo.order(), stops, i);
+                        final List<String> keys = new ArrayList<>(3);
                         if (dir != null) {
                             keys.add(line + "|" + station + "|" + dir);
                         }
                         keys.add(line + "|" + station);
+                        // cross-line last resort: a station's platform known from another line, but
+                        // only when this line is oriented against the shared anchor so the direction
+                        // means the same for every line
+                        if (dir != null && lo != null && lo.anchored()) {
+                            keys.add("S:" + station + "|" + dir);
+                        }
                         action.accept(keys, stops.get(i));
                     }
                 } else {
@@ -112,11 +122,13 @@ public class IdentityTrackSource {
     }
 
     /**
-     * The longest commercial-stop sequence a line runs, used as its canonical order. It fixes one
-     * direction; a journey travelling the other way visits the same stations in decreasing order.
+     * The longest commercial-stop sequence a line runs, used as its canonical order, oriented so a
+     * shared anchor (HKI/PSL) sits near the start. That makes "forward" mean the same direction for
+     * every anchored line, so the {@code (station, direction)} cross-line tier is comparable. A
+     * journey travelling the other way visits the same stations in decreasing order.
      */
-    private Map<String, List<String>> buildLineOrders(final List<List<Schedule>> schedulesByKind) {
-        final Map<String, List<String>> orders = new HashMap<>();
+    private Map<String, LineOrder> buildLineOrders(final List<List<Schedule>> schedulesByKind) {
+        final Map<String, List<String>> longest = new HashMap<>();
         for (final List<Schedule> schedules : schedulesByKind) {
             for (final Schedule schedule : schedules) {
                 if (StringUtils.isBlank(schedule.commuterLineId)) {
@@ -126,10 +138,31 @@ public class IdentityTrackSource {
                 for (final ScheduleRow row : commercialStops(schedule)) {
                     seq.add(row.station.stationShortCode);
                 }
-                orders.merge(schedule.commuterLineId, seq, (a, b) -> b.size() > a.size() ? b : a);
+                longest.merge(schedule.commuterLineId, seq, (a, b) -> b.size() > a.size() ? b : a);
             }
         }
+        final Map<String, LineOrder> orders = new HashMap<>();
+        for (final Map.Entry<String, List<String>> entry : longest.entrySet()) {
+            final List<String> seq = new ArrayList<>(entry.getValue());
+            final int anchor = anchorIndex(seq);
+            if (anchor >= 0 && anchor * 2 > seq.size()) {
+                Collections.reverse(seq);
+            }
+            orders.put(entry.getKey(), new LineOrder(seq, anchor >= 0));
+        }
         return orders;
+    }
+
+    /** Position of the first shared anchor station, or -1 when the line touches neither. */
+    private static int anchorIndex(final List<String> seq) {
+        int best = -1;
+        for (final String anchor : List.of("HKI", "PSL")) {
+            final int idx = seq.indexOf(anchor);
+            if (idx >= 0 && (best < 0 || idx < best)) {
+                best = idx;
+            }
+        }
+        return best;
     }
 
     /**
@@ -179,5 +212,9 @@ public class IdentityTrackSource {
                         .thenComparing(Map.Entry.comparingByKey(Comparator.reverseOrder())))
                 .map(Map.Entry::getKey)
                 .orElse(null);
+    }
+
+    /** A line's canonical stop order, oriented toward the shared anchor when it touches one. */
+    private record LineOrder(List<String> order, boolean anchored) {
     }
 }
