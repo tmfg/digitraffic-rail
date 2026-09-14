@@ -20,7 +20,7 @@ class IdentityTrackSourceTest {
 
     private final IdentityTrackSource source = new IdentityTrackSource();
 
-    // --- commuter trains: key on the line code, direction via the neighbouring stop ---
+    // --- commuter trains: key on line code + direction, with (line, station) fallback ---
 
     @Test
     void givenSameLineAndDirection_whenStopHasNoTrack_thenBorrowsFromSibling() {
@@ -33,25 +33,38 @@ class IdentityTrackSourceTest {
         assertEquals(List.of("14", "8", "1"), tracksOf(blank));
     }
 
-    /** The platform a line uses at a station depends on which way it is going. */
+    /** Direction is preferred: a stop takes its own direction's platform, not the other way's. */
     @Test
-    void givenOppositeDirection_whenStopHasNoTrack_thenDoesNotBorrowAcrossDirections() {
+    void givenBothDirectionsHaveTracks_whenStopHasNoTrack_thenPrefersOwnDirection() {
+        final Schedule outbound = commuter("E", List.of("HKI", "PSL", "KIL"), List.of("14", "8", "1"));
+        final Schedule inbound = commuter("E", List.of("KIL", "PSL", "HKI"), List.of("1", "3", "15"));
+        final Schedule blank = commuter("E", List.of("KIL", "PSL", "HKI"), Arrays.asList(null, null, null));
+
+        source.fill(List.of(List.of(outbound, inbound, blank)));
+
+        assertEquals("3", blank.scheduleRows.get(1).commercialTrack);
+    }
+
+    /** Fallback: with no same-direction sibling, it borrows the (line, station) modal anyway. */
+    @Test
+    void givenOnlyOppositeDirectionHasTrack_whenStopHasNoTrack_thenFallsBackToLineStation() {
         final Schedule outbound = commuter("E", List.of("HKI", "PSL", "KIL"), List.of("14", "8", "1"));
         final Schedule inbound = commuter("E", List.of("KIL", "PSL", "HKI"), Arrays.asList(null, null, null));
 
         source.fill(List.of(List.of(outbound, inbound)));
 
-        assertNull(inbound.scheduleRows.get(1).commercialTrack);
+        assertEquals("8", inbound.scheduleRows.get(1).commercialTrack);
     }
 
+    /** The exact next stop no longer matters: a skip-stop variant of the same direction still borrows. */
     @Test
-    void givenTerminus_whenBorrowing_thenDoesNotTakeThroughStopPlatform() {
-        final Schedule through = commuter("E", List.of("HKI", "PSL", "KIL"), List.of("14", "8", "1"));
-        final Schedule terminating = commuter("E", List.of("HKI", "PSL"), Arrays.asList(null, null));
+    void givenSkipStopVariantSameDirection_whenStopHasNoTrack_thenBorrows() {
+        final Schedule full = commuter("E", List.of("HKI", "PSL", "KVH", "KIL"), List.of("2", "8", "5", "1"));
+        final Schedule skips = commuter("E", List.of("HKI", "PSL", "KIL"), Arrays.asList(null, null, null));
 
-        source.fill(List.of(List.of(through, terminating)));
+        source.fill(List.of(List.of(full, skips)));
 
-        assertNull(terminating.scheduleRows.get(1).commercialTrack);
+        assertEquals("8", skips.scheduleRows.get(1).commercialTrack);
     }
 
     @Test

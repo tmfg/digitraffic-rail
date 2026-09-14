@@ -22,12 +22,14 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
  *
  * <p>The identity is the thing that outlives a timetable change:
  * <ul>
- * <li><b>commuter trains</b> key on the line code (I, K, E \u2026). The running number is reassigned
- * every period, so it cannot be used. A line runs both directions, so the neighbouring stop is part
- * of the key to keep the two apart.</li>
+ * <li><b>commuter trains</b> key on the line code (I, K, E \u2026); the running number is reassigned
+ * every period. A line uses different platforms in each direction, so the key also carries the
+ * direction of travel \u2014 derived from a per-line canonical stop order, not the immediate
+ * neighbour, so every journey going the same way shares a key even when their exact next stop
+ * differs (skip-stops, short turns). When no same-direction sibling has a platform, it falls back to
+ * {@code (line, station)} across both directions.</li>
  * <li><b>every other train</b> keys on train type + number (IC:1, PYO:2), which is itself a single
- * directed service \u2014 so the neighbour is not needed and would only fragment the pool on
- * skip-stop days.</li>
+ * directed service \u2014 so no direction is needed and adding one would fragment the pool.</li>
  * </ul>
  *
  * <p>The pool is built from tracks resolved by the exact sources (upcoming and history) that run
@@ -39,60 +41,120 @@ public class IdentityTrackSource {
 
     /** Fills blank tracks in place and returns how many were filled. */
     public int fill(final List<List<Schedule>> schedulesByKind) {
-        final Map<StopKey, Map<String, Integer>> seen = new HashMap<>();
-        forEachStop(schedulesByKind, (key, row) -> {
+        final Map<String, List<String>> lineOrder = buildLineOrders(schedulesByKind);
+
+        final Map<String, Map<String, Integer>> seen = new HashMap<>();
+        forEachStop(schedulesByKind, lineOrder, (keys, row) -> {
             if (StringUtils.isNotBlank(row.commercialTrack)) {
-                seen.computeIfAbsent(key, k -> new HashMap<>()).merge(row.commercialTrack, 1, Integer::sum);
+                for (final String key : keys) {
+                    seen.computeIfAbsent(key, k -> new HashMap<>()).merge(row.commercialTrack, 1, Integer::sum);
+                }
             }
         });
 
         final int[] filled = { 0 };
-        forEachStop(schedulesByKind, (key, row) -> {
+        forEachStop(schedulesByKind, lineOrder, (keys, row) -> {
             if (StringUtils.isNotBlank(row.commercialTrack)) {
                 return;
             }
-            final String track = mostUsed(seen.get(key));
-            if (track != null) {
-                row.commercialTrack = track;
-                filled[0]++;
+            // keys run most-specific first: same-direction, then the (line, station) fallback
+            for (final String key : keys) {
+                final String track = mostUsed(seen.get(key));
+                if (track != null) {
+                    row.commercialTrack = track;
+                    filled[0]++;
+                    return;
+                }
             }
         });
         return filled[0];
     }
 
     private void forEachStop(final List<List<Schedule>> schedulesByKind,
-            final BiConsumer<StopKey, ScheduleRow> action) {
+            final Map<String, List<String>> lineOrder,
+            final BiConsumer<List<String>, ScheduleRow> action) {
         for (final List<Schedule> schedules : schedulesByKind) {
             for (final Schedule schedule : schedules) {
-                final String identity = identityOf(schedule);
-                if (identity == null) {
-                    continue;
-                }
-                final boolean directed = StringUtils.isNotBlank(schedule.commuterLineId);
                 final List<ScheduleRow> stops = commercialStops(schedule);
-                for (int i = 0; i < stops.size(); i++) {
-                    final String neighbour = directed ? neighbourOf(stops, i) : "";
-                    if (neighbour != null) {
-                        action.accept(new StopKey(identity, stops.get(i).station.stationShortCode, neighbour),
-                                stops.get(i));
+                if (StringUtils.isNotBlank(schedule.commuterLineId)) {
+                    final String line = "L:" + schedule.commuterLineId;
+                    final List<String> order = lineOrder.get(schedule.commuterLineId);
+                    for (int i = 0; i < stops.size(); i++) {
+                        final String station = stops.get(i).station.stationShortCode;
+                        final String dir = directionAt(order, stops, i);
+                        final List<String> keys = new ArrayList<>(2);
+                        if (dir != null) {
+                            keys.add(line + "|" + station + "|" + dir);
+                        }
+                        keys.add(line + "|" + station);
+                        action.accept(keys, stops.get(i));
+                    }
+                } else {
+                    final String ld = longDistanceIdentity(schedule);
+                    if (ld == null) {
+                        continue;
+                    }
+                    for (final ScheduleRow row : stops) {
+                        action.accept(List.of(ld + "|" + row.station.stationShortCode), row);
                     }
                 }
             }
         }
     }
 
-    /**
-     * Commuter trains key on the line code, which survives the periodic renumbering; every other
-     * train keys on type + number, which is itself a single directed service. A train with neither
-     * has no stable identity to borrow from.
-     */
-    private static String identityOf(final Schedule schedule) {
-        if (StringUtils.isNotBlank(schedule.commuterLineId)) {
-            return "L:" + schedule.commuterLineId;
-        }
+    /** Type + number is a single directed service, so it needs no direction and no fallback. */
+    private static String longDistanceIdentity(final Schedule schedule) {
         if (schedule.trainType != null && StringUtils.isNotBlank(schedule.trainType.name)
                 && schedule.trainNumber != null) {
             return "T:" + schedule.trainType.name + ":" + schedule.trainNumber;
+        }
+        return null;
+    }
+
+    /**
+     * The longest commercial-stop sequence a line runs, used as its canonical order. It fixes one
+     * direction; a journey travelling the other way visits the same stations in decreasing order.
+     */
+    private Map<String, List<String>> buildLineOrders(final List<List<Schedule>> schedulesByKind) {
+        final Map<String, List<String>> orders = new HashMap<>();
+        for (final List<Schedule> schedules : schedulesByKind) {
+            for (final Schedule schedule : schedules) {
+                if (StringUtils.isBlank(schedule.commuterLineId)) {
+                    continue;
+                }
+                final List<String> seq = new ArrayList<>();
+                for (final ScheduleRow row : commercialStops(schedule)) {
+                    seq.add(row.station.stationShortCode);
+                }
+                orders.merge(schedule.commuterLineId, seq, (a, b) -> b.size() > a.size() ? b : a);
+            }
+        }
+        return orders;
+    }
+
+    /**
+     * "F" or "B" for travel along or against the line's canonical order, or null when the order
+     * cannot place this stop (then only the direction-less fallback key applies).
+     */
+    private static String directionAt(final List<String> order, final List<ScheduleRow> stops, final int index) {
+        if (order == null) {
+            return null;
+        }
+        final int here = order.indexOf(stops.get(index).station.stationShortCode);
+        if (here < 0) {
+            return null;
+        }
+        if (index + 1 < stops.size()) {
+            final int next = order.indexOf(stops.get(index + 1).station.stationShortCode);
+            if (next >= 0) {
+                return next > here ? "F" : "B";
+            }
+        }
+        if (index > 0) {
+            final int prev = order.indexOf(stops.get(index - 1).station.stationShortCode);
+            if (prev >= 0) {
+                return prev < here ? "F" : "B";
+            }
         }
         return null;
     }
@@ -107,14 +169,6 @@ public class IdentityTrackSource {
         return stops;
     }
 
-    /** Where the journey goes next, or where it came from at the last stop. */
-    private static String neighbourOf(final List<ScheduleRow> stops, final int index) {
-        if (index + 1 < stops.size()) {
-            return ">" + stops.get(index + 1).station.stationShortCode;
-        }
-        return index > 0 ? "<" + stops.get(index - 1).station.stationShortCode : null;
-    }
-
     /** Ties break on the track name so the same input always yields the same feed. */
     private static String mostUsed(final Map<String, Integer> counts) {
         if (counts == null || counts.isEmpty()) {
@@ -125,8 +179,5 @@ public class IdentityTrackSource {
                         .thenComparing(Map.Entry.comparingByKey(Comparator.reverseOrder())))
                 .map(Map.Entry::getKey)
                 .orElse(null);
-    }
-
-    private record StopKey(String identity, String stationShortCode, String neighbour) {
     }
 }
