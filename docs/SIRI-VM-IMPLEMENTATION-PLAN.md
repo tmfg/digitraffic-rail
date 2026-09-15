@@ -86,7 +86,7 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyInterpreter`/
 - [x] Add configuration flag `avoindataserver.siri.vm.enabled`
 
 ### Phase 3: Controller & Endpoint ✅
-- [x] Add `SiriVmController.getSiriVm()` — a **separate controller** from `SiriController` (not a method on
+- [x] Add `SiriVmController.getSiriVm()` — a **separate controller** from `SiriEtController` (not a method on
       it), since `@ConditionalOnProperty` only gates whole bean registration, not individual `@RequestMapping`
       methods. This keeps SIRI-ET and SIRI-VM independently toggleable as required.
 - [x] Map endpoint `/api/v1/siri/vm` returning XML
@@ -94,7 +94,7 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyInterpreter`/
 - [x] Implement feature flag gating with `@ConditionalOnProperty(name = "avoindataserver.siri.vm.enabled")`
 
 ### Phase 4: Testing & Integration ✅
-- [x] Create controller integration test (`SiriVmControllerIntegrationTest`, mirrors `SiriControllerIntegrationTest`)
+- [x] Create controller integration test (`SiriVmControllerIntegrationTest`, mirrors `SiriEtControllerIntegrationTest`)
 - [x] Create service-level unit tests (`SiriVmServiceTest`: schema validity, unresolved-journey skip, optional
       MonitoredCall)
 - [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`)
@@ -118,7 +118,7 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyInterpreter`/
 
 ### Modified Files
 
-- `AvoinDataServer/src/main/java/fi/livi/rata/avoindata/server/controller/api/SiriController.java`
+- `AvoinDataServer/src/main/java/fi/livi/rata/avoindata/server/controller/api/SiriEtController.java`
   - Add `getSiriVm()` method
   - Add constant for VM filename
   

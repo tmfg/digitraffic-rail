@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Serves the SIRI Nordic Vehicle Monitoring (VM) real-time feed. A separate controller (and flag) from
- * {@link SiriController}'s SIRI-ET endpoint, since the two feeds must be independently toggleable —
+ * {@link SiriEtController}'s SIRI-ET endpoint, since the two feeds must be independently toggleable —
  * {@code @ConditionalOnProperty} only gates whole bean registration, not individual methods.
  */
 @Tag(name = "siri", description = "Returns real-time data in SIRI Nordic format")
@@ -53,6 +53,7 @@ public class SiriVmController {
                 Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
         headers.add("x-timestamp", export.created.toString());
         headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + VM_FILENAME + "\"");
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_XML)
                 .headers(headers)

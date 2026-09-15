@@ -37,7 +37,7 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
         "spring.cloud.aws.secretsmanager.enabled=false",
         "spring.cloud.aws.region.static=eu-west-1"
 })
-class SiriControllerIntegrationTest extends MockMvcBaseTest {
+class SiriEtControllerIntegrationTest extends MockMvcBaseTest {
 
     private static final String SIRI_ET_URL = "/api/v1/siri/et";
     private static final String ET_FILENAME = "siri-et.xml";

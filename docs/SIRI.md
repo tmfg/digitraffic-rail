@@ -114,7 +114,7 @@ class. Since the hard requirement is that each service is independently toggleab
 (`avoindataserver.siri.et.enabled` vs. `avoindataserver.siri.vm.enabled`, and equivalently on the updater side),
 each service gets:
 
-- its own **controller** class (`SiriController` for ET, `SiriVmController` for VM, future `SiriSxController`),
+- its own **controller** class (`SiriEtController` for ET, `SiriVmController` for VM, future `SiriSxController`),
   each `@ConditionalOnProperty(name = "avoindataserver.siri.<service>.enabled")`, serving
   `GET /api/v1/siri/<service>`;
 - its own **scheduled updating service** class (`SiriUpdatingService` for ET, `SiriVmUpdatingService` for VM,

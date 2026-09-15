@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(WebConfig.CONTEXT_PATH + "siri")
 // No matchIfMissing: the endpoint is disabled unless explicitly enabled.
 @ConditionalOnProperty(name = "avoindataserver.siri.et.enabled", havingValue = "true")
-public class SiriController {
+public class SiriEtController {
 
     private static final String ET_FILENAME = "siri-et.xml";
     private static final int CACHE_SECONDS = 30;
@@ -29,7 +29,7 @@ public class SiriController {
 
     private final GeneratedExportRepository generatedExportRepository;
 
-    public SiriController(final GeneratedExportRepository generatedExportRepository) {
+    public SiriEtController(final GeneratedExportRepository generatedExportRepository) {
         this.generatedExportRepository = generatedExportRepository;
     }
 
@@ -37,11 +37,7 @@ public class SiriController {
     @RequestMapping(method = RequestMethod.GET, path = "et", produces = MediaType.APPLICATION_XML_VALUE)
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> getSiriEt() {
-        return getExport(ET_FILENAME);
-    }
-
-    private ResponseEntity<byte[]> getExport(final String fileName) {
-        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(fileName);
+        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(ET_FILENAME);
         if (export == null) {
             return ResponseEntity.notFound().build();
         }
@@ -52,6 +48,7 @@ public class SiriController {
                 Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
         headers.add("x-timestamp", export.created.toString());
         headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + ET_FILENAME + "\"");
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_XML)
                 .headers(headers)
