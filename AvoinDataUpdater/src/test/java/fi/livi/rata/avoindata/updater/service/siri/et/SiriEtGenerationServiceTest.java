@@ -369,17 +369,6 @@ class SiriEtGenerationServiceTest {
         verify(generatedExportRepository, never()).persist(any());
     }
 
-    // ===== GEN-13: PETI snapshot is warmed up before the matcher is taken =====
-
-    @Test
-    void givenGenerate_thenEnsuresPetiLoadedBeforeMatcher() {
-        setupHappyPath();
-
-        service.generate();
-
-        verify(petiStopSource).ensureLoaded();
-    }
-
     // ===== GEN-14: Empty PETI snapshot → fail at prepare with a PETI_EMPTY reason, keep last-good (no persist) =====
 
     @Test

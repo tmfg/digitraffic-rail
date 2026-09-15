@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
@@ -42,10 +43,13 @@ import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
+import fi.livi.rata.avoindata.updater.service.siri.common.TimeTableRowsLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationNameLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationUicLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.JourneyRefResolver;
+import fi.livi.rata.avoindata.updater.service.siri.et.MapPlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PetiUnavailableException;
+import fi.livi.rata.avoindata.updater.service.siri.et.PlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneyRefResolver;
 import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneysUnavailableException;
 
@@ -160,9 +164,6 @@ public class SiriVmGenerationService {
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
 
-        // Warm the PETI snapshot on demand (mirrors SIRI-ET / NeTEx generation) so a restart before the daily
-        // refresh does not leave the feed stale.
-        petiStopSource.ensureLoaded();
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
         if (matcher.matchedCount() == 0) {
             throw new PetiUnavailableException("PETI stop snapshot is empty after warm-up");
@@ -174,8 +175,18 @@ public class SiriVmGenerationService {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(locationIds);
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
-        final VmJourneyConverter converter =
-                new VmJourneyConverter(journeyRefResolver, stationUicLookup, siriStopResolver, stationNameLookup);
+        // Only consulted when a location's live track is unknown (see VmJourneyConverter.resolveMonitoredCallStopRef):
+        // loads that one train's full row list on demand, since the live position query above only ever fetches
+        // a single upcoming-stop row per train.
+        final TimeTableRowsLookup timeTableRowsLookup = (trainNumber, departureDate) ->
+                gtfsTrainRepository.findBySourceVersionAndIdIn(0L, Set.of(new TrainId(trainNumber, departureDate)))
+                        .stream()
+                        .findFirst()
+                        .map(train -> train.timeTableRows)
+                        .orElseGet(List::of);
+
+        final VmJourneyConverter converter = new VmJourneyConverter(journeyRefResolver, stationUicLookup,
+                siriStopResolver, stationNameLookup, dbSources.plannedTrackLookup(), timeTableRowsLookup);
         final VmJourneyMarshaller marshaller =
                 new VmJourneyMarshaller(siriWritingService, NeTExIdGenerator.CODESPACE, NeTExIdGenerator.CODESPACE);
         final SiriVmService vmService = new SiriVmService(converter, marshaller);
@@ -219,6 +230,10 @@ public class SiriVmGenerationService {
         }
 
         final Map<TrainId, ResolvedJourney> resolvedByTrainId = new HashMap<>();
+        // Same (trainNumber,departureDate) -> stationShortCode -> visitIndex -> plannedTrack shape as SIRI-ET's
+        // MapPlannedTrackLookup, built from the same already-fetched j.tracks — VM's live track fallback needs
+        // no extra query for this, only for the visitIndex (see TimeTableRowsLookup wiring in prepareContext()).
+        final Map<TrainId, Map<String, Map<Integer, String>>> tracksByTrainId = new HashMap<>();
         for (final NeTExPublishedJourney j : journeys) {
             resolvedByTrainId.put(j.trainId, new ResolvedJourney(
                     new ServiceJourneyId(j.serviceJourneyId),
@@ -228,9 +243,17 @@ public class SiriVmGenerationService {
                     j.journeyPatternRef != null ? new JourneyPatternRef(j.journeyPatternRef) : null,
                     endpointOf(j.tracks, 0),
                     endpointOf(j.tracks, j.tracks.size() - 1)));
+            for (final NeTExPublishedJourneyTrack t : j.tracks) {
+                if (t.plannedTrack != null && t.stationShortCode != null) {
+                    tracksByTrainId.computeIfAbsent(j.trainId, k -> new HashMap<>())
+                            .computeIfAbsent(t.stationShortCode, k -> new HashMap<>())
+                            .put(t.visitIndex, t.plannedTrack);
+                }
+            }
         }
 
-        return new DbSources(new PublishedJourneyRefResolver(resolvedByTrainId), version, newestGeneratedAt);
+        return new DbSources(new PublishedJourneyRefResolver(resolvedByTrainId),
+                new MapPlannedTrackLookup(tracksByTrainId), version, newestGeneratedAt);
     }
 
     /**
@@ -246,9 +269,9 @@ public class SiriVmGenerationService {
         return t.stationShortCode != null ? new JourneyEndpoint(t.stationShortCode, t.plannedTrack) : null;
     }
 
-    /** The DB-read journey ref lookup + the published dataset version/age used for it. */
-    private record DbSources(JourneyRefResolver journeyRefResolver, long datasetVersion,
-            ZonedDateTime newestGeneratedAt) {}
+    /** The DB-read journey ref + planned-track lookups, and the published dataset version/age used for it. */
+    private record DbSources(JourneyRefResolver journeyRefResolver, PlannedTrackLookup plannedTrackLookup,
+            long datasetVersion, ZonedDateTime newestGeneratedAt) {}
 
     private record VmGenerationContext(SiriVmService vmService, List<GTFSTrainLocation> locations, ZonedDateTime now,
             Long journeySourceVersion, ZonedDateTime journeySourceGeneratedAt) {}

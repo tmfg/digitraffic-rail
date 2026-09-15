@@ -37,6 +37,7 @@ public class CachingPetiStopSource implements PetiStopSource {
 
     private static final Logger log = LoggerFactory.getLogger(CachingPetiStopSource.class);
     private static final String STOPS_XML_ENTRY = "stops.xml";
+    private static final Duration INITIAL_LOAD_RETRY_DELAY = Duration.ofMinutes(1);
 
     /**
      * Upper bound on decompressed stops.xml size — defence-in-depth against zip
@@ -48,6 +49,8 @@ public class CachingPetiStopSource implements PetiStopSource {
     private final PetiNeTExParser parser;
     private final String petiUrl;
     private final Duration blockTimeout;
+    private final Object refreshLock = new Object();
+    private Instant nextInitialLoadAttempt = Instant.MIN;
 
     private volatile List<PetiStop> lastGood = List.of();
     private volatile Instant lastSuccessfulFetch = null;
@@ -66,6 +69,7 @@ public class CachingPetiStopSource implements PetiStopSource {
 
     @Override
     public List<PetiStop> getStops() {
+        ensureLoaded();
         return lastGood;
     }
 
@@ -78,14 +82,22 @@ public class CachingPetiStopSource implements PetiStopSource {
      * assignments rather
      * than failing outright.
      */
-    @Override
-    public void ensureLoaded() {
-        if (lastGood.isEmpty()) {
-            log.info("rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
-            refresh();
+    private void ensureLoaded() {
+        if (!lastGood.isEmpty()) {
+            return;
         }
+
+        synchronized (refreshLock) {
+            final Instant now = Instant.now();
+            if (lastGood.isEmpty() && !now.isBefore(nextInitialLoadAttempt)) {
+                log.info("method=ensureLoaded rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
+                nextInitialLoadAttempt = now.plus(INITIAL_LOAD_RETRY_DELAY);
+                refreshLocked();
+            }
+        }
+
         if (lastGood.isEmpty()) {
-            log.warn("rail.upstream.peti operation=ensureLoaded outcome=empty "
+            log.warn("method=ensureLoaded rail.upstream.peti operation=ensureLoaded outcome=empty "
                     + "detail=generating_without_stop_assignments");
         }
     }
@@ -98,6 +110,13 @@ public class CachingPetiStopSource implements PetiStopSource {
      */
     @Scheduled(cron = "${updater.netex.peti.cron:0 30 3 * * *}", zone = "UTC")
     public void refresh() {
+        synchronized (refreshLock) {
+            nextInitialLoadAttempt = Instant.now().plus(INITIAL_LOAD_RETRY_DELAY);
+            refreshLocked();
+        }
+    }
+
+    private void refreshLocked() {
         final long startNanos = System.nanoTime();
         int httpStatus = 0;
         long bodySize = 0;
@@ -127,7 +146,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             lastFetchResult = PetiFetchResult.success(httpStatus, durationMs,
                     parsed.size(), quayCount, bodySize);
 
-            log.info("rail.upstream.peti operation=fetchPeti outcome=success http_status={} " +
+            log.info("method=refresh rail.upstream.peti operation=fetchPeti outcome=success http_status={} " +
                     "duration_ms={} stop_places={} quays={} body_size={}",
                     httpStatus, durationMs, parsed.size(), quayCount, bodySize);
 
@@ -136,7 +155,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
             lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
                     e.getClass().getSimpleName());
-            log.error("rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
+            log.error("method=refresh rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
                     "duration_ms={} error.type={}", httpStatus, durationMs, e.getClass().getSimpleName(), e);
 
         } catch (final Exception e) {
@@ -144,7 +163,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             final Throwable unwrapped = Exceptions.unwrap(e);
             lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
                     unwrapped.getClass().getSimpleName());
-            log.error("rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
+            log.error("method=refresh rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
                     "duration_ms={} error.type={}", httpStatus, durationMs,
                     unwrapped.getClass().getSimpleName(), e);
         }

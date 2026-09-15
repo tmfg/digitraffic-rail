@@ -1,16 +1,21 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
 import org.apache.commons.lang3.BooleanUtils;
 
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
+import fi.livi.rata.avoindata.updater.service.siri.common.CommercialStopVisits;
 import fi.livi.rata.avoindata.updater.service.siri.common.JourneyEndpoint;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.StopRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.TimeTableRowsLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.JourneyRefResolver;
+import fi.livi.rata.avoindata.updater.service.siri.et.PlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.StationNameLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.StationUicLookup;
 import fi.livi.rata.avoindata.updater.service.siri.vm.model.VmActivity;
@@ -32,15 +37,21 @@ public class VmJourneyConverter {
     private final StationUicLookup stationUicLookup;
     private final SiriStopResolver siriStopResolver;
     private final StationNameLookup stationNameLookup;
+    private final PlannedTrackLookup plannedTrackLookup;
+    private final TimeTableRowsLookup timeTableRowsLookup;
 
     public VmJourneyConverter(final JourneyRefResolver journeyRefResolver,
                                  final StationUicLookup stationUicLookup,
                                  final SiriStopResolver siriStopResolver,
-                                 final StationNameLookup stationNameLookup) {
+                                 final StationNameLookup stationNameLookup,
+                                 final PlannedTrackLookup plannedTrackLookup,
+                                 final TimeTableRowsLookup timeTableRowsLookup) {
         this.journeyRefResolver = journeyRefResolver;
         this.stationUicLookup = stationUicLookup;
         this.siriStopResolver = siriStopResolver;
         this.stationNameLookup = stationNameLookup;
+        this.plannedTrackLookup = plannedTrackLookup;
+        this.timeTableRowsLookup = timeTableRowsLookup;
     }
 
     public Optional<VmActivity> convert(final GTFSTrainLocation location) {
@@ -75,11 +86,41 @@ public class VmJourneyConverter {
             return new MonitoredCall(null, null);
         }
         final OptionalInt uic = stationUicLookup.uicFor(stationShortCode);
-        final StopRef stopRef = uic.isPresent()
-                ? siriStopResolver.resolveQuayId(uic.getAsInt(), actualTrackOf(location)).orElse(null)
-                : null;
         final String stopName = stationNameLookup.nameFor(stationShortCode).orElse(null);
-        return new MonitoredCall(stopRef, stopName);
+        if (uic.isEmpty()) {
+            return new MonitoredCall(null, stopName);
+        }
+        return new MonitoredCall(resolveMonitoredCallStopRef(location, stationShortCode, uic.getAsInt()), stopName);
+    }
+
+    /**
+     * Resolves the upcoming stop's Quay from its live (real-time) track, falling back to the planned (NeTEx)
+     * track when the live track is unknown ({@code unknownTrack=true}) — mirrors SIRI-ET's {@code
+     * EtJourneyInterpreter.resolveStopRef} fallback: if the confirmed real-time track isn't known yet, the
+     * planned value is used in its place. Unlike ET (which already holds the train's full row list while
+     * converting), SIRI-VM only loads a single upcoming-stop row per train for its live position query, so it
+     * has no visitIndex to pick the right planned track when a station is served more than once — that is
+     * resolved here, on demand, by loading the train's full row list via {@link #timeTableRowsLookup}
+     * <em>only</em> in this fallback path, so the common case (live track known) stays the original single
+     * cheap query.
+     */
+    private StopRef resolveMonitoredCallStopRef(final GTFSTrainLocation location, final String stationShortCode,
+                                                final int uic) {
+        final String actualTrack = actualTrackOf(location);
+        if (actualTrack != null) {
+            return siriStopResolver.resolveQuayId(uic, actualTrack).orElse(null);
+        }
+        final List<GTFSTimeTableRow> rows =
+                timeTableRowsLookup.rowsFor(location.getTrainNumber(), location.getDepartureDate());
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, stationShortCode);
+        if (visitIndex.isEmpty()) {
+            return null;
+        }
+        return plannedTrackLookup.plannedTrack(location.getTrainNumber(), location.getDepartureDate(),
+                        stationShortCode, visitIndex.getAsInt())
+                .flatMap(track -> siriStopResolver.resolveQuayId(uic, track))
+                .orElse(null);
     }
 
     /**

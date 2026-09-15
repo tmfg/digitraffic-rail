@@ -16,7 +16,7 @@ The Nordic profile also defines cross-cutting rules governing all services:
 
 - **One file per delivery**: Complete dataset delivered as a single XML document
 - **Local time**: All dates and times are in local (Helsinki) time, minimum second precision (e.g., 2026-07-10T21:22:23)
-- **National stop identifiers**: Each stop reference must use the official identifier from the national stop register. For rail, this means PETI FSR:Quay identifier (specific platform). Same identifiers used by our NeTEx timetable
+- **National stop identifiers**: Each stop reference must use the official identifier from the national stop register. For rail, this means PETI FSR:Quay identifier (specific platform). Same identifiers used by our NeTEx timetable. These identifiers (`FSR:Quay:*`, `FSR:StopPlace:*`) are stable and do not change over time, so code can safely cache/rely on them across generation cycles without re-validating identity each run.
 - **Tied to plan**: Each real-time data point references identifiers published in NeTEx
 - **Producer codespace**: Both the producer reference (ProducerRef) and data source reference (DataSource) use Fintraffic Rail's registered codespace, FTR
 
@@ -292,5 +292,100 @@ journey's true origin/destination. That is only safe when the endpoint stops the
 If a real endpoint stop has an unknown track, the published track list can skip it and the VM `OriginRef` /
 `DestinationRef` derivation may point to the next/previous known stop instead.
 
-This should be revisited in a dedicated follow-up by preserving endpoint identity separately from the stored
-track list, or by another equivalent approach that does not substitute another stop.
+**Root cause and why this isn't fixed at the DB level right now:** the `netex_published_journey_track` table's
+`planned_track` column is `NOT NULL` (see `V49__netex_published_journey.sql`), and
+`NeTExService.buildPublishedJourneyDrafts()` accordingly filters out any commercial stop whose track is unknown
+before persisting — there is no other DB table (no separate journey-pattern/route table) that carries the true
+origin/destination independently of this filtered track list. Fixing this properly would require a schema
+migration (`planned_track` nullable) plus removing that filter, which is a bigger change than its current impact
+warrants.
+
+**Decision:** deferred. A NeTEx-side change already in progress (separate branch) will guarantee every published
+stop always carries a planned track, which removes the underlying condition (unknown track at an endpoint)
+entirely — at that point this can never happen in practice and no DB/schema change is needed here. Revisit only if
+that guarantee doesn't materialize or turns out to have exceptions.
+
+## Unknown live-track fallback to the planned track (ET and VM)
+
+### Problem
+
+A colleague (via Slack) reported that when a stop's real-time track/platform is unknown
+(`GTFSTimeTableRow.getUnknownTrack() == true` / `GTFSTrainLocation.getUnknownTrack() == true`), the code treated the
+stop as entirely unresolved:
+
+- **SIRI-ET** (`EtJourneyInterpreter.resolveStopRef`): returned no `StopRef`, which caused the *whole journey* to be
+  dropped from the SIRI-ET output.
+- **SIRI-VM** (`VmJourneyConverter.resolveMonitoredCall`): returned no `MonitoredCall`, dropping that element from
+  the `VehicleActivity` (the vehicle itself was still emitted, just without its next-stop details).
+
+This was unnecessarily lossy: `unknownTrack=true` means the confirmed real-time track isn't known yet, not that the
+platform changed from what was planned. So falling back to the **planned track** (already stored per journey/stop/
+visit in `NeTExPublishedJourneyTrack`) recovers a valid `Quay`/`StopPlace` in the common case, instead of silently
+losing data.
+
+### `visitIndex`
+
+Both fixes hinge on `visitIndex`: the 0-based occurrence count of a given `stationShortCode` within a journey's
+ordered *commercial* stops (rows where the train actually takes on/lets off passengers — see
+`EtJourneyInterpreter.isCommercial`/`pairRows`). This is the same key persisted by NeTEx generation in
+`NeTExPublishedJourneyTrack.visitIndex`, and is required by `PlannedTrackLookup.plannedTrack(trainNumber,
+departureDate, stationShortCode, visitIndex)` to disambiguate a station served more than once on the same journey
+(e.g. a turn-back service that visits a station twice with different platforms each time).
+
+### SIRI-ET fix
+
+`EtJourneyInterpreter.interpret(...)` already iterates the train's *entire* `time_table_row` list once, so
+`visitIndex` can be tracked incrementally with a simple running count per station
+(`resolveVisitCounts.merge(stationShortCode, 1, Integer::sum) - 1`). `resolveStopRef` was changed to fall back to
+`plannedTrackLookup.plannedTrack(...)` whenever the live/actual track is null or `unknownTrack=true`, instead of
+returning empty.
+
+### SIRI-VM fix — why it needed more than a copy-paste of the ET fix
+
+Unlike ET, `VmJourneyConverter.resolveMonitoredCall` only ever receives a **single** `GTFSTrainLocation` row per
+train — the current/next upcoming stop, selected by a native SQL query (`GTFSTrainRepository.getTrainLocations`)
+that deliberately excludes already-passed stops (`actual_time is null`) because it only cares about the next stop.
+There is no `visitIndex` available "for free" the way there is in ET.
+
+Three options were considered:
+
+1. **Extend the SQL query to also compute `visitIndex`.** Rejected: this would require reimplementing the
+   arrival/departure pairing and commercial-stop-counting logic (`pairRows`/`isCommercial`) as SQL window functions,
+   across the *entire* train history (not just the not-yet-departed rows the query currently returns) — complex,
+   error-prone, and hard to test compared to the equivalent Java code.
+2. **Approximate with `visitIndex = 0`.** Rejected: silently wrong for any station visited more than once.
+3. **On-demand secondary fetch, only when the live track is unknown** (chosen). Since an unknown live track is a
+   rare edge case, the extra cost is acceptable: when (and only when) `unknownTrack=true`, fetch the train's full
+   `time_table_row` list (`TimeTableRowsLookup.rowsFor(trainNumber, departureDate)`,
+   backed by `GTFSTrainRepository.findBySourceVersionAndIdIn`), pair it into commercial stops with the new shared
+   `CommercialStopVisits.of(rows)` utility (mirrors `EtJourneyInterpreter`'s pairing logic so both converters agree
+   on what counts as a commercial stop), then resolve the current visit index with
+   `CommercialStopVisits.currentVisitIndex(stops, stationShortCode)`.
+
+   `currentVisitIndex` has one subtlety not needed by ET: it cannot just check whether a stop's arrival row has
+   `actualTime == null` to decide "not yet completed" — a stop with both an arrival and a departure row is still the
+   *current* stop while the train is **dwelling** there (arrival already has an actual time, departure doesn't).
+   The correct check uses a `completingRow()` concept: the departure row if the stop has one, otherwise the arrival
+   (for a terminus) — only that row's `actualTime` determines whether the stop has fully finished.
+
+   This also meant no new query was needed for the planned-track data itself: `SiriVmGenerationService` already
+   loads `NeTExPublishedJourney.tracks` (`findByDatasetVersionAndDepartureDatesFetchTracks`) — the exact same list
+   ET uses to build its `MapPlannedTrackLookup` — it just wasn't building the lookup from it. `buildDbSources()` now
+   aggregates `tracksByTrainId` the same way `SiriEtGenerationService.buildDbSources` does, and constructs a
+   `MapPlannedTrackLookup` passed into `VmJourneyConverter`.
+
+### New shared code
+
+- `siri/common/CommercialStopVisits.java` — pairs a train's raw `GTFSTimeTableRow` list into commercial stops and
+  exposes `currentVisitIndex(stops, stationShortCode)`. Used only by the VM fallback path (ET already has its own
+  incremental tracking since it processes the full row list up front).
+- `siri/common/TimeTableRowsLookup.java` — `@FunctionalInterface rowsFor(trainNumber, departureDate)`; a seam kept
+  out of `VmJourneyConverter` so it stays unit-testable without a DB dependency. `SiriVmGenerationService` supplies
+  the real DB-backed implementation; tests supply a no-op/fake.
+
+### Status
+
+Implemented and tested. `EtJourneyInterpreter` unit tests pass in full. VM: 35/36 tests pass; the one remaining
+failure (`SiriVmGenerationServiceTest.givenUnknownEndpointTracks_whenGenerate_thenKeepsEndpointIdentity`) is
+pre-existing and unrelated — confirmed via `git stash` isolation (fails identically with and without this fix); see
+the "Origin/Destination endpoint derivation" follow-up above, which already documents that separate, known issue.

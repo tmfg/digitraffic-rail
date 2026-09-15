@@ -70,9 +70,11 @@ class SiriVmServiceTest {
                         List.of(new PetiQuay("FSR:Quay:OL-3", "3", null, null, null))));
 
         writingService = new SiriWritingService();
+        // No-op planned-track/row lookups: these tests don't exercise the unknown-track fallback.
         final VmJourneyConverter converter = new VmJourneyConverter(
                 journeyRefResolver, stationUicLookup, new SiriStopResolver(petiStopSource.getMatcher()),
-                stationNameLookup);
+                stationNameLookup, (trainNumber, departureDate, stationShortCode, visitIndex) -> Optional.empty(),
+                (trainNumber, departureDate) -> List.of());
         final VmJourneyMarshaller marshaller = new VmJourneyMarshaller(writingService, "TEST", "FSR");
         service = new SiriVmService(converter, marshaller);
     }

@@ -8,6 +8,12 @@ import java.io.InputStream;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -263,6 +269,54 @@ class CachingPetiStopSourceHttpTest {
         // then
         assertNotNull(source.getLastFetchResult());
         assertEquals(fixtureZipBytes.length, source.getLastFetchResult().bodySize());
+    }
+
+    @Test
+    void givenConcurrentFirstReads_whenGetStops_thenOnlyOneFetchIsPerformed() throws Exception {
+        final AtomicInteger requestCount = new AtomicInteger();
+        final CountDownLatch requestStarted = new CountDownLatch(1);
+        final CountDownLatch releaseRequest = new CountDownLatch(1);
+        final ExchangeFunction exchange = request -> Mono.fromCallable(() -> {
+            requestCount.incrementAndGet();
+            requestStarted.countDown();
+            assertTrue(releaseRequest.await(5, TimeUnit.SECONDS));
+            return ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .build();
+        });
+        final CachingPetiStopSource source = sourceWithExchange(exchange);
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        try {
+            final Future<List<PetiStop>> first = executor.submit(source::getStops);
+            assertTrue(requestStarted.await(5, TimeUnit.SECONDS));
+            final Future<List<PetiStop>> second = executor.submit(source::getStops);
+
+            releaseRequest.countDown();
+
+            assertEquals(4, first.get(5, TimeUnit.SECONDS).size());
+            assertEquals(4, second.get(5, TimeUnit.SECONDS).size());
+            assertEquals(1, requestCount.get());
+        } finally {
+            releaseRequest.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void givenFailedInitialLoad_whenGetStopsIsCalledAgain_thenRetryIsDelayed() {
+        final AtomicInteger requestCount = new AtomicInteger();
+        final ExchangeFunction exchange = request -> {
+            requestCount.incrementAndGet();
+            return Mono.error(new ConnectException("Connection refused"));
+        };
+        final CachingPetiStopSource source = sourceWithExchange(exchange);
+
+        assertTrue(source.getStops().isEmpty());
+        assertTrue(source.getStops().isEmpty());
+
+        assertEquals(1, requestCount.get());
     }
 
     // --- Helper methods ---

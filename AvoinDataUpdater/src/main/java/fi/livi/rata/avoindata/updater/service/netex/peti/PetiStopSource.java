@@ -7,23 +7,21 @@ import java.util.List;
  */
 public interface PetiStopSource {
 
-    /** Return the current list of stops. May be empty (no data loaded yet). */
-    List<PetiStop> getStops();
-
     /**
-     * Ensure stop data is available before generation. Static/disabled sources are
-     * a no-op
-     * (an empty result is intentional); a live feed loads on demand and fails if it
-     * cannot
-     * supply data, so generation never silently ships a package without stop
-     * assignments.
+     * Return the current list of stops. May be empty (no data loaded yet).
+     * Implementations that load on demand (e.g. a live feed) must ensure data is
+     * available before returning, so callers never need a separate load step.
      */
-    default void ensureLoaded() {
-    }
+    List<PetiStop> getStops();
 
     /** Convenience: build a matcher from current stops. */
     default PetiUicMatcher getMatcher() {
-        return new PetiUicMatcher(getStops());
+        return getMatcher(getStops());
+    }
+
+    /** Build a matcher from an already-fetched stop list, avoiding a redundant {@link #getStops()} call. */
+    default PetiUicMatcher getMatcher(final List<PetiStop> stops) {
+        return new PetiUicMatcher(stops);
     }
 
     /** Age of the current snapshot in seconds, or -1 when never loaded / not applicable (static sources). */

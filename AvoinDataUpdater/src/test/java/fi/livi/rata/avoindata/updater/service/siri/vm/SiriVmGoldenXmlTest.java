@@ -92,9 +92,12 @@ class SiriVmGoldenXmlTest {
                         List.of(new PetiQuay("FSR:Quay:OL-3", "3", null, null, null))));
 
         writingService = new SiriWritingService();
+        // None of these golden scenarios exercise the unknown-track planned-track fallback, so both lookups are
+        // no-ops here; see VmJourneyConverterTest for fallback-specific coverage.
         final VmJourneyConverter converter = new VmJourneyConverter(
                 journeyRefResolver, stationUicLookup, new SiriStopResolver(petiStopSource.getMatcher()),
-                stationNameLookup);
+                stationNameLookup, (trainNumber, departureDate, stationShortCode, visitIndex) -> Optional.empty(),
+                (trainNumber, departureDate) -> List.of());
         final VmJourneyMarshaller marshaller = new VmJourneyMarshaller(writingService, PRODUCER_REF, DATA_SOURCE);
         service = new SiriVmService(converter, marshaller);
     }

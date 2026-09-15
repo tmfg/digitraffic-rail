@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -88,8 +89,18 @@ public class EtJourneyInterpreter {
         int resolvedQuays = 0;
         int unresolvedStops = 0;
         InterpretResult.SkipReason firstUnresolvedReason = null;
+        // Counts, per station short code, how many times that station has been visited so far while walking the
+        // stops in order. Map.merge(key, 1, Integer::sum) puts 1 on the first visit and adds 1 on every later
+        // visit to the same station, always returning the updated (post-increment) count. Subtracting 1 turns
+        // that 1-based running count into a 0-based visitIndex: 1st visit -> 0, 2nd visit -> 1, and so on.
+        final Map<String, Integer> resolveVisitCounts = new HashMap<>();
         for (final PairedStop stop : commercialStops) {
-            final Optional<StopRef> stopRef = resolveStopRef(stop);
+            // A station served more than once (e.g. a journey that turns back through the same station) is
+            // otherwise ambiguous by station code alone, so visitIndex identifies which occurrence this is and is
+            // passed down to resolve the right visit's planned track (see the fallback in resolveStopRef()).
+            final int visitIndex = resolveVisitCounts.merge(
+                    representativeRow(stop).stationShortCode, 1, Integer::sum) - 1;
+            final Optional<StopRef> stopRef = resolveStopRef(train.id.trainNumber, train.id.departureDate, stop, visitIndex);
             // Resolve every commercial stop (not only up to the first miss) so the wide-event match rate reflects
             // each lookup, then drop the whole journey if any stop is unresolved — the Nordic profile requires a
             // complete Quay sequence (IsCompleteStopSequence=true), so we omit rather than publish a hole. The
@@ -132,21 +143,22 @@ public class EtJourneyInterpreter {
                     representativeRow(current.stop()).stationShortCode, 1, Integer::sum) - 1;
             // Partial-cancellation boundary: the last served stop before a cancelled stop departs 'cancelled'.
             final boolean nextCancelled = i + 1 < stops.size() && isCancelled(stops.get(i + 1).stop());
-            calls.add(toCall(train, current.stop(), current.stopRef(), current.stopName(), order, nextCancelled,
-                    i <= lastActualIndex, visitIndex));
+            calls.add(toCall(train.id.trainNumber, train.id.departureDate, current.stop(), current.stopRef(),
+                    current.stopName(), order, nextCancelled, i <= lastActualIndex, visitIndex));
         }
 
         final ResolvedJourney j = resolved.get();
         return new InterpretResult.Emitted(new EtJourney(
                 j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(), j.journeyPatternRef(),
                 train.cancelled, monitored,
-                stops.isEmpty() ? null : stops.get(0).stopName(),
-                stops.isEmpty() ? null : stops.get(stops.size() - 1).stopName(),
+                stops.isEmpty() ? null : stops.getFirst().stopName(),
+                stops.isEmpty() ? null : stops.getLast().stopName(),
                 calls));
     }
 
-    private EtCall toCall(final GTFSTrain train, final PairedStop stop, final StopRef stopRef, final String stopName,
-                          final int order, final boolean nextCancelled, final boolean past, final int visitIndex) {
+    private EtCall toCall(final long trainNumber, final LocalDate departureDate, final PairedStop stop,
+                          final StopRef stopRef, final String stopName, final int order, final boolean nextCancelled,
+                          final boolean past, final int visitIndex) {
         final boolean cancelled = isCancelled(stop);
         final CallPoint arrival = stop.arrival == null ? null
                 : new CallPoint(
@@ -164,7 +176,7 @@ public class EtJourneyInterpreter {
                         stop.departure.actualTime,
                         departureStatus);
 
-        final QuayChange quayChange = computeQuayChange(train, stop, stopRef, visitIndex);
+        final QuayChange quayChange = computeQuayChange(trainNumber, departureDate, stop, stopRef, visitIndex);
 
         if (past) {
             return new EtCall.Recorded(stopRef, order, cancelled, arrival, departure, stopName, quayChange);
@@ -174,17 +186,18 @@ public class EtJourneyInterpreter {
     }
 
     /**
-     * Detects a platform change: returns a {@link QuayChange} only when the planned track is known, the current
-     * platform is known, and the planned quay genuinely differs from the actual quay. When the current platform
-     * is unknown we do not assert a change (such a stop has no resolvable quay and its journey is dropped upstream).
+     * Detects a platform change: returns a {@link QuayChange} only when the planned track is known, the real-time
+     * platform is known, and the planned quay genuinely differs from the actual quay. When the real-time platform
+     * is unknown, {@code actualQuay} was itself resolved from this same planned track (see {@link
+     * #resolveStopRef}), so it can never differ from it — we skip the lookup rather than assert a no-op change.
      */
-    private QuayChange computeQuayChange(final GTFSTrain train, final PairedStop stop, final StopRef actualQuay,
-                                         final int visitIndex) {
+    private QuayChange computeQuayChange(final long trainNumber, final LocalDate departureDate, final PairedStop stop,
+                                         final StopRef actualQuay, final int visitIndex) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final Optional<String> plannedTrack = plannedTrackLookup.plannedTrack(
-                train.id.trainNumber, train.id.departureDate, representative.stationShortCode, visitIndex);
-        // Need a planned track to resolve the planned quay; a null actual track means the current platform is
-        // unknown, so the stop has no resolvable quay and never carries a change.
+                trainNumber, departureDate, representative.stationShortCode, visitIndex);
+        // Need a planned track to resolve the planned quay; a null real-time track means the actual quay is
+        // itself the planned one (per resolveStopRef's fallback), so it never carries a change.
         if (plannedTrack.isEmpty() || actualTrackOf(representative) == null) {
             return null;
         }
@@ -199,13 +212,26 @@ public class EtJourneyInterpreter {
         return new QuayChange(plannedQuay.get(), actualQuay);
     }
 
-    private Optional<StopRef> resolveStopRef(final PairedStop stop) {
+    /**
+     * Resolves a commercial stop's Quay from its actual (real-time) track, falling back to the planned (NeTEx)
+     * track when the actual track is unknown ({@code unknownTrack=true}) — i.e. if the confirmed real-time track
+     * isn't known yet, the planned value is used in its place. This recovers a resolvable Quay for the common
+     * "no live track yet/lost" case instead of dropping the whole journey.
+     */
+    private Optional<StopRef> resolveStopRef(final long trainNumber, final LocalDate departureDate,
+                                             final PairedStop stop, final int visitIndex) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final OptionalInt uic = stationUicLookup.uicFor(representative.stationShortCode);
         if (uic.isEmpty()) {
             return Optional.empty();
         }
-        return siriStopResolver.resolveQuayId(uic.getAsInt(), actualTrackOf(representative));
+        final String actualTrack = actualTrackOf(representative);
+        if (actualTrack != null) {
+            return siriStopResolver.resolveQuayId(uic.getAsInt(), actualTrack);
+        }
+        final Optional<String> plannedTrack = plannedTrackLookup.plannedTrack(
+                trainNumber, departureDate, representative.stationShortCode, visitIndex);
+        return plannedTrack.flatMap(track -> siriStopResolver.resolveQuayId(uic.getAsInt(), track));
     }
 
     /** Why a commercial stop didn't resolve: no PETI stop place for the station, or a stop place but no quay. */
@@ -282,7 +308,7 @@ public class EtJourneyInterpreter {
         if (commercialStops.isEmpty()) {
             return false;
         }
-        final PairedStop last = commercialStops.get(commercialStops.size() - 1);
+        final PairedStop last = commercialStops.getLast();
         final GTFSTimeTableRow lastRow = last.arrival != null ? last.arrival : last.departure;
         if (lastRow.actualTime != null) {
             return false;
@@ -307,8 +333,8 @@ public class EtJourneyInterpreter {
         ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime).thenComparing(r -> r.type));
 
         int i = 0;
-        if (ordered.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
-            stops.add(new PairedStop(null, ordered.get(0)));
+        if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+            stops.add(new PairedStop(null, ordered.getFirst()));
             i = 1;
         }
 

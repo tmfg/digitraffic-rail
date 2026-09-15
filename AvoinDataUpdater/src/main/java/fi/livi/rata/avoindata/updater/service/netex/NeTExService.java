@@ -24,6 +24,7 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
@@ -207,13 +208,9 @@ public class NeTExService {
             return null;
         }
 
-        // Load PETI on demand so generation never depends on the daily warm-up having
-        // run first.
-        // When the feed is unavailable, generation degrades (no stop assignments)
-        // rather than failing.
-        petiStopSource.ensureLoaded();
-        final int petiStopPlaces = petiStopSource.getStops().size();
-        final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
+        final List<PetiStop> petiStops = petiStopSource.getStops();
+        final int petiStopPlaces = petiStops.size();
+        final int petiQuays = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
         log.info("method=computeDataset peti_fetch_outcome={} peti_stop_places={} peti_quays={}",
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 

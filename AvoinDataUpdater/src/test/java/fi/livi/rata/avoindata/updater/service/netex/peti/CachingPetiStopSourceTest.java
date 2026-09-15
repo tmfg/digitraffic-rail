@@ -236,23 +236,23 @@ class CachingPetiStopSourceTest {
     }
 
     @Test
-    void givenLoadedSnapshot_whenEnsureLoaded_thenDoesNotThrow() {
+    void givenLoadedSnapshot_whenGetStops_thenDoesNotThrow() {
         // given — snapshot already present
         source.applySnapshot(source.parseZipBytes(fixtureZipBytes));
 
         // when/then — no fetch, no failure
-        assertDoesNotThrow(() -> source.ensureLoaded());
+        assertDoesNotThrow(() -> source.getStops());
         assertEquals(4, source.getStops().size());
     }
 
     @Test
-    void givenEmptySnapshotAndUnavailableFeed_whenEnsureLoaded_thenDoesNotThrow() {
+    void givenEmptySnapshotAndUnavailableFeed_whenGetStops_thenDoesNotThrow() {
         // given — empty snapshot; stub WebClient returns Mono.empty() so refresh cannot
         // populate it
 
         // when/then — an unavailable feed degrades (stays empty) rather than blocking
         // generation
-        assertDoesNotThrow(() -> source.ensureLoaded());
+        assertDoesNotThrow(() -> source.getStops());
         assertTrue(source.getStops().isEmpty());
     }
 

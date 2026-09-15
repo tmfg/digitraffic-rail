@@ -151,9 +151,6 @@ public class SiriEtGenerationService {
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
 
-        // Warm the PETI snapshot on demand (mirrors NeTEx generation) so a restart before the daily refresh does
-        // not leave the feed stale.
-        petiStopSource.ensureLoaded();
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
         if (matcher.matchedCount() == 0) {
             throw new PetiUnavailableException("PETI stop snapshot is empty after warm-up");
