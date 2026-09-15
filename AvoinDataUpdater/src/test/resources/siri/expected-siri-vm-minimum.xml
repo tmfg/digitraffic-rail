@@ -7,7 +7,7 @@
             <ResponseTimestamp>2026-07-15T12:00:00</ResponseTimestamp>
             <VehicleActivity>
                 <RecordedAtTime>2026-07-15T11:59:30</RecordedAtTime>
-                <ValidUntilTime>2026-07-15T12:05:00</ValidUntilTime>
+                <ValidUntilTime>2026-07-15T12:04:30</ValidUntilTime>
                 <MonitoredVehicleJourney>
                     <LineRef>FTR:Line:IC</LineRef>
                     <FramedVehicleJourneyRef>

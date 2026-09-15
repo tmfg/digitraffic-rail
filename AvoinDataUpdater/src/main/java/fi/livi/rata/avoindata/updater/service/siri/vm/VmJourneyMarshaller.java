@@ -33,8 +33,9 @@ import uk.org.siri.siri21.VehicleRef;
 /// whole {@code Siri} document to bytes. Pure translation — no conversion.
 public class VmJourneyMarshaller {
 
-    // How long a reported position stays usable before a client should stop trusting it. Same order of
-    // magnitude as SIRI-ET's FRESH_WITHIN_MINUTES / the ~10s vehicle-location generation cadence.
+    // How long a reported position stays usable before a client should stop trusting it, measured from when
+    // the position was recorded (not from generation time) — same order of magnitude as SIRI-ET's
+    // FRESH_WITHIN_MINUTES / the ~10s vehicle-location generation cadence.
     private static final int VALID_UNTIL_MINUTES = 5;
     private final SiriWritingService siriWritingService;
     private final String producerRef;
@@ -55,7 +56,7 @@ public class VmJourneyMarshaller {
         delivery.setVersion("2.0");
         delivery.setResponseTimestamp(toHelsinki(now));
         for (final VmActivity activity : activities) {
-            delivery.getVehicleActivities().add(marshalActivity(activity, now));
+            delivery.getVehicleActivities().add(marshalActivity(activity));
         }
 
         siri.getServiceDelivery().getVehicleMonitoringDeliveries().add(delivery);
@@ -69,10 +70,10 @@ public class VmJourneyMarshaller {
         return siriWritingService.marshalToBytes(siri);
     }
 
-    private VehicleActivityStructure marshalActivity(final VmActivity activity, final ZonedDateTime now) {
+    private VehicleActivityStructure marshalActivity(final VmActivity activity) {
         final VehicleActivityStructure va = new VehicleActivityStructure();
         va.setRecordedAtTime(toHelsinki(activity.recordedAtTime()));
-        va.setValidUntilTime(toHelsinki(now.plusMinutes(VALID_UNTIL_MINUTES)));
+        va.setValidUntilTime(toHelsinki(activity.recordedAtTime().plusMinutes(VALID_UNTIL_MINUTES)));
         va.setMonitoredVehicleJourney(marshalJourney(activity));
         return va;
     }
@@ -163,7 +164,7 @@ public class VmJourneyMarshaller {
             // VehicleLocationAtStop is "where the vehicle is at the stop" (per the wiki, used for significant
             // deviations from the planned stop location) - only meaningful once VehicleAtStop is true; we have
             // no more precise "at platform" position than the vehicle's own last reported GPS fix.
-            if (Boolean.TRUE.equals(activity.vehicleAtStop())) {
+            if (activity.vehicleAtStop()) {
                 final LocationStructure atStop = new LocationStructure();
                 atStop.setLongitude(scale(BigDecimal.valueOf(activity.longitude())));
                 atStop.setLatitude(scale(BigDecimal.valueOf(activity.latitude())));
