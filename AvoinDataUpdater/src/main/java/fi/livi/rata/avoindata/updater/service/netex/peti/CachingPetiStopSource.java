@@ -106,14 +106,14 @@ public class CachingPetiStopSource implements PetiStopSource {
         synchronized (refreshLock) {
             final Instant now = Instant.now();
             if (lastGood.isEmpty() && !now.isBefore(nextInitialLoadAttempt)) {
-                log.info("method=ensureLoaded component=rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
+                log.info("method=ensureLoaded event=rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
                 nextInitialLoadAttempt = now.plus(INITIAL_LOAD_RETRY_DELAY);
                 refreshLocked();
             }
         }
 
         if (lastGood.isEmpty()) {
-            log.warn("method=ensureLoaded component=rail.upstream.peti operation=ensureLoaded outcome=empty "
+            log.warn("method=ensureLoaded event=rail.upstream.peti operation=ensureLoaded outcome=empty "
                     + "detail=generating_without_stop_assignments");
         }
     }
@@ -148,7 +148,7 @@ public class CachingPetiStopSource implements PetiStopSource {
                             .jitter(0.0)
                             .filter(CachingPetiStopSource::isRetryableFailure)
                             .doBeforeRetry(signal -> log.warn(
-                                    "method=refresh component=rail.upstream.peti operation=fetchPeti outcome=retry "
+                                    "method=refresh event=rail.upstream.peti operation=fetchPeti outcome=retry "
                                             + "attempt={} tookMs={} errorType={}",
                                     signal.totalRetries() + 1, stopWatch.getDuration().toMillis(),
                                     signal.failure().getClass().getSimpleName())))
@@ -172,7 +172,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             lastFetchResult = PetiFetchResult.success(httpStatus, durationMs,
                     parsed.size(), quayCount, bodySize);
 
-            log.info("method=refresh component=rail.upstream.peti operation=fetchPeti outcome=success httpStatus={} " +
+            log.info("method=refresh event=rail.upstream.peti operation=fetchPeti outcome=success httpStatus={} " +
                     "tookMs={} stopPlaces={} quays={} bodySize={}",
                     httpStatus, durationMs, parsed.size(), quayCount, bodySize);
 
@@ -184,7 +184,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             }
             lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
                     unwrapped.getClass().getSimpleName());
-            log.error("method=refresh component=rail.upstream.peti operation=fetchPeti outcome=error httpStatus={} " +
+            log.error("method=refresh event=rail.upstream.peti operation=fetchPeti outcome=error httpStatus={} " +
                     "tookMs={} errorType={}", httpStatus, durationMs,
                     unwrapped.getClass().getSimpleName(), e);
         }
@@ -239,8 +239,6 @@ public class CachingPetiStopSource implements PetiStopSource {
                     return parser.parse(new ByteArrayInputStream(xmlBytes));
                 }
             }
-        } catch (final PetiParseException e) {
-            throw e;
         } catch (final IOException e) {
             throw new PetiParseException("Failed to read zip content", e);
         }
