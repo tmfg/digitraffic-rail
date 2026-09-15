@@ -7,9 +7,11 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,11 +23,17 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import reactor.core.Exceptions;
+import reactor.util.retry.Retry;
 
 /**
  * HTTP-backed PetiStopSource that fetches the Kooste PETI-rail-NeTEx.zip,
  * extracts stops.xml, parses it with PetiNeTExParser, and caches the result
  * as a last-good snapshot. Refreshes on schedule (03:30 UTC).
+ *
+ * <p>
+ * Transient failures (5xx responses, connection errors, per-attempt timeouts) are
+ * retried with a short exponential backoff before giving up; 4xx responses and
+ * parse errors are not retried, since retrying them cannot succeed.
  *
  * <p>
  * On fetch/parse failure, the last-good snapshot is preserved — generation
@@ -39,6 +47,11 @@ public class CachingPetiStopSource implements PetiStopSource {
     private static final String STOPS_XML_ENTRY = "stops.xml";
     private static final Duration INITIAL_LOAD_RETRY_DELAY = Duration.ofMinutes(1);
 
+    /** Retries for transient failures (5xx / connection / timeout) within a single fetch attempt. */
+    private static final int MAX_RETRY_ATTEMPTS = 2;
+    private static final Duration RETRY_MIN_BACKOFF = Duration.ofSeconds(1);
+    private static final Duration RETRY_MAX_BACKOFF = Duration.ofSeconds(4);
+
     /**
      * Upper bound on decompressed stops.xml size — defence-in-depth against zip
      * bombs (~170× real data).
@@ -48,6 +61,7 @@ public class CachingPetiStopSource implements PetiStopSource {
     private final WebClient webClient;
     private final PetiNeTExParser parser;
     private final String petiUrl;
+    private final Duration requestTimeout;
     private final Duration blockTimeout;
     private final Object refreshLock = new Object();
     private Instant nextInitialLoadAttempt = Instant.MIN;
@@ -60,10 +74,12 @@ public class CachingPetiStopSource implements PetiStopSource {
             final WebClient webClient,
             final PetiNeTExParser parser,
             final @Value("${updater.netex.peti.url}") String petiUrl,
-            final @Value("${updater.netex.peti.block-timeout-seconds:30}") int blockTimeoutSeconds) {
+            final @Value("${updater.netex.peti.request-timeout-seconds:10}") int requestTimeoutSeconds,
+            final @Value("${updater.netex.peti.block-timeout-seconds:40}") int blockTimeoutSeconds) {
         this.webClient = webClient;
         this.parser = parser;
         this.petiUrl = petiUrl;
+        this.requestTimeout = Duration.ofSeconds(requestTimeoutSeconds);
         this.blockTimeout = Duration.ofSeconds(blockTimeoutSeconds);
     }
 
@@ -90,14 +106,14 @@ public class CachingPetiStopSource implements PetiStopSource {
         synchronized (refreshLock) {
             final Instant now = Instant.now();
             if (lastGood.isEmpty() && !now.isBefore(nextInitialLoadAttempt)) {
-                log.info("method=ensureLoaded rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
+                log.info("method=ensureLoaded component=rail.upstream.peti operation=ensureLoaded outcome=refresh reason=empty_snapshot");
                 nextInitialLoadAttempt = now.plus(INITIAL_LOAD_RETRY_DELAY);
                 refreshLocked();
             }
         }
 
         if (lastGood.isEmpty()) {
-            log.warn("method=ensureLoaded rail.upstream.peti operation=ensureLoaded outcome=empty "
+            log.warn("method=ensureLoaded component=rail.upstream.peti operation=ensureLoaded outcome=empty "
                     + "detail=generating_without_stop_assignments");
         }
     }
@@ -117,7 +133,7 @@ public class CachingPetiStopSource implements PetiStopSource {
     }
 
     private void refreshLocked() {
-        final long startNanos = System.nanoTime();
+        final StopWatch stopWatch = StopWatch.createStarted();
         int httpStatus = 0;
         long bodySize = 0;
 
@@ -126,6 +142,16 @@ public class CachingPetiStopSource implements PetiStopSource {
                     .uri(petiUrl)
                     .retrieve()
                     .toEntity(byte[].class)
+                    .timeout(requestTimeout)
+                    .retryWhen(Retry.backoff(MAX_RETRY_ATTEMPTS, RETRY_MIN_BACKOFF)
+                            .maxBackoff(RETRY_MAX_BACKOFF)
+                            .jitter(0.0)
+                            .filter(CachingPetiStopSource::isRetryableFailure)
+                            .doBeforeRetry(signal -> log.warn(
+                                    "method=refresh component=rail.upstream.peti operation=fetchPeti outcome=retry "
+                                            + "attempt={} tookMs={} errorType={}",
+                                    signal.totalRetries() + 1, stopWatch.getDuration().toMillis(),
+                                    signal.failure().getClass().getSimpleName())))
                     .block(blockTimeout);
 
             httpStatus = entity != null ? entity.getStatusCode().value() : 0;
@@ -138,7 +164,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             }
 
             final List<PetiStop> parsed = parseZipBytes(zipBytes);
-            final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
+            final long durationMs = stopWatch.getDuration().toMillis();
 
             applySnapshot(parsed);
 
@@ -146,27 +172,48 @@ public class CachingPetiStopSource implements PetiStopSource {
             lastFetchResult = PetiFetchResult.success(httpStatus, durationMs,
                     parsed.size(), quayCount, bodySize);
 
-            log.info("method=refresh rail.upstream.peti operation=fetchPeti outcome=success http_status={} " +
-                    "duration_ms={} stop_places={} quays={} body_size={}",
+            log.info("method=refresh component=rail.upstream.peti operation=fetchPeti outcome=success httpStatus={} " +
+                    "tookMs={} stopPlaces={} quays={} bodySize={}",
                     httpStatus, durationMs, parsed.size(), quayCount, bodySize);
 
-        } catch (final WebClientResponseException e) {
-            httpStatus = e.getStatusCode().value();
-            final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
-            lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
-                    e.getClass().getSimpleName());
-            log.error("method=refresh rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
-                    "duration_ms={} error.type={}", httpStatus, durationMs, e.getClass().getSimpleName(), e);
-
         } catch (final Exception e) {
-            final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
-            final Throwable unwrapped = Exceptions.unwrap(e);
+            final long durationMs = stopWatch.getDuration().toMillis();
+            final Throwable unwrapped = unwrapRetryExhausted(e);
+            if (unwrapped instanceof final WebClientResponseException responseException) {
+                httpStatus = responseException.getStatusCode().value();
+            }
             lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
                     unwrapped.getClass().getSimpleName());
-            log.error("method=refresh rail.upstream.peti operation=fetchPeti outcome=error http_status={} " +
-                    "duration_ms={} error.type={}", httpStatus, durationMs,
+            log.error("method=refresh component=rail.upstream.peti operation=fetchPeti outcome=error httpStatus={} " +
+                    "tookMs={} errorType={}", httpStatus, durationMs,
                     unwrapped.getClass().getSimpleName(), e);
         }
+    }
+
+    /** True for failures worth retrying: 5xx responses, connection errors, and per-attempt timeouts. */
+    private static boolean isRetryableFailure(final Throwable throwable) {
+        if (throwable instanceof final WebClientResponseException responseException) {
+            return responseException.getStatusCode().is5xxServerError();
+        }
+        if (throwable instanceof TimeoutException) {
+            return true;
+        }
+        final Throwable cause = throwable.getCause();
+        return throwable instanceof IOException
+                || ((cause instanceof IOException || cause instanceof TimeoutException));
+    }
+
+    /**
+     * When {@link Retry#backoff} exhausts its attempts, Reactor wraps the last failure in a
+     * {@code RetryExhaustedException}. Unwrap it so logging/status extraction see the real cause,
+     * exactly as if no retry had happened.
+     */
+    private static Throwable unwrapRetryExhausted(final Throwable throwable) {
+        final Throwable unwrapped = Exceptions.unwrap(throwable);
+        if (Exceptions.isRetryExhausted(unwrapped) && unwrapped.getCause() != null) {
+            return Exceptions.unwrap(unwrapped.getCause());
+        }
+        return unwrapped;
     }
 
     /**

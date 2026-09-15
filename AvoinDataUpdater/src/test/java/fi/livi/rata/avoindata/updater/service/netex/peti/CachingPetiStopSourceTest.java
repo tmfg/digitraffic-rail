@@ -63,7 +63,7 @@ class CachingPetiStopSourceTest {
         final ExchangeFunction noOpExchange = request -> Mono.empty();
         stubWebClient = WebClient.builder().exchangeFunction(noOpExchange).build();
         source = new CachingPetiStopSource(stubWebClient, new PetiNeTExParser(),
-                "https://test.example.com/peti.zip", 5);
+                "https://test.example.com/peti.zip", 30, 5);
     }
 
     // --- A1: Happy path — zip → parse → returns parsed stops ---
@@ -417,7 +417,7 @@ class CachingPetiStopSourceTest {
         // given
         final String customUrl = "https://custom.example.com/peti.zip";
         final CachingPetiStopSource customSource = new CachingPetiStopSource(
-                stubWebClient, new PetiNeTExParser(), customUrl, 10);
+                stubWebClient, new PetiNeTExParser(), customUrl, 30, 10);
 
         // when / then
         assertEquals(customUrl, customSource.getPetiUrl());

@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,8 +53,14 @@ class CachingPetiStopSourceHttpTest {
     }
 
     private CachingPetiStopSource sourceWithExchange(final ExchangeFunction exchange) {
+        // requestTimeoutSeconds is set well above blockTimeoutSeconds so existing HTTP-status-based
+        // tests are unaffected by the per-attempt timeout; only the outer block(...) applies to them.
+        return sourceWithExchange(exchange, 30);
+    }
+
+    private CachingPetiStopSource sourceWithExchange(final ExchangeFunction exchange, final int requestTimeoutSeconds) {
         final WebClient webClient = WebClient.builder().exchangeFunction(exchange).build();
-        return new CachingPetiStopSource(webClient, new PetiNeTExParser(), PETI_URL, 5);
+        return new CachingPetiStopSource(webClient, new PetiNeTExParser(), PETI_URL, requestTimeoutSeconds, 5);
     }
 
     private static ExchangeFunction exchangeReturning(final HttpStatus status, final byte[] body) {
@@ -85,19 +92,7 @@ class CachingPetiStopSourceHttpTest {
     @Test
     void givenPriorSuccessThenHttp500_whenRefresh_thenKeepsLastGoodAndTelemetryIsError() {
         // given — first: successful fetch, then second call returns 500
-        final java.util.concurrent.atomic.AtomicInteger callCount = new java.util.concurrent.atomic.AtomicInteger(0);
-        final ExchangeFunction statefulExchange = request -> {
-            if (callCount.getAndIncrement() == 0) {
-                return Mono.just(ClientResponse.create(HttpStatus.OK)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                        .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
-                        .build());
-            }
-            return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
-                    .build());
-        };
+        final ExchangeFunction statefulExchange = getStatefulExchange();
         final CachingPetiStopSource source = sourceWithExchange(statefulExchange);
         source.refresh();
         assertEquals(4, source.getStops().size());
@@ -111,6 +106,22 @@ class CachingPetiStopSourceHttpTest {
         assertNotNull(source.getLastFetchResult());
         assertEquals("error", source.getLastFetchResult().outcome());
         assertEquals(500, source.getLastFetchResult().httpStatus());
+    }
+
+    private static @NonNull ExchangeFunction getStatefulExchange() {
+        final AtomicInteger callCount = new AtomicInteger(0);
+        return request -> {
+            if (callCount.getAndIncrement() == 0) {
+                return Mono.just(ClientResponse.create(HttpStatus.OK)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                        .build());
+            }
+            return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
+                    .build());
+        };
     }
 
     // --- B3: HTTP 503 (Service Unavailable) → same as 500 ---
@@ -136,8 +147,15 @@ class CachingPetiStopSourceHttpTest {
     @Test
     void givenHttp404_whenRefresh_thenKeepsLastGoodAndReportsError() {
         // given
-        final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.NOT_FOUND, new byte[0]));
+        final AtomicInteger callCount = new AtomicInteger(0);
+        final ExchangeFunction countingExchange = request -> {
+            callCount.incrementAndGet();
+            return Mono.just(ClientResponse.create(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
+                    .build());
+        };
+        final CachingPetiStopSource source = sourceWithExchange(countingExchange);
 
         // when
         source.refresh();
@@ -147,6 +165,91 @@ class CachingPetiStopSourceHttpTest {
         assertNotNull(source.getLastFetchResult());
         assertEquals("error", source.getLastFetchResult().outcome());
         assertEquals(404, source.getLastFetchResult().httpStatus());
+        // 4xx is a client error — retrying cannot help, so only one attempt is made
+        assertEquals(1, callCount.get(), "4xx responses must not be retried");
+    }
+
+    // --- B4b: Transient 503 that recovers → retried automatically, no error surfaced ---
+
+    @Test
+    void givenTransientHttp503ThenSuccess_whenRefresh_thenRetriesAndSucceeds() {
+        // given — first two attempts fail with 503, third succeeds
+        final AtomicInteger callCount = new AtomicInteger(0);
+        final ExchangeFunction flakyExchange = request -> {
+            if (callCount.getAndIncrement() < 2) {
+                return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
+                        .build());
+            }
+            return Mono.just(ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .build());
+        };
+        final CachingPetiStopSource source = sourceWithExchange(flakyExchange);
+
+        // when
+        source.refresh();
+
+        // then — the caller never sees the transient failures, only the eventual success
+        assertEquals(4, source.getStops().size());
+        assertNotNull(source.getLastFetchResult());
+        assertEquals("success", source.getLastFetchResult().outcome());
+        assertEquals(3, callCount.get(), "expected 2 retries before success");
+    }
+
+    // --- B4c: Persistent 503 → gives up after the retry budget, keeps last-good ---
+
+    @Test
+    void givenPersistentHttp503_whenRefresh_thenGivesUpAfterRetriesAndReportsError() {
+        // given — every attempt fails with 503
+        final AtomicInteger callCount = new AtomicInteger(0);
+        final ExchangeFunction alwaysFailingExchange = request -> {
+            callCount.incrementAndGet();
+            return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
+                    .build());
+        };
+        final CachingPetiStopSource source = sourceWithExchange(alwaysFailingExchange);
+
+        // when
+        source.refresh();
+
+        // then — 1 initial attempt + 2 retries, then gives up
+        assertTrue(source.getStops().isEmpty());
+        assertNotNull(source.getLastFetchResult());
+        assertEquals("error", source.getLastFetchResult().outcome());
+        assertEquals(503, source.getLastFetchResult().httpStatus());
+        assertEquals(3, callCount.get(), "expected the initial attempt plus 2 retries, then giving up");
+    }
+
+    // --- B4d: Transient connection error that recovers → retried automatically ---
+
+    @Test
+    void givenTransientConnectException_whenRefresh_thenRetriesAndSucceeds() {
+        // given — first attempt throws a connection error, second succeeds
+        final AtomicInteger callCount = new AtomicInteger(0);
+        final ExchangeFunction flakyExchange = request -> {
+            if (callCount.getAndIncrement() == 0) {
+                return Mono.error(new ConnectException("Connection refused"));
+            }
+            return Mono.just(ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .build());
+        };
+        final CachingPetiStopSource source = sourceWithExchange(flakyExchange);
+
+        // when
+        source.refresh();
+
+        // then
+        assertEquals(4, source.getStops().size());
+        assertNotNull(source.getLastFetchResult());
+        assertEquals("success", source.getLastFetchResult().outcome());
+        assertEquals(2, callCount.get(), "expected 1 retry before success");
     }
 
     // --- B5: Network error (ExchangeFunction throws) → keeps last-good ---
@@ -314,9 +417,14 @@ class CachingPetiStopSourceHttpTest {
         final CachingPetiStopSource source = sourceWithExchange(exchange);
 
         assertTrue(source.getStops().isEmpty());
-        assertTrue(source.getStops().isEmpty());
+        // the first call already retries transient connection errors internally (1 initial
+        // attempt + 2 retries) before giving up
+        assertEquals(3, requestCount.get());
 
-        assertEquals(1, requestCount.get());
+        assertTrue(source.getStops().isEmpty());
+        // the 1-minute initial-load retry-delay gate prevents a second call from triggering
+        // another fetch (with its own internal retries) so soon after the first failure
+        assertEquals(3, requestCount.get());
     }
 
     // --- Helper methods ---

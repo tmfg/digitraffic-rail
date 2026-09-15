@@ -389,3 +389,35 @@ Implemented and tested. `EtJourneyInterpreter` unit tests pass in full. VM: 35/3
 failure (`SiriVmGenerationServiceTest.givenUnknownEndpointTracks_whenGenerate_thenKeepsEndpointIdentity`) is
 pre-existing and unrelated — confirmed via `git stash` isolation (fails identically with and without this fix); see
 the "Origin/Destination endpoint derivation" follow-up above, which already documents that separate, known issue.
+
+## PETI stop-source caching and resilience (`CachingPetiStopSource`)
+
+### Lazy initialization
+
+`getStops()` loads the PETI snapshot on demand if it is still empty (e.g. right after an app restart, before the
+daily 03:30 UTC scheduled `refresh()` has run), so callers (`NeTExService`, `SiriEtGenerationService`,
+`SiriVmGenerationService`) never need to call a separate "ensure loaded" step themselves — `PetiStopSource` no
+longer exposes one. Concurrent first callers contend on a single lock (`refreshLock`, double-checked) so only one
+HTTP fetch happens even if several generation cycles race on first use.
+
+### Retry-delay gate (1 minute)
+
+If the initial load fails, a `nextInitialLoadAttempt` gate (1 minute) prevents every subsequent `getStops()` call
+from re-attempting the fetch (and re-incurring its timeout) until the gate has passed. The scheduled `refresh()`
+always attempts regardless of this gate — it exists only to stop frequent SIRI generation cycles from hammering a
+down/slow PETI endpoint.
+
+### Per-fetch retry (transient failures only)
+
+Within a single fetch attempt, transient failures — 5xx responses, connection errors, and a per-attempt timeout
+(`updater.netex.peti.request-timeout-seconds`, default 10s) — are retried automatically with a short deterministic
+backoff (2 retries, 1s then 2s, capped at 4s; no jitter, since a single internal client doesn't need to desynchronize
+from other clients). 4xx responses and parse errors are never retried, since retrying them cannot change the
+outcome. `updater.netex.peti.block-timeout-seconds` (default 40s) is the outer bound on the whole fetch including
+retries, and must comfortably exceed `request-timeout-seconds × 3` plus backoff.
+
+Failures are always logged: transient errors as `log.error` per attempt-group outcome (`method=refresh
+operation=fetchPeti outcome=error`), each retry as `log.warn` (`outcome=retry attempt=…`), and a final `log.warn`
+if `getStops()` still returns empty afterward (`method=ensureLoaded outcome=empty`). On any failure, the last-good
+snapshot is preserved — generation degrades to stale-but-valid data (or, for SIRI, fails the cycle and keeps the
+previous published package) rather than a package with an empty/partial stop assignment.
