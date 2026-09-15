@@ -263,7 +263,7 @@ class NeTExStopsServiceTest {
         }
 
         @Test
-        void givenNoTrackAndSingleQuayStopPlace_whenCreatingStops_thenTakesTheOnlyQuay() {
+        void givenNoTrackAndSingleQuayStopPlace_whenCreatingStops_thenLeavesQuayUnset() {
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:7", 1_000_001, "Dragsvik", true, null,
                                 List.of(quay("FSR:Quay:70", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -274,13 +274,14 @@ class NeTExStopsServiceTest {
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
                                 nullTrackPairs(List.of(station)));
 
-                assertEquals("FSR:Quay:70", stopsData.getStopAssignments().get(0).quayRef());
+                // no track: the quay is chosen upstream from the resolved track, not guessed here
+                assertNull(stopsData.getStopAssignments().get(0).quayRef());
         }
 
         @Test
         void givenNoTrackAndSeveralQuays_whenCreatingStops_thenLeavesQuayUnset() {
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:8", 1_000_001, "Helsinki", true, null,
-                                List.of(quay("FSR:Quay:81", "1"), quay("FSR:Quay:82", "2")));
+                                List.of(quay("FSR:Quay:82", "2"), quay("FSR:Quay:81", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
                                 fixturePetiSource(List.of(petiStop)));
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,
@@ -289,6 +290,7 @@ class NeTExStopsServiceTest {
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
                                 nullTrackPairs(List.of(station)));
 
+                // no track: the quay is chosen upstream from the resolved track, not guessed here
                 assertNull(stopsData.getStopAssignments().get(0).quayRef());
         }
 

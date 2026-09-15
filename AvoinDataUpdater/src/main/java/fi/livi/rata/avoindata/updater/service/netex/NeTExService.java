@@ -27,7 +27,9 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
@@ -333,6 +335,18 @@ public class NeTExService {
                 + "peti_quays={}",
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
+        // Last-resort track fill, now that PETI is loaded and before any stop point or route is
+        // derived: a stop no observation could place takes its station's lowest PETI platform, so a
+        // matched station never yields a trackless station-level stop.
+        final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        final Map<String, String> firstPlatformByStation = new HashMap<>();
+        for (final Station station : stations) {
+            matcher.match(station.uicCode).flatMap(PetiStop::firstPlatformCode)
+                    .ifPresent(code -> firstPlatformByStation.put(station.shortCode, code));
+        }
+        final int fromFirstPlatform = fillFromFirstPlatform(allFiltered, firstPlatformByStation);
+        log.info("event=generateNeTEx method=computeDataset fromFirstPlatform={}", fromFirstPlatform);
+
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
 
@@ -597,6 +611,29 @@ public class NeTExService {
             result.add(schedule);
         }
         return result;
+    }
+
+    /**
+     * The fourth and last track source: a commercial stop still without a track takes its station's
+     * lowest PETI platform. Runs after the exact sources so a real observation always wins, and only
+     * for stations PETI knows, so the guess is always a platform the station actually has.
+     */
+    private int fillFromFirstPlatform(final List<Schedule> schedules,
+            final Map<String, String> firstPlatformByStation) {
+        int filled = 0;
+        for (final Schedule schedule : schedules) {
+            for (final ScheduleRow row : schedule.scheduleRows) {
+                if (!CommercialStopRule.isCommercialStop(row) || StringUtils.isNotBlank(row.commercialTrack)) {
+                    continue;
+                }
+                final String code = firstPlatformByStation.get(row.station.stationShortCode);
+                if (code != null) {
+                    row.commercialTrack = code;
+                    filled++;
+                }
+            }
+        }
+        return filled;
     }
 
     /**
