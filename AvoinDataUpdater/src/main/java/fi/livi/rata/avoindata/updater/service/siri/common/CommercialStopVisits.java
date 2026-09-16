@@ -48,6 +48,18 @@ public final class CommercialStopVisits {
         private GTFSTimeTableRow completingRow() {
             return departure != null ? departure : arrival;
         }
+
+        /** Mirrors {@code EtJourneyInterpreter}'s cancellation check: a stop is cancelled if either of its rows
+         * is. The live-location query (see {@code GTFSTrainRepository.getTrainLocations}) excludes cancelled
+         * rows outright, so a cancelled stop can never be the one it resolves - {@link #currentVisitIndex}
+         * mirrors that by never selecting a cancelled stop as current either, even when its completing row
+         * happens to have no actual time (the usual case, since a cancelled stop is never actually run). */
+        private boolean isCancelled() {
+            if (arrival != null && arrival.cancelled) {
+                return true;
+            }
+            return departure != null && departure.cancelled;
+        }
     }
 
     /** Pairs {@code rows} into stops (see {@link Stop}) and keeps only the commercial ones, in schedule order. */
@@ -101,8 +113,14 @@ public final class CommercialStopVisits {
      * {@code GTFSTrainRepository.getTrainLocations}), found here by scanning the full planned order instead of
      * that query's {@code actual_time is null} SQL filter. When a station is served more than once, an earlier
      * visit is only skipped once its completing row (see {@link Stop#completingRow()}) already has an actual
-     * time, so the first not-yet-completed match is unambiguous. Empty when the station never occurs, or every
-     * occurrence is already completed (should not normally happen for a station a live location still reports).
+     * time, so the first not-yet-completed match is unambiguous. Cancelled visits still occupy a slot in the
+     * running count (so a later, real visit keeps its true visitIndex — same convention as {@code
+     * EtJourneyInterpreter}), but are never themselves returned as the current occurrence: the live-location
+     * query excludes cancelled rows outright (its {@code cancelled is false} filter), and a cancelled stop's
+     * completing row typically never gets an actual time either (it's never actually run), so without this
+     * exclusion a cancelled visit would be wrongly reported as current instead of the next, real visit. Empty
+     * when the station never occurs, or every (non-cancelled) occurrence is already completed (should not
+     * normally happen for a station a live location still reports).
      */
     public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode) {
         final Map<String, Integer> visitCounts = new HashMap<>();
@@ -112,7 +130,7 @@ public final class CommercialStopVisits {
             // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
             // counting pattern).
             final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
-            if (station.equals(stationShortCode) && stop.completingRow().actualTime == null) {
+            if (station.equals(stationShortCode) && !stop.isCancelled() && stop.completingRow().actualTime == null) {
                 return OptionalInt.of(visitIndex);
             }
         }
