@@ -128,6 +128,44 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
     }
 
+    @Test
+    public void getTrainLocationsApproachingTerminus() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // All stops before the terminus (last row, an ARRIVAL-only OL) are already completed; the terminus
+        // ARRIVAL itself is still pending with a live estimate - the train is approaching, not yet there.
+        for (int i = 0; i < 7; i++) {
+            t.timeTableRows.get(i).actualTime = t.timeTableRows.get(i).scheduledTime;
+        }
+        t.timeTableRows.get(7).liveEstimateTime = t.timeTableRows.get(7).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertLocations(locations, 1, "OL", "1");
+        assertThat(locations.get(0).getVehicleAtStop()).isFalse();
+    }
+
+    @Test
+    public void getTrainLocationsDwellingAtTerminus() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // Train has arrived at (and is dwelling at) the terminus: every row, including the terminus ARRIVAL,
+        // now has an actual time. A terminus has no DEPARTURE row, so the "next unresolved row" query has
+        // nothing left to match - it must fall back to reporting the terminus itself as the current stop.
+        for (final TimeTableRow row : t.timeTableRows) {
+            row.actualTime = row.scheduledTime;
+        }
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertLocations(locations, 1, "OL", "1");
+        assertThat(locations.get(0).getVehicleAtStop()).isTrue();
+    }
+
     /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx
      * refers to. Proves MySQL executes the row-value tuple IN at real-time operating-day scale (~200 ids)
      * and returns exactly the requested, sourced trains. */

@@ -61,5 +61,19 @@ public interface GTFSTrainLocation {
     /// resolved stop identified by {@link #getStationShortCode()} — as opposed to still approaching it.
     /// {@code null} when no upcoming/current stop was resolved. See
     /// {@code GTFSTrainRepository#getTrainLocations} for the derivation from `time_table_row.type`.
-    Boolean getVehicleAtStop();
+    ///
+    /// Backed by {@link #getVehicleAtStopValue()} rather than mapped directly: MySQL does not preserve the
+    /// `TINYINT(1)`/boolean display-width metadata for a computed (`CASE`/comparison) column once it passes
+    /// through the query's derived table, so the JDBC driver reports it as a plain `Integer` — projecting
+    /// that straight to `Boolean` fails with `UnsupportedOperationException` at runtime (verified against a
+    /// real MySQL instance, not just H2/mocks). Projecting the raw `Integer` and converting in Java sidesteps
+    /// the issue entirely.
+    default Boolean getVehicleAtStop() {
+        final Integer value = getVehicleAtStopValue();
+        return value == null ? null : value != 0;
+    }
+
+    /// Raw `0`/`1`/`null` value backing {@link #getVehicleAtStop()} — see its Javadoc for why this indirection
+    /// is needed. Not intended to be called directly outside this interface.
+    Integer getVehicleAtStopValue();
 }

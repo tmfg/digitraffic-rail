@@ -59,21 +59,60 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     ///   (type=1) -> vehicle_at_stop = true. StopPointRef is unchanged (same station on both rows).
     /// - Not yet departed the origin station (which has no ARRIVAL row at all): the same DEPARTURE-only
     ///   situation applies from the very start -> vehicle_at_stop = true there too.
+    ///
+    /// Terminus fallback (`term` lateral join): a terminus has only an ARRIVAL row (no DEPARTURE), so once
+    /// that ARRIVAL's `actual_time` is set (train has arrived), the primary `nxt` lateral join above has
+    /// nothing left to match for that train - without this fallback the LEFT JOIN would return no stop at all,
+    /// silently dropping the terminus from the location instead of reporting the train as dwelling there.
+    /// `term` matches the train's actually-arrived terminus directly (the commercial ARRIVAL row with no later
+    /// commercial row for the same train) and reports it with `vehicle_at_stop = true`; `coalesce` prefers
+    /// `nxt` whenever it has a match, so `term` only ever supplies a row when the train has nothing left to
+    /// approach.
     @Query(value = """
-select id, departure_date as departureDate, train_number as trainNumber, timestamp, st_x(location) as x, st_y(location) as y, speed, accuracy, station_short_code as stationShortCode, commercial_track as commercialTrack, ut as unknownTrack, delay_seconds as delaySeconds, vehicle_at_stop as vehicleAtStop from (
-    select tl.id, tl.departure_date, tl.train_number, timestamp, location, speed, accuracy, tr.station_short_code, commercial_track, tr.unknown_track ut,
-    timestampdiff(SECOND, tr.scheduled_time, tr.live_estimate_time) as delay_seconds,
-    case when tr.type is null then null when tr.type = 1 then true else false end as vehicle_at_stop, rank()
-    over (partition by id order by scheduled_time, type) as r
-    from train_location tl
-    left join time_table_row tr
-        on tl.departure_date = tr.departure_date
-        and tl.train_number = tr.train_number
+select tl.id as id, tl.departure_date as departureDate, tl.train_number as trainNumber, tl.timestamp as timestamp,
+    st_x(tl.location) as x, st_y(tl.location) as y, tl.speed as speed, tl.accuracy as accuracy,
+    coalesce(nxt.station_short_code, term.station_short_code) as stationShortCode,
+    coalesce(nxt.commercial_track, term.commercial_track) as commercialTrack,
+    coalesce(nxt.unknown_track, term.unknown_track) as unknownTrack,
+    coalesce(nxt.delay_seconds, term.delay_seconds) as delaySeconds,
+    coalesce(nxt.vehicle_at_stop, term.vehicle_at_stop) as vehicleAtStopValue
+from train_location tl
+left join lateral (
+    select tr.station_short_code, tr.commercial_track, tr.unknown_track,
+        timestampdiff(SECOND, tr.scheduled_time, tr.live_estimate_time) as delay_seconds,
+        (tr.type = 1) as vehicle_at_stop
+    from time_table_row tr
+    where tr.departure_date = tl.departure_date
+        and tr.train_number = tl.train_number
         and tr.commercial_stop is true
         and tr.cancelled is false
         and tr.actual_time is null
         and tr.live_estimate_time > CURRENT_TIMESTAMP()
-    where id in (:ids)) data
-where r = 1""", nativeQuery = true)
+    order by tr.scheduled_time, tr.type
+    limit 1
+) nxt on true
+left join lateral (
+    select tr.station_short_code, tr.commercial_track, tr.unknown_track,
+        timestampdiff(SECOND, tr.scheduled_time, tr.actual_time) as delay_seconds,
+        1 as vehicle_at_stop
+    from time_table_row tr
+    where tr.departure_date = tl.departure_date
+        and tr.train_number = tl.train_number
+        and tr.commercial_stop is true
+        and tr.cancelled is false
+        and tr.type = 0
+        and tr.actual_time is not null
+        and not exists (
+            select 1 from time_table_row tr2
+            where tr2.departure_date = tr.departure_date
+                and tr2.train_number = tr.train_number
+                and tr2.commercial_stop is true
+                and tr2.cancelled is false
+                and tr2.scheduled_time > tr.scheduled_time
+        )
+    order by tr.scheduled_time desc
+    limit 1
+) term on nxt.station_short_code is null
+where tl.id in (:ids)""", nativeQuery = true)
     List<GTFSTrainLocation> getTrainLocations(@Param("ids") final List<Long> locationIds);
 }

@@ -76,4 +76,11 @@ record TestGTFSTrainLocation(long id, LocalDate departureDate, long trainNumber,
     public Boolean getVehicleAtStop() {
         return vehicleAtStop;
     }
+
+    @Override
+    public Integer getVehicleAtStopValue() {
+        // Not used: getVehicleAtStop() is overridden directly above, bypassing the default method that would
+        // otherwise call this.
+        throw new UnsupportedOperationException();
+    }
 }
