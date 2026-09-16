@@ -198,9 +198,19 @@ public class NeTExService {
         try {
             final LocalDate start = feedStart();
             final long adhocStart = System.currentTimeMillis();
-            final List<Schedule> adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
-            final long regularStart = System.currentTimeMillis();
-            final List<Schedule> regularSchedules = scheduleProviderService.getRegularSchedules(start);
+            final List<Schedule> adhocSchedules;
+            final List<Schedule> regularSchedules;
+            final long regularStart;
+            try {
+                adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
+                regularStart = System.currentTimeMillis();
+                regularSchedules = scheduleProviderService.getRegularSchedules(start);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RipaFetchException("Interrupted while fetching schedules from RIPA", e);
+            } catch (final Exception e) {
+                throw new RipaFetchException("Failed to fetch schedules from RIPA", e);
+            }
             final long stationsStart = System.currentTimeMillis();
             final List<Station> stations = stationRepository.findAll();
             final long tracksStart = System.currentTimeMillis();
@@ -222,6 +232,10 @@ public class NeTExService {
             final long durationMs = System.currentTimeMillis() - startTime;
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
             log.error("event=generateNeTEx method=generateNeTEx failed, durationMs={}", durationMs, e);
+            // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a build failure.
+            if (e instanceof final RipaFetchException ripaFetchException) {
+                throw ripaFetchException;
+            }
             throw new RuntimeException("NeTEx generation failed", e);
         }
     }
