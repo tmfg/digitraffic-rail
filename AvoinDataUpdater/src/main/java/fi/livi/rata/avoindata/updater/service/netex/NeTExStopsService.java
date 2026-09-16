@@ -115,6 +115,7 @@ public class NeTExStopsService {
                         matchedCount++;
                         quayNoTrackCount++;
                     }
+                    
                     case UNMATCHED -> unmatchedCount++;
                 }
             }
