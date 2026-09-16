@@ -86,7 +86,12 @@ public class GTFSWritingService {
     @Scheduled(fixedDelay = 1000*60*60, initialDelay = 1000*60)
     @Transactional
     public void deleteOldZips() {
-        final Integer numberOfDeletedRows =  gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14));
+        final List<Long> newestPerFileName = gtfsRepository.findNewestIdPerFileName();
+        if (newestPerFileName.isEmpty()) {
+            return;
+        }
+        final Integer numberOfDeletedRows =
+                gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14), newestPerFileName);
         log.info(String.format("Deleted %s zips", numberOfDeletedRows));
     }
 

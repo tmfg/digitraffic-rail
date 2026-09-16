@@ -88,6 +88,10 @@ public class GtfsController {
 
     private byte[] getData(final HttpServletResponse response, final String fileName) {
         final GeneratedExport gtfs = gtfsRepository.findFirstByFileNameOrderByIdDesc(fileName);
+        if (gtfs == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return new byte[0];
+        }
 
         response.addHeader("x-is-fresh",
                 Boolean.toString(gtfs.created.isAfter(DateProvider.nowInHelsinki().minusHours(25))));
