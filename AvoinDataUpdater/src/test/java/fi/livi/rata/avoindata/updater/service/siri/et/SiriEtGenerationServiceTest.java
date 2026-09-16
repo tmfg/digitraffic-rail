@@ -107,9 +107,9 @@ class SiriEtGenerationServiceTest {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
-        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
-        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
-        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 1));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 2));
         return journey;
     }
 

@@ -79,7 +79,7 @@ public class NeTExPublishedJourneyWriter {
                     draft.lineRef(), draft.operatorRef(), draft.journeyPatternRef(), newVersion, now);
             for (final PublishedJourneyDraft.PublishedTrack track : draft.tracks()) {
                 journey.addTrack(new NeTExPublishedJourneyTrack(track.stationShortCode(), track.plannedTrack(),
-                        track.visitIndex()));
+                        track.visitIndex(), track.sequenceIndex()));
             }
             journeys.add(journey);
         }

@@ -106,9 +106,9 @@ class SiriVmGenerationServiceTest {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
-        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
-        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
-        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 1));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 2));
         return journey;
     }
 
@@ -461,8 +461,8 @@ class SiriVmGenerationServiceTest {
         final NeTExPublishedJourney journey60 = new NeTExPublishedJourney(
                 new TrainId(60L, TODAY), "FTR:ServiceJourney:60-67890", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:60", DATASET_VERSION, DateProvider.nowInHelsinki());
-        journey60.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0));
-        journey60.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+        journey60.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
+        journey60.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 1));
 
         seedPublished(publishedJourney59(), journey60);
         setupStationsAndPeti();
@@ -572,8 +572,8 @@ class SiriVmGenerationServiceTest {
                 "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
         // HKI's track was unknown at publish time, so the writer never persisted a row for it — it simply isn't
         // in the list (not stored with track=null; see NeTExService.buildPublishedJourneyDrafts).
-        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0));
-        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 0));
+        journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 1));
         seedPublished(journey);
         setupStationsAndPeti();
         setupLiveLocation(location59());

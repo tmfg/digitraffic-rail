@@ -276,9 +276,13 @@ public class NeTExService {
                 return;
             }
             // Count each station's occurrences over the (commercial) passing times so a station served more than
-            // once keeps a planned track per visit; only stops with a known track are stored.
+            // once keeps a planned track per visit; only stops with a known track are stored. sequenceIndex is a
+            // separate, monotonically increasing counter over the *stored* tracks only, so it reflects their true
+            // journey order (unlike visitIndex, which resets per station and is meant only to disambiguate
+            // repeated stops for lookup, not for ordering — see NeTExPublishedJourney#tracks).
             final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
             final Map<String, Integer> visitCounts = new HashMap<>();
+            int sequenceIndex = 0;
             for (final var pt : serviceJourney.passingTimes()) {
                 if (pt.stationShortCode() == null) {
                     continue;
@@ -286,7 +290,7 @@ public class NeTExService {
                 final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
                 if (pt.commercialTrack() != null) {
                     tracks.add(new PublishedJourneyDraft.PublishedTrack(
-                            pt.stationShortCode(), pt.commercialTrack(), visitIndex));
+                            pt.stationShortCode(), pt.commercialTrack(), visitIndex, sequenceIndex++));
                 }
             }
             drafts.add(new PublishedJourneyDraft(trainId, serviceJourneyId, serviceJourney.lineRef(),
