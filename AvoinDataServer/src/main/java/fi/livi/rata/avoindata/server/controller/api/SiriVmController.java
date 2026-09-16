@@ -53,7 +53,6 @@ public class SiriVmController {
                 Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
         headers.add("x-timestamp", export.created.toString());
         headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + VM_FILENAME + "\"");
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_XML)
                 .headers(headers)
