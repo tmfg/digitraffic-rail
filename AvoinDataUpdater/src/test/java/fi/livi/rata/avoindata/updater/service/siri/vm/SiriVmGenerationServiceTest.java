@@ -518,9 +518,12 @@ class SiriVmGenerationServiceTest {
     @Test
     void givenInvalidSiriOutput_whenGenerate_thenNoPersistandNoThrow() {
         setupHappyPath();
-        // Create a mock SiriWritingService that returns invalid schema
-        final SiriWritingService invalidService = mock(SiriWritingService.class);
-        when(invalidService.isSchemaValid(any())).thenReturn(false);
+        // Spy on a real SiriWritingService so buildEnvelope/marshalToXml/marshalToBytes actually run (a full
+        // mock returns null from buildEnvelope by default, failing generation at the BUILD stage before it ever
+        // reaches isSchemaValid - this test would then pass for any build failure, not just a schema-invalid
+        // one). Only isSchemaValid is stubbed, to force generation to fail specifically at the VALIDATE stage.
+        final SiriWritingService invalidService = spy(new SiriWritingService());
+        doReturn(false).when(invalidService).isSchemaValid(any());
 
         final SiriVmGenerationService serviceWithInvalidWriter = new SiriVmGenerationService(
                 stationRepository,
