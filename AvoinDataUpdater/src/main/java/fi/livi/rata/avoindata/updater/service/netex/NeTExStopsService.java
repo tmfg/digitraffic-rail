@@ -74,6 +74,7 @@ public class NeTExStopsService {
 
         final var seenStations = new LinkedHashSet<String>();
         final Map<String, String> projectionTargets = new HashMap<>();
+        final List<String> tracksWithoutQuay = new ArrayList<>();
 
         for (final StationTrackPair pair : uniquePairs) {
             final Station station = stationByShortCode.get(pair.stationShortCode());
@@ -108,6 +109,7 @@ public class NeTExStopsService {
                     case MATCHED_NO_QUAY -> {
                         matchedCount++;
                         quayUnmatchedCount++;
+                        tracksWithoutQuay.add(pair.stationShortCode() + "-" + pair.commercialTrack());
                     }
                     case MATCHED_NO_TRACK -> {
                         matchedCount++;
@@ -121,6 +123,16 @@ public class NeTExStopsService {
         for (final String shortCode : seenStations) {
             routePoints.add(new NeTExStopsData.NeTExRoutePoint(
                     idGenerator.routePointId(shortCode), shortCode, projectionTargets.get(shortCode)));
+        }
+
+        // One line listing every gap, because the per-track errors above are easy to lose in a long run.
+        // Each needs a human decision: either PETI is missing a passenger platform, or the schedule put a
+        // passenger train on a track that is not one.
+        if (!tracksWithoutQuay.isEmpty()) {
+            log.error("event=generateNeTEx method=createStopsData "
+                    + "count={} tracks={} message=\"no PETI quay for these tracks, stops published without a "
+                    + "QuayRef\"",
+                    tracksWithoutQuay.size(), tracksWithoutQuay);
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,

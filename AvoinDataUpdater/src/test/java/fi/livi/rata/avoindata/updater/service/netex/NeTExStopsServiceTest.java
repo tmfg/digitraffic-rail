@@ -430,6 +430,77 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenSeveralTracksWithNoMatchingQuay_whenCreatingStops_thenSummaryErrorListsThemAll() {
+                // given — two stations, each asked for a track PETI does not publish
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1"), quay("FSR:Quay:21", "2")));
+                final PetiStop helsinki = new PetiStop("FSR:StopPlace:1", 1_000_100, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:10", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere, helsinki)));
+                final List<Station> stations = List.of(
+                                createStation("TPE", "Tampere", 160, true,
+                                                new BigDecimal("61.498500"), new BigDecimal("23.773000")),
+                                createStation("HKI", "Helsinki", 100, true,
+                                                new BigDecimal("60.172133"), new BigDecimal("24.941662")));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        // when
+                        serviceWithPeti.createStopsData(stations, List.of(
+                                        new NeTExStopsService.StationTrackPair("TPE", "3"),
+                                        new NeTExStopsService.StationTrackPair("HKI", "415")));
+
+                        // then — one line names every gap, so none is lost among the per-track errors
+                        final String summary = appender.list.stream()
+                                        .filter(e -> e.getLevel() == Level.ERROR)
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .filter(m -> m.contains("tracks_without_quay"))
+                                        .findFirst()
+                                        .orElseThrow(() -> new AssertionError(
+                                                        "Expected a tracks_without_quay summary, got: "
+                                                                        + appender.list));
+
+                        assertTrue(summary.contains("count=2"), summary);
+                        assertTrue(summary.contains("TPE-3"), summary);
+                        assertTrue(summary.contains("HKI-415"), summary);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
+        void givenEveryTrackResolves_whenCreatingStops_thenNoSummaryErrorIsLogged() {
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere)));
+                final Station station = createStation("TPE", "Tampere", 160, true,
+                                new BigDecimal("61.498500"), new BigDecimal("23.773000"));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        serviceWithPeti.createStopsData(List.of(station),
+                                        List.of(new NeTExStopsService.StationTrackPair("TPE", "1")));
+
+                        assertTrue(appender.list.stream()
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .noneMatch(m -> m.contains("tracks_without_quay")),
+                                        "Expected no summary when every track resolved: " + appender.list);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
         void givenNullTrackInPair_whenCreatingStops_thenProducesStationLevelSsp() {
                 // given — station OL with track null in the schedule data
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:3", 1_000_200, "Oulu", true, null, List.of());
