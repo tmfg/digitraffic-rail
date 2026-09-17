@@ -85,6 +85,16 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     /// commercial row for the same train) and reports it with `vehicle_at_stop = true`; `coalesce` prefers
     /// `next` whenever it has a match, so `term` only ever supplies a row when the train has nothing left to
     /// approach.
+    ///
+    /// `term`'s own lateral is unconditionally materialized once per `train_location` row: the `ON` clause
+    /// below is a join predicate, not a gate on the derived table's evaluation, so MySQL computes `term` for
+    /// every row regardless of whether `next` already matched (verified with `EXPLAIN ANALYZE`, MySQL 8.0.46:
+    /// `Materialize ... loops=<row count>` is unconditional). Because of that, `term`'s own query must stay
+    /// cheap on its own merits - it deliberately does *not* filter by type/actual_time before sorting (that
+    /// would force a correlated check per candidate row instead of once per train_location row); instead it
+    /// picks the chronologically last commercial, non-cancelled row directly (same shape/cost as `next`'s own
+    /// lookup) and only then checks, via the `ON` clause, whether that single already-materialized row happens
+    /// to be an ARRIVAL with `actual_time` set.
     @Query(value = """
 select tl.id as id, tl.departure_date as departureDate, tl.train_number as trainNumber, tl.timestamp as timestamp,
     st_x(tl.location) as x, st_y(tl.location) as y, tl.speed as speed, tl.accuracy as accuracy,
@@ -130,33 +140,28 @@ left join lateral (
     order by tr.scheduled_time, tr.type
     limit 1
 ) next on true
--- term: terminus fallback, only evaluated when next found nothing (see the on clause below). A terminus has no
--- DEPARTURE row, so once its ARRIVAL actual_time is set, next has nothing left to match for that train -
--- without this, the location would silently lose its stop instead of reporting the train as arrived/dwelling.
+-- term: terminus fallback (see class-level comment above for why its own lateral is unconditionally
+-- materialized, and why it is written to stay cheap despite that).
 left join lateral (
     select tr.station_short_code, tr.commercial_track, tr.unknown_track, tr.unknown_delay,
         timestampdiff(SECOND, tr.scheduled_time, tr.actual_time) as delay_seconds,
-        1 as vehicle_at_stop
+        1 as vehicle_at_stop,
+        tr.type as row_type,
+        tr.actual_time as row_actual_time
     from time_table_row tr
     where tr.departure_date = tl.departure_date
         and tr.train_number = tl.train_number
         and tr.commercial_stop is true
         and tr.cancelled is false
-        and tr.type = 0 -- ARRIVAL
-        and tr.actual_time is not null
-        -- must be the last commercial row overall for this train, i.e. an actually-arrived terminus.
-        and not exists (
-            select 1 from time_table_row tr2
-            where tr2.departure_date = tr.departure_date
-                and tr2.train_number = tr.train_number
-                and tr2.commercial_stop is true
-                and tr2.cancelled is false
-                and tr2.scheduled_time > tr.scheduled_time
-        )
-    order by tr.scheduled_time desc
+    -- the last commercial, non-cancelled row overall - type asc breaks a same-instant ARRIVAL/DEPARTURE tie
+    -- in favor of ARRIVAL (type=0), matching what the ON clause below requires.
+    order by tr.scheduled_time desc, tr.type asc
     limit 1
--- lateral evaluation is skipped entirely (short-circuited) whenever next already matched.
+-- only an actually-arrived (actual_time set) ARRIVAL (type=0) row qualifies as the terminus fallback, and only
+-- when next found nothing.
 ) term on next.station_short_code is null
+    and term.row_type = 0 -- ARRIVAL
+    and term.row_actual_time is not null
 where tl.id in (:ids)""", nativeQuery = true)
     List<GTFSTrainLocation> getTrainLocations(@Param("ids") final List<Long> locationIds);
 }
