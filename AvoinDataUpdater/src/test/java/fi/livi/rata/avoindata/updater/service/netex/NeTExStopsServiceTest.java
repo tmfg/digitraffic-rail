@@ -459,10 +459,10 @@ class NeTExStopsServiceTest {
                         final String summary = appender.list.stream()
                                         .filter(e -> e.getLevel() == Level.ERROR)
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .filter(m -> m.contains("tracks_without_quay"))
+                                        .filter(m -> m.contains("no PETI quay for these tracks"))
                                         .findFirst()
                                         .orElseThrow(() -> new AssertionError(
-                                                        "Expected a tracks_without_quay summary, got: "
+                                                        "Expected a summary of tracks without a quay, got: "
                                                                         + appender.list));
 
                         assertTrue(summary.contains("count=2"), summary);
@@ -493,7 +493,7 @@ class NeTExStopsServiceTest {
 
                         assertTrue(appender.list.stream()
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .noneMatch(m -> m.contains("tracks_without_quay")),
+                                        .noneMatch(m -> m.contains("no PETI quay for these tracks")),
                                         "Expected no summary when every track resolved: " + appender.list);
                 } finally {
                         logbackLogger.detachAppender(appender);

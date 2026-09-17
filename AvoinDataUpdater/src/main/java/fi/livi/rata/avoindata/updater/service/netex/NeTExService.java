@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +28,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
@@ -48,7 +50,19 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 public class NeTExService {
 
     private static final Logger log = LoggerFactory.getLogger(NeTExService.class);
+
+    /**
+     * Excluded from the package:
+     * V, HV, MV: "tyhjävaunujunat", trains that run without passengers
+     */
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV");
+
+    /**
+     * Passenger platforms are currently numbered 1-22. A track outside that shape is probably a 
+     * track that should never have reached a passenger schedule, which is a different fault
+     * — and a different source system — from a real platform PETI has not published yet.
+     */
+    private static final Pattern VALID_PLATFORM_NUMBER = Pattern.compile("[1-9]|1[0-9]|2[0-2]");
 
     @Value("${updater.netex.peti.min-match-rate:0.95}")
     private double minMatchRate = 0.95;
@@ -350,16 +364,13 @@ public class NeTExService {
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
         // Last-resort track fill, now that PETI is loaded and before any stop point or route is
-        // derived: a stop no observation could place takes its station's lowest PETI platform, so a
-        // matched station never yields a trackless station-level stop.
+        // derived, so stop point ids and stop assignments cannot disagree about the track.
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
-        final Map<String, String> firstPlatformByStation = new HashMap<>();
+        final Map<String, PetiStop> petiByStation = new HashMap<>();
         for (final Station station : stations) {
-            matcher.match(station.uicCode).flatMap(PetiStop::firstPlatformCode)
-                    .ifPresent(code -> firstPlatformByStation.put(station.shortCode, code));
+            matcher.match(station.uicCode).ifPresent(stop -> petiByStation.put(station.shortCode, stop));
         }
-        final int fromFirstPlatform = fillFromFirstPlatform(allFiltered, firstPlatformByStation);
-        log.info("event=generateNeTEx method=computeDataset fromFirstPlatform={}", fromFirstPlatform);
+        fillFromFirstPlatform(allFiltered, petiByStation);
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
@@ -628,26 +639,76 @@ public class NeTExService {
     }
 
     /**
-     * The fourth and last track source: a commercial stop still without a track takes its station's
-     * lowest PETI platform. Runs after the exact sources so a real observation always wins, and only
-     * for stations PETI knows, so the guess is always a platform the station actually has.
+     * The fourth and last track source: a commercial stop takes its station's lowest PETI platform when
+     * no source could name a track, and also when the track that was named is not one PETI publishes as a
+     * platform — a yard or work track that a passenger train should never be on. The latter is a fault in
+     * the source data, so every one is logged for reporting; the fallback only keeps the feed usable
+     * meanwhile. Runs after the exact sources so a real observation always wins.
      */
-    private int fillFromFirstPlatform(final List<Schedule> schedules,
-            final Map<String, String> firstPlatformByStation) {
-        int filled = 0;
+    private void fillFromFirstPlatform(final List<Schedule> schedules,
+            final Map<String, PetiStop> petiByStation) {
+        int fromFirstPlatform = 0;
+        int replacedUnknownTrack = 0;
+        final Set<String> invalidTracks = new LinkedHashSet<>();
+        final Set<String> missingFromPeti = new LinkedHashSet<>();
+
         for (final Schedule schedule : schedules) {
             for (final ScheduleRow row : schedule.scheduleRows) {
-                if (!CommercialStopRule.isCommercialStop(row) || StringUtils.isNotBlank(row.commercialTrack)) {
+                if (!CommercialStopRule.isCommercialStop(row)) {
                     continue;
                 }
-                final String code = firstPlatformByStation.get(row.station.stationShortCode);
-                if (code != null) {
-                    row.commercialTrack = code;
-                    filled++;
+                final PetiStop peti = petiByStation.get(row.station.stationShortCode);
+                if (peti == null) {
+                    continue;
                 }
+                final String track = row.commercialTrack;
+                final boolean blank = StringUtils.isBlank(track);
+                if (!blank && peti.resolveQuay(track).isPresent()) {
+                    continue;
+                }
+                final String firstPlatform = peti.firstPlatformCode().orElse(null);
+                if (firstPlatform == null) {
+                    continue;
+                }
+
+                if (blank) {
+                    fromFirstPlatform++;
+                } else {
+                    replacedUnknownTrack++;
+                    final boolean platformShaped = VALID_PLATFORM_NUMBER.matcher(track).matches();
+                    final String key = row.station.stationShortCode + "-" + track;
+                    final boolean firstSighting = platformShaped
+                            ? missingFromPeti.add(key)
+                            : invalidTracks.add(key);
+                    if (firstSighting) {
+                        log.error("event=generateNeTEx method=fillFromFirstPlatform PETI publishes no platform "
+                                + "for track station={} uic={} track={} likelyCause={} stopPlace={} "
+                                + "stopPlaceName={} petiTracks={} replacedWith={}",
+                                row.station.stationShortCode, peti.uicCode(), track,
+                                platformShaped ? "missing_from_peti" : "invalid_schedule_track",
+                                peti.stopPlaceId(), peti.name(),
+                                peti.quays().stream().map(PetiQuay::publicCode).toList(), firstPlatform);
+                    }
+                }
+                row.commercialTrack = firstPlatform;
             }
         }
-        return filled;
+
+        log.info("event=generateNeTEx method=fillFromFirstPlatform fromFirstPlatform={} "
+                + "replacedUnknownTrack={} missingFromPeti={} invalidScheduleTracks={}",
+                fromFirstPlatform, replacedUnknownTrack, missingFromPeti.size(), invalidTracks.size());
+
+        if (!missingFromPeti.isEmpty()) {
+            log.error("event=generateNeTEx method=fillFromFirstPlatform likelyCause=missing_from_peti count={} "
+                    + "tracks={} message=\"platform-shaped tracks PETI does not publish, report to PETI\"",
+                    missingFromPeti.size(), missingFromPeti);
+        }
+        if (!invalidTracks.isEmpty()) {
+            log.error("event=generateNeTEx method=fillFromFirstPlatform likelyCause=invalid_schedule_track "
+                    + "count={} tracks={} message=\"tracks outside the 1-22 platform numbering on a "
+                    + "passenger schedule, report to the schedule source\"",
+                    invalidTracks.size(), invalidTracks);
+        }
     }
 
     /**
