@@ -11,7 +11,7 @@ For VM-specific implementation history/checklists, see [`SIRI-VM-IMPLEMENTATION-
 
 Digitraffic Rail's SIRI feeds must conform to the **Norwegian/Nordic SIRI Profile**, published and maintained by
 Entur on behalf of Jernbanedirektoratet (the Norwegian Railway Directorate). This is the *authoritative,
-living* specification — prefer it over any locally-cached PDF snapshot when the two disagree, and use it both
+living* specification — prefer it over any older/cached notes if the two ever disagree, and use it both
 as the basis for new work and for validating existing behavior:
 
 | Topic | URL |
@@ -180,9 +180,18 @@ each service gets:
     `NeTExPublishedJourneyTrack`), distinct from `visitIndex` (a per-station occurrence counter used for
     keyed lookups): ordering by `visitIndex` alone misplaces a repeated station's later visit.
   - `MonitoredCall.VehicleAtStop`/`VehicleLocationAtStop` — see above.
+  - `InCongestion` — derived from `time_table_row.unknown_delay`: set by the source system (LIIKE) when it
+    cannot reliably estimate how long a train will actually have to wait (`Delay`/the live estimate exist but
+    are known to be unreliable). The Nordic SIRI-VM profile has no dedicated "estimate is unreliable" field, so
+    this is surfaced via `InCongestion` instead — its wording ("affected by ... other circumstances which may
+    lead to further delays") fits an unknown-wait situation reasonably well, and no better-fitting field exists;
+    this is an accepted design decision, not a literal congestion signal. `Delay` itself is still always
+    computed/emitted as normal (mandatory, 1:1) — `unknown_delay` only adds this extra "don't fully trust it"
+    signal alongside it, it never suppresses `Delay`. See `GTFSTrainRepository.getTrainLocations`/
+    `VmJourneyConverter`/`VmJourneyMarshaller`.
 - **Still not implemented** (all optional per spec; checked against the actual data available and found to have
   no ready source): `Bearing` (no heading in `train_location`), `Occupancy` (no passenger telemetry),
-  `VehicleStatus` (no status enum source), `InCongestion` (no congestion data), `ProgressBetweenStops`
+  `VehicleStatus` (no status enum source), `ProgressBetweenStops`
   (investigated in depth — PALA optionally carries a track-km linear position (`ratakmsijainti`) that could
   feed this, but its production reliability is unverified and no station↔track-km reference dataset exists
   to pair it with; see "ProgressBetweenStops investigation" in `SIRI-VM-IMPLEMENTATION-PLAN.md` for the full
@@ -190,7 +199,7 @@ each service gets:
   omitted entirely rather than emitting a meaningless `"0"`. See the field-by-field table in
   `SIRI-VM-IMPLEMENTATION-PLAN.md` → "SIRI-VM Data Mapping" for the full implemented/not-implemented breakdown
   with reasoning per field. Revisit any of these if a real data source becomes available (e.g. a heading sensor,
-  congestion feed, or track-km reference data).
+  track-km reference data).
 - **Precondition**: the spec states valid timetable data (NeTEx/SIRI-ET) must exist before VM position data is
   sent. This is enforced implicitly: `VmJourneyInterpreter` drops (returns `Optional.empty()` for) any location
   whose train doesn't resolve to a published `NeTExPublishedJourney` via `JourneyRefResolver`, and

@@ -69,7 +69,7 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyInterpreter`/
 ## Implementation Approach
 
 ### Phase 1: Analysis & Planning
-- [x] Understand SIRI-VM specification from docs (PUBLIC-SIRI-VM-070926-124123.pdf)
+- [x] Understand SIRI-VM specification from the Entur SIRI-VM wiki page (see `SIRI.md` → "Canonical source material")
 - [x] Review existing SIRI-ET implementation pattern
 - [x] Map train/vehicle data to SIRI-VM XML schema
 - [x] Define required data transformations
@@ -156,7 +156,7 @@ Field-by-field status against the Entur SIRI-VM wiki spec and the checked-in gol
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Velocity | 0:1 | ✅ Implemented | Ground speed. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Occupancy | 0:1 | ❌ Not implemented | No telemetry. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Delay | 1:1 | ✅ Implemented | Always emitted; `PT0S` if no delay. |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ InCongestion | 0:1 | ❌ Not implemented | No source. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ InCongestion | 0:1 | ✅ Implemented | Derived from `time_table_row.unknown_delay` (source system's own "can't reliably estimate the wait" flag) — accepted design decision, fitting the spec's "other circumstances which may lead to further delays" wording; does not affect `Delay`, which is always emitted regardless. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleStatus | 0:1 | ❌ Not implemented | No source. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ ProgressBetweenStops | 0:1 | ❌ Not implemented | No reliable source. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleJourneyRef | 0:1 | ➖ N/A | Framed ref used instead. |
@@ -243,9 +243,7 @@ This implementation follows general Java best practices:
 
 ## Key References
 
-- SIRI-VM Specification: `docs/PUBLIC-SIRI-VM-070926-124123.pdf`
-- SIRI General: `docs/PUBLIC-General information SIRI-070926-122346.pdf`
-- SIRI Introduction: `docs/PUBLIC-Introduction-070926-122019.pdf`
+- SIRI-VM Specification: https://entur.atlassian.net/wiki/spaces/PUBLIC/pages/637370425/SIRI-VM (canonical, living source — see `SIRI.md` → "Canonical source material" for the full list of wiki pages used)
 - GitHub Examples: https://github.com/entur/profile-norway-examples/tree/master/siri/vehicle-monitoring
 - Outline Example: https://raw.githubusercontent.com/entur/profile-norway-examples/master/siri/siri-vm-outline.xml
 
