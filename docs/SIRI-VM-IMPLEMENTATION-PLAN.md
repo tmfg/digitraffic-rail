@@ -41,29 +41,31 @@ The implementation will follow the existing SIRI-ET pattern:
 3. `SiriVmController` serves the XML via HTTP endpoint `/api/v1/siri/vm`
 4. Feature flag `avoindataserver.siri.vm.enabled` controls endpoint availability
 
-### Why an interpreter → domain IR (`VmActivity`) → marshaller pipeline, instead of one method
+### Why an interpreter/converter → domain IR (`VmActivity`) → marshaller pipeline, instead of one method
 
 Both SIRI-ET and SIRI-VM split "decide what the real-time data says" from "express it as SIRI XML" via a small
-immutable domain record (`VmActivity` for VM, the ET equivalents for ET) sitting between an *Interpreter* and a
-*Marshaller*. This is not required by the SIRI spec — a single method could walk `GTFSTrainLocation` straight
-into JAXB objects — but it was chosen deliberately, for the same reasons in both services:
+immutable domain record (`VmActivity` for VM, the ET equivalents for ET) sitting between an *Interpreter/Converter*
+and a *Marshaller* (VM's class is named `VmJourneyConverter`; ET's is still `EtJourneyInterpreter` — see
+"Follow-up: Consistency Improvements" below for the deferred rename). This is not required by the SIRI spec — a
+single method could walk `GTFSTrainLocation` straight into JAXB objects — but it was chosen deliberately, for the
+same reasons in both services:
 
-- **Separation of concerns**: the interpreter decides journey/stop resolution and unit conversions; the
+- **Separation of concerns**: the interpreter/converter decides journey/stop resolution and unit conversions; the
   marshaller only knows how to render already-resolved data as XML (JAXB types, timezones, `Duration`/`BigDecimal`
   formatting). Neither class needs to understand the other's job.
-- **Testability without XML**: interpreter unit tests assert on plain record fields (e.g. "unresolved stop →
-  `monitoredCallStopRef == null`") instead of parsing/walking a JAXB tree or running schema validation.
+- **Testability without XML**: interpreter/converter unit tests assert on plain record fields (e.g. "unresolved
+  stop → `monitoredCallStopRef == null`") instead of parsing/walking a JAXB tree or running schema validation.
 - **Stats need a pre-XML checkpoint**: `SiriVmService` computes `SiriVmStats` (locations received vs. activities
-  emitted, i.e. how many were dropped as unresolvable) from the size of the interpreted list, before any XML is
+  emitted, i.e. how many were dropped as unresolvable) from the size of the converted list, before any XML is
   built. Without an intermediate list this would have to be a side-effecting counter threaded through XML
   construction.
-- **Isolates JAXB/schema-version churn**: the interpreter has zero dependency on `uk.org.siri.siri21`; if the
-  SIRI schema version changes, only the marshaller is affected.
-- **Makes "drop unresolvable" a type-level contract**: the interpreter returns `Optional<VmActivity>` (empty for
-  a location whose train has no published journey), so the "every real-time item must tie back to the plan"
-  Nordic-profile rule can't be silently skipped by a future caller.
+- **Isolates JAXB/schema-version churn**: the interpreter/converter has zero dependency on `uk.org.siri.siri21`; if
+  the SIRI schema version changes, only the marshaller is affected.
+- **Makes "drop unresolvable" a type-level contract**: the interpreter/converter returns `Optional<VmActivity>`
+  (empty for a location whose train has no published journey), so the "every real-time item must tie back to the
+  plan" Nordic-profile rule can't be silently skipped by a future caller.
 
-This is documented in the `VmActivity` Javadoc; see also `VmJourneyInterpreter`/`VmJourneyMarshaller`/
+This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`VmJourneyMarshaller`/
 `SiriVmService` class Javadocs for the concrete split.
 
 ## Implementation Approach
@@ -142,7 +144,7 @@ Field-by-field status against the Entur SIRI-VM wiki spec and the checked-in gol
 | &nbsp;&nbsp;&nbsp;&nbsp;↳ ValidUntilTime | 1:1 | ✅ Implemented | +5 min freshness window. |
 | &nbsp;&nbsp;&nbsp;&nbsp;↳ MonitoredVehicleJourney | 1:1 | ✅ Implemented | Real-time journey payload. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ LineRef | 1:1 | ✅ Implemented | |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ DirectionRef | 0:1 | ❌ Not implemented | Optional; omitted. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ DirectionRef | 0:1 | ❌ Not implemented | Deliberate scope choice, not a data gap: optional in VM (unlike ET), so omitted entirely rather than emit a meaningless fixed `"0"` placeholder. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ FramedVehicleJourneyRef | 0:1 | ✅ Implemented | Framed form used. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleMode | 0:1 | ✅ Implemented | Fixed `rail`. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ OperatorRef | 0:1 | ✅ Implemented | |
@@ -152,7 +154,7 @@ Field-by-field status against the Entur SIRI-VM wiki spec and the checked-in gol
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ DataSource | 1:1 | ✅ Implemented | Codespace. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleLocation | 1:1 | ✅ Implemented | WGS84 / EPSG:4326. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Longitude / Latitude | 1:1 | ✅ Implemented | |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Bearing | 0:1 | ❌ Not implemented | No heading data. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Bearing | 0:1 | ❌ Not implemented | Genuine data gap: `train_location` (GPS fix) carries no heading/compass reading, only position and ground speed. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Velocity | 0:1 | ✅ Implemented | Ground speed. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Occupancy | 0:1 | ❌ Not implemented | No telemetry. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Delay | 1:1 | ✅ Implemented | Always emitted; `PT0S` if no delay. |

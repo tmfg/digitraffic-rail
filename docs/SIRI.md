@@ -82,11 +82,13 @@ three-stage pipeline, split across two Java packages:
   schema validation, shared envelope building), `PetiUnavailableException` /
   `PublishedJourneysUnavailableException` (dependency-failure signaling used by every generation service).
 - **`service/siri/<service>`** (e.g. `siri/et`, `siri/vm`) — everything specific to that one SIRI service:
-  - **Interpreter** (`EtJourneyInterpreter`, `VmJourneyInterpreter`, future `SxSituationInterpreter`): decides
-    *what the real-time situation is* — resolves the published journey/stop via `JourneyRefResolver` /
+  - **Interpreter/Converter** (`EtJourneyInterpreter`, `VmJourneyConverter`, future `SxSituationInterpreter`):
+    decides *what the real-time situation is* — resolves the published journey/stop via `JourneyRefResolver` /
     `StationUicLookup` / `StationNameLookup` / `SiriStopResolver`, applies unit conversions, and returns a small
     immutable **domain record** (`EtCall`-family, `VmActivity`). Has zero dependency on JAXB/`uk.org.siri.*`
-    types.
+    types. VM uses the `*Converter`/`converter`/`convert(...)` naming; ET still uses the older
+    `*Interpreter`/`interpreter`/`interpret(...)` naming — see "Follow-up: Consistency Improvements" in
+    `SIRI-VM-IMPLEMENTATION-PLAN.md` for the (deferred, purely cosmetic) plan to align them.
   - **Marshaller** (`EtJourneyMarshaller`, `VmJourneyMarshaller`): pure translation from the domain record to
     the SIRI JAXB object tree (timezone conversion, `BigDecimal`/`Duration` formatting, envelope assembly). No
     interpretation logic.
@@ -201,7 +203,7 @@ each service gets:
   with reasoning per field. Revisit any of these if a real data source becomes available (e.g. a heading sensor,
   track-km reference data).
 - **Precondition**: the spec states valid timetable data (NeTEx/SIRI-ET) must exist before VM position data is
-  sent. This is enforced implicitly: `VmJourneyInterpreter` drops (returns `Optional.empty()` for) any location
+  sent. This is enforced implicitly: `VmJourneyConverter` drops (returns `Optional.empty()` for) any location
   whose train doesn't resolve to a published `NeTExPublishedJourney` via `JourneyRefResolver`, and
   `SiriVmGenerationService` fails the whole cycle via `PetiUnavailableException`/
   `PublishedJourneysUnavailableException` if the PETI/NeTEx dependencies are stale or missing.
