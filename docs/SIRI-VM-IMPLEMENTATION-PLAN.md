@@ -109,23 +109,37 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 - [ ] Document SIRI-VM response format
 - [ ] Update configuration documentation
 
-## Key Files to Create/Modify
+## Key Files (as actually implemented)
 
 ### New Files (AvoinDataUpdater)
 
 - `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/SiriVmService.java`
 - `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/SiriVmGenerationService.java`
-- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/SiriVmScheduledService.java` (or similar)
+- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/VmJourneyConverter.java`
+- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/VmJourneyMarshaller.java`
+- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/SiriVmStats.java`
+- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/vm/model/VmActivity.java`
+- `src/main/java/fi/livi/rata/avoindata/updater/service/siri/SiriVmUpdatingService.java` (note: sibling to
+  `SiriUpdatingService` in `service/siri/`, not nested under `service/siri/vm/` — that package holds only
+  VM-specific converter/marshaller/service/model classes)
 - `src/test/java/fi/livi/rata/avoindata/updater/service/siri/vm/...` (tests)
+
+### New Files (AvoinDataServer)
+
+- `src/main/java/fi/livi/rata/avoindata/server/controller/api/SiriVmController.java` — a **separate controller**
+  from `SiriEtController`, not a method added to it (see Phase 3 above for why).
+- `src/test/java/fi/livi/rata/avoindata/server/controller/api/SiriVmControllerIntegrationTest.java`
 
 ### Modified Files
 
-- `AvoinDataServer/src/main/java/fi/livi/rata/avoindata/server/controller/api/SiriEtController.java`
-  - Add `getSiriVm()` method
-  - Add constant for VM filename
-  
-- `AvoinDataUpdater/src/main/resources/application.properties`
-  - Add `avoindataserver.siri.vm.enabled=true` (default)
+- `AvoinDataServer/src/main/resources/application.properties` — added `avoindataserver.siri.vm.enabled=true`.
+- `AvoinDataUpdater/src/main/resources/application.properties` — added `updater.siri.vm.enabled=true` and
+  `updater.siri.vm.fixed-rate-ms`.
+- `AvoinDataCommon/.../dao/gtfs/GTFSTrainRepository.java` — added `getTrainLocations(...)` (the native query VM's
+  live position/delay/vehicle-at-stop data comes from) and the `unknown_delay` column.
+- `AvoinDataCommon/.../domain/gtfs/GTFSTrainLocation.java` — added fields surfaced by the query above.
+- `NeTExPublishedJourneyTrack` — added an explicit `@OrderBy("sequenceIndex ASC")` (needed for VM's
+  `OriginRef`/`DestinationRef` first/last-stop resolution; see `SIRI.md` for why).
 
 ### Test Resources
 
@@ -156,11 +170,11 @@ Field-by-field status against the Entur SIRI-VM wiki spec and the checked-in gol
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Longitude / Latitude | 1:1 | ✅ Implemented | |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Bearing | 0:1 | ❌ Not implemented | Genuine data gap: `train_location` (GPS fix) carries no heading/compass reading, only position and ground speed. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Velocity | 0:1 | ✅ Implemented | Ground speed. |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Occupancy | 0:1 | ❌ Not implemented | No telemetry. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Occupancy | 0:1 | ❌ Not implemented | Genuine data gap: no passenger-count/load telemetry exists anywhere in the source systems available to the updater. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ Delay | 1:1 | ✅ Implemented | Always emitted; `PT0S` if no delay. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ InCongestion | 0:1 | ✅ Implemented | Derived from `time_table_row.unknown_delay` (source system's own "can't reliably estimate the wait" flag) — accepted design decision, fitting the spec's "other circumstances which may lead to further delays" wording; does not affect `Delay`, which is always emitted regardless. |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleStatus | 0:1 | ❌ Not implemented | No source. |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ ProgressBetweenStops | 0:1 | ❌ Not implemented | No reliable source. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleStatus | 0:1 | ❌ Not implemented | Genuine data gap: no vehicle operational-status signal (e.g. breakdown/not-in-service) exists in `train_location`/GTFS data; only position, speed, and timetable-derived delay are available. |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ ProgressBetweenStops | 0:1 | ❌ Not implemented | Genuine data gap, investigated in depth (see "`ProgressBetweenStops` investigation" below): a candidate PALA field exists but its production reliability is unverified, and no station↔track-km reference dataset exists to pair it with. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleJourneyRef | 0:1 | ➖ N/A | Framed ref used instead. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ VehicleRef | 1:1 | ✅ Implemented | Train number. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ MonitoredCall | 0:1 | ✅ Implemented | Current/next stop only. |
@@ -196,30 +210,34 @@ Everything marked ❌ was checked against the live `train_location`/NeTEx data a
 ## Configuration Options
 
 ```properties
-# Enable/disable SIRI-VM endpoint
+# Enable/disable SIRI-VM endpoint (server) / generation (updater)
 avoindataserver.siri.vm.enabled=true
+updater.siri.vm.enabled=true
+updater.siri.vm.fixed-rate-ms=60000
 
-# Cache control (consider making this configurable like ET)
-# Default: 30 seconds (same as ET)
+# HTTP cache-control: max-age=30, public (CACHE_SECONDS constant in SiriVmController, matching SiriEtController -
+# not externalized as a property, same as ET)
 ```
 
 ## Implementation Notes
 
-1. **Data Source**: Likely sourced from existing train journey/position data in the database
-2. **Refresh Rate**: Probably ~1 minute updates (following same pattern as ET)
-3. **XML Format**: SIRI 2.0 standard (matches ET implementation)
-4. **Performance**: Cache at HTTP level (~30 sec) to reduce load
-5. **Error Handling**: Missing data should not crash generation (similar to ET approach)
-6. **Testing Strategy**: Use golden XML files with known scenarios (delays, occupancy, position data)
+1. **Data Source**: `GTFSTrainLocation` (via `GTFSTrainRepository.getTrainLocations`, backed by the same
+   `train_location` table GTFS-Realtime `VehiclePosition` uses), joined to published NeTEx journeys.
+2. **Refresh Rate**: `updater.siri.vm.fixed-rate-ms` (default 60000ms/1 minute), same pattern as ET.
+3. **XML Format**: SIRI 2.0 standard (matches ET implementation).
+4. **Performance**: HTTP-level `Cache-Control: max-age=30, public` (`SiriVmController.CACHE_SECONDS`), same as ET.
+5. **Error Handling**: `PetiUnavailableException`/`PublishedJourneysUnavailableException` fail the generation
+   cycle fast (logged, previous `GeneratedExport` left in place) rather than publishing partial/stale data.
+6. **Testing Strategy**: golden XML files (`SiriVmGoldenXmlTest`) plus unit tests for the converter/marshaller/
+   service layers and an integration test against a real database (`SiriVmServiceTest` and friends).
 
 ## Dependencies & Tools
 
 - Spring Framework (already in use)
 - JAXB for XML generation (already used by ET)
 - JUnit + Mockito for tests (existing test framework)
-- **digitraffic-common-java**: Leverage existing common services from `/lib/digitraffic-common-java` (subtree)
-  - Check for utilities, base classes, and common domain objects
-  - Reuse where applicable instead of reimplementing
+- **digitraffic-common-java** (`lib/digitraffic-common-java` subtree): reused for common services, e.g. in
+  `SiriVmGenerationService`.
 
 ## Code Quality & Best Practices
 
@@ -235,13 +253,13 @@ This implementation follows general Java best practices:
 
 ## Success Criteria
 
-- [ ] SIRI-VM endpoint serves valid XML when `avoindataserver.siri.vm.enabled=true`
-- [ ] Endpoint returns 404 when flag is disabled
-- [ ] XML validates against SIRI-VM schema
-- [ ] Cache headers are properly set
-- [ ] Data is refreshed periodically
-- [ ] Integration tests pass
-- [ ] Golden XML tests pass with realistic scenarios
+- [x] SIRI-VM endpoint serves valid XML when `avoindataserver.siri.vm.enabled=true`
+- [x] Endpoint returns 404 when flag is disabled (`@ConditionalOnProperty` on `SiriVmController`)
+- [x] XML validates against SIRI-VM schema (`SiriWritingService` schema validation in the VALIDATE stage)
+- [x] Cache headers are properly set (`Cache-Control: max-age=30, public`)
+- [x] Data is refreshed periodically (`SiriVmUpdatingService`, default every 60s)
+- [x] Integration tests pass
+- [x] Golden XML tests pass with realistic scenarios
 
 ## Key References
 
@@ -385,10 +403,9 @@ Three options were considered:
 
 ### Status
 
-Implemented and tested. `EtJourneyInterpreter` unit tests pass in full. VM: 35/36 tests pass; the one remaining
-failure (`SiriVmGenerationServiceTest.givenUnknownEndpointTracks_whenGenerate_thenKeepsEndpointIdentity`) is
-pre-existing and unrelated — confirmed via `git stash` isolation (fails identically with and without this fix); see
-the "Origin/Destination endpoint derivation" follow-up above, which already documents that separate, known issue.
+Implemented and tested. Full SIRI-ET and SIRI-VM test suites pass (see `SIRI.md` for current test counts per
+class). The "Origin/Destination endpoint derivation on published journeys" follow-up above documents a separate,
+known, deliberately-deferred limitation (unrelated to this fallback) — it is not a test failure.
 
 ## PETI stop-source caching and resilience (`CachingPetiStopSource`)
 
