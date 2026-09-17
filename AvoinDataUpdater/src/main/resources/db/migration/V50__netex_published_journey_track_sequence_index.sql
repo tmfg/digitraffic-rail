@@ -12,7 +12,7 @@ ADD COLUMN `sequence_index` int NOT NULL DEFAULT 0 AFTER `visit_index`;
 -- regeneration, while SIRI-VM keeps reading it every minute).
 UPDATE `netex_published_journey_track` t
 JOIN (
-    SELECT `id`, ROW_NUMBER() OVER (PARTITION BY `journey_id` ORDER BY `id`) - 1 AS rn
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY journey_id ORDER BY id) - 1 AS rn
     FROM `netex_published_journey_track`
-) ranked ON ranked.`id` = t.`id`
-SET t.`sequence_index` = ranked.rn;
+) ranked ON ranked.id = t.id
+SET t.sequence_index = ranked.rn;
