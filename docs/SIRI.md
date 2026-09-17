@@ -173,9 +173,12 @@ each service gets:
     `NeTExPublishedJourneyTrack` list — the same fetch-joined tracks `findByDatasetVersionAndDepartureDatesFetchTracks`
     already loaded for dataset-version bookkeeping, just not previously read). Uses the stop's *planned* track,
     not a live position, since a train doesn't have a live position at its origin once en route, nor before it
-    reaches its destination. `NeTExPublishedJourney.tracks` now has an explicit `@OrderBy("id ASC")` so the
-    first/last element reliably matches insertion (= stop) order — previously relied on unspecified JPA
+    reaches its destination. `NeTExPublishedJourney.tracks` now has an explicit `@OrderBy("sequenceIndex ASC")`
+    so the first/last element reliably matches true journey order — previously relied on unspecified JPA
     collection order, which was safe for existing per-station keyed lookups but not for "first/last" access.
+    `sequenceIndex` is a dedicated, monotonically increasing journey-position field (see
+    `NeTExPublishedJourneyTrack`), distinct from `visitIndex` (a per-station occurrence counter used for
+    keyed lookups): ordering by `visitIndex` alone misplaces a repeated station's later visit.
   - `MonitoredCall.VehicleAtStop`/`VehicleLocationAtStop` — see above.
 - **Still not implemented** (all optional per spec; checked against the actual data available and found to have
   no ready source): `Bearing` (no heading in `train_location`), `Occupancy` (no passenger telemetry),
