@@ -127,7 +127,7 @@ class NeTExServiceTest {
     }
 
     @Test
-    void givenMuseumTrain_whenFiltering_thenIncluded() {
+    void givenMuseumTrain_whenFiltering_thenExcluded() {
         // given
         final Schedule schedule = createSchedule("MUS", "Long-distance", true);
 
@@ -135,7 +135,7 @@ class NeTExServiceTest {
         final List<Schedule> result = netExService.filterPassengerTrains(List.of(schedule));
 
         // then
-        assertEquals(1, result.size());
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -174,7 +174,7 @@ class NeTExServiceTest {
         final List<Schedule> result = netExService.filterPassengerTrains(List.of(passenger, cargo, museum));
 
         // then
-        assertEquals(List.of("IC", "MUS"), result.stream().map(s -> s.trainType.name).toList());
+        assertEquals(List.of("IC"), result.stream().map(s -> s.trainType.name).toList());
     }
 
     // --- Generation orchestration tests ---

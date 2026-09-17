@@ -54,8 +54,9 @@ public class NeTExService {
     /**
      * Excluded from the package:
      * V, HV, MV: "tyhjävaunujunat", trains that run without passengers
+     * MUS: museum trains, excluded by design
      */
-    private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV");
+    private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
 
     /**
      * Passenger platforms are currently numbered 1-22. A track outside that shape is probably a 
@@ -114,8 +115,8 @@ public class NeTExService {
 
     /**
      * The Nordic profile wants a quay on every stop assignment, and a quay can only
-     * be found once a stop names a track. RIPA's schedules endpoint rarely does, so
-     * the track is taken from the coming days first, from what the train last
+     * be found once a stop names a track. Schedules mostly do not assign a track in advance,
+     * so the track is taken from the coming days first, from what the train last
      * actually used second, and finally borrowed from another journey of the same
      * service identity. Done on the schedules themselves, before any NeTEx entity is
      * derived, so that the stop point ids and the stop assignments cannot disagree
@@ -618,7 +619,8 @@ public class NeTExService {
     }
 
     /**
-     * Mirrors GTFSService.isPassengerTrain so both feeds publish the same journeys.
+     * Follows GTFSService.isPassengerTrain, except that museum trains (MUS) are excluded here but kept in
+     * gtfs-passenger.zip, so the two feeds do not publish exactly the same journeys.
      */
     public List<Schedule> filterPassengerTrains(final List<Schedule> schedules) {
         final List<Schedule> result = new ArrayList<>();
