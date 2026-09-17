@@ -120,7 +120,15 @@ public final class CommercialStopVisits {
      * completing row typically never gets an actual time either (it's never actually run), so without this
      * exclusion a cancelled visit would be wrongly reported as current instead of the next, real visit. Empty
      * when the station never occurs, or every (non-cancelled) occurrence is already completed (should not
-     * normally happen for a station a live location still reports).
+     * normally happen for a station a live location still reports) — except the arrived-terminus case below.
+     *
+     * <p>Terminus fallback: mirrors {@code GTFSTrainRepository.getTrainLocations}'s {@code term} lateral join.
+     * A terminus has only an ARRIVAL row (no departure), so once that arrival's actual time is set (train has
+     * arrived), there is no later not-yet-completed row left to match for it — the loop above would find
+     * nothing and this stop's live location would silently lose its {@code MonitoredCall}/{@code
+     * VehicleAtStop} when its live track is unknown. Since the arrived terminus is by definition the last
+     * (non-cancelled) stop in the journey, it is still reported as current here, exactly as {@code term}
+     * reports it in the live-location query.
      */
     public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode) {
         final Map<String, Integer> visitCounts = new HashMap<>();
@@ -133,6 +141,17 @@ public final class CommercialStopVisits {
             if (station.equals(stationShortCode) && !stop.isCancelled() && stop.completingRow().actualTime == null) {
                 return OptionalInt.of(visitIndex);
             }
+        }
+        for (int i = stops.size() - 1; i >= 0; i--) {
+            final Stop stop = stops.get(i);
+            if (stop.isCancelled()) {
+                continue;
+            }
+            final String station = stop.representative().stationShortCode;
+            if (station.equals(stationShortCode) && stop.departure == null) {
+                return OptionalInt.of(visitCounts.get(station) - 1);
+            }
+            break;
         }
         return OptionalInt.empty();
     }

@@ -70,6 +70,24 @@ public class CommercialStopVisitsTest {
         assertEquals(1, visitIndex.getAsInt());
     }
 
+    // Regression test mirroring GTFSTrainRepository.getTrainLocations' `term` lateral join fallback: once a
+    // train has arrived at its terminus (the terminus' only row, an ARRIVAL, now has an actual time), there is
+    // no not-yet-completed row left for currentVisitIndex to match, so without the terminus fallback it would
+    // wrongly return empty - losing the planned-track lookup VmJourneyConverter needs when the live track is
+    // unknown.
+    @Test
+    public void currentVisitIndex_returnsArrivedTerminusAsCurrent() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt());
+    }
+
     @Test
     public void currentVisitIndex_emptyWhenStationNeverOccurs() {
         final List<GTFSTimeTableRow> rows = new ArrayList<>();
