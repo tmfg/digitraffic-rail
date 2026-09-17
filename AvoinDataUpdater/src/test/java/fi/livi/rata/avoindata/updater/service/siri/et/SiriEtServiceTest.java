@@ -709,6 +709,82 @@ class SiriEtServiceTest {
         assertTrue(getEvjsOrEmpty(result).isEmpty());
     }
 
+    // --- ET-13b: unknownTrack=true but a planned track is known → falls back to it instead of dropping ---
+
+    @Test
+    void givenUnknownTrackTrueWithPlannedTrackAvailable_whenBuild_thenFallsBackToPlannedTrackQuay() {
+        // given — stop at TKU, actual track unknown, but the planned (NeTEx) track for TKU is "3"
+        plannedTracks.put("TKU", "3");
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        final GTFSTimeTableRow arr = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI));
+        arr.commercialTrack = "3";
+        arr.unknownTrack = true;
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI));
+        dep.commercialTrack = "3";
+        dep.unknownTrack = true;
+        train.timeTableRows.add(dep);
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        // then — the journey is recovered (not dropped) and TKU's StopPointRef resolves via the planned track
+        final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertEquals("FSR:Quay:TKU-3", tku.getStopPointRef().getValue());
+        // The fallback quay is itself the planned one (see resolveStopRef's Javadoc), so it never carries a
+        // spurious platform-change StopAssignment.
+        assertTrue(tku.getArrivalStopAssignments().isEmpty());
+        assertTrue(tku.getDepartureStopAssignments().isEmpty());
+    }
+
+    // --- ET-13c: unknownTrack=true at a repeated station → the fallback uses that occurrence's own planned
+    // track (visitIndex), not another visit's ---
+
+    @Test
+    void givenUnknownTrackTrueAtRepeatedStationWithPerVisitPlannedTracks_whenBuild_thenEachOccurrenceFallsBackToItsOwnTrack() {
+        // TPE is served twice: the first visit has a known actual track (no fallback needed), the second visit's
+        // actual track is unknown and must fall back to *its own* (visit 1) planned track, not visit 0's.
+        final Map<String, String> plannedByVisit = new HashMap<>();
+        plannedByVisit.put("HKI#0", "7");
+        plannedByVisit.put("TPE#0", "1");
+        plannedByVisit.put("TPE#1", "2");
+        plannedByVisit.put("OL#0", "1");
+        final SiriEtService svc = newService(
+                shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
+                (trainNumber, date, shortCode, visitIndex) ->
+                        Optional.ofNullable(plannedByVisit.get(shortCode + "#" + visitIndex)));
+
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "TPE", ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1"); // visit 0, actual track known
+        final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI));
+        arr.commercialTrack = "2";
+        arr.unknownTrack = true; // visit 1, actual track unknown -> must fall back to TPE#1 ("2"), not TPE#0 ("1")
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI));
+        dep.commercialTrack = "2";
+        dep.unknownTrack = true;
+        train.timeTableRows.add(dep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+
+        assertEquals(4, calls.size());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue(), "first TPE visit: actual track");
+        assertEquals("FSR:Quay:TPE-2", calls.get(2).getStopPointRef().getValue(),
+                "second TPE visit: falls back to its own (visit 1) planned track, not visit 0's");
+    }
+
     // --- ET-14: Station not in UIC lookup → whole journey omitted (complete-sequence rule) ---
 
     @Test
