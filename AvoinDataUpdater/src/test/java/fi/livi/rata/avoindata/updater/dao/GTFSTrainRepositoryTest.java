@@ -86,15 +86,58 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
-        t.timeTableRows.get(0).liveEstimateTime = t.timeTableRows.get(0).scheduledTime;
+        t.timeTableRows.getFirst().liveEstimateTime = t.timeTableRows.getFirst().scheduledTime;
         t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
         trainRepository.save(t);
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
-        final TimeTableRow ttr = t.timeTableRows.get(0);
+        final TimeTableRow ttr = t.timeTableRows.getFirst();
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        // Row 0 (HKI DEPARTURE) is the origin - it has no paired ARRIVAL row at all, so the train not yet
+        // having departed still counts as "at stop" from the very start.
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
+
+    // Regression coverage for the "normal" dwelling case at a non-terminus station: the selected DEPARTURE's
+    // paired ARRIVAL at the same station has actually happened (actual_time set), so vehicle_at_stop must be
+    // true - this is the main case the coalesce(...)/paired-ARRIVAL subquery exists for.
+    @Test
+    public void getTrainLocationsDwellingAtIntermediateStop() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // Train has departed HKI and arrived at PSL (rows 0 and 1), and is now dwelling at PSL awaiting
+        // departure (row 2): its live estimate is in the future and actual_time is still null.
+        t.timeTableRows.getFirst().actualTime = t.timeTableRows.getFirst().scheduledTime;
+        t.timeTableRows.get(1).actualTime = t.timeTableRows.get(1).scheduledTime;
+        t.timeTableRows.get(2).liveEstimateTime = t.timeTableRows.get(2).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+        final TimeTableRow ttr = t.timeTableRows.get(2);
+
+        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+    }
+
+    // Regression coverage for the newly-added unknownDelay column: it must be read straight off the selected
+    // row (bypassing TimeTableRow.getLiveEstimateTime()'s JSON-serialization suppression, which does not apply
+    // to this native query) and exposed unchanged as GTFSTrainLocation.getUnknownDelay().
+    @Test
+    public void getTrainLocationsExposesUnknownDelayFlag() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        t.timeTableRows.getFirst().liveEstimateTime = t.timeTableRows.getFirst().scheduledTime;
+        t.timeTableRows.getFirst().unknownDelay = true;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThat(locations.getFirst().getUnknownDelay()).isTrue();
+    }
+
     // Regression test for a bug where vehicle_at_stop was derived solely from the selected row's type: here
     // the earlier TPE ARRIVAL is excluded only because its live estimate is stale (still in the past), not
     // because it actually happened (actual_time is still null) - so the later TPE DEPARTURE gets selected
@@ -105,7 +148,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final TrainLocation tl = trainLocationFactory.create(t);
 
         // 1 minute in the past should be enough, but is not! some local timezone issue?
-        t.timeTableRows.get(0).liveEstimateTime = ZonedDateTime.now().minusMinutes(300);
+        t.timeTableRows.getFirst().liveEstimateTime = ZonedDateTime.now().minusMinutes(300);
         t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
         trainRepository.save(t);
 
@@ -122,9 +165,9 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final TrainLocation tl = trainLocationFactory.create(t);
 
         // should not include 1st row, because it's not commercial stop
-        t.timeTableRows.get(0).liveEstimateTime = t.timeTableRows.get(0).scheduledTime;
+        t.timeTableRows.getFirst().liveEstimateTime = t.timeTableRows.getFirst().scheduledTime;
         t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
-        t.timeTableRows.get(0).commercialStop = false;
+        t.timeTableRows.getFirst().commercialStop = false;
         trainRepository.save(t);
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
@@ -149,7 +192,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
 
         assertLocations(locations, 1, "OL", "1");
-        assertThat(locations.get(0).getVehicleAtStop()).isFalse();
+        assertThat(locations.getFirst().getVehicleAtStop()).isFalse();
     }
 
     @Test
@@ -168,7 +211,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
 
         assertLocations(locations, 1, "OL", "1");
-        assertThat(locations.get(0).getVehicleAtStop()).isTrue();
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
 
     /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx

@@ -1,8 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -107,8 +106,8 @@ class SiriVmServiceTest {
         final SiriVmResult result = service.buildVmDocumentWithStats(List.of(location), NOW);
 
         assertEquals(1, result.stats().activitiesEmitted());
-        assertTrue(result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
-                .getVehicleActivities().getFirst().getMonitoredVehicleJourney().getMonitoredCall() == null);
+        assertNull(result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
+                .getVehicleActivities().getFirst().getMonitoredVehicleJourney().getMonitoredCall());
     }
 
     private static GTFSTrainLocation location(final long trainNumber, final String stationShortCode,
@@ -124,8 +123,15 @@ class SiriVmServiceTest {
     private static GTFSTrainLocation location(final long trainNumber, final String stationShortCode,
                                                final String commercialTrack, final Integer delaySeconds,
                                                final Boolean vehicleAtStop) {
+        return location(trainNumber, stationShortCode, commercialTrack, delaySeconds, vehicleAtStop, null);
+    }
+
+    private static GTFSTrainLocation location(final long trainNumber, final String stationShortCode,
+                                               final String commercialTrack, final Integer delaySeconds,
+                                               final Boolean vehicleAtStop, final Boolean unknownDelay) {
         return new TestGTFSTrainLocation(1L, DEPARTURE_DATE, trainNumber, RECORDED_AT,
-                24.9384, 60.1699, 90, 10, stationShortCode, commercialTrack, false, delaySeconds, vehicleAtStop, null);
+                24.9384, 60.1699, 90, 10, stationShortCode, commercialTrack, false, delaySeconds, vehicleAtStop,
+                unknownDelay);
     }
 
     @Test
@@ -150,6 +156,31 @@ class SiriVmServiceTest {
         assertEquals(java.time.Duration.ZERO,
                 result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
                         .getVehicleActivities().getFirst().getMonitoredVehicleJourney().getDelay());
+    }
+
+    @Test
+    void locationWithSourceUnknownDelayFlagTrue_setsInCongestionTrueButStillEmitsDelay() {
+        // The source system's unknown_delay flag ("this delay estimate is unreliable") is surfaced via the
+        // optional InCongestion field, since the profile has no dedicated field for it - but Delay itself
+        // stays mandatory and must still be emitted with its best computed value.
+        final GTFSTrainLocation location = location(59L, "TPE", "1", 125, false, true);
+
+        final SiriVmResult result = service.buildVmDocumentWithStats(List.of(location), NOW);
+
+        final var mvj = result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
+                .getVehicleActivities().getFirst().getMonitoredVehicleJourney();
+        assertEquals(Boolean.TRUE, mvj.isInCongestion());
+        assertEquals(java.time.Duration.ofSeconds(125), mvj.getDelay());
+    }
+
+    @Test
+    void locationWithSourceUnknownDelayFlagFalse_leavesInCongestionUnset() {
+        final GTFSTrainLocation location = location(59L, "TPE", "1", 125, false, false);
+
+        final SiriVmResult result = service.buildVmDocumentWithStats(List.of(location), NOW);
+
+        assertEquals(null, result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
+                .getVehicleActivities().getFirst().getMonitoredVehicleJourney().isInCongestion());
     }
 
     @Test
@@ -202,7 +233,7 @@ class SiriVmServiceTest {
         final var call = result.document().getServiceDelivery().getVehicleMonitoringDeliveries().getFirst()
                 .getVehicleActivities().getFirst().getMonitoredVehicleJourney().getMonitoredCall();
         assertEquals(Boolean.FALSE, call.isVehicleAtStop());
-        assertTrue(call.getVehicleLocationAtStop() == null);
+        assertNull(call.getVehicleLocationAtStop());
     }
 
     @Test
