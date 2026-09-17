@@ -306,6 +306,7 @@ public class NeTExService {
         if (dataset == null) {
             return null;
         }
+        checkStopAssignments(dataset.stopsData());
         final Map<String, PublicationDeliveryStructure> files = buildFiles(dataset);
         final byte[] zip = zip(files);
 
@@ -316,6 +317,35 @@ public class NeTExService {
                 stopsData.matchedCount(), stopsData.unmatchedCount(),
                 stopsData.quayMatchedCount(), stopsData.quayUnmatchedCount(), stopsData.quayNoTrackCount(),
                 dataset);
+    }
+
+    /**
+     * Postcondition on the finished dataset: the Nordic profile requires every ScheduledStopPoint to have a
+     * StopAssignment, and a stop point without one has no coordinates anywhere in the package. The validator
+     * cannot see this, because it only checks assignments that exist. Reports rather than throws —
+     * publishing a package a few stops short beats publishing none.
+     */
+    private void checkStopAssignments(final NeTExStopsData stopsData) {
+        if (petiStopSource.getStops().isEmpty()) {
+            return;
+        }
+
+        final Set<String> assigned = stopsData.getStopAssignments().stream()
+                .map(NeTExStopsData.NeTExStopAssignment::scheduledStopPointRef)
+                .collect(Collectors.toSet());
+
+        final List<String> withoutAssignment = stopsData.getScheduledStopPoints().stream()
+                .map(NeTExStopsData.NeTExScheduledStopPoint::id)
+                .filter(id -> !assigned.contains(id))
+                .toList();
+
+        if (withoutAssignment.isEmpty()) {
+            return;
+        }
+
+        log.error("event=generateNeTEx method=checkStopAssignments stopPoints={} withoutAssignment={} "
+                + "stopPointIds={} message=\"stop points published with no PassengerStopAssignment\"",
+                stopsData.getScheduledStopPoints().size(), withoutAssignment.size(), withoutAssignment);
     }
 
     /**

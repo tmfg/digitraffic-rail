@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class NeTExStopsService {
         final var seenStations = new LinkedHashSet<String>();
         final Map<String, String> projectionTargets = new HashMap<>();
         final List<String> tracksWithoutQuay = new ArrayList<>();
+        final Map<String, Station> stationsWithoutStopPlace = new LinkedHashMap<>();
 
         for (final StationTrackPair pair : uniquePairs) {
             final Station station = stationByShortCode.get(pair.stationShortCode());
@@ -116,7 +118,14 @@ public class NeTExStopsService {
                         quayNoTrackCount++;
                     }
                     
-                    case UNMATCHED -> unmatchedCount++;
+                    case UNMATCHED -> {
+                        unmatchedCount++;
+                        if (stationsWithoutStopPlace.putIfAbsent(station.shortCode, station) == null) {
+                            log.error("event=generateNeTEx method=createStopsData PETI publishes no stop place "
+                                    + "for station station={} uic={} name={} country={}",
+                                    station.shortCode, station.uicCode, station.name, station.countryCode);
+                        }
+                    }
                 }
             }
         }
@@ -134,6 +143,18 @@ public class NeTExStopsService {
                     + "count={} tracks={} message=\"no PETI quay for these tracks, stops published without a "
                     + "QuayRef\"",
                     tracksWithoutQuay.size(), tracksWithoutQuay);
+        }
+
+        // Every stop point of these stations goes out with no assignment at all, so it has no coordinates
+        // anywhere in the package and nothing tying it to the stop registry. PETI has to publish the stop place.
+        if (!stationsWithoutStopPlace.isEmpty()) {
+            log.error("event=generateNeTEx method=createStopsData "
+                    + "count={} stations={} message=\"no PETI stop place for these stations, stops published "
+                    + "without a PassengerStopAssignment\"",
+                    stationsWithoutStopPlace.size(),
+                    stationsWithoutStopPlace.values().stream()
+                            .map(s -> s.shortCode + "(" + s.uicCode + ")")
+                            .toList());
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,

@@ -501,6 +501,116 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenStationMissingFromPeti_whenCreatingStops_thenErrorNamesTheStation() {
+                // given — PETI publishes Tampere but not the Swedish border station
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere)));
+                final Station haaparanta = createStation("HPA", "Haaparanta pohjoinen", 10726, true,
+                                new BigDecimal("65.837000"), new BigDecimal("24.146000"));
+                haaparanta.countryCode = "SE";
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        // when
+                        serviceWithPeti.createStopsData(List.of(haaparanta),
+                                        List.of(new NeTExStopsService.StationTrackPair("HPA", "21")));
+
+                        // then — the station is named, so it can be reported to PETI
+                        final String message = appender.list.stream()
+                                        .filter(e -> e.getLevel() == Level.ERROR)
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .filter(m -> m.contains("PETI publishes no stop place for station"))
+                                        .findFirst()
+                                        .orElseThrow(() -> new AssertionError(
+                                                        "Expected an error, got: " + appender.list));
+
+                        assertTrue(message.contains("station=HPA"), message);
+                        assertTrue(message.contains("uic=10726"), message);
+                        assertTrue(message.contains("country=SE"), message);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
+        void givenSeveralStationsMissingFromPeti_whenCreatingStops_thenSummaryErrorListsThemAll() {
+                // given — an empty-but-non-null PETI stop place set that matches neither station
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere)));
+                final List<Station> stations = List.of(
+                                createStation("TOR", "Tornio", 351, true,
+                                                new BigDecimal("65.848000"), new BigDecimal("24.148000")),
+                                createStation("HPA", "Haaparanta pohjoinen", 10726, true,
+                                                new BigDecimal("65.837000"), new BigDecimal("24.146000")));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        // when — two tracks at each station, so a per-station line must not repeat
+                        serviceWithPeti.createStopsData(stations, List.of(
+                                        new NeTExStopsService.StationTrackPair("TOR", null),
+                                        new NeTExStopsService.StationTrackPair("TOR", "721"),
+                                        new NeTExStopsService.StationTrackPair("HPA", null),
+                                        new NeTExStopsService.StationTrackPair("HPA", "21")));
+
+                        // then
+                        final String summary = appender.list.stream()
+                                        .filter(e -> e.getLevel() == Level.ERROR)
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .filter(m -> m.contains("no PETI stop place for these stations"))
+                                        .findFirst()
+                                        .orElseThrow(() -> new AssertionError(
+                                                        "Expected a summary of stations without a stop place, got: "
+                                                                        + appender.list));
+
+                        assertTrue(summary.contains("count=2"), summary);
+                        assertTrue(summary.contains("TOR(351)"), summary);
+                        assertTrue(summary.contains("HPA(10726)"), summary);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
+        void givenEveryStationMatchesPeti_whenCreatingStops_thenNoStationSummaryIsLogged() {
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of(quay("FSR:Quay:20", "1")));
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere)));
+                final Station station = createStation("TPE", "Tampere", 160, true,
+                                new BigDecimal("61.498500"), new BigDecimal("23.773000"));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        serviceWithPeti.createStopsData(List.of(station),
+                                        List.of(new NeTExStopsService.StationTrackPair("TPE", "1")));
+
+                        assertTrue(appender.list.stream()
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .noneMatch(m -> m.contains("no PETI stop place")),
+                                        "Expected no station summary when every station matched: "
+                                                        + appender.list);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
         void givenNullTrackInPair_whenCreatingStops_thenProducesStationLevelSsp() {
                 // given — station OL with track null in the schedule data
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:3", 1_000_200, "Oulu", true, null, List.of());

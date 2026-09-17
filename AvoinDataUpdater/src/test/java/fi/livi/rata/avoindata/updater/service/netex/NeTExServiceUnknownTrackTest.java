@@ -35,7 +35,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 
 /**
  * A track PETI does not publish as a platform (a yard or work track) must not reach the feed: it is
- * replaced with the station's first platform and reported.
+ * replaced with the station's first platform and reported. Also covers the postcondition that every
+ * stop point leaves with an assignment.
  */
 class NeTExServiceUnknownTrackTest {
 
@@ -136,6 +137,63 @@ class NeTExServiceUnknownTrackTest {
                 .map(NeTExStopsData.NeTExScheduledStopPoint::id)
                 .toList();
         assertTrue(sspIds.contains("FTR:ScheduledStopPoint:HKI-2"), sspIds.toString());
+    }
+
+    @Test
+    void givenStationMissingFromPeti_whenGenerating_thenPostconditionNamesTheStopPointWithoutAssignment() {
+        // given — PETI publishes Helsinki but not Tampere, so nothing can assign Tampere's stop point
+        final NeTExService service = serviceWith(onlyHelsinki());
+        final Schedule schedule = scheduleWithTracks("1", "1");
+
+        final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logbackLogger.addAppender(appender);
+
+        try {
+            service.generateNeTEx(List.of(), List.of(schedule), stations());
+
+            final String message = appender.list.stream()
+                    .filter(e -> e.getLevel() == Level.ERROR)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .filter(m -> m.contains("method=checkStopAssignments"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Expected an error, got: " + appender.list));
+
+            assertTrue(message.contains("withoutAssignment=1"), message);
+            assertTrue(message.contains("FTR:ScheduledStopPoint:TPE-1"), message);
+        } finally {
+            logbackLogger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void givenEveryStopPointAssigned_whenGenerating_thenPostconditionLogsNothing() {
+        final NeTExService service = serviceWith(helsinkiWithPlatforms("1", "2"));
+        final Schedule schedule = scheduleWithTracks("2", "1");
+
+        final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logbackLogger.addAppender(appender);
+
+        try {
+            service.generateNeTEx(List.of(), List.of(schedule), stations());
+
+            assertTrue(appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .noneMatch(m -> m.contains("method=checkStopAssignments")),
+                    "Expected no report when every stop point is assigned: " + appender.list);
+        } finally {
+            logbackLogger.detachAppender(appender);
+        }
+    }
+
+    /** TPE is absent, so its stop point cannot be assigned. */
+    private static PetiStopSource onlyHelsinki() {
+        final PetiStop hki = new PetiStop("FSR:StopPlace:HKI", 1_000_100, "Helsinki", true, null,
+                List.of(new PetiQuay("FSR:Quay:HKI-1", "1", null, null, null)));
+        return () -> List.of(hki);
     }
 
     /** HKI is station uic 100, so its PETI stop place is 1_000_100. */
