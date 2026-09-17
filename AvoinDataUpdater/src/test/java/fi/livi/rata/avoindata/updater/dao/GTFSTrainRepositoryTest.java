@@ -214,6 +214,33 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
 
+    // Regression test: TPE's DEPARTURE (row 4) and JY's ARRIVAL (row 5) share the exact same scheduled_time
+    // (zero scheduled transit time between adjacent stops - a real TrainFactory fixture occurrence, not
+    // contrived). If a same-instant tie were broken ARRIVAL-first, JY's ARRIVAL would be selected as the
+    // "next" stop instead of TPE's DEPARTURE, prematurely advancing the reported stop to JY before the train
+    // has actually left TPE. DEPARTURE must win the tie.
+    @Test
+    public void getTrainLocationsTieAtStationBoundaryPrefersDeparture() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // Train has departed HKI, PSL and arrived at TPE (rows 0-3 actual); TPE's DEPARTURE and JY's ARRIVAL
+        // (rows 4-5) are both still pending with a live estimate at their shared scheduled_time.
+        for (int i = 0; i < 4; i++) {
+            t.timeTableRows.get(i).actualTime = t.timeTableRows.get(i).scheduledTime;
+        }
+        t.timeTableRows.get(4).liveEstimateTime = t.timeTableRows.get(4).scheduledTime;
+        t.timeTableRows.get(5).liveEstimateTime = t.timeTableRows.get(5).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+        final TimeTableRow ttr = t.timeTableRows.get(4);
+
+        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        // TPE's own paired ARRIVAL (row 3) already happened, so the train is dwelling at TPE.
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+    }
+
     /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx
      * refers to. Proves MySQL executes the row-value tuple IN at real-time operating-day scale (~200 ids)
      * and returns exactly the requested, sourced trains. */

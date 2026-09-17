@@ -70,7 +70,14 @@ public final class CommercialStopVisits {
         }
 
         final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
-        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime).thenComparing(r -> r.type));
+        // type descending breaks a same-instant tie in favor of DEPARTURE, matching
+        // GTFSTrainRepository.getTrainLocations's next lateral: this only matters when the current station's
+        // DEPARTURE and the next station's ARRIVAL share the same scheduled_time (zero scheduled transit time,
+        // a real occurrence - see TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). Sorting ARRIVAL-first
+        // on such a tie would let a different station's ARRIVAL slot in between this station's ARRIVAL/DEPARTURE
+        // pair below, corrupting the pairing (and every subsequent visitIndex) from that point on.
+        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
+                .thenComparing(r -> r.type, Comparator.reverseOrder()));
 
         int i = 0;
         if (ordered.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {

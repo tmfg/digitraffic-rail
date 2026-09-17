@@ -137,7 +137,11 @@ left join lateral (
         and tr.cancelled is false
         and tr.actual_time is null
         and tr.live_estimate_time > CURRENT_TIMESTAMP()
-    order by tr.scheduled_time, tr.type
+    -- type desc breaks a same-instant tie in favor of DEPARTURE: two rows tie only when the current
+    -- stations DEPARTURE and the next stations ARRIVAL share the same scheduled_time (zero scheduled
+    -- transit time), and DEPARTURE must win - it belongs to the station the train has not yet left,
+    -- whereas ARRIVAL-first would prematurely advance the reported stop to the next station before departure.
+    order by tr.scheduled_time, tr.type desc
     limit 1
 ) next on true
 -- term: terminus fallback (see class-level comment above for why its own lateral is unconditionally

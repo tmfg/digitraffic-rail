@@ -98,4 +98,35 @@ public class CommercialStopVisitsTest {
 
         assertTrue(visitIndex.isEmpty());
     }
+
+    // Regression test: a station's DEPARTURE and the next station's ARRIVAL can share the exact same
+    // scheduled_time (zero scheduled transit time between adjacent stops - a real occurrence, see
+    // TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). Sorting ARRIVAL-first on that tie would let
+    // JY's ARRIVAL slot in between TPE's own ARRIVAL/DEPARTURE pair, pairing TPE's ARRIVAL with no departure
+    // (mistaken for a terminus) and JY's ARRIVAL with TPE's DEPARTURE (wrong station identity) - corrupting
+    // every visitIndex from that point on. DEPARTURE must win the tie so pairing stays station-correct.
+    @Test
+    public void of_pairsRowsCorrectlyWhenDepartureAndNextArrivalTie() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2), false, null));
+        // JY's ARRIVAL ties exactly with TPE's DEPARTURE above.
+        rows.add(row("JY", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(2), false, null));
+        rows.add(row("JY", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(3), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+
+        assertEquals(3, stops.size());
+        assertEquals("HKI", stops.get(0).departure().stationShortCode);
+        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
+        assertEquals("JY", stops.get(2).arrival().stationShortCode);
+        // TPE must be a full arrival+departure pair, not mistaken for a terminus (departure == null).
+        assertTrue(stops.get(1).departure() != null);
+        assertEquals("TPE", stops.get(1).departure().stationShortCode);
+        // The train is still dwelling at TPE (its DEPARTURE has no actual time yet) - not yet at JY.
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt());
+    }
 }
