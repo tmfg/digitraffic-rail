@@ -95,6 +95,10 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
     }
+    // Regression test for a bug where vehicle_at_stop was derived solely from the selected row's type: here
+    // the earlier TPE ARRIVAL is excluded only because its live estimate is stale (still in the past), not
+    // because it actually happened (actual_time is still null) - so the later TPE DEPARTURE gets selected
+    // instead, but the train has NOT actually arrived at TPE yet. vehicle_at_stop must stay false.
     @Test
     public void getTrainLocationsGetFirstWithEstimateInTheFuture() {
         final Train t = createTrainWithoutActualTimes();
@@ -109,6 +113,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         final TimeTableRow ttr = t.timeTableRows.get(4);
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        assertThat(locations.getFirst().getVehicleAtStop()).isFalse();
     }
 
     @Test

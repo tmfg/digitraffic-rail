@@ -125,7 +125,7 @@ class SiriVmServiceTest {
                                                final String commercialTrack, final Integer delaySeconds,
                                                final Boolean vehicleAtStop) {
         return new TestGTFSTrainLocation(1L, DEPARTURE_DATE, trainNumber, RECORDED_AT,
-                24.9384, 60.1699, 90, 10, stationShortCode, commercialTrack, false, delaySeconds, vehicleAtStop);
+                24.9384, 60.1699, 90, 10, stationShortCode, commercialTrack, false, delaySeconds, vehicleAtStop, null);
     }
 
     @Test

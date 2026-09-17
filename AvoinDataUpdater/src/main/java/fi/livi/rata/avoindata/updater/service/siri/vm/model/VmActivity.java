@@ -35,6 +35,10 @@ import fi.livi.rata.avoindata.updater.service.siri.vm.VmJourneyConverter;
 /// @param vehicleAtStop         whether the train is currently at (dwelling at, or not yet departed from) the
 ///                              {@code monitoredCallStopRef} stop, as opposed to still approaching it, or
 ///                              {@code null} when unknown (no {@code monitoredCallStopRef} resolved).
+/// @param unknownDelay          whether the source system has flagged {@link #delaySeconds()} as unreliable
+///                              (it cannot estimate how long the train will actually wait), or {@code null}/
+///                              {@code false} in the normal case. Surfaced as SIRI-VM's {@code InCongestion} by
+///                              {@link fi.livi.rata.avoindata.updater.service.siri.vm.VmJourneyMarshaller}.
 public record VmActivity(
         long trainNumber,
         ResolvedJourney journey,
@@ -49,5 +53,6 @@ public record VmActivity(
         String originName,
         StopRef destinationStopRef,
         String destinationName,
-        Boolean vehicleAtStop) {
+        Boolean vehicleAtStop,
+        Boolean unknownDelay) {
 }

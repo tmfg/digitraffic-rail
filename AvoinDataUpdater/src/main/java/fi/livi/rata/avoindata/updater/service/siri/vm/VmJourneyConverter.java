@@ -71,7 +71,7 @@ public class VmJourneyConverter {
                 location.getX(), location.getY(), speedMetersPerSecond,
                 monitoredCall.stopRef(), monitoredCall.stopName(), location.getDelaySeconds(),
                 origin.stopRef(), origin.stopName(), destination.stopRef(), destination.stopName(),
-                location.getVehicleAtStop()));
+                location.getVehicleAtStop(), location.getUnknownDelay()));
     }
 
     /**

@@ -52,6 +52,14 @@ public interface GTFSTrainLocation {
     /// Whether the upcoming stop's track (see {@link #getCommercialTrack()}) is not yet confirmed/known.
     Boolean getUnknownTrack();
 
+    /// Whether the source system (LIIKE) has flagged the upcoming stop's delay estimate (see
+    /// {@link #getDelaySeconds()}) as unreliable — i.e. it genuinely does not know how long the train will
+    /// have to wait. `null`/`false` in the normal case. Consumed by SIRI-VM's `InCongestion` (there is no
+    /// dedicated "estimate is unreliable" field in the Nordic profile — see
+    /// {@code GTFSTrainRepository#getTrainLocations} for why `InCongestion` was chosen); GTFS-Realtime does not
+    /// currently consume this.
+    Boolean getUnknownDelay();
+
     /// Real-time delay, in seconds, against the upcoming commercial stop's scheduled time (positive = late,
     /// negative = early). {@code null} when no upcoming stop was resolved (see
     /// {@code GTFSTrainRepository#getTrainLocations}) or its live estimate is unknown.

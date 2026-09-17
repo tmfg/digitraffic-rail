@@ -159,7 +159,8 @@ class SiriVmGenerationServiceTest {
                 "1",
                 false,
                 180,
-                false);
+                false,
+                null);
     }
 
     /**
@@ -179,7 +180,8 @@ class SiriVmGenerationServiceTest {
                 "7",
                 false,
                 0,
-                true);
+                true,
+                null);
     }
 
     private static Station createStation(final String shortCode, final int uicCode) {
@@ -479,7 +481,7 @@ class SiriVmGenerationServiceTest {
         final TestGTFSTrainLocation loc60 = new TestGTFSTrainLocation(
                 3L, TODAY, 60L,
                 ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI),
-                25.759588, 61.437778, 70, 10, "OL", "1", false, 0, false);
+                25.759588, 61.437778, 70, 10, "OL", "1", false, 0, false, null);
 
         when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L, 3L));
         when(gtfsTrainRepository.getTrainLocations(List.of(1L, 3L))).thenReturn(List.of(loc59, loc60));

@@ -9,7 +9,7 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 record TestGTFSTrainLocation(long id, LocalDate departureDate, long trainNumber, ZonedDateTime timestamp,
                               double x, double y, int speed, int accuracy, String stationShortCode,
                               String commercialTrack, Boolean unknownTrack, Integer delaySeconds,
-                              Boolean vehicleAtStop)
+                              Boolean vehicleAtStop, Boolean unknownDelay)
         implements GTFSTrainLocation {
 
     @Override
@@ -75,6 +75,11 @@ record TestGTFSTrainLocation(long id, LocalDate departureDate, long trainNumber,
     @Override
     public Boolean getVehicleAtStop() {
         return vehicleAtStop;
+    }
+
+    @Override
+    public Boolean getUnknownDelay() {
+        return unknownDelay;
     }
 
     @Override

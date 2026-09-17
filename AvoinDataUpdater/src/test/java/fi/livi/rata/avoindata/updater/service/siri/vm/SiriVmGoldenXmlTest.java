@@ -134,7 +134,7 @@ class SiriVmGoldenXmlTest {
     /** A location with no station/track info: no {@code MonitoredCall} is emitted. */
     private static GTFSTrainLocation minimumLocation() {
         return new TestGTFSTrainLocation(1L, DEPARTURE_DATE, 59L, RECORDED_AT,
-                24.938400, 60.169900, 90, 10, null, null, null, null, null);
+                24.938400, 60.169900, 90, 10, null, null, null, null, null, null);
     }
 
     /** A location whose next-stop station/track resolve to a PETI quay: a {@code MonitoredCall} is emitted,
@@ -142,14 +142,14 @@ class SiriVmGoldenXmlTest {
      * the stop (not dwelling), so {@code VehicleAtStop} is {@code false}. */
     private static GTFSTrainLocation locationWithMonitoredCall() {
         return new TestGTFSTrainLocation(2L, DEPARTURE_DATE, 59L, RECORDED_AT,
-                23.761000, 61.498100, 108, 10, "TPE", "1", false, 90, false);
+                23.761000, 61.498100, 108, 10, "TPE", "1", false, 90, false, null);
     }
 
     /** Same resolved stop as {@link #locationWithMonitoredCall()}, but the train is currently dwelling there
      * ({@code VehicleAtStop = true}), so {@code VehicleLocationAtStop} is also emitted from the current fix. */
     private static GTFSTrainLocation locationAtStop() {
         return new TestGTFSTrainLocation(3L, DEPARTURE_DATE, 59L, RECORDED_AT,
-                23.761000, 61.498100, 0, 10, "TPE", "1", false, 0, true);
+                23.761000, 61.498100, 0, 10, "TPE", "1", false, 0, true, null);
     }
 
     private static String readGolden(final String resource) throws IOException {

@@ -6,6 +6,8 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.apache.commons.lang3.BooleanUtils;
+
 import static fi.livi.rata.avoindata.common.serializer.BigDecimalSerializer.scale;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -139,6 +141,14 @@ public class VmJourneyMarshaller {
         // Delay is mandatory in the Nordic SIRI-VM profile (1:1), defined as "PT0S" when there is no delay —
         // it must never be omitted, unlike MonitoredCall/Bearing/Occupancy which are genuinely optional.
         mvj.setDelay(activity.delaySeconds() != null ? Duration.ofSeconds(activity.delaySeconds()) : Duration.ZERO);
+
+        // InCongestion is optional (0:1); the profile has no dedicated "delay estimate is unreliable" field,
+        // so it is only set (to true) when the source system (LIIKE) flags unknownDelay - left unset (not
+        // false) otherwise, since we have no positive signal either way. Delay above is still always computed
+        // and emitted regardless of this flag - it is never suppressed or replaced with PT0S because of it.
+        if (BooleanUtils.isTrue(activity.unknownDelay())) {
+            mvj.setInCongestion(true);
+        }
 
         // IsCompleteStopSequence is mandatory (1:1). SIRI-VM only ever reports the single upcoming/current
         // MonitoredCall (never the complete stop sequence like SIRI-ET does), so per profile this must always
