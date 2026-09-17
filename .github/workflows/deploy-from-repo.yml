@@ -97,7 +97,7 @@ jobs:
           task-definition: ${{ github.event.inputs.application-name }}
           service-name: ${{ github.event.inputs.application-name }}
           cluster-name: ${{ secrets.CLUSTER_NAME }}
-          desired-count: ${{ github.event.inputs.env == 'prod' && 2 || 1 }}
+          desired-count: ${{ github.event.inputs.env == 'prod' && 4 || 1 }}
 
       - name: Configure AWS credentials for SBOM
         uses: aws-actions/configure-aws-credentials@v6.1.1
