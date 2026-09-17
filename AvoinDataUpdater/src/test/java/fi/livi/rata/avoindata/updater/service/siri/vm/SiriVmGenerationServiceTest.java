@@ -19,6 +19,7 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -290,7 +291,12 @@ class SiriVmGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         final String xml = new String(exports.getFirst().data);
         assertTrue(xml.contains("FTR:ServiceJourney:59-12345"), "Expected train 59 in output");
-        assertFalse(xml.contains("99"), "Train 99 should not appear (no published journey)");
+        // Checking for a literal "99" substring in the whole document is unsafe: the response/recorded
+        // timestamps are real wall-clock values (not frozen in this test) and can coincidentally contain "99"
+        // in any of their digits (seconds, milliseconds, etc.), making the assertion flaky. Counting
+        // VehicleActivity elements instead only depends on how many journeys were actually resolved.
+        assertEquals(1, StringUtils.countMatches(xml, "<VehicleActivity>"),
+                "Train 99 should not appear (no published journey)");
     }
 
     // ===== GEN-VM-08: Live locations are fetched using findLatestForPassengerTrains =====
