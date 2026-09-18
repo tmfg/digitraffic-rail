@@ -17,7 +17,6 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * yet" 404, which comes from the controller's own logic).
  */
 @TestPropertySource(properties = {
-        "spring.cloud.aws.secretsmanager.enabled=false",
         "spring.cloud.aws.region.static=eu-west-1"
 })
 class SiriEtControllerDisabledIntegrationTest extends MockMvcBaseTest {

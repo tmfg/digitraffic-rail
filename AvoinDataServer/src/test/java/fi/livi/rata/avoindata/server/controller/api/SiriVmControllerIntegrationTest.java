@@ -26,12 +26,11 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * for that "enabled but nothing generated yet" case; the separate "flag off entirely, no route mapped" case is
  * covered by {@link SiriVmControllerDisabledIntegrationTest}). Mirrors {@link SiriEtControllerIntegrationTest}.
  */
-// The Secrets Manager region is supplied by the runtime environment, not the repo — disable it so the context
-// loads hermetically; a static region satisfies any remaining AWS client. The test application.properties
+// spring.cloud.aws.secretsmanager.enabled=false is already set globally in the test application.properties.
+// A static region still needs to be supplied here for any remaining AWS client. The test application.properties
 // shadows the main one, so the SIRI-VM endpoint must be re-enabled here for it to be mapped.
 @TestPropertySource(properties = {
         "avoindataserver.siri.vm.enabled=true",
-        "spring.cloud.aws.secretsmanager.enabled=false",
         "spring.cloud.aws.region.static=eu-west-1"
 })
 class SiriVmControllerIntegrationTest extends MockMvcBaseTest {

@@ -31,12 +31,11 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * {@link GeneratedExportRepository} is stubbed to focus on the controller's HTTP contract with the full web
  * context (MockMvc, content negotiation, headers, status).
  */
-// The Secrets Manager region is supplied by the runtime environment, not the repo — disable it so the context
-// loads hermetically; a static region satisfies any remaining AWS client. The test application.properties
+// spring.cloud.aws.secretsmanager.enabled=false is already set globally in the test application.properties.
+// A static region still needs to be supplied here for any remaining AWS client. The test application.properties
 // shadows the main one, so the SIRI-ET endpoint must be re-enabled here for it to be mapped.
 @TestPropertySource(properties = {
         "avoindataserver.siri.et.enabled=true",
-        "spring.cloud.aws.secretsmanager.enabled=false",
         "spring.cloud.aws.region.static=eu-west-1"
 })
 class SiriEtControllerIntegrationTest extends MockMvcBaseTest {
