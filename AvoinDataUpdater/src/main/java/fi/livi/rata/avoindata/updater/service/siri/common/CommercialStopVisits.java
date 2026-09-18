@@ -93,6 +93,8 @@ public final class CommercialStopVisits {
         // on such a tie would let a different station's ARRIVAL slot in between this station's ARRIVAL/DEPARTURE
         // pair below, corrupting the pairing (and every subsequent visitIndex) from that point on.
         ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
+                // reverseOrder() flips the enum's natural ARRIVAL(0)-before-DEPARTURE(1) order to
+                // DEPARTURE-before-ARRIVAL on a same-instant tie - see the tie-break note above.
                 .thenComparing(r -> r.type, Comparator.reverseOrder()));
 
         int i = 0;

@@ -338,6 +338,8 @@ public class EtJourneyInterpreter {
 
         final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
         ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
+                // reverseOrder() flips the enum's natural ARRIVAL(0)-before-DEPARTURE(1) order to
+                // DEPARTURE-before-ARRIVAL on a same-instant tie - see the tie-break note in the javadoc above.
                 .thenComparing(r -> r.type, Comparator.reverseOrder()));
 
         int i = 0;
