@@ -113,6 +113,10 @@ public class SiriVmGenerationService {
             journeySourceVersion = context.journeySourceVersion();
             journeySourceGeneratedAt = context.journeySourceGeneratedAt();
             locationsReceived = context.locations().size();
+            // Seeded now (not just derived from result.stats() below) so a failure in BUILD/VALIDATE/PERSIST
+            // still reports the true received count on its error event, instead of falling back to
+            // SiriVmStats.empty()'s locationsReceived=0 and hiding the affected batch size.
+            stats = new SiriVmStats(locationsReceived, 0);
 
             stage = Stage.BUILD;
             final SiriVmResult result = context.vmService().buildVmDocumentWithStats(context.locations(), context.now());

@@ -9,6 +9,7 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
@@ -597,5 +598,120 @@ class SiriVmGenerationServiceTest {
         assertFalse(xml.contains("FSR:Quay:HKI-7"), "the true origin's quay is not resolvable since it's missing"
                 + " from the published tracks");
         assertTrue(xml.contains("FSR:Quay:OL-1"), "destination identity is unaffected since OL is still known");
+    }
+
+    /**
+     * Regression test: if BUILD (conversion/marshalling) throws after locations have already been loaded from
+     * the DB, the error event must still report the true received count instead of falling back to
+     * {@code SiriVmStats.empty()}'s locationsReceived=0 - otherwise the wide event hides the affected batch
+     * size on exactly the failures where it matters most. {@code getSpeed()} throwing simulates a failure
+     * inside {@code VmJourneyConverter.convert} itself (BUILD stage), strictly after {@code prepareContext()}
+     * (and its locations-received count) has already succeeded.
+     */
+    @Test
+    void givenBuildThrowsAfterLocationsLoaded_whenGenerate_thenErrorEventReportsTrueLocationsReceived() {
+        setupHappyPath();
+        when(trainLocationRepository.findLatestForPassengerTrains(any())).thenReturn(List.of(1L));
+        when(gtfsTrainRepository.getTrainLocations(List.of(1L)))
+                .thenReturn(List.of(new ThrowingSpeedLocation(location59())));
+
+        final Logger logger = (Logger) LoggerFactory.getLogger(SiriVmGenerationService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.generate();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        verify(generatedExportRepository, never()).persist(any());
+        final String wideEvent = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(m -> m.contains("outcome=error") && m.contains("rail.siri.locations.received="))
+                .toList()
+                .getLast();
+        assertTrue(wideEvent.contains("stage=build"), "must fail at the build stage: " + wideEvent);
+        assertTrue(wideEvent.contains("rail.siri.locations.received=1"),
+                "error event must retain the true received count, not fall back to 0: " + wideEvent);
+    }
+
+    /** Delegates every method to {@code delegate} except {@link #getSpeed()}, which always throws - used to
+     * simulate a BUILD-stage (conversion) failure without needing malformed repository data. */
+    private record ThrowingSpeedLocation(GTFSTrainLocation delegate) implements GTFSTrainLocation {
+        @Override
+        public long getId() {
+            return delegate.getId();
+        }
+
+        @Override
+        public LocalDate getDepartureDate() {
+            return delegate.getDepartureDate();
+        }
+
+        @Override
+        public long getTrainNumber() {
+            return delegate.getTrainNumber();
+        }
+
+        @Override
+        public ZonedDateTime getTimestamp() {
+            return delegate.getTimestamp();
+        }
+
+        @Override
+        public double getX() {
+            return delegate.getX();
+        }
+
+        @Override
+        public double getY() {
+            return delegate.getY();
+        }
+
+        @Override
+        public int getSpeed() {
+            throw new RuntimeException("simulated BUILD-stage failure");
+        }
+
+        @Override
+        public int getAccuracy() {
+            return delegate.getAccuracy();
+        }
+
+        @Override
+        public String getStationShortCode() {
+            return delegate.getStationShortCode();
+        }
+
+        @Override
+        public String getCommercialTrack() {
+            return delegate.getCommercialTrack();
+        }
+
+        @Override
+        public Boolean getUnknownTrack() {
+            return delegate.getUnknownTrack();
+        }
+
+        @Override
+        public Boolean getUnknownDelay() {
+            return delegate.getUnknownDelay();
+        }
+
+        @Override
+        public Integer getDelaySeconds() {
+            return delegate.getDelaySeconds();
+        }
+
+        @Override
+        public Boolean getVehicleAtStop() {
+            return delegate.getVehicleAtStop();
+        }
+
+        @Override
+        public Integer getVehicleAtStopValue() {
+            return delegate.getVehicleAtStopValue();
+        }
     }
 }
