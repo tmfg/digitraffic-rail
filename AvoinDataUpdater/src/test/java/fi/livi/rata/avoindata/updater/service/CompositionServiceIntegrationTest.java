@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -58,10 +59,16 @@ public class CompositionServiceIntegrationTest extends BaseTest {
     @MockitoBean
     private TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
+    @BeforeEach
+    public void setUp() {
+        // Composition ingestion resolves stations against the Trakedia node map, so the mock must
+        // return a non-null result for every test rather than only where it is explicitly asserted.
+        testDataService.mockGetTrakediaLiikennepaikkaNodes(trakediaLiikennepaikkaService);
+    }
+
     @Sql({ "/koju/sql/base.sql", "/koju/sql/time_table_row-2024-11-13--9715.sql" })
     @Test
     public void journeySectionsShouldBeOrderedByScheduleTest() throws Exception {
-        testDataService.mockGetTrakediaLiikennepaikkaNodes(trakediaLiikennepaikkaService);
         testDataService.createSingleTrainComposition();
         final Composition composition = compositionRepository.findAll().getFirst();
 
@@ -160,3 +167,4 @@ public class CompositionServiceIntegrationTest extends BaseTest {
         compositionService.addCompositions(new ArrayList<>());
     }
 }
+
