@@ -255,7 +255,11 @@ implemented:
   the new output.
 - **Service-level unit tests** (`SiriVmServiceTest` etc.): schema validity, unresolved-journey dropping,
   optional-field omission — assert on the domain record and/or the JAXB tree directly, no HTTP involved.
-- **Controller integration tests** (`SiriVmControllerIntegrationTest` etc.): HTTP-level behavior — fresh/stale
-  caching headers, 404 when disabled.
+- **Controller integration tests** (`SiriVmControllerIntegrationTest` etc.): HTTP-level behavior with the flag
+  explicitly re-enabled (the test `application.properties` shadows the main one and leaves it unset/disabled
+  by default) — fresh/stale caching headers, 404 when enabled but nothing has been generated yet. The
+  complementary "flag left disabled entirely, route never mapped" case has its own 404 test in a separate class
+  (`SiriVmControllerDisabledIntegrationTest`/`SiriEtControllerDisabledIntegrationTest`), since it needs the
+  opposite property configuration and thus a separate Spring context.
 - Not yet covered for VM: a DB-level end-to-end integration test equivalent to `SiriEtDbIntegrationTest` (see
   `SIRI-VM-IMPLEMENTATION-PLAN.md` Phase 4).

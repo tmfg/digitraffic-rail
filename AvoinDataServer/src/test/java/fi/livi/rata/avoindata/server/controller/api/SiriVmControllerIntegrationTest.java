@@ -22,7 +22,9 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 /**
  * REST leg of the SIRI-VM pipeline: {@code GET /api/v1/siri/vm} serves the latest {@code siri-vm.xml}
  * {@link GeneratedExport} row (produced by the updater) as {@code application/xml}, sets the freshness headers,
- * and returns 404 when nothing has been generated yet. Mirrors {@link SiriEtControllerIntegrationTest}.
+ * and returns 404 when nothing has been generated yet (see {@link #givenNoPublishedSiriVm_whenGet_thenNotFound()}
+ * for that "enabled but nothing generated yet" case; the separate "flag off entirely, no route mapped" case is
+ * covered by {@link SiriVmControllerDisabledIntegrationTest}). Mirrors {@link SiriEtControllerIntegrationTest}.
  */
 // The Secrets Manager region is supplied by the runtime environment, not the repo — disable it so the context
 // loads hermetically; a static region satisfies any remaining AWS client. The test application.properties

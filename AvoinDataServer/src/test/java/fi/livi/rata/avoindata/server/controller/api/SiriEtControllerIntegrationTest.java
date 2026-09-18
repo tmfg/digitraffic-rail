@@ -22,7 +22,9 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 /**
  * REST leg of the SIRI-ET pipeline: {@code GET /api/v1/siri/et} serves the latest {@code siri-et.xml}
  * {@link GeneratedExport} row (produced by the updater) as {@code application/xml}, sets the freshness headers,
- * and returns 404 when nothing has been generated yet.
+ * and returns 404 when nothing has been generated yet (see {@link #givenNoPublishedSiriEt_whenGet_thenNotFound()}
+ * for that "enabled but nothing generated yet" case; the separate "flag off entirely, no route mapped" case is
+ * covered by {@link SiriEtControllerDisabledIntegrationTest}).
  *
  * <p>The end-to-end DB round-trip (NeTEx → DB → SIRI-ET → DB) is covered by
  * {@code SiriEtDbIntegrationTest} in the updater. The server datasource is read-only by design, so here the
