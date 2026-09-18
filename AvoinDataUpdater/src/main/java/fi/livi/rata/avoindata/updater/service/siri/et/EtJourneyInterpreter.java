@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -320,22 +322,9 @@ public class EtJourneyInterpreter {
     /**
      * Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
      * (ARRIVAL only). The {@code timeTableRows} association declares no order, so the rows are first sorted
-     * (into a copy) by scheduled time, then a station-aware tie-break - matching {@code CommercialStopVisits.of}
-     * and {@code GTFSTrainRepository.getTrainLocations}'s own logic. Same-instant ties come in two distinct
-     * flavors needing opposite treatment:
-     * <ul>
-     *   <li>Different stations (station-boundary tie): a station's DEPARTURE and the next station's ARRIVAL
-     *   share the exact same scheduled time (zero scheduled transit time between adjacent stops - a real
-     *   occurrence, see TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). DEPARTURE must win here:
-     *   sorting ARRIVAL-first would let the next station's ARRIVAL slot in between this station's own
-     *   ARRIVAL/DEPARTURE pair, pairing this station's ARRIVAL with no departure (mistaken for a terminus) and
-     *   the next station's ARRIVAL with this station's DEPARTURE (wrong station identity).</li>
-     *   <li>The SAME station's own ARRIVAL and DEPARTURE share the exact same scheduled time (a zero-dwell
-     *   stop, e.g. a scheduled pass-by point with no dwell time). ARRIVAL must win here instead (the natural
-     *   order): the pairing loop below assumes rows strictly alternate ARRIVAL, DEPARTURE, ARRIVAL, DEPARTURE,
-     *   ... - a DEPARTURE-first tie on this station's own pair would break that alternation and split this
-     *   single stop into two bogus ones (one missing its arrival, one missing its departure).</li>
-     * </ul>
+     * (into a copy) by scheduled time via {@link #orderRows}, matching {@code CommercialStopVisits.of} and
+     * {@code GTFSTrainRepository.getTrainLocations}'s own logic (see {@link #orderRows}'s javadoc for why
+     * same-instant ties are resolved with a dedicated post-processing pass rather than a tie-break comparator).
      */
     private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
         final List<PairedStop> stops = new ArrayList<>();
@@ -343,17 +332,7 @@ public class EtJourneyInterpreter {
             return stops;
         }
 
-        final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
-        ordered.sort((a, b) -> {
-            final int byTime = a.scheduledTime.compareTo(b.scheduledTime);
-            if (byTime != 0) {
-                return byTime;
-            }
-            if (a.stationShortCode.equals(b.stationShortCode)) {
-                return a.type.compareTo(b.type); // same station: ARRIVAL(0) before DEPARTURE(1), natural order
-            }
-            return b.type.compareTo(a.type); // different stations: DEPARTURE(1) before ARRIVAL(0), reversed
-        });
+        final List<GTFSTimeTableRow> ordered = orderRows(rows);
 
         int i = 0;
         if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
@@ -373,6 +352,76 @@ public class EtJourneyInterpreter {
         }
 
         return stops;
+    }
+
+    /**
+     * Orders {@code rows} by scheduled time for {@link #pairRows}, which assumes rows strictly alternate
+     * ARRIVAL, DEPARTURE, ARRIVAL, DEPARTURE, ... Same-instant ties cannot be resolved with a plain pairwise
+     * tie-break comparator: an earlier version tried "DEPARTURE before ARRIVAL, unless same station" via
+     * {@code Comparator}, but that is not transitive (two DEPARTUREs at different stations compare equal to
+     * each other, yet each compares with the <em>opposite</em> sign against an ARRIVAL at one of those
+     * stations) - {@code List.sort} can throw "Comparator... violates its general contract" or silently
+     * misorder a three-or-more-row tie. So ties are instead resolved with a dedicated post-processing pass
+     * ({@link #reorderTiedGroup}) that reconstructs each same-instant run explicitly by station, rather than by
+     * a per-pair comparison rule.
+     */
+    private static List<GTFSTimeTableRow> orderRows(final List<GTFSTimeTableRow> rows) {
+        final List<GTFSTimeTableRow> byTime = new ArrayList<>(rows);
+        byTime.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime));
+
+        final List<GTFSTimeTableRow> result = new ArrayList<>(byTime.size());
+        int i = 0;
+        while (i < byTime.size()) {
+            int j = i + 1;
+            while (j < byTime.size() && byTime.get(j).scheduledTime.equals(byTime.get(i).scheduledTime)) {
+                j++;
+            }
+            result.addAll(reorderTiedGroup(byTime.subList(i, j)));
+            i = j;
+        }
+        return result;
+    }
+
+    /**
+     * Reconstructs the correct order of a run of rows sharing the exact same scheduled time, by station rather
+     * than by a global tie-break rule. Physically, a train visits stations one at a time, so such a run is
+     * always a single chain: at most one leading row completing a stay opened before the tie (a lone
+     * DEPARTURE, its own ARRIVAL scheduled earlier), zero or more stations fully contained in the tie (a
+     * zero-dwell stop: both its ARRIVAL and DEPARTURE share this same instant), and at most one trailing row
+     * opening a stay that continues after the tie (a lone ARRIVAL, its own DEPARTURE scheduled later). Ordering
+     * as [leading][zero-dwell pairs, each ARRIVAL before its own DEPARTURE][trailing] keeps every station's own
+     * rows correctly paired regardless of how many stations happen to tie at once - unlike a global type-based
+     * tie-break, this never depends on comparing one station's row against a different station's row.
+     */
+    private static List<GTFSTimeTableRow> reorderTiedGroup(final List<GTFSTimeTableRow> group) {
+        if (group.size() == 1) {
+            return group;
+        }
+
+        final Map<String, List<GTFSTimeTableRow>> byStation = new LinkedHashMap<>();
+        for (final GTFSTimeTableRow row : group) {
+            byStation.computeIfAbsent(row.stationShortCode, k -> new ArrayList<>()).add(row);
+        }
+
+        final List<GTFSTimeTableRow> leading = new ArrayList<>();
+        final List<GTFSTimeTableRow> middle = new ArrayList<>();
+        final List<GTFSTimeTableRow> trailing = new ArrayList<>();
+        for (final List<GTFSTimeTableRow> stationRows : byStation.values()) {
+            if (stationRows.size() >= 2) {
+                stationRows.sort(Comparator.comparing(r -> r.type)); // ARRIVAL(0) before DEPARTURE(1)
+                middle.addAll(stationRows);
+            } else if (stationRows.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+                leading.add(stationRows.get(0));
+            } else {
+                trailing.add(stationRows.get(0));
+            }
+        }
+
+        final List<GTFSTimeTableRow> ordered = new ArrayList<>(group.size());
+        ordered.addAll(leading);
+        ordered.addAll(middle);
+        ordered.addAll(trailing);
+        return ordered;
     }
 
     private record PairedStop(GTFSTimeTableRow arrival, GTFSTimeTableRow departure) {}

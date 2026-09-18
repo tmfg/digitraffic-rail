@@ -589,6 +589,45 @@ class SiriEtServiceTest {
         assertEquals(3, calls.get(2).getOrder().intValue());
     }
 
+    // Regression test for the reviewer's comparator-contract-violation finding: a single tied instant can
+    // involve THREE stations at once - HKI's departure completing a stay opened earlier, TPE's own arrival and
+    // departure tying with each other (zero-dwell), and TKU's arrival opening a stay that continues later. A
+    // pairwise "DEPARTURE-first unless same station" comparator is not transitive across this chain (HKI's and
+    // TKU's rows are different stations so compare "equal" to each other, yet each compares with the opposite
+    // sign against TPE's rows) - this used to risk List.sort throwing "Comparison method violates its general
+    // contract" or silently misordering. The fix reconstructs the tied run by station instead of by pairwise
+    // comparison, so all three stations must still come out correctly paired, in the right (causal) order.
+    @Test
+    void givenThreeStationsTieAtSameInstant_whenBuild_thenPairsAllStopsCorrectly() {
+        // given
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI",
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), "7");
+        // TPE's own arrival and departure tie exactly with HKI's departure and TKU's arrival above/below.
+        addStop(train, "TPE",
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), "1");
+        addStop(train, "TKU",
+                ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), "3");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — exactly 3 stops (HKI, TPE, TKU), each correctly paired and in causal order, despite four of
+        // their six rows sharing one exact tied instant.
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        assertEquals(3, calls.size());
+        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TKU-3", calls.get(2).getStopPointRef().getValue());
+        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(2, calls.get(1).getOrder().intValue());
+        assertEquals(3, calls.get(2).getOrder().intValue());
+    }
+
     // --- ET-09: Stop with arrival.actualTime but no departure.actualTime → still RecordedCall ---
 
     @Test

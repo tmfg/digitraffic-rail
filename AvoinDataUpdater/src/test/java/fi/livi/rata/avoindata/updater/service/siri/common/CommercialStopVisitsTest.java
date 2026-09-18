@@ -242,6 +242,40 @@ public class CommercialStopVisitsTest {
         assertTrue(stops.get(2).departure() == null); // OL is the terminus
     }
 
+    // Regression test for the reviewer's comparator-contract-violation finding: a single tied instant can
+    // involve THREE stations at once - HKI's DEPARTURE completing a stay opened earlier, TPE's own ARRIVAL and
+    // DEPARTURE tying with each other (zero-dwell), and JY's ARRIVAL opening a stay that continues later. A
+    // pairwise "DEPARTURE-first unless same station" comparator is not transitive across this chain (HKI's and
+    // JY's rows are different stations so compare "equal" to each other, yet each compares with the opposite
+    // sign against TPE's rows) - this used to risk List.sort throwing "Comparison method violates its general
+    // contract" or silently misordering. The fix reconstructs the tied run by station instead of by pairwise
+    // comparison, so it must still produce HKI(leading)/TPE(zero-dwell pair)/JY(trailing) in order.
+    @Test
+    public void of_pairsRowsCorrectlyWhenThreeStationsTieAtSameInstant() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        // HKI's own ARRIVAL is scheduled earlier (not part of the tie); its DEPARTURE, TPE's own ARRIVAL and
+        // DEPARTURE (zero-dwell), and JY's own ARRIVAL all then share the exact same instant; JY's DEPARTURE is
+        // scheduled later (not part of the tie either).
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.ARRIVAL, T0, false, T0));
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("JY", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("JY", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+
+        // All three stations must come out as full, correctly-paired stops, in the right (causal) order -
+        // despite four of their six rows sharing one exact tied instant.
+        assertEquals(3, stops.size());
+        assertEquals("HKI", stops.get(0).arrival().stationShortCode);
+        assertEquals("HKI", stops.get(0).departure().stationShortCode);
+        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
+        assertEquals("TPE", stops.get(1).departure().stationShortCode);
+        assertEquals("JY", stops.get(2).arrival().stationShortCode);
+        assertEquals("JY", stops.get(2).departure().stationShortCode);
+    }
+
     // Regression test: a non-commercial stop (e.g. a technical/operational-only stop with no passenger
     // exchange) must be filtered out of the paired stop sequence entirely - mirroring the NeTEx static timetable
     // and SIRI-ET's own CommercialStopRule, which never emit such a stop's own visitIndex either. If it were
