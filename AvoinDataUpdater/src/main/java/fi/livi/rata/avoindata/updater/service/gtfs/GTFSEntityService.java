@@ -45,10 +45,11 @@ public class GTFSEntityService {
         this.trakediaLiikennepaikkaService = trakediaLiikennepaikkaService;
     }
 
-    public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
+    public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
+                                    final Map<String, JsonNode> nodes, final GtfsRunContext context) {
         final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
-        final PlatformData platformData = platformDataService.getCurrentPlatformData();
+        final PlatformData platformData = platformDataService.getCurrentPlatformData(nodes);
         final Map<String, Stop> stopMap = gtfsStopsService.createStops(scheduleIntervalsByTrain, timeTableRows, platformData);
 
         final GTFSDto gtfsDto = new GTFSDto();
@@ -57,15 +58,14 @@ public class GTFSEntityService {
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
         gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
-        gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap);
-        gtfsDto.translations = createTranslations(gtfsDto.stops);
+        gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap, nodes, context);
+        gtfsDto.translations = createTranslations(gtfsDto.stops, nodes);
 
         return gtfsDto;
     }
 
-    private List<Translation> createTranslations(final List<Stop> stops) {
+    private List<Translation> createTranslations(final List<Stop> stops, final Map<String, JsonNode> nodes) {
         final List<Translation> translations = new ArrayList<>();
-        final Map<String, JsonNode> nodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes();
 
         for(final Stop stop : stops) {
             // skip stops with track, they are not needed for translations

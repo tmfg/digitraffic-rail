@@ -1,9 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
@@ -11,6 +14,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import tools.jackson.databind.JsonNode;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiRunContext;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,34 +42,66 @@ public class GTFSService {
 
     public static int FIRST_STOP_SEQUENCE = 1;
 
+    /** Upper bound on route-resolution work per feed, so a degraded Infra API cannot stall the run. */
+    private static final Duration FEED_BUDGET = Duration.ofMinutes(10);
+
     private final GTFSEntityService gtfsEntityService;
     private final GTFSWritingService gtfsWritingService;
     private final ScheduleProviderService scheduleProviderService;
     private final LastUpdateService lastUpdateService;
     private final GTFSTripService gtfsTripService;
+    private final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService;
 
-    public GTFSService(final GTFSEntityService gtfsEntityService, final GTFSWritingService gtfsWritingService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService, final GTFSTripService gtfsTripService) {
+    public GTFSService(final GTFSEntityService gtfsEntityService, final GTFSWritingService gtfsWritingService, final ScheduleProviderService scheduleProviderService, final LastUpdateService lastUpdateService, final GTFSTripService gtfsTripService, final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService) {
         this.gtfsEntityService = gtfsEntityService;
         this.gtfsWritingService = gtfsWritingService;
         this.scheduleProviderService = scheduleProviderService;
         this.lastUpdateService = lastUpdateService;
         this.gtfsTripService = gtfsTripService;
+        this.trakediaLiikennepaikkaService = trakediaLiikennepaikkaService;
     }
 
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "UTC")
     public void generateGTFS() {
         TimingUtil.log(log, "generateGTFS", () -> {
+            final GtfsRunContext context = newRunContext();
             try {
                 final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
-                this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start));
+                this.generateGTFS(scheduleProviderService.getAdhocSchedules(start), scheduleProviderService.getRegularSchedules(start), context);
 
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.GTFS);
-            } catch (final ExecutionException | InterruptedException | IOException e) {
+            } catch (final ExecutionException | InterruptedException | IOException | RuntimeException e) {
+                context.metrics().markError(e);
                 log.error("method=generateGTFS Error generating gtfs", e);
 
                 throw new RuntimeException(e);
+            } finally {
+                InfraApiRunContext.unbind();
+                logRunEvent(context.metrics());
             }
         });
+    }
+
+    /** Binds the run's metrics so the shared WebClient can attribute Infra API requests to it. */
+    private GtfsRunContext newRunContext() {
+        final GtfsRunContext context = new GtfsRunContext(FEED_BUDGET, Clock.systemUTC());
+        InfraApiRunContext.bind(context.metrics());
+        return context;
+    }
+
+    /** Emitted with an identical field set on every path; only the level differs. */
+    private void logRunEvent(final GtfsRunMetrics metrics) {
+        try {
+            final Map<String, Object> event = metrics.finalEvent();
+            if (metrics.outcome() == GtfsOutcome.SUCCESS) {
+                log.info("{}", event);
+            } else {
+                log.error("{}", event);
+            }
+        } catch (final RuntimeException e) {
+            // Must never mask the generation failure that is already propagating.
+            log.error("method=logRunEvent Could not emit GTFS run event", e);
+        }
     }
 
     //For generating test json
@@ -109,38 +148,85 @@ public class GTFSService {
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
                               final boolean filterOutNonStopsAndMuseumTrains) throws IOException {
-        // filter out museum trains when desired
-        final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream()
-                .filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
+        final GtfsRunContext context = newRunContext();
+        try {
+            return createGtfs(passengerAdhocSchedules, passengerRegularSchedules, zipFileName,
+                    filterOutNonStopsAndMuseumTrains, resolveNodes(context), context);
+        } finally {
+            InfraApiRunContext.unbind();
+        }
+    }
 
-        final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, passengerRegularSchedules);
+    private GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
+                               final List<Schedule> passengerRegularSchedules,
+                               final String zipFileName,
+                               final boolean filterOutNonStopsAndMuseumTrains,
+                               final Map<String, JsonNode> nodes,
+                               final GtfsRunContext context) throws IOException {
+        context.startFeed(zipFileName);
+        try {
+            // filter out museum trains when desired
+            final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream()
+                    .filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
 
-        if (filterOutNonStopsAndMuseumTrains) {
-            for (final Trip trip : gtfsDto.trips) {
-                trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
+            final GTFSDto gtfsDto = gtfsEntityService.createGTFSEntity(adhocSchedules, passengerRegularSchedules, nodes, context);
+
+            if (filterOutNonStopsAndMuseumTrains) {
+                for (final Trip trip : gtfsDto.trips) {
+                    trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
+                }
+
+                // first filter out invalid trips
+                gtfsDto.trips = filterOutTripsWithLessThanTwoStops(gtfsDto);
+                // and then filter the stop-ids
+                final Set<String> stopIds = collectStopIds(gtfsDto.trips);
+                gtfsDto.stops = filterStops(gtfsDto, stopIds);
             }
 
-            // first filter out invalid trips
-            gtfsDto.trips = filterOutTripsWithLessThanTwoStops(gtfsDto);
-            // and then filter the stop-ids
-            final Set<String> stopIds = collectStopIds(gtfsDto.trips);
-            gtfsDto.stops = filterStops(gtfsDto, stopIds);
+            gtfsWritingService.writeGTFSFiles(gtfsDto, zipFileName);
+            context.metrics().recordFeedPublished(zipFileName);
+
+            return gtfsDto;
+        } catch (final IOException | RuntimeException e) {
+            context.metrics().recordFeedFailed(zipFileName);
+            throw e;
         }
-
-        gtfsWritingService.writeGTFSFiles(gtfsDto, zipFileName);
-
-        return gtfsDto;
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        final GTFSDto gtfs = this.createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip", false);
+        final GtfsRunContext context = newRunContext();
+        try {
+            generateGTFS(adhocSchedules, regularSchedules, context);
+        } catch (final IOException | RuntimeException e) {
+            context.metrics().markError(e);
+            throw e;
+        } finally {
+            InfraApiRunContext.unbind();
+            logRunEvent(context.metrics());
+        }
+    }
+
+    /**
+     * Resolves one validated node snapshot for the whole run, so that all feeds are built from the
+     * same source generation instead of re-reading an ambient, arbitrarily aged cache per feed.
+     */
+    private Map<String, JsonNode> resolveNodes(final GtfsRunContext context) {
+        final InfraApiMapResult<JsonNode> nodeMap = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes();
+        context.metrics().recordNodeMap(nodeMap);
+        return nodeMap.requireComplete();
+    }
+
+    private void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
+                              final GtfsRunContext context) throws IOException {
+        final Map<String, JsonNode> nodes = resolveNodes(context);
+        final GTFSDto gtfs = this.createGtfs(adhocSchedules, regularSchedules, "gtfs-all.zip", false, nodes, context);
 
         final List<Schedule> passengerAdhocSchedules = adhocSchedules.stream().filter(this::isPassengerTrain).toList();
         final List<Schedule> passengerRegularSchedules = regularSchedules.stream().filter(this::isPassengerTrain).toList();
 
-        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip", false);
-        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger-stops.zip", true);
-        createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules);
+        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger.zip", false, nodes, context);
+        this.createGtfs(passengerAdhocSchedules, passengerRegularSchedules, "gtfs-passenger-stops.zip", true, nodes, context);
+        createVrGtfs(passengerAdhocSchedules, passengerRegularSchedules, nodes, context);
 
         gtfsTripService.updateGtfsTrips(gtfs);
 
@@ -177,12 +263,13 @@ public class GTFSService {
                 (scheduleRow.arrival.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL || scheduleRow.departure.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL));
     }
 
-    private void createVrGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules) throws IOException {
+    private void createVrGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules,
+                              final Map<String, JsonNode> nodes, final GtfsRunContext context) throws IOException {
         final List<Schedule> vrPassengerAdhocSchedules = createVrSchedules(passengerAdhocSchedules);
         final List<Schedule> vrPassengerRegularSchedules = createVrSchedules(passengerRegularSchedules);
 
-        createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip", true);
-        createVRTreGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules);
+        createGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, "gtfs-vr.zip", true, nodes, context);
+        createVRTreGtfs(vrPassengerAdhocSchedules, vrPassengerRegularSchedules, nodes, context);
     }
 
     private List<Schedule> createVrSchedules(final List<Schedule> passengerAdhocSchedules) {
@@ -198,13 +285,14 @@ public class GTFSService {
     }
 
 
-    public void createVRTreGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules) throws IOException {
+    public void createVRTreGtfs(final List<Schedule> passengerAdhocSchedules, final List<Schedule> passengerRegularSchedules,
+                                final Map<String, JsonNode> nodes, final GtfsRunContext context) throws IOException {
         final Set<String> includedStations = Sets.newHashSet("OV", "OVK", "LPÄ", "NOA");
         final Predicate<Schedule> treFilter = schedule -> schedule.scheduleRows.stream().anyMatch(scheduleRow -> includedStations.contains(scheduleRow.station.stationShortCode));
         final List<Schedule> vrTrePassengerAdhocSchedules = passengerAdhocSchedules.stream().filter(treFilter).collect(Collectors.toList());
         final List<Schedule> vrTreRegularSchedules = passengerRegularSchedules.stream().filter(treFilter).collect(Collectors.toList());
 
-        createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip", true);
+        createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip", true, nodes, context);
     }
 
     private boolean isPassengerTrain(final Schedule s) {

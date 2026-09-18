@@ -4,8 +4,10 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,8 @@ import fi.livi.rata.avoindata.common.domain.composition.JourneyComposition;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainreadymessage.TrainRunningMessage;
 import fi.livi.rata.avoindata.updater.deserializers.JourneyCompositionConverter;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
@@ -72,7 +76,11 @@ public class TestDataService {
             log.error("could not fetch Trakedia data", e);
         }
 
-        when(trakediaLiikennepaikkaServiceMock.getTrakediaLiikennepaikkaNodes()).thenReturn(liikennepaikkaMap);
+        final Map<InfraApiDataset, Integer> sourceCounts = new EnumMap<>(InfraApiDataset.class);
+        sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
+        sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikkaMap.size());
+        when(trakediaLiikennepaikkaServiceMock.getTrakediaLiikennepaikkaNodes())
+                .thenReturn(InfraApiMapResult.success(liikennepaikkaMap, sourceCounts, Instant.now()));
     }
 
     @Modifying
@@ -142,3 +150,4 @@ public class TestDataService {
         return Arrays.asList(trainRunningMessages);
     }
 }
+

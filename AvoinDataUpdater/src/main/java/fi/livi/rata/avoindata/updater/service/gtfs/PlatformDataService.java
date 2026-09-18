@@ -47,9 +47,11 @@ public class PlatformDataService {
      */
 
     public PlatformData getCurrentPlatformData() {
-        final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
+        return getCurrentPlatformData(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes().requireComplete());
+    }
 
-        final Map<String, JsonNode> liikennePaikkaNodes = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes();
+    public PlatformData getCurrentPlatformData(final Map<String, JsonNode> liikennePaikkaNodes) {
+        final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
 
         final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
                 infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));

@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.retry.support.RetryTemplate;
+import fi.livi.rata.avoindata.updater.config.InfraApiRetry;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -28,6 +30,7 @@ import static org.locationtech.jts.simplify.DouglasPeuckerSimplifier.simplify;
 
 @Service
 public class TrakediaRouteService {
+    private final RetryTemplate retryTemplate = InfraApiRetry.create();
     private Set<String> ignoredStations = Set.of("PYE");
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -40,8 +43,19 @@ public class TrakediaRouteService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
+    /** Coordinates of a resolved route, or the reason a dummy segment has to be used instead. */
+    public record RouteResult(List<Coordinate> coordinates, DummyReason fallbackReason) {
+        public static RouteResult of(final List<Coordinate> coordinates) {
+            return new RouteResult(coordinates, null);
+        }
+
+        public static RouteResult fallback(final DummyReason reason) {
+            return new RouteResult(List.of(), reason);
+        }
+    }
+
     @Cacheable("trakediaRoute")
-    public List<Coordinate> createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
+    public RouteResult createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
         final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
         final String timeParameter = String.format("%s/%s", startOfDayIso8601, startOfDayIso8601);
@@ -50,9 +64,7 @@ public class TrakediaRouteService {
                 "https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s&jatkokerroin=1",
                 correctTunniste(startTunniste), correctTunniste(endTunniste), timeParameter);
 
-        log.info(routeUrl);
-
-        final JsonNode apiRoute = webClient.get().uri(routeUrl).retrieve().bodyToMono(JsonNode.class).block();
+        final JsonNode apiRoute = retryTemplate.execute(context -> webClient.get().uri(routeUrl).retrieve().bodyToMono(JsonNode.class).block());
 
         final List<List<Coordinate>> allLines = new ArrayList<>();
         final JsonNode geometria = apiRoute.get("geometria");
@@ -60,7 +72,7 @@ public class TrakediaRouteService {
             if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
                 log.warn("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
             }
-            return new ArrayList<>();
+            return RouteResult.fallback(DummyReason.ROUTE_EMPTY_GEOMETRY);
         }
         for (final JsonNode lineNode : geometria) {
             final List<Coordinate> output = new ArrayList<>();
@@ -70,7 +82,8 @@ public class TrakediaRouteService {
             allLines.add(simplifyCoordinates(output));
         }
 
-        return getShortestPath(allLines, startStop, endStop);
+        final List<Coordinate> shortestPath = getShortestPath(allLines, startStop, endStop);
+        return shortestPath.isEmpty() ? RouteResult.fallback(DummyReason.NO_DIJKSTRA_PATH) : RouteResult.of(shortestPath);
     }
 
     private List<Coordinate> simplifyCoordinates(final List<Coordinate> coordinates) {

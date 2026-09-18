@@ -34,7 +34,8 @@ public class StationDeserializer extends AEntityDeserializer<Station> {
                                final DeserializationContext deserializationContext) {
         // To break circular reference
         final var trakediaLiikennepaikkaService = applicationContext.getBean(TrakediaLiikennepaikkaService.class);
-        final var liikennepaikkaMap = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkas();
+        // Coordinates are enrichment here: an unavailable map must not fail station ingestion.
+        final var liikennepaikkaMap = trakediaLiikennepaikkaService.getTrakediaLiikennepaikkas().valuesOrEmpty();
 
         final Station station = new Station();
 

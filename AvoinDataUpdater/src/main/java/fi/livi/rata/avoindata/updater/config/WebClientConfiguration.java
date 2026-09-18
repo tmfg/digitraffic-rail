@@ -88,6 +88,7 @@ public class WebClientConfiguration {
         // more memory for default web-client
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(defaultHttpClient))
+                .filter(new InfraApiMetricsFilter())
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(codecs -> codecs
                                 .defaultCodecs().maxInMemorySize(200 * 1024 * 1024))
