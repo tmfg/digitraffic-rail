@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -321,14 +320,22 @@ public class EtJourneyInterpreter {
     /**
      * Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
      * (ARRIVAL only). The {@code timeTableRows} association declares no order, so the rows are first sorted
-     * (into a copy) by scheduled time, then DEPARTURE before ARRIVAL on a tie - matching
-     * {@code CommercialStopVisits.of} and {@code GTFSTrainRepository.getTrainLocations}'s own tie-break. This
-     * only matters when a station's DEPARTURE and the next station's ARRIVAL share the exact same scheduled
-     * time (zero scheduled transit time between adjacent stops - a real occurrence, see TrainFactory's TPE
-     * DEPARTURE / JY ARRIVAL fixture rows): sorting ARRIVAL-first on that tie would let the next station's
-     * ARRIVAL slot in between this station's own ARRIVAL/DEPARTURE pair below, pairing this station's ARRIVAL
-     * with no departure (mistaken for a terminus) and the next station's ARRIVAL with this station's DEPARTURE
-     * (wrong station identity) - corrupting every pairing (and visitIndex) from that point on.
+     * (into a copy) by scheduled time, then a station-aware tie-break - matching {@code CommercialStopVisits.of}
+     * and {@code GTFSTrainRepository.getTrainLocations}'s own logic. Same-instant ties come in two distinct
+     * flavors needing opposite treatment:
+     * <ul>
+     *   <li>Different stations (station-boundary tie): a station's DEPARTURE and the next station's ARRIVAL
+     *   share the exact same scheduled time (zero scheduled transit time between adjacent stops - a real
+     *   occurrence, see TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). DEPARTURE must win here:
+     *   sorting ARRIVAL-first would let the next station's ARRIVAL slot in between this station's own
+     *   ARRIVAL/DEPARTURE pair, pairing this station's ARRIVAL with no departure (mistaken for a terminus) and
+     *   the next station's ARRIVAL with this station's DEPARTURE (wrong station identity).</li>
+     *   <li>The SAME station's own ARRIVAL and DEPARTURE share the exact same scheduled time (a zero-dwell
+     *   stop, e.g. a scheduled pass-by point with no dwell time). ARRIVAL must win here instead (the natural
+     *   order): the pairing loop below assumes rows strictly alternate ARRIVAL, DEPARTURE, ARRIVAL, DEPARTURE,
+     *   ... - a DEPARTURE-first tie on this station's own pair would break that alternation and split this
+     *   single stop into two bogus ones (one missing its arrival, one missing its departure).</li>
+     * </ul>
      */
     private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
         final List<PairedStop> stops = new ArrayList<>();
@@ -337,10 +344,16 @@ public class EtJourneyInterpreter {
         }
 
         final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
-        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
-                // reverseOrder() flips the enum's natural ARRIVAL(0)-before-DEPARTURE(1) order to
-                // DEPARTURE-before-ARRIVAL on a same-instant tie - see the tie-break note in the javadoc above.
-                .thenComparing(r -> r.type, Comparator.reverseOrder()));
+        ordered.sort((a, b) -> {
+            final int byTime = a.scheduledTime.compareTo(b.scheduledTime);
+            if (byTime != 0) {
+                return byTime;
+            }
+            if (a.stationShortCode.equals(b.stationShortCode)) {
+                return a.type.compareTo(b.type); // same station: ARRIVAL(0) before DEPARTURE(1), natural order
+            }
+            return b.type.compareTo(a.type); // different stations: DEPARTURE(1) before ARRIVAL(0), reversed
+        });
 
         int i = 0;
         if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {

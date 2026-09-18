@@ -214,6 +214,34 @@ public class CommercialStopVisitsTest {
         assertEquals(0, visitIndex.getAsInt());
     }
 
+    // Regression test for the review-reported bug: a station's OWN ARRIVAL and DEPARTURE can also share the
+    // exact same scheduled_time (a zero-dwell stop, e.g. a scheduled pass-by point). Unlike the
+    // cross-station-boundary tie above, a global DEPARTURE-first tie-break here would misfire: since the
+    // pairing loop assumes strict ARRIVAL/DEPARTURE alternation, treating TPE's DEPARTURE as sorted first would
+    // split TPE into two bogus stops (one with only a departure, mistaken for an origin; one with only an
+    // arrival, mistaken for a terminus) instead of one TPE stop with both legs. This is why the tie-break must
+    // be station-aware: DEPARTURE-first only when the tied rows are two DIFFERENT stations.
+    @Test
+    public void of_pairsRowsCorrectlyWhenSameStationArrivalAndDepartureTie() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // TPE's own ARRIVAL and DEPARTURE tie exactly (zero scheduled dwell time).
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1), false, T0.plusHours(1)));
+        rows.add(row("OL", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(2), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+
+        assertEquals(3, stops.size());
+        assertEquals("HKI", stops.get(0).departure().stationShortCode);
+        // TPE must be a single, full arrival+departure pair - not split into two stops.
+        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
+        assertTrue(stops.get(1).departure() != null);
+        assertEquals("TPE", stops.get(1).departure().stationShortCode);
+        assertEquals("OL", stops.get(2).arrival().stationShortCode);
+        assertTrue(stops.get(2).departure() == null); // OL is the terminus
+    }
+
     // Regression test: a non-commercial stop (e.g. a technical/operational-only stop with no passenger
     // exchange) must be filtered out of the paired stop sequence entirely - mirroring the NeTEx static timetable
     // and SIRI-ET's own CommercialStopRule, which never emit such a stop's own visitIndex either. If it were

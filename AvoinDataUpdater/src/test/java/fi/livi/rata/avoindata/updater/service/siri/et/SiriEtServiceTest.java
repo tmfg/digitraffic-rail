@@ -555,6 +555,40 @@ class SiriEtServiceTest {
         assertEquals(4, calls.get(3).getOrder().intValue());
     }
 
+    // Regression test for the review-reported bug: a station's OWN arrival and departure can also share the
+    // exact same scheduled time (a zero-dwell stop, e.g. a scheduled pass-by point). Unlike the
+    // cross-station-boundary tie above, a global DEPARTURE-first tie-break would misfire here: since pairRows
+    // assumes strict arrival/departure alternation, sorting TPE's own departure before its arrival would split
+    // TPE into two bogus stops (one arrival-only, mistaken for a terminus; one departure-only, mistaken for an
+    // origin) instead of one TPE stop with both legs correctly paired.
+    @Test
+    void givenSameStationArrivalAndDepartureTie_whenBuild_thenPairsAsSingleStopNotSplit() {
+        // given
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        // TPE's own arrival and departure tie exactly (zero scheduled dwell time).
+        addStop(train, "TPE",
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI), "1");
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — exactly 3 stops (HKI, TPE, OL); TPE keeps a single, full arrival+departure pair, not split.
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        assertEquals(3, calls.size());
+        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:OL-1", calls.get(2).getStopPointRef().getValue());
+        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(2, calls.get(1).getOrder().intValue());
+        assertEquals(3, calls.get(2).getOrder().intValue());
+    }
+
     // --- ET-09: Stop with arrival.actualTime but no departure.actualTime → still RecordedCall ---
 
     @Test

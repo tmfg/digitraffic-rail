@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,16 +96,28 @@ public final class CommercialStopVisits {
         }
 
         final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
-        // type descending breaks a same-instant tie in favor of DEPARTURE, matching
-        // GTFSTrainRepository.getTrainLocations's next lateral: this only matters when the current station's
-        // DEPARTURE and the next station's ARRIVAL share the same scheduled_time (zero scheduled transit time,
-        // a real occurrence - see TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). Sorting ARRIVAL-first
-        // on such a tie would let a different station's ARRIVAL slot in between this station's ARRIVAL/DEPARTURE
-        // pair below, corrupting the pairing (and every subsequent visitIndex) from that point on.
-        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
-                // reverseOrder() flips the enum's natural ARRIVAL(0)-before-DEPARTURE(1) order to
-                // DEPARTURE-before-ARRIVAL on a same-instant tie - see the tie-break note above.
-                .thenComparing(r -> r.type, Comparator.reverseOrder()));
+        // Same-instant ties come in two distinct flavors that need opposite tie-breaks:
+        // - Different stations (station-boundary tie): this station's DEPARTURE and the next station's ARRIVAL
+        //   share the same scheduled_time (zero scheduled transit time, a real occurrence - see TrainFactory's
+        //   TPE DEPARTURE / JY ARRIVAL fixture rows). DEPARTURE must win, matching
+        //   GTFSTrainRepository.getTrainLocations's next lateral - sorting ARRIVAL-first here would let the next
+        //   station's ARRIVAL slot in between this station's own ARRIVAL/DEPARTURE pair, corrupting the pairing
+        //   (and every subsequent visitIndex) from that point on.
+        // - The SAME station's own ARRIVAL and DEPARTURE share the same scheduled_time (a zero-dwell stop, e.g.
+        //   a pass-by point scheduled with no dwell time). Here ARRIVAL must win (the natural order) instead:
+        //   the pairing loop below assumes rows strictly alternate ARRIVAL, DEPARTURE, ARRIVAL, DEPARTURE, ... -
+        //   a DEPARTURE-first tie on this station's own pair would break that alternation and split this single
+        //   stop into two bogus ones (one missing its arrival, one missing its departure).
+        ordered.sort((a, b) -> {
+            final int byTime = a.scheduledTime.compareTo(b.scheduledTime);
+            if (byTime != 0) {
+                return byTime;
+            }
+            if (a.stationShortCode.equals(b.stationShortCode)) {
+                return a.type.compareTo(b.type); // same station: ARRIVAL(0) before DEPARTURE(1), natural order
+            }
+            return b.type.compareTo(a.type); // different stations: DEPARTURE(1) before ARRIVAL(0), reversed
+        });
 
         int i = 0;
         if (ordered.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
