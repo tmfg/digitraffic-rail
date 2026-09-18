@@ -410,10 +410,13 @@ public class EtJourneyInterpreter {
             if (stationRows.size() >= 2) {
                 stationRows.sort(Comparator.comparing(r -> r.type)); // ARRIVAL(0) before DEPARTURE(1)
                 middle.addAll(stationRows);
-            } else if (stationRows.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
-                leading.add(stationRows.get(0));
+                continue;
+            }
+            final GTFSTimeTableRow onlyRow = stationRows.getFirst();
+            if (onlyRow.type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+                leading.add(onlyRow);
             } else {
-                trailing.add(stationRows.get(0));
+                trailing.add(onlyRow);
             }
         }
 
