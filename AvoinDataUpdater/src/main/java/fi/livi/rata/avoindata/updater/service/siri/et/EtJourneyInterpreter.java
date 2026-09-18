@@ -392,6 +392,19 @@ public class EtJourneyInterpreter {
      * as [leading][zero-dwell pairs, each ARRIVAL before its own DEPARTURE][trailing] keeps every station's own
      * rows correctly paired regardless of how many stations happen to tie at once - unlike a global type-based
      * tie-break, this never depends on comparing one station's row against a different station's row.
+     *
+     * <p>Example: HKI's own ARRIVAL is scheduled earlier (not part of any tie); its DEPARTURE, TPE's own
+     * ARRIVAL and DEPARTURE (a zero-dwell stop), and TKU's own ARRIVAL all share one exact scheduled time; TKU's
+     * DEPARTURE is scheduled later (not part of the tie either):
+     * <pre>
+     * input group (order as received, i.e. arbitrary):  TKU ARR, HKI DEP, TPE DEP, TPE ARR
+     * grouped by station:                               HKI -&gt; [DEP]   TPE -&gt; [DEP, ARR]   TKU -&gt; [ARR]
+     * classified:                                        HKI leading    TPE middle (sorted ARR, DEP)  TKU trailing
+     * result:                                             HKI DEP, TPE ARR, TPE DEP, TKU ARR
+     * </pre>
+     * which the caller's {@code orderRows} then places between HKI's earlier ARRIVAL and TKU's later DEPARTURE,
+     * yielding the fully-correct sequence HKI ARR, HKI DEP, TPE ARR, TPE DEP, TKU ARR, TKU DEP - i.e. 3 clean
+     * stops (HKI, TPE, TKU) even though 4 of the 6 rows tie on scheduled time.
      */
     private static List<GTFSTimeTableRow> reorderTiedGroup(final List<GTFSTimeTableRow> group) {
         if (group.size() == 1) {
