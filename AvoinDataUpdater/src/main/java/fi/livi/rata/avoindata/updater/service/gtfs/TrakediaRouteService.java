@@ -13,6 +13,8 @@ import org.locationtech.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,6 +32,8 @@ import static org.locationtech.jts.simplify.DouglasPeuckerSimplifier.simplify;
 
 @Service
 public class TrakediaRouteService {
+    static final String CACHE_NAME = "trakediaRoute";
+
     private final RetryTemplate retryTemplate = InfraApiRetry.create();
     private Set<String> ignoredStations = Set.of("PYE");
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -43,6 +47,22 @@ public class TrakediaRouteService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
+    @Autowired(required = false)
+    private CacheManager cacheManager;
+
+    /** Whether a route is already cached, i.e. resolvable without any Infra API request. */
+    public boolean isCached(final String startTunniste, final String endTunniste) {
+        if (cacheManager == null) {
+            return false;
+        }
+        final Cache cache = cacheManager.getCache(CACHE_NAME);
+        return cache != null && cache.get(cacheKey(startTunniste, endTunniste)) != null;
+    }
+
+    private static String cacheKey(final String startTunniste, final String endTunniste) {
+        return startTunniste + ">" + endTunniste;
+    }
+
     /** Coordinates of a resolved route, or the reason a dummy segment has to be used instead. */
     public record RouteResult(List<Coordinate> coordinates, DummyReason fallbackReason) {
         public static RouteResult of(final List<Coordinate> coordinates) {
@@ -54,7 +74,10 @@ public class TrakediaRouteService {
         }
     }
 
-    @Cacheable("trakediaRoute")
+    // Stop has no equals/hashCode, so the default key generator falls back to identity and never
+    // hits across feeds, which rebuild their Stop objects. The tunniste pair is the real identity.
+    // Keep this expression and cacheKey() below in step.
+    @Cacheable(cacheNames = CACHE_NAME, key = "#startTunniste + '>' + #endTunniste")
     public RouteResult createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
         final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));

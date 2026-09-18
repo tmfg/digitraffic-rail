@@ -183,11 +183,13 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
     }
 
     public GtfsOutcome outcome() {
+        // A feed failure always propagates and sets errorType, so this has to be tested first or
+        // PARTIAL is unreachable and a run that published four of five feeds looks like total loss.
+        if (!failedFeedNames.isEmpty()) {
+            return publishedFeedNames.isEmpty() ? GtfsOutcome.ERROR : GtfsOutcome.PARTIAL;
+        }
         if (errorType != null) {
             return GtfsOutcome.ERROR;
-        }
-        if (!failedFeedNames.isEmpty()) {
-            return GtfsOutcome.PARTIAL;
         }
         return dummySegments > 0 || !degradedFeedNames.isEmpty() ? GtfsOutcome.DEGRADED : GtfsOutcome.SUCCESS;
     }
@@ -220,6 +222,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
         event.put("rail.gtfs.shapes.total", totalShapes);
         event.put("rail.gtfs.shapes.real", realShapes);
         event.put("rail.gtfs.route_failures.suppressed", suppressedFailures);
+        event.put("rail.gtfs.route_failures.samples", failureSamples);
 
         for (final String feedName : attemptedFeedNames) {
             final String prefix = "rail.gtfs.feed." + feedName + ".";

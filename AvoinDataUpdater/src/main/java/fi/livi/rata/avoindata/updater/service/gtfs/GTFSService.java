@@ -152,7 +152,11 @@ public class GTFSService {
         try {
             return createGtfs(passengerAdhocSchedules, passengerRegularSchedules, zipFileName,
                     filterOutNonStopsAndMuseumTrains, resolveNodes(context), context);
+        } catch (final IOException | RuntimeException e) {
+            context.metrics().markError(e);
+            throw e;
         } finally {
+            logRunEvent(context.metrics());
             InfraApiRunContext.unbind();
         }
     }

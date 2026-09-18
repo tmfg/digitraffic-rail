@@ -129,12 +129,13 @@ class GtfsRunMetricsTest {
 
     @Test
     void givenFeedFailureWhenOutcomeIsDerivedThenRunIsPartial() {
-        // Given
+        // Given a feed failure always propagates and marks the run, as production does
         final GtfsRunMetrics metrics = metrics();
         metrics.recordFeedAttempt("gtfs-all.zip");
         metrics.recordFeedPublished("gtfs-all.zip");
         metrics.recordFeedAttempt("gtfs-vr.zip");
         metrics.recordFeedFailed("gtfs-vr.zip");
+        metrics.markError(new IllegalStateException("feed write failed"));
 
         // When
         final Map<String, Object> event = metrics.finalEvent();
@@ -147,6 +148,18 @@ class GtfsRunMetricsTest {
                 .containsEntry("rail.gtfs.feeds.failed", 1)
                 .containsEntry("rail.gtfs.feed.gtfs-vr.zip.failed", true)
                 .containsEntry("rail.gtfs.feed.gtfs-all.zip.published", true);
+    }
+
+    @Test
+    void givenFirstFeedFailsWhenOutcomeIsDerivedThenRunIsError() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordFeedAttempt("gtfs-all.zip");
+        metrics.recordFeedFailed("gtfs-all.zip");
+        metrics.markError(new IllegalStateException("feed write failed"));
+
+        // When / Then
+        assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.ERROR);
     }
 
     @Test

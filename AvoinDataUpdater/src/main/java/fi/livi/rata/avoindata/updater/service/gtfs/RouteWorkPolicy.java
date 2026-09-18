@@ -49,10 +49,18 @@ public class RouteWorkPolicy {
     }
 
     public Decision decide(final String segment) {
+        return decide(segment, false);
+    }
+
+    /**
+     * @param servedFromCache route already resolved this run; the budget bounds upstream work, so a
+     *                        cache hit must not be turned into a dummy segment for no saving.
+     */
+    public Decision decide(final String segment, final boolean servedFromCache) {
         if (failedSegments.contains(segment)) {
             return Decision.SKIP_PREVIOUSLY_FAILED;
         }
-        if (Duration.between(feedStartedAt, clock.instant()).compareTo(feedBudget) >= 0) {
+        if (!servedFromCache && Duration.between(feedStartedAt, clock.instant()).compareTo(feedBudget) >= 0) {
             return Decision.SKIP_BUDGET_EXHAUSTED;
         }
         return Decision.PROCEED;

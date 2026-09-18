@@ -105,6 +105,28 @@ class RouteWorkPolicyTest {
     }
 
     @Test
+    void givenSpentBudgetWhenTheRouteIsAlreadyCachedThenItStillProceeds() {
+        // Given
+        final MutableClock clock = new MutableClock();
+        final RouteWorkPolicy policy = new RouteWorkPolicy(FEED_BUDGET, clock);
+        clock.advance(FEED_BUDGET);
+
+        // When / Then the budget bounds upstream work, so cached geometry is not discarded
+        assertThat(policy.decide("AAA->BBB", true).proceed()).isTrue();
+        assertThat(policy.decide("AAA->BBB", false).dummyReason()).isEqualTo(DummyReason.FEED_BUDGET_EXHAUSTED);
+    }
+
+    @Test
+    void givenFailedSegmentWhenItIsCachedThenItIsStillNotRetried() {
+        // Given
+        final RouteWorkPolicy policy = new RouteWorkPolicy(FEED_BUDGET, new MutableClock());
+        policy.recordFailure("AAA->BBB");
+
+        // When / Then a failure has no cache entry, so the negative cache still wins
+        assertThat(policy.decide("AAA->BBB", true).dummyReason()).isEqualTo(DummyReason.PREVIOUSLY_FAILED);
+    }
+
+    @Test
     void givenFailedSegmentWhenTheNextFeedStartsThenItIsStillNotRetried() {
         // Given
         final RouteWorkPolicy policy = new RouteWorkPolicy(FEED_BUDGET, new MutableClock());

@@ -72,7 +72,7 @@ public class TrakediaLiikennepaikkaService {
         final AtomicBoolean refreshed = new AtomicBoolean();
         final InfraApiMapResult<Double[]> result = lpCache.get(() -> {
             refreshed.set(true);
-            return loadMap(coordinateMapFailures, "refreshInfraApiCoordinateMap", () -> {
+            return loadMap(coordinateMapFailures, MapKind.COORDINATE, () -> {
                 final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
                 final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
                 final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
@@ -163,7 +163,7 @@ public class TrakediaLiikennepaikkaService {
         final AtomicBoolean refreshed = new AtomicBoolean();
         final InfraApiMapResult<JsonNode> result = lpNodeCache.get(() -> {
             refreshed.set(true);
-            return loadMap(nodeMapFailures, "refreshInfraApiNodeMap", () -> {
+            return loadMap(nodeMapFailures, MapKind.NODE, () -> {
                 final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
                 final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
 
@@ -185,43 +185,51 @@ public class TrakediaLiikennepaikkaService {
      * event. This is the earliest point in the GTFS pipeline where degraded coverage is knowable.
      */
     private <V> ExpiringCache.CacheResult<InfraApiMapResult<V>> loadMap(final FailureWindow failures,
-                                                                       final String operation,
+                                                                       final MapKind kind,
                                                                        final Supplier<InfraApiMapResult<V>> fetch) {
         final long startedAt = System.currentTimeMillis();
 
         if (failures.isSuppressed(Instant.now())) {
             final InfraApiMapResult<V> suppressed = InfraApiMapResult.failed(failures.lastFailure(), Instant.now(),
                     InfraApiMapResult.CacheState.REFRESH_SUPPRESSED);
-            logSourceRefresh(operation, suppressed, startedAt);
+            logSourceRefresh(kind, suppressed, startedAt);
             return new ExpiringCache.CacheResult<>(false, suppressed);
         }
 
         try {
             final InfraApiMapResult<V> result = fetch.get();
             failures.clear();
-            logSourceRefresh(operation, result, startedAt);
+            logSourceRefresh(kind, result, startedAt);
             return new ExpiringCache.CacheResult<>(result.complete(), result);
         } catch (final RuntimeException e) {
             failures.record(e, Instant.now().plus(FAILURE_SUPPRESSION));
             final InfraApiMapResult<V> failed = InfraApiMapResult.failed(e, Instant.now(),
                     InfraApiMapResult.CacheState.REFRESH_FAILED);
-            logSourceRefresh(operation, failed, startedAt);
+            logSourceRefresh(kind, failed, startedAt);
             return new ExpiringCache.CacheResult<>(false, failed);
         }
     }
 
-    private void logSourceRefresh(final String operation, final InfraApiMapResult<?> result, final long startedAt) {
+    /** The two maps have different consumers, so they must not share an entity type or namespace. */
+    private record MapKind(String operation, String entityType, String metricPrefix) {
+        private static final MapKind NODE =
+                new MapKind("refreshInfraApiNodeMap", "infra_node_map", "rail.gtfs.nodes.");
+        private static final MapKind COORDINATE =
+                new MapKind("refreshInfraApiCoordinateMap", "infra_coordinate_map", "rail.infra.coordinates.");
+    }
+
+    private void logSourceRefresh(final MapKind kind, final InfraApiMapResult<?> result, final long startedAt) {
         final Map<String, Object> event = new LinkedHashMap<>();
-        event.put("operation", operation);
+        event.put("operation", kind.operation());
         event.put("outcome", result.complete() ? "success" : result.failure() == null ? "degraded" : "error");
         event.put("error.type", result.failure() == null ? "" : result.failure().getClass().getSimpleName());
         event.put("rail.source.system", "DIGITRAFFIC");
         event.put("rail.source.api", "infra-api");
         event.put("rail.source.owner", "TRAKEDIA");
-        event.put("rail.entity.type", "infra_node_map");
-        event.put("rail.gtfs.nodes.cache.state", result.cacheState().name().toLowerCase(Locale.ROOT));
+        event.put("rail.entity.type", kind.entityType());
+        event.put(kind.metricPrefix() + "cache.state", result.cacheState().name().toLowerCase(Locale.ROOT));
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
-            event.put("rail.gtfs.nodes." + source.getKey().metricKey() + ".count", source.getValue());
+            event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
         }
         event.put("duration_ms", System.currentTimeMillis() - startedAt);
 

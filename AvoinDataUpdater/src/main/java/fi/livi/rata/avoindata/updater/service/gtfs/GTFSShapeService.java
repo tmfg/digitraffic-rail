@@ -140,19 +140,27 @@ public class GTFSShapeService {
                 return SegmentOutcome.fallback(DummyReason.NO_END_NODE);
             }
 
-            final RouteWorkPolicy.Decision decision = context.routePolicy().decide(segment);
+            final String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
+            final String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
+
+            final RouteWorkPolicy.Decision decision = context.routePolicy().decide(segment,
+                    this.trakediaRouteService.isCached(startTunniste, endTunniste));
             if (!decision.proceed()) {
                 return SegmentOutcome.fallback(decision.dummyReason());
             }
 
-            final TrakediaRouteService.RouteResult result = this.trakediaRouteService.createRoute(startStop, endStop,
-                    startTrakediaNode.get(0).get("tunniste").textValue(),
-                    endTrakediaNode.get(0).get("tunniste").textValue());
+            // Counted before the call so a throwing cache miss stays in the hit/miss denominator.
             context.metrics().recordRouteLookup();
+            final TrakediaRouteService.RouteResult result =
+                    this.trakediaRouteService.createRoute(startStop, endStop, startTunniste, endTunniste);
 
-            return result.fallbackReason() == null
-                    ? SegmentOutcome.resolved(result.coordinates())
-                    : SegmentOutcome.fallback(result.fallbackReason());
+            if (result.fallbackReason() != null) {
+                // Empty geometry and no-path are failures too; without this they are re-requested
+                // by every later feed.
+                context.routePolicy().recordFailure(segment);
+                return SegmentOutcome.fallback(result.fallbackReason());
+            }
+            return SegmentOutcome.resolved(result.coordinates());
         } catch (final WebClientResponseException e) {
             context.routePolicy().recordFailure(segment);
             context.metrics().recordRouteFailure(segment,

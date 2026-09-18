@@ -53,6 +53,9 @@ public final class InfraApiRetry {
         @Override
         public <T, E extends Throwable> void onError(final RetryContext context, final RetryCallback<T, E> callback,
                                                      final Throwable throwable) {
+            if (context.getRetryCount() <= 1) {
+                return;
+            }
             final InfraApiMetricsSink sink = InfraApiRunContext.current();
             if (sink != null) {
                 sink.recordUpstreamRetry(datasetOf(throwable));

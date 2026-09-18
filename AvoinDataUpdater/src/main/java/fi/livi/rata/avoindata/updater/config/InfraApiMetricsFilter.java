@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.config;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -16,20 +18,40 @@ import reactor.core.publisher.Mono;
  */
 public class InfraApiMetricsFilter implements ExchangeFilterFunction {
 
+    private static final String INFRA_API_PATH = "/infra-api";
+
     @Override
     public Mono<ClientResponse> filter(final ClientRequest request, final ExchangeFunction next) {
+        final String path = request.url().getPath();
+        // The filter is installed on the shared WebClient and inherited by derived clients, so
+        // non-Infra traffic during a run would otherwise be attributed to Infra API.
+        if (path == null || !path.contains(INFRA_API_PATH)) {
+            return next.exchange(request);
+        }
+
         // Resolved at subscribe time, while still on the thread that owns the run.
         final InfraApiMetricsSink sink = InfraApiRunContext.current();
         if (sink == null) {
             return next.exchange(request);
         }
 
-        final InfraApiDataset dataset = InfraApiDataset.fromPath(request.url().getPath());
+        final InfraApiDataset dataset = InfraApiDataset.fromPath(path);
         final long startedAtMs = System.currentTimeMillis();
 
         return next.exchange(request)
-                .doOnNext(response -> sink.recordUpstreamResponse(dataset, response.statusCode().value(),
-                        elapsedMs(startedAtMs), response.headers().contentLength().orElse(0L)))
+                // Recorded when the body completes, not when headers arrive: latency has to include
+                // body transfer, and chunked responses carry no Content-Length to count.
+                .map(response -> response.mutate()
+                        .body(body -> {
+                            final AtomicLong bytes = new AtomicLong();
+                            return body
+                                    .doOnNext(buffer -> bytes.addAndGet(buffer.readableByteCount()))
+                                    .doOnComplete(() -> sink.recordUpstreamResponse(dataset,
+                                            response.statusCode().value(), elapsedMs(startedAtMs), bytes.get()))
+                                    .doOnError(error -> sink.recordUpstreamTransportError(dataset,
+                                            elapsedMs(startedAtMs), error));
+                        })
+                        .build())
                 .doOnError(error -> sink.recordUpstreamTransportError(dataset, elapsedMs(startedAtMs), error));
     }
 
