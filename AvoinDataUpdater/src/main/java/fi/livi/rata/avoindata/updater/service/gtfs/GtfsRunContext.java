@@ -32,7 +32,6 @@ public class GtfsRunContext {
         return currentFeed;
     }
 
-    /** Arms the feed time budget and opens the feed's metrics in one explicit step. */
     public void startFeed(final String feedName) {
         currentFeed = feedName;
         routePolicy.startFeed();

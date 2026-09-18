@@ -66,7 +66,7 @@ public final class InfraApiRetry {
             if (throwable instanceof WebClientRequestException requestException) {
                 return InfraApiDataset.fromPath(requestException.getUri().getPath());
             }
-            return InfraApiDataset.UNKNOWN;
+            return InfraApiDataset.OTHER;
         }
     }
 }

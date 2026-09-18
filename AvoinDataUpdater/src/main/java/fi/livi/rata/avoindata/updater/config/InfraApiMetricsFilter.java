@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.updater.config;
 
-import java.time.Duration;
-
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -27,15 +25,15 @@ public class InfraApiMetricsFilter implements ExchangeFilterFunction {
         }
 
         final InfraApiDataset dataset = InfraApiDataset.fromPath(request.url().getPath());
-        final long startedAt = System.nanoTime();
+        final long startedAtMs = System.currentTimeMillis();
 
         return next.exchange(request)
                 .doOnNext(response -> sink.recordUpstreamResponse(dataset, response.statusCode().value(),
-                        elapsedMs(startedAt), response.headers().contentLength().orElse(0L)))
-                .doOnError(error -> sink.recordUpstreamTransportError(dataset, elapsedMs(startedAt), error));
+                        elapsedMs(startedAtMs), response.headers().contentLength().orElse(0L)))
+                .doOnError(error -> sink.recordUpstreamTransportError(dataset, elapsedMs(startedAtMs), error));
     }
 
-    private static long elapsedMs(final long startedAtNanos) {
-        return Duration.ofNanos(System.nanoTime() - startedAtNanos).toMillis();
+    private static long elapsedMs(final long startedAtMs) {
+        return System.currentTimeMillis() - startedAtMs;
     }
 }

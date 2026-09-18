@@ -13,7 +13,7 @@ public enum InfraApiDataset {
     RAIDEOSUUDET("raideosuudet"),
     LAITURIT("laiturit"),
     RADAT("radat"),
-    UNKNOWN("unknown");
+    OTHER("other");
 
     private final String token;
 
@@ -28,14 +28,14 @@ public enum InfraApiDataset {
 
     public static InfraApiDataset fromPath(final String path) {
         if (path == null) {
-            return UNKNOWN;
+            return OTHER;
         }
         final String lowerCasePath = path.toLowerCase(Locale.ROOT);
         for (final InfraApiDataset dataset : values()) {
-            if (dataset != UNKNOWN && lowerCasePath.contains(dataset.token)) {
+            if (dataset != OTHER && lowerCasePath.contains(dataset.token)) {
                 return dataset;
             }
         }
-        return UNKNOWN;
+        return OTHER;
     }
 }
