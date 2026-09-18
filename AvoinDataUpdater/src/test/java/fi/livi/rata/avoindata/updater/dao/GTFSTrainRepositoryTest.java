@@ -1,7 +1,9 @@
 package fi.livi.rata.avoindata.updater.dao;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
+import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
@@ -9,6 +11,7 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.factory.TimeTableRowFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainFactory;
 import fi.livi.rata.avoindata.updater.factory.TrainLocationFactory;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,12 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
     @Autowired
     private TrainRepository trainRepository;
+
+    @Autowired
+    private TimeTableRowRepository timeTableRowRepository;
+
+    @Autowired
+    private TimeTableRowFactory ttrf;
 
     private Train createTrainWithoutActualTimes() {
         final Train t = trainFactory.createBaseTrain();
@@ -238,6 +247,132 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
         assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
         // TPE's own paired ARRIVAL (row 3) already happened, so the train is dwelling at TPE.
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+    }
+
+    // Regression test: a cancelled row must be excluded from `next`'s own candidate set even when its live
+    // estimate is set in the future - mirrors the existing commercial_stop=false skip test, but for the
+    // `tr.cancelled is false` filter instead. Without this filter a cancelled HKI DEPARTURE would wrongly be
+    // reported as the current/next stop instead of skipping ahead to PSL's (non-cancelled) ARRIVAL.
+    @Test
+    public void getTrainLocationsCancelledRowIsSkipped() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        t.timeTableRows.getFirst().liveEstimateTime = t.timeTableRows.getFirst().scheduledTime;
+        t.timeTableRows.getFirst().cancelled = true;
+        t.timeTableRows.get(1).liveEstimateTime = t.timeTableRows.get(1).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+        final TimeTableRow ttr = t.timeTableRows.get(1);
+
+        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+    }
+
+    // Regression test documenting current behavior: the paired-ARRIVAL subquery filters `arr.cancelled is
+    // false`, so a cancelled ARRIVAL row is invisible to it - exactly as if no ARRIVAL row existed at all for
+    // that station. A selected DEPARTURE whose only same-station ARRIVAL was cancelled therefore falls into the
+    // "no paired ARRIVAL -> origin-like -> at stop" branch (vehicle_at_stop = true), the same as a real origin
+    // station. If this coalesce fallback is ever narrowed to only apply at true origins, this test must change
+    // together with it - it exists to make that behavior change deliberate rather than accidental.
+    @Test
+    public void getTrainLocationsCancelledArrivalTreatedAsNoPairedArrival() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // HKI DEPARTURE already happened; PSL's ARRIVAL (row 1) was cancelled (never actually recorded as
+        // happened); PSL's DEPARTURE (row 2) is the next not-yet-happened commercial row with a future estimate.
+        t.timeTableRows.getFirst().actualTime = t.timeTableRows.getFirst().scheduledTime;
+        t.timeTableRows.get(1).cancelled = true;
+        t.timeTableRows.get(2).liveEstimateTime = t.timeTableRows.get(2).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+        final TimeTableRow ttr = t.timeTableRows.get(2);
+
+        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+    }
+
+    // Regression test: getTrainLocations is always called with a batch of ids (one per live train_location) -
+    // each lateral join is correlated on tl.departure_date/train_number, so per-train results must not leak
+    // into each other. Proves two different trains resolved in the SAME call each get their own, independently
+    // correct next-stop and vehicle_at_stop - not, say, the other train's row, or a cross-joined duplicate.
+    @Test
+    public void getTrainLocationsBatchOfMultipleTrainsResolvesIndependently() {
+        final Train dwellingTrain = createTrainWithoutActualTimes();
+        final TrainLocation dwellingLocation = trainLocationFactory.create(dwellingTrain);
+        // Dwelling at PSL: HKI departed, PSL ARRIVAL happened, PSL DEPARTURE pending with a future estimate.
+        dwellingTrain.timeTableRows.getFirst().actualTime = dwellingTrain.timeTableRows.getFirst().scheduledTime;
+        dwellingTrain.timeTableRows.get(1).actualTime = dwellingTrain.timeTableRows.get(1).scheduledTime;
+        dwellingTrain.timeTableRows.get(2).liveEstimateTime = dwellingTrain.timeTableRows.get(2).scheduledTime;
+        trainRepository.save(dwellingTrain);
+
+        final Train approachingTrain = trainFactory.createBaseTrain(new TrainId(52L, LocalDate.now()));
+        approachingTrain.timeTableRows.forEach(row -> row.actualTime = null);
+        final TrainLocation approachingLocation = trainLocationFactory.create(approachingTrain);
+        // Still approaching HKI (its very first row): nothing has happened yet, only HKI's own estimate is set.
+        approachingTrain.timeTableRows.getFirst().liveEstimateTime = approachingTrain.timeTableRows.getFirst().scheduledTime;
+        trainRepository.save(approachingTrain);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository
+                .getTrainLocations(List.of(dwellingLocation.id, approachingLocation.id));
+
+        assertThatCollection(locations).hasSize(2);
+        final GTFSTrainLocation dwellingResult = locations.stream().filter(l -> l.getId() == dwellingLocation.id).findFirst()
+                .orElseThrow();
+        final GTFSTrainLocation approachingResult = locations.stream().filter(l -> l.getId() == approachingLocation.id).findFirst()
+                .orElseThrow();
+
+        assertThat(dwellingResult.getStationShortCode()).isEqualTo("PSL");
+        assertThat(dwellingResult.getVehicleAtStop()).isTrue();
+        assertThat(approachingResult.getStationShortCode()).isEqualTo("HKI");
+        assertThat(approachingResult.getVehicleAtStop()).isTrue(); // HKI is the origin, no paired ARRIVAL exists
+    }
+
+    // Regression test for a repeated (loop-line) station visit: the paired-ARRIVAL subquery must match the
+    // occurrence closest to (at or before) the selected DEPARTURE's own scheduled_time - not an earlier visit to
+    // the same station. AAA is visited twice: the first visit is long completed (both actual times set); the
+    // train is now dwelling at AAA's SECOND visit, whose own ARRIVAL has happened but whose DEPARTURE has not.
+    // The first visit's ARRIVAL is deliberately left WITHOUT an actual_time (simulating stale/incomplete data
+    // for an old visit) so that, if the subquery wrongly matched it instead of the second visit's ARRIVAL,
+    // vehicle_at_stop would flip to false - proving the "nearest occurrence" semantics are load-bearing, not
+    // incidental.
+    @Test
+    public void getTrainLocationsRepeatedStationPicksNearestArrivalOccurrence() {
+        final TrainId id = new TrainId(53L, LocalDate.now());
+        Train t = new Train(id.trainNumber, id.departureDate, 1, "test", 1L, 1L, "Z", true, false, 1L,
+                Train.TimetableType.REGULAR, ZonedDateTime.now());
+        t = trainRepository.save(t);
+
+        final ZonedDateTime base = ZonedDateTime.now().plusHours(1);
+        final List<TimeTableRow> rows = new ArrayList<>();
+        rows.add(ttrf.create(t, base, base, new StationEmbeddable("HKI", 1, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        // First AAA visit: ARRIVAL deliberately left without actual_time (simulated stale data - see class
+        // comment on this test).
+        rows.add(ttrf.create(t, base.plusHours(1), null, new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL));
+        rows.add(ttrf.create(t, base.plusHours(1).plusMinutes(1), base.plusHours(1).plusMinutes(1),
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        rows.add(ttrf.create(t, base.plusHours(2), base.plusHours(2), new StationEmbeddable("BBB", 10, "FI"),
+                TimeTableRow.TimeTableRowType.ARRIVAL));
+        rows.add(ttrf.create(t, base.plusHours(2).plusMinutes(1), base.plusHours(2).plusMinutes(1),
+                new StationEmbeddable("BBB", 10, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        // Second AAA visit: ARRIVAL has actually happened; DEPARTURE is the pending row with a future estimate.
+        rows.add(ttrf.create(t, base.plusHours(3), base.plusHours(3), new StationEmbeddable("AAA", 9, "FI"),
+                TimeTableRow.TimeTableRowType.ARRIVAL));
+        final TimeTableRow secondDeparture = ttrf.create(t, base.plusHours(3).plusMinutes(1), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE);
+        secondDeparture.liveEstimateTime = secondDeparture.scheduledTime;
+        rows.add(secondDeparture);
+        rows.add(ttrf.create(t, base.plusHours(4), null, new StationEmbeddable("OL", 5, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL));
+
+        t.timeTableRows = timeTableRowRepository.saveAll(rows);
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThat(locations.getFirst().getStationShortCode()).isEqualTo("AAA");
         assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
 

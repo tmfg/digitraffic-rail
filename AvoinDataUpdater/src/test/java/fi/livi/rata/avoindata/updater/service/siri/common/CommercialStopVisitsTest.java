@@ -166,4 +166,36 @@ public class CommercialStopVisitsTest {
         assertTrue(visitIndex.isPresent());
         assertEquals(0, visitIndex.getAsInt());
     }
+
+    // Regression test: a non-commercial stop (e.g. a technical/operational-only stop with no passenger
+    // exchange) must be filtered out of the paired stop sequence entirely - mirroring the NeTEx static timetable
+    // and SIRI-ET's own CommercialStopRule, which never emit such a stop's own visitIndex either. If it were
+    // kept, it would wrongly consume a slot in the pairing/visit-count sequence for the following stations.
+    @Test
+    public void of_skipsNonCommercialStopEntirely() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        final GTFSTimeTableRow nonCommercialArrival =
+                row("XXX", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusMinutes(30), false, T0.plusMinutes(30));
+        nonCommercialArrival.commercialStop = false;
+        final GTFSTimeTableRow nonCommercialDeparture =
+                row("XXX", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusMinutes(31), false, T0.plusMinutes(31));
+        nonCommercialDeparture.commercialStop = false;
+        rows.add(nonCommercialArrival);
+        rows.add(nonCommercialDeparture);
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, null));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1).plusMinutes(2), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+
+        assertEquals(2, stops.size());
+        assertEquals("HKI", stops.get(0).departure().stationShortCode);
+        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
+        // TPE keeps visitIndex 0 - the skipped non-commercial XXX stop never occupied a slot. "now" sits after
+        // XXX's actual completion but before TPE's own (not-yet-elapsed) estimate, matching how the other tests
+        // in this class evaluate a still-eligible completing row.
+        final OptionalInt tpeVisitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusMinutes(45));
+        assertTrue(tpeVisitIndex.isPresent());
+        assertEquals(0, tpeVisitIndex.getAsInt());
+    }
 }
