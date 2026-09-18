@@ -167,6 +167,30 @@ public class CommercialStopVisitsTest {
         assertEquals(0, visitIndex.getAsInt());
     }
 
+    // Regression test for the review-reported bug: the terminus fallback must report the *matched* stop's own
+    // occurrence index, not the station's final aggregate visit count. Here the real, arrived terminus is
+    // TPE's first (visit 0) occurrence; a later, wholly cancelled duplicate TPE row follows it (e.g. a stray
+    // erroneous timetable entry) and is skipped by the reverse scan, but it still bumps the station's total
+    // visit count to 2. Before the fix, the fallback returned visitCounts.get("TPE") - 1 == 1 (the *last*
+    // occurrence's index) regardless of which occurrence it actually matched, so VM would have resolved the
+    // planned track for the wrong (later, nonexistent) visit instead of visit 0's.
+    @Test
+    public void currentVisitIndex_returnsMatchedOccurrencesOwnIndexNotTheStationsFinalCount() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // TPE visit 0: the real, arrived terminus - not cancelled, already happened, no departure follows.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        // TPE visit 1: a later, wholly cancelled duplicate row - invisible to the SQL's term lateral (cancelled
+        // rows are filtered out per-row), but still counted as an occurrence for visit-index purposes.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(2), true, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(3));
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt(), "must resolve to TPE's visit 0 (the actual match), not visit 1");
+    }
+
     @Test
     public void currentVisitIndex_emptyWhenStationNeverOccurs() {
         final List<GTFSTimeTableRow> rows = new ArrayList<>();

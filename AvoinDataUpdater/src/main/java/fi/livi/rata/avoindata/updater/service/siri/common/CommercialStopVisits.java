@@ -272,12 +272,21 @@ public final class CommercialStopVisits {
     public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode,
                                                 final ZonedDateTime now) {
         final Map<String, Integer> visitCounts = new HashMap<>();
-        for (final Stop stop : stops) {
+        // Records each stop's own occurrence index (position within its station's visits), parallel to
+        // `stops`, so the terminus fallback below can report the exact matched stop's index - not the
+        // station's *final* aggregate count, which would be wrong whenever a later, cancelled/non-commercial
+        // occurrence of the same station follows the terminus fallback's match (see the review finding this
+        // fixes: the reverse scan can match an earlier occurrence while later, skipped ones still bumped the
+        // aggregate count).
+        final int[] visitIndexPerStop = new int[stops.size()];
+        for (int i = 0; i < stops.size(); i++) {
+            final Stop stop = stops.get(i);
             final String station = stop.representative().stationShortCode;
             // 0-based occurrence of this station within the journey so far, incremented on every visit
             // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
             // counting pattern).
             final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
+            visitIndexPerStop[i] = visitIndex;
             if (station.equals(stationShortCode) && stop.isEligible(now)) {
                 return OptionalInt.of(visitIndex);
             }
@@ -289,7 +298,7 @@ public final class CommercialStopVisits {
             }
             if (lastRow.type == TimeTableRow.TimeTableRowType.ARRIVAL && lastRow.actualTime != null
                     && lastRow.stationShortCode.equals(stationShortCode)) {
-                return OptionalInt.of(visitCounts.get(lastRow.stationShortCode) - 1);
+                return OptionalInt.of(visitIndexPerStop[i]);
             }
             break;
         }
