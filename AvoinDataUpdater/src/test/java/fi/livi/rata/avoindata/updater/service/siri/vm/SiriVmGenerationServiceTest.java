@@ -278,6 +278,32 @@ class SiriVmGenerationServiceTest {
                         + "unknownTrack=false (only commercialTrack was null)");
     }
 
+    // ===== GEN-VM-01c: Blank ("") commercialTrack with unknownTrack=false must also trigger the planned-track
+    // fallback prefetch — regression test for a review-reported bug: ingestion represents a missing/cleared
+    // commercial track as "" (see ScheduleToTrainConverter.emptyCommercialTrackInTimeTableRows /
+    // TimeTableRowDeserializer), not null, but the prefetch filter's underlying actualTrackOf() treated any
+    // non-null string - including "" - as a usable live track, so it never entered the fallback and quay
+    // resolution for "" silently failed, omitting the MonitoredCall. =====
+
+    @Test
+    void givenBlankCommercialTrackWithoutUnknownTrackFlag_whenGenerate_thenStillResolvesPlannedTrackFallback() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        final TestGTFSTrainLocation location = new TestGTFSTrainLocation(
+                1L, TODAY, 59L, DateProvider.nowInHelsinki().minusMinutes(1),
+                25.759588, 61.437778, 60, 10, "TPE", "", false, 180, false, null);
+        setupLiveLocation(location);
+        when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any())).thenReturn(List.of(train59Rows()));
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.getFirst().data);
+        assertTrue(xml.contains("FSR:Quay:TPE-1"),
+                "Expected the planned-track fallback to resolve TPE's MonitoredCall even though "
+                        + "commercialTrack was blank rather than null");
+    }
+
     // ===== GEN-VM-02: Happy path — persisted bytes are schema-valid SIRI-VM XML =====
 
     @Test

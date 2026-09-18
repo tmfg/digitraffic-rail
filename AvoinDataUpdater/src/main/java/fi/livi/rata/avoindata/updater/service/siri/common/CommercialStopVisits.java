@@ -77,16 +77,26 @@ public final class CommercialStopVisits {
                     && row.liveEstimateTime != null && row.liveEstimateTime.isAfter(now);
         }
 
-        /** Mirrors {@code EtJourneyInterpreter}'s cancellation check: a stop is cancelled if either of its rows
-         * is. Only used by the arrived-terminus fallback in {@link #currentVisitIndex} (a single-row, ARRIVAL-
-         * only case there); the general "is this stop currently reportable" question is answered per-row by
-         * {@link #isEligible}/{@link #isRowEligible} instead, which already excludes a cancelled row from
-         * eligibility on its own, without disqualifying the other, non-cancelled leg of the same stop. */
-        private boolean isCancelled() {
-            if (arrival != null && arrival.cancelled) {
-                return true;
+        /// The chronologically last commercial, non-cancelled row of this stop - mirrors the SQL terminus
+        /// fallback's own row selection (`term`'s `where tr.commercial_stop is true and tr.cancelled is false`,
+        /// picking the latest row overall), which filters per row, not per stop. A partially cancelled stop -
+        /// e.g. a non-cancelled ARRIVAL (already actual) paired with a *cancelled* DEPARTURE - must still expose
+        /// its still-valid ARRIVAL here rather than being treated as wholly cancelled, or the terminus fallback
+        /// in [currentVisitIndex] would wrongly lose a `MonitoredCall` the SQL itself still resolves. `null`
+        /// when neither leg qualifies (both cancelled or non-commercial), in which case the terminus fallback
+        /// must keep looking at the previous stop, exactly as the SQL's row-wide scan would.
+        private GTFSTimeTableRow lastNonCancelledCommercialRow() {
+            if (isUsable(departure)) {
+                return departure;
             }
-            return departure != null && departure.cancelled;
+            if (isUsable(arrival)) {
+                return arrival;
+            }
+            return null;
+        }
+
+        private static boolean isUsable(final GTFSTimeTableRow row) {
+            return row != null && !row.cancelled && BooleanUtils.isTrue(row.commercialStop);
         }
     }
 
@@ -249,7 +259,11 @@ public final class CommercialStopVisits {
      * nothing and this stop's live location would silently lose its {@code MonitoredCall}/{@code
      * VehicleAtStop} when its live track is unknown. Since the arrived terminus is by definition the last
      * (non-cancelled) stop in the journey, it is still reported as current here, exactly as {@code term}
-     * reports it in the live-location query.
+     * reports it in the live-location query. Like {@code term}'s own row selection, this looks at the
+     * <em>last commercial, non-cancelled row overall</em> (see {@link Stop#lastNonCancelledCommercialRow}) -
+     * not "the last wholly non-cancelled stop" - so a partially cancelled stop (e.g. a non-cancelled, already
+     * arrived ARRIVAL paired with a cancelled DEPARTURE) still surfaces its still-valid ARRIVAL leg here,
+     * exactly as {@code term} would pick it.
      *
      * @param now the time to evaluate estimate staleness against - callers should pass the same instant used to
      *            build the live locations being resolved (see {@code SiriVmGenerationService}), matching the
@@ -269,13 +283,13 @@ public final class CommercialStopVisits {
             }
         }
         for (int i = stops.size() - 1; i >= 0; i--) {
-            final Stop stop = stops.get(i);
-            if (stop.isCancelled()) {
+            final GTFSTimeTableRow lastRow = stops.get(i).lastNonCancelledCommercialRow();
+            if (lastRow == null) {
                 continue;
             }
-            final String station = stop.representative().stationShortCode;
-            if (station.equals(stationShortCode) && stop.departure == null) {
-                return OptionalInt.of(visitCounts.get(station) - 1);
+            if (lastRow.type == TimeTableRow.TimeTableRowType.ARRIVAL && lastRow.actualTime != null
+                    && lastRow.stationShortCode.equals(stationShortCode)) {
+                return OptionalInt.of(visitCounts.get(lastRow.stationShortCode) - 1);
             }
             break;
         }

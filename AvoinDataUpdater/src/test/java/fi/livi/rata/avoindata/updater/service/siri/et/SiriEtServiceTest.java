@@ -899,6 +899,40 @@ class SiriEtServiceTest {
                 "second TPE visit: falls back to its own (visit 1) planned track, not visit 0's");
     }
 
+    // --- ET-13d: blank ("") commercialTrack (unknownTrack left false/null) must be treated like a null/unknown
+    // track, not a literal, resolvable "" track - regression test for a review-reported bug: ingestion
+    // represents a missing/cleared commercial track as "" (see ScheduleToTrainConverter's
+    // emptyCommercialTrackInTimeTableRows and TimeTableRowDeserializer), not null, but actualTrackOf() used to
+    // treat any non-null string - including "" - as usable, so it never reached the planned-track fallback and
+    // the whole journey was dropped despite a resolvable planned track being available. ---
+
+    @Test
+    void givenBlankCommercialTrackWithoutUnknownTrackFlag_whenBuild_thenFallsBackToPlannedTrackQuay() {
+        // given — stop at TKU, commercialTrack is blank (as ingestion sets it, not null) and unknownTrack=false,
+        // but the planned (NeTEx) track for TKU is "3"
+        plannedTracks.put("TKU", "3");
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        final GTFSTimeTableRow arr = createRow(train, "TKU", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 11, 0, 0, 0, ZONE_ID_HKI));
+        arr.commercialTrack = "";
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TKU", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI));
+        dep.commercialTrack = "";
+        train.timeTableRows.add(dep);
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+
+        // then — the journey is recovered (not dropped) and TKU's StopPointRef resolves via the planned track
+        final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(1);
+        assertEquals("FSR:Quay:TKU-3", tku.getStopPointRef().getValue());
+    }
+
     // --- ET-14: Station not in UIC lookup → whole journey omitted (complete-sequence rule) ---
 
     @Test

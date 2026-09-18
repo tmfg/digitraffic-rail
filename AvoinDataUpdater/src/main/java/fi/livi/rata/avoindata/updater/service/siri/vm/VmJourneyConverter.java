@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
@@ -155,7 +156,13 @@ public class VmJourneyConverter {
     }
 
     private static String actualTrackOf(final GTFSTrainLocation location) {
-        return BooleanUtils.isTrue(location.getUnknownTrack()) ? null : location.getCommercialTrack();
+        if (BooleanUtils.isTrue(location.getUnknownTrack())) {
+            return null;
+        }
+        // Ingestion represents a missing/cleared commercial track as "" (see
+        // ScheduleToTrainConverter.emptyCommercialTrackInTimeTableRows / TimeTableRowDeserializer), not null -
+        // treat it the same as null so the planned-track fallback is used instead of an unresolvable "" quay.
+        return StringUtils.isBlank(location.getCommercialTrack()) ? null : location.getCommercialTrack();
     }
 
     private record MonitoredCall(StopRef stopRef, String stopName) {}

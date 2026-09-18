@@ -143,6 +143,30 @@ public class CommercialStopVisitsTest {
         assertEquals(0, visitIndex.getAsInt());
     }
 
+    // Regression test for the review-reported bug: the terminus fallback's cancellation check must be per-row
+    // (mirroring the SQL term lateral's own `tr.cancelled is false` row filter), not "is either leg of the
+    // paired stop cancelled". Here TPE's ARRIVAL is not cancelled and has already happened (actual time set),
+    // but its DEPARTURE was separately cancelled (e.g. the onward leg was dropped, ending the journey there in
+    // practice). Before the fix, Stop.isCancelled() (true because the DEPARTURE was cancelled) gated the whole
+    // stop, wrongly hiding this arrived terminus even though the SQL's term lateral - which filters cancelled
+    // rows individually - still resolves TPE's ARRIVAL as the last non-cancelled commercial row and reports it.
+    @Test
+    public void currentVisitIndex_returnsArrivedTerminusAsCurrentWhenOnlyItsDepartureIsCancelled() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // TPE ARRIVAL: not cancelled, already happened - a perfectly valid terminus candidate on its own.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+        // TPE DEPARTURE: cancelled - drops out of the SQL's candidate window on its own, but must not
+        // disqualify the still-valid ARRIVAL leg of the same stop.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1).plusMinutes(2), true, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(2));
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt());
+    }
+
     @Test
     public void currentVisitIndex_emptyWhenStationNeverOccurs() {
         final List<GTFSTimeTableRow> rows = new ArrayList<>();
