@@ -4,7 +4,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.TestPropertySource;
 
 import fi.livi.rata.avoindata.server.MockMvcBaseTest;
 
@@ -16,9 +15,6 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * itself returns 404 (distinct from {@link SiriEtControllerIntegrationTest}'s "enabled but nothing generated
  * yet" 404, which comes from the controller's own logic).
  */
-@TestPropertySource(properties = {
-        "spring.cloud.aws.region.static=eu-west-1"
-})
 class SiriEtControllerDisabledIntegrationTest extends MockMvcBaseTest {
 
     @Test
