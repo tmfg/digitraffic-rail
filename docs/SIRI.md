@@ -97,7 +97,9 @@ three-stage pipeline, split across two Java packages:
     size of the intermediate domain-record list, before any XML exists.
   - **GenerationService** (`SiriEtGenerationService`, `SiriVmGenerationService`): the full scheduled-cycle
     pipeline — PREPARE (fetch trains/locations + published-journey/PETI dependencies, failing fast via
-    `PetiUnavailableException`/`PublishedJourneysUnavailableException` if stale/missing) → BUILD (call the
+    `PetiUnavailableException`/`PublishedJourneysUnavailableException` if PETI is completely empty or the
+    NeTEx published-journeys snapshot is stale/missing — see the precondition note below, PETI snapshot *age*
+    itself is telemetry-only, not a rejection criterion) → BUILD (call the
     Service) → VALIDATE (schema-validate the output) → PERSIST (write to `GeneratedExport` with a
     service-specific filename, e.g. `siri-vm.xml`) → COMPLETE (emit a `rail.siri.generation` wide-event log
     line with a `rail.siri.service=et|vm|sx` tag for observability).
@@ -208,8 +210,11 @@ each service gets:
 - **Precondition**: the spec states valid timetable data (NeTEx/SIRI-ET) must exist before VM position data is
   sent. This is enforced implicitly: `VmJourneyConverter` drops (returns `Optional.empty()` for) any location
   whose train doesn't resolve to a published `NeTExPublishedJourney` via `JourneyRefResolver`, and
-  `SiriVmGenerationService` fails the whole cycle via `PetiUnavailableException`/
-  `PublishedJourneysUnavailableException` if the PETI/NeTEx dependencies are stale or missing.
+  `SiriVmGenerationService` fails the whole cycle via `PetiUnavailableException` if the PETI stop snapshot
+  is completely empty (`PetiUicMatcher.matchedCount() == 0`), or `PublishedJourneysUnavailableException` if
+  the NeTEx published-journeys snapshot is missing/empty. Note this is **not** a staleness check: PETI
+  snapshot age (`CachingPetiStopSource.getSnapshotAgeSeconds()`) is logged for observability only and is
+  never compared against a threshold — an old-but-non-empty PETI snapshot is accepted and used as-is.
 
 ### SIRI-SX (not yet implemented)
 
