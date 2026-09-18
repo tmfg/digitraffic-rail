@@ -34,8 +34,10 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * A track PETI does not publish as a platform (a yard or work track) must not reach the feed: it is
- * replaced with the station's first platform and reported. Also covers the postcondition that every
+ * A track PETI does not publish as a platform (a yard or work track) must not
+ * reach the feed: it is
+ * replaced with the station's first platform and reported. Also covers the
+ * postcondition that every
  * stop point leaves with an assignment.
  */
 class NeTExServiceUnknownTrackTest {
@@ -44,7 +46,8 @@ class NeTExServiceUnknownTrackTest {
 
     @Test
     void givenTrackPetiDoesNotPublish_whenGenerating_thenStopUsesFirstPlatform() {
-        // given — HKI publishes platforms 1 and 2, the schedule says the train stops on yard track 415
+        // given — HKI publishes platforms 1 and 2, the schedule says the train stops on
+        // yard track 415
         final NeTExService service = serviceWith(helsinkiWithPlatforms("1", "2"));
         final Schedule schedule = scheduleWithTracks("415", "1");
 
@@ -90,7 +93,8 @@ class NeTExServiceUnknownTrackTest {
 
     @Test
     void givenTrackOutsidePlatformNumbering_whenGenerating_thenBlamedOnTheSchedule() {
-        // 415 is not a platform number at all, so the schedule put a passenger train on a yard track
+        // 415 is not a platform number at all, so the schedule put a passenger train on
+        // a yard track
         assertCause("415", "invalid_schedule_track", "report to the schedule source");
     }
 
@@ -141,7 +145,8 @@ class NeTExServiceUnknownTrackTest {
 
     @Test
     void givenStationMissingFromPeti_whenGenerating_thenPostconditionNamesTheStopPointWithoutAssignment() {
-        // given — PETI publishes Helsinki but not Tampere, so nothing can assign Tampere's stop point
+        // given — PETI publishes Helsinki but not Tampere, so nothing can assign
+        // Tampere's stop point
         final NeTExService service = serviceWith(onlyHelsinki());
         final Schedule schedule = scheduleWithTracks("1", "1");
 

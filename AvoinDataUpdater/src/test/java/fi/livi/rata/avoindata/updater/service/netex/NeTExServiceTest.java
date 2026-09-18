@@ -32,7 +32,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * Tests for NeTExService — orchestration and filtering logic.
  */
 class NeTExServiceTest {
-        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
+    private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     private NeTExService netExService;
 

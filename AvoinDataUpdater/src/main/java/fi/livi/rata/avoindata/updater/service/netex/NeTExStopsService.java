@@ -117,7 +117,7 @@ public class NeTExStopsService {
                         matchedCount++;
                         quayNoTrackCount++;
                     }
-                    
+
                     case UNMATCHED -> {
                         unmatchedCount++;
                         if (stationsWithoutStopPlace.putIfAbsent(station.shortCode, station) == null) {
@@ -135,8 +135,10 @@ public class NeTExStopsService {
                     idGenerator.routePointId(shortCode), shortCode, projectionTargets.get(shortCode)));
         }
 
-        // One line listing every gap, because the per-track errors above are easy to lose in a long run.
-        // Each needs a human decision: either PETI is missing a passenger platform, or the schedule put a
+        // One line listing every gap, because the per-track errors above are easy to
+        // lose in a long run.
+        // Each needs a human decision: either PETI is missing a passenger platform, or
+        // the schedule put a
         // passenger train on a track that is not one.
         if (!tracksWithoutQuay.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData "
@@ -145,8 +147,10 @@ public class NeTExStopsService {
                     tracksWithoutQuay.size(), tracksWithoutQuay);
         }
 
-        // Every stop point of these stations goes out with no assignment at all, so it has no coordinates
-        // anywhere in the package and nothing tying it to the stop registry. PETI has to publish the stop place.
+        // Every stop point of these stations goes out with no assignment at all, so it
+        // has no coordinates
+        // anywhere in the package and nothing tying it to the stop registry. PETI has
+        // to publish the stop place.
         if (!stationsWithoutStopPlace.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData "
                     + "count={} stations={} message=\"no PETI stop place for these stations, stops published "
@@ -171,7 +175,9 @@ public class NeTExStopsService {
         return stationName == null ? null : stationName.replaceAll("\\s+asema$", "");
     }
 
-    /** No location: it resolves through the assignment's quay, or its stop place. */
+    /**
+     * No location: it resolves through the assignment's quay, or its stop place.
+     */
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
             final Station station) {
         return new NeTExStopsData.NeTExScheduledStopPoint(
@@ -180,7 +186,8 @@ public class NeTExStopsService {
     }
 
     /**
-     * A RoutePoint is the station, so it carries the station centroid; the profile also
+     * A RoutePoint is the station, so it carries the station centroid; the profile
+     * also
      * requires it to name a ScheduledStopPoint it corresponds to.
      */
     private AssignmentResult buildAssignment(final StationTrackPair pair, final Station station,
@@ -196,7 +203,8 @@ public class NeTExStopsService {
         final String assignmentId = idGenerator.passengerStopAssignmentId(pair.stationShortCode(), track);
 
         if (track == null || track.isBlank()) {
-            // A matched station takes its first platform as a track upstream, so a track is only
+            // A matched station takes its first platform as a track upstream, so a track is
+            // only
             // blank here when the stop place publishes no quays at all — nothing to assign.
             return new AssignmentResult(
                     Optional.of(new NeTExStopsData.NeTExStopAssignment(
@@ -243,7 +251,8 @@ public class NeTExStopsService {
     }
 
     /**
-     * A (station, track) pair extracted from schedule data. A blank track is held as
+     * A (station, track) pair extracted from schedule data. A blank track is held
+     * as
      * null so that two pairs are equal exactly when they name the same stop point.
      */
     public record StationTrackPair(String stationShortCode, String commercialTrack) {

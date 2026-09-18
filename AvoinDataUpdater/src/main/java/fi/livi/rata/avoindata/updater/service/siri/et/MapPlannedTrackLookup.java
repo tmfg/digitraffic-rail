@@ -7,10 +7,13 @@ import java.util.Optional;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 /**
- * {@link PlannedTrackLookup} backed by a {@code (trainNumber, departureDate) -> stationShortCode -> visitIndex
- * -> plannedTrack} map read from the DB. Keying by visit index (not station alone) keeps a distinct planned
- * track for each visit when a journey serves the same station more than once. The DB read path uses this
- * instead of re-resolving from RIPA.
+ * {@link PlannedTrackLookup} backed by a
+ * {@code (trainNumber, departureDate) -> stationShortCode -> visitIndex
+ * -> plannedTrack} map read from the DB. Keying by visit index (not station
+ * alone) keeps a distinct planned
+ * track for each visit when a journey serves the same station more than once.
+ * The DB read path uses this
+ * instead of re-resolving from the schedules.
  */
 public class MapPlannedTrackLookup implements PlannedTrackLookup {
 
@@ -22,7 +25,7 @@ public class MapPlannedTrackLookup implements PlannedTrackLookup {
 
     @Override
     public Optional<String> plannedTrack(final long trainNumber, final LocalDate departureDate,
-                                         final String stationShortCode, final int visitIndex) {
+            final String stationShortCode, final int visitIndex) {
         final Map<String, Map<Integer, String>> byStation = byTrainId.get(new TrainId(trainNumber, departureDate));
         if (byStation == null) {
             return Optional.empty();

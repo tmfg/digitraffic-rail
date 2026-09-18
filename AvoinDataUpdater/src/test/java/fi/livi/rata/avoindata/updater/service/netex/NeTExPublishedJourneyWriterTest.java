@@ -36,8 +36,10 @@ class NeTExPublishedJourneyWriterTest {
         writer = new NeTExPublishedJourneyWriter(journeyRepo, true, 2, 2);
     }
 
-    // Consumes the pre-joined drafts (no RIPA, no id re-join) and persists each as a journey with its planned
-    // tracks as a FK aggregate, carrying the refs (incl. journeyPatternRef) straight through.
+    // Consumes the pre-joined drafts (no fetch, no id re-join) and persists each as
+    // a journey with its planned
+    // tracks as a FK aggregate, carrying the refs (incl. journeyPatternRef)
+    // straight through.
     @Test
     void givenDataset_whenPersistWindow_thenPersistsJourneyWithTracksFromDraft() {
         final PublishedJourneyDraft draft = new PublishedJourneyDraft(
@@ -70,7 +72,8 @@ class NeTExPublishedJourneyWriterTest {
         assertEquals(journey, journey.tracks.get(0).journey);
     }
 
-    // A station served twice keeps a track row per visit, each carrying its 0-based visit index.
+    // A station served twice keeps a track row per visit, each carrying its 0-based
+    // visit index.
     @Test
     void givenDraftTracksWithVisitIndex_whenPersistWindow_thenVisitIndexPersisted() {
         final PublishedJourneyDraft draft = new PublishedJourneyDraft(
@@ -111,8 +114,7 @@ class NeTExPublishedJourneyWriterTest {
     // When disabled, nothing is read or written.
     @Test
     void givenDisabled_whenPersistWindow_thenNoop() {
-        final NeTExPublishedJourneyWriter disabled =
-                new NeTExPublishedJourneyWriter(journeyRepo, false, 2, 2);
+        final NeTExPublishedJourneyWriter disabled = new NeTExPublishedJourneyWriter(journeyRepo, false, 2, 2);
 
         disabled.persistWindow(dataset(List.of()));
 

@@ -59,9 +59,12 @@ public class NeTExService {
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
 
     /**
-     * Passenger platforms are currently numbered 1-22. A track outside that shape is probably a 
-     * track that should never have reached a passenger schedule, which is a different fault
-     * — and a different source system — from a real platform PETI has not published yet.
+     * Passenger platforms are currently numbered 1-22. A track outside that shape
+     * is probably a
+     * track that should never have reached a passenger schedule, which is a
+     * different fault
+     * — and a different source system — from a real platform PETI has not published
+     * yet.
      */
     private static final Pattern VALID_PLATFORM_NUMBER = Pattern.compile("[1-9]|1[0-9]|2[0-2]");
 
@@ -115,10 +118,12 @@ public class NeTExService {
 
     /**
      * The Nordic profile wants a quay on every stop assignment, and a quay can only
-     * be found once a stop names a track. Schedules mostly do not assign a track in advance,
+     * be found once a stop names a track. Schedules mostly do not assign a track in
+     * advance,
      * so the track is taken from the coming days first, from what the train last
      * actually used second, and finally borrowed from another journey of the same
-     * service identity. Done on the schedules themselves, before any NeTEx entity is
+     * service identity. Done on the schedules themselves, before any NeTEx entity
+     * is
      * derived, so that the stop point ids and the stop assignments cannot disagree
      * about which track a stop uses.
      */
@@ -181,7 +186,10 @@ public class NeTExService {
         return filled;
     }
 
-    /** History is asked only about the exact schedule part, which pins the same route. */
+    /**
+     * History is asked only about the exact schedule part, which pins the same
+     * route.
+     */
     private record TrackGap(long trainNumber, ScheduleRow row) {
         List<HistoricalTrackSource.StopKey> keys() {
             final List<HistoricalTrackSource.StopKey> keys = new ArrayList<>();
@@ -247,7 +255,8 @@ public class NeTExService {
             final long durationMs = System.currentTimeMillis() - startTime;
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
             log.error("event=generateNeTEx method=generateNeTEx failed, durationMs={}", durationMs, e);
-            // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a build failure.
+            // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a
+            // build failure.
             if (e instanceof final RipaFetchException ripaFetchException) {
                 throw ripaFetchException;
             }
@@ -255,13 +264,21 @@ public class NeTExService {
         }
     }
 
-    /** How far a generation cycle got — emitted as {@code stage=…} so an error line says where it failed. */
-    private enum Stage { FETCH, GENERATE, COMPLETE }
+    /**
+     * How far a generation cycle got — emitted as {@code stage=…} so an error line
+     * says where it failed.
+     */
+    private enum Stage {
+        FETCH, GENERATE, COMPLETE
+    }
 
     /**
-     * Emits the one-line {@code rail.netex.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); {@code error} is logged at ERROR (with {@code error.type} + {@code stage}),
-     * everything else at INFO. All counts are {@code rail.netex.*}-namespaced to match the SIRI wide event.
+     * Emits the one-line {@code rail.netex.generation} wide event — same field set
+     * on every outcome (zeros /
+     * NULL where unavailable); {@code error} is logged at ERROR (with
+     * {@code error.type} + {@code stage}),
+     * everything else at INFO. All counts are {@code rail.netex.*}-namespaced to
+     * match the SIRI wide event.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final NeTExGenerationResult result) {
@@ -295,8 +312,10 @@ public class NeTExService {
     }
 
     /**
-     * Generates the NeTEx Nordic ZIP from the given schedules and stations by chaining the three stages:
-     * {@link #computeDataset} (the data), {@link #buildFiles} (the XML) and {@link #zip} (the archive).
+     * Generates the NeTEx Nordic ZIP from the given schedules and stations by
+     * chaining the three stages:
+     * {@link #computeDataset} (the data), {@link #buildFiles} (the XML) and
+     * {@link #zip} (the archive).
      * Returns {@code null} when no schedules match.
      */
     public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
@@ -320,9 +339,12 @@ public class NeTExService {
     }
 
     /**
-     * Postcondition on the finished dataset: the Nordic profile requires every ScheduledStopPoint to have a
-     * StopAssignment, and a stop point without one has no coordinates anywhere in the package. The validator
-     * cannot see this, because it only checks assignments that exist. Reports rather than throws —
+     * Postcondition on the finished dataset: the Nordic profile requires every
+     * ScheduledStopPoint to have a
+     * StopAssignment, and a stop point without one has no coordinates anywhere in
+     * the package. The validator
+     * cannot see this, because it only checks assignments that exist. Reports
+     * rather than throws —
      * publishing a package a few stops short beats publishing none.
      */
     private void checkStopAssignments(final NeTExStopsData stopsData) {
@@ -349,9 +371,12 @@ public class NeTExService {
     }
 
     /**
-     * Stage 1 — computes every NeTEx structure needed both to render the XML and to persist the resolved
-     * journey refs: the winning passenger schedules (overall and per operating day), stops, routes, lines,
-     * operators, service journeys and the calendar. Returns {@code null} when no schedules match; does no
+     * Stage 1 — computes every NeTEx structure needed both to render the XML and to
+     * persist the resolved
+     * journey refs: the winning passenger schedules (overall and per operating
+     * day), stops, routes, lines,
+     * operators, service journeys and the calendar. Returns {@code null} when no
+     * schedules match; does no
      * XML/ZIP work.
      */
     public NeTExDataset computeDataset(final List<Schedule> adhocSchedules,
@@ -394,8 +419,10 @@ public class NeTExService {
                 + "peti_quays={}",
                 petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
 
-        // Last-resort track fill, now that PETI is loaded and before any stop point or route is
-        // derived, so stop point ids and stop assignments cannot disagree about the track.
+        // Last-resort track fill, now that PETI is loaded and before any stop point or
+        // route is
+        // derived, so stop point ids and stop assignments cannot disagree about the
+        // track.
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
         final Map<String, PetiStop> petiByStation = new HashMap<>();
         for (final Station station : stations) {
@@ -426,13 +453,15 @@ public class NeTExService {
         final var operators = entityService.createOperators(allFiltered);
         final var serviceJourneys = entityService.createServiceJourneys(allFiltered, routeData);
 
-        // The winning schedule per (train, day) drives both the calendar and the persisted journey refs, so
-        // DayTypes, ServiceJourneys and the published refs cannot disagree — resolved once here.
+        // The winning schedule per (train, day) drives both the calendar and the
+        // persisted journey refs, so
+        // DayTypes, ServiceJourneys and the published refs cannot disagree — resolved
+        // once here.
         final Map<TrainId, Schedule> winningByTrainDate = resolveWinningSchedules(adhocSchedules, regularSchedules,
                 publishable, feedStart(), feedEnd());
         final Map<TrainId, String> datedRefs = new HashMap<>();
-        winningByTrainDate.forEach((trainId, schedule) ->
-                datedRefs.put(trainId, entityService.serviceJourneyIdFor(schedule)));
+        winningByTrainDate
+                .forEach((trainId, schedule) -> datedRefs.put(trainId, entityService.serviceJourneyIdFor(schedule)));
         final NeTExCalendarService.NeTExCalendarData calendar = calendarService.createCalendarData(datedRefs);
         final List<LocalDate> operatingDays = calendar.datesOf(
                 serviceJourneys.stream().map(NeTExEntityService.NeTExServiceJourney::id).toList());
@@ -452,11 +481,16 @@ public class NeTExService {
     }
 
     /**
-     * Joins each winning {@code (train, date)} schedule to its built {@code ServiceJourney} once, producing the
-     * per-journey drafts the writer persists. Doing the id-join here (rather than in the writer) keeps the
-     * persisted shape — refs plus planned tracks — explicit at the point the data is computed.
+     * Joins each winning {@code (train, date)} schedule to its built
+     * {@code ServiceJourney} once, producing the
+     * per-journey drafts the writer persists. Doing the id-join here (rather than
+     * in the writer) keeps the
+     * persisted shape — refs plus planned tracks — explicit at the point the data
+     * is computed.
      *
-     * <p>Skipped entirely when journey persistence is off, so the run does not join a draft per train per day
+     * <p>
+     * Skipped entirely when journey persistence is off, so the run does not join a
+     * draft per train per day
      * for a writer that will not store any of them.
      */
     private List<PublishedJourneyDraft> buildPublishedJourneyDrafts(final Map<TrainId, Schedule> winningByTrainDate,
@@ -475,8 +509,10 @@ public class NeTExService {
             if (serviceJourney == null) {
                 return;
             }
-            // Count each station's occurrences over the (commercial) passing times so a station served more than
-            // once keeps a planned track per visit; only stops with a known track are stored.
+            // Count each station's occurrences over the (commercial) passing times so a
+            // station served more than
+            // once keeps a planned track per visit; only stops with a known track are
+            // stored.
             final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
             final Map<String, Integer> visitCounts = new HashMap<>();
             for (final var pt : serviceJourney.passingTimes()) {
@@ -495,21 +531,29 @@ public class NeTExService {
         return drafts;
     }
 
-    /** Stage 2 — renders the computed dataset into the per-Line NeTEx XML documents. */
+    /**
+     * Stage 2 — renders the computed dataset into the per-Line NeTEx XML documents.
+     */
     public Map<String, PublicationDeliveryStructure> buildFiles(final NeTExDataset dataset) {
         return writingService.buildDataset(dataset.stopsData(), dataset.routeData(), dataset.lines(),
                 dataset.operators(), dataset.serviceJourneys(), dataset.calendar(), DateProvider.nowInHelsinki());
     }
 
-    /** Stage 3 — marshals and zips the XML documents into the single distributable archive. */
+    /**
+     * Stage 3 — marshals and zips the XML documents into the single distributable
+     * archive.
+     */
     public byte[] zip(final Map<String, PublicationDeliveryStructure> files) {
         return writingService.marshalAndZip(files);
     }
 
     /**
-     * The computed NeTEx data (stage 1 output): everything needed to render the XML <em>and</em> to persist the
-     * resolved journey refs, without re-fetching or re-resolving. {@code publishedJourneys} is the per-journey
-     * aggregate (refs + planned tracks) for every winning {@code (trainNumber, operatingDate)} across the feed
+     * The computed NeTEx data (stage 1 output): everything needed to render the XML
+     * <em>and</em> to persist the
+     * resolved journey refs, without re-fetching or re-resolving.
+     * {@code publishedJourneys} is the per-journey
+     * aggregate (refs + planned tracks) for every winning
+     * {@code (trainNumber, operatingDate)} across the feed
      * horizon — already joined so the writer just maps it to rows.
      */
     public record NeTExDataset(List<Schedule> winningSchedules,
@@ -639,7 +683,8 @@ public class NeTExService {
         }
 
         if (!droppedByStation.isEmpty()) {
-            // Self-correcting: the schedules return once the station metadata catches up, so this is a WARN
+            // Self-correcting: the schedules return once the station metadata catches up,
+            // so this is a WARN
             // (visibility) rather than an ERROR (action required).
             log.warn("event=generateNeTEx method=dropUnpublishableStops droppedSchedules={} "
                     + "stationsNotPublishable={}",
@@ -649,8 +694,10 @@ public class NeTExService {
     }
 
     /**
-     * Follows GTFSService.isPassengerTrain, except that museum trains (MUS) are excluded here but kept in
-     * gtfs-passenger.zip, so the two feeds do not publish exactly the same journeys.
+     * Follows GTFSService.isPassengerTrain, except that museum trains (MUS) are
+     * excluded here but kept in
+     * gtfs-passenger.zip, so the two feeds do not publish exactly the same
+     * journeys.
      */
     public List<Schedule> filterPassengerTrains(final List<Schedule> schedules) {
         final List<Schedule> result = new ArrayList<>();
@@ -671,10 +718,14 @@ public class NeTExService {
     }
 
     /**
-     * The fourth and last track source: a commercial stop takes its station's lowest PETI platform when
-     * no source could name a track, and also when the track that was named is not one PETI publishes as a
-     * platform — a yard or work track that a passenger train should never be on. The latter is a fault in
-     * the source data, so every one is logged for reporting; the fallback only keeps the feed usable
+     * The fourth and last track source: a commercial stop takes its station's
+     * lowest PETI platform when
+     * no source could name a track, and also when the track that was named is not
+     * one PETI publishes as a
+     * platform — a yard or work track that a passenger train should never be on.
+     * The latter is a fault in
+     * the source data, so every one is logged for reporting; the fallback only
+     * keeps the feed usable
      * meanwhile. Runs after the exact sources so a real observation always wins.
      */
     private void fillFromFirstPlatform(final List<Schedule> schedules,

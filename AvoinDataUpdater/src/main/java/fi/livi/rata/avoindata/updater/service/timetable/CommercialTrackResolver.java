@@ -19,10 +19,12 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
- * RIPA's schedules endpoint rarely fills in liikennepaikanRaide, but its trains
- * endpoint carries kaupallinenNro on the timetable rows and those reach
- * time_table_row a few days ahead of departure. This joins the two on attapId,
- * the schedule row part a timetable row came from.
+ * Schedules rarely fill in liikennepaikanRaide, but trains carry kaupallinenNro
+ * on
+ * their timetable rows and those reach time_table_row a few days ahead of
+ * departure. This joins the two on attapId, the schedule row part a timetable
+ * row
+ * came from.
  */
 @Component
 public class CommercialTrackResolver {
@@ -46,7 +48,8 @@ public class CommercialTrackResolver {
 
     /**
      * Every day in the window carries the same stop and they can name different
-     * tracks, so the run nearest to now wins: it is both the likeliest to still hold
+     * tracks, so the run nearest to now wins: it is both the likeliest to still
+     * hold
      * and the only choice that does not vary between generations.
      */
     public Optional<String> resolveTrack(final ScheduleRow scheduleRow,

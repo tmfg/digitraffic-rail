@@ -215,7 +215,7 @@ public class NeTExEntityService {
      * Deduplicates by ID — if multiple schedules produce the same ServiceJourney ID
      * (e.g. multiple adhoc schedules for same train+date), the highest schedule.id
      * wins
-     * (most recent version from RIPA).
+     * (the most recent version).
      */
     public List<NeTExServiceJourney> createServiceJourneys(final List<Schedule> schedules,
             final NeTExRouteData routeData) {

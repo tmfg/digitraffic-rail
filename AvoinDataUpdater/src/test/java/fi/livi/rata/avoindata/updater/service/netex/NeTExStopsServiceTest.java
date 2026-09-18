@@ -274,7 +274,8 @@ class NeTExStopsServiceTest {
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
                                 nullTrackPairs(List.of(station)));
 
-                // no track: the quay is chosen upstream from the resolved track, not guessed here
+                // no track: the quay is chosen upstream from the resolved track, not guessed
+                // here
                 assertNull(stopsData.getStopAssignments().get(0).quayRef());
         }
 
@@ -290,7 +291,8 @@ class NeTExStopsServiceTest {
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
                                 nullTrackPairs(List.of(station)));
 
-                // no track: the quay is chosen upstream from the resolved track, not guessed here
+                // no track: the quay is chosen upstream from the resolved track, not guessed
+                // here
                 assertNull(stopsData.getStopAssignments().get(0).quayRef());
         }
 
@@ -540,7 +542,8 @@ class NeTExStopsServiceTest {
 
         @Test
         void givenSeveralStationsMissingFromPeti_whenCreatingStops_thenSummaryErrorListsThemAll() {
-                // given — an empty-but-non-null PETI stop place set that matches neither station
+                // given — an empty-but-non-null PETI stop place set that matches neither
+                // station
                 final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
                                 List.of(quay("FSR:Quay:20", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
