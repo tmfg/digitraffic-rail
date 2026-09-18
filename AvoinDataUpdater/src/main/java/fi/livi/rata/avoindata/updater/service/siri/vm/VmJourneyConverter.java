@@ -143,6 +143,17 @@ public class VmJourneyConverter {
         return new ResolvedEndpoint(stopRef, stopName);
     }
 
+    /// Whether {@link #actualTrackOf} would return `null` for this location - i.e. whether resolving its
+    /// {@code MonitoredCall} needs the planned-track fallback (and therefore the on-demand
+    /// {@link #timeTableRowsLookup} row batch). Exposed so {@code SiriVmGenerationService} can pre-batch exactly
+    /// the same set of trains this converter will actually need rows for - using two independently-maintained
+    /// conditions here risks exactly the kind of drift this method exists to prevent (see the review finding
+    /// that motivated this: the prefetch used to only check `unknownTrack`, silently missing trains whose
+    /// `commercialTrack` was null for an unrelated reason).
+    static boolean needsPlannedTrackFallback(final GTFSTrainLocation location) {
+        return actualTrackOf(location) == null;
+    }
+
     private static String actualTrackOf(final GTFSTrainLocation location) {
         return BooleanUtils.isTrue(location.getUnknownTrack()) ? null : location.getCommercialTrack();
     }

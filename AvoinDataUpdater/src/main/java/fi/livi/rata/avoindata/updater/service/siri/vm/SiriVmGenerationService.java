@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,17 +181,18 @@ public class SiriVmGenerationService {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(locationIds);
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
-        // Only consulted when a location's live track is unknown (see VmJourneyConverter.resolveMonitoredCallStopRef):
-        // batched up-front for every such train in this cycle (one collection query), rather than one
-        // findBySourceVersionAndIdIn call per unknown-track train - GTFSTrain.timeTableRows is EAGER, so a
-        // per-train call here would otherwise fetch that train's full row set on every single generation cycle.
-        final Set<TrainId> unknownTrackTrainIds = locations.stream()
-                .filter(location -> BooleanUtils.isTrue(location.getUnknownTrack()))
+        // Only consulted when a location's live track can't be used directly (see
+        // VmJourneyConverter.needsPlannedTrackFallback / resolveMonitoredCallStopRef): batched up-front for every
+        // such train in this cycle (one collection query), rather than one findBySourceVersionAndIdIn call per
+        // fallback train - GTFSTrain.timeTableRows is EAGER, so a per-train call here would otherwise fetch that
+        // train's full row set on every single generation cycle.
+        final Set<TrainId> plannedTrackFallbackTrainIds = locations.stream()
+                .filter(VmJourneyConverter::needsPlannedTrackFallback)
                 .map(location -> new TrainId(location.getTrainNumber(), location.getDepartureDate()))
                 .collect(Collectors.toSet());
-        final Map<TrainId, List<GTFSTimeTableRow>> timeTableRowsByTrainId = unknownTrackTrainIds.isEmpty()
+        final Map<TrainId, List<GTFSTimeTableRow>> timeTableRowsByTrainId = plannedTrackFallbackTrainIds.isEmpty()
                 ? Map.of()
-                : gtfsTrainRepository.findBySourceVersionAndIdIn(0L, unknownTrackTrainIds).stream()
+                : gtfsTrainRepository.findBySourceVersionAndIdIn(0L, plannedTrackFallbackTrainIds).stream()
                         .collect(Collectors.toMap(train -> train.id, train -> train.timeTableRows));
         final TimeTableRowsLookup timeTableRowsLookup = (trainNumber, departureDate) ->
                 timeTableRowsByTrainId.getOrDefault(new TrainId(trainNumber, departureDate), List.of());

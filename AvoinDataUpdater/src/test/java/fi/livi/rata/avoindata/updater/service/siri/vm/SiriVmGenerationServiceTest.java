@@ -9,11 +9,14 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
@@ -28,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -193,6 +197,41 @@ class SiriVmGenerationServiceTest {
         return station;
     }
 
+    /**
+     * train 59's full time_table_row list, matching {@link #publishedJourney59()}'s planned tracks, and timed
+     * relative to the real clock (not a fixed date) so its TPE stop is still "current" against the fallback's
+     * {@code DateProvider.nowInHelsinki()} lookup regardless of when the test actually runs.
+     */
+    private static GTFSTrain train59Rows() {
+        final ZonedDateTime tpeArrival = DateProvider.nowInHelsinki().minusMinutes(3);
+        final GTFSTrain train = new GTFSTrain();
+        train.id = new TrainId(59L, TODAY);
+        train.cancelled = false;
+        train.timeTableRows = new ArrayList<>();
+        addRow(train, "HKI", TimeTableRow.TimeTableRowType.DEPARTURE, tpeArrival.minusMinutes(30), "7");
+        addRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL, tpeArrival, "1");
+        addRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE, tpeArrival.plusMinutes(5), "1");
+        addRow(train, "OL", TimeTableRow.TimeTableRowType.ARRIVAL, tpeArrival.plusHours(2), "1");
+        return train;
+    }
+
+    private static void addRow(final GTFSTrain train, final String stationShortCode,
+                               final TimeTableRow.TimeTableRowType type, final ZonedDateTime scheduledTime,
+                               final String track) {
+        final GTFSTimeTableRow row = new GTFSTimeTableRow();
+        row.stationShortCode = stationShortCode;
+        row.type = type;
+        row.scheduledTime = scheduledTime;
+        row.commercialStop = true;
+        row.commercialTrack = track;
+        row.cancelled = false;
+        row.train = train;
+        // No actual time yet (not-yet-completed row) - mirrors a fresh, on-time live estimate, which is what
+        // Stop#isRowEligible requires (see CommercialStopVisits) for the row to count as the current visit.
+        row.liveEstimateTime = scheduledTime;
+        train.timeTableRows.add(row);
+    }
+
     private List<GeneratedExport> capturePersistedExports() {
         @SuppressWarnings("unchecked")
         final ArgumentCaptor<Collection<GeneratedExport>> captor = ArgumentCaptor.forClass(Collection.class);
@@ -211,6 +250,32 @@ class SiriVmGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertEquals(1, exports.size());
         assertEquals("siri-vm.xml", exports.getFirst().fileName);
+    }
+
+    // ===== GEN-VM-01b: Null commercialTrack with unknownTrack=false must still trigger the planned-track
+    // fallback prefetch — regression test for a review-reported bug where the prefetch filter only checked
+    // unknownTrack, silently missing trains whose live track was null for a different, unrelated reason
+    // (e.g. commercial_track not yet populated), which then dropped a resolvable MonitoredCall entirely. =====
+
+    @Test
+    void givenNullCommercialTrackWithoutUnknownTrackFlag_whenGenerate_thenStillResolvesPlannedTrackFallback() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        // unknownTrack=false (not the usual fallback trigger) but commercialTrack=null - actualTrackOf() still
+        // returns null here, so the converter still needs the planned-track fallback and its row prefetch.
+        final TestGTFSTrainLocation location = new TestGTFSTrainLocation(
+                1L, TODAY, 59L, DateProvider.nowInHelsinki().minusMinutes(1),
+                25.759588, 61.437778, 60, 10, "TPE", null, false, 180, false, null);
+        setupLiveLocation(location);
+        when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any())).thenReturn(List.of(train59Rows()));
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.getFirst().data);
+        assertTrue(xml.contains("FSR:Quay:TPE-1"),
+                "Expected the planned-track fallback to resolve TPE's MonitoredCall even though "
+                        + "unknownTrack=false (only commercialTrack was null)");
     }
 
     // ===== GEN-VM-02: Happy path — persisted bytes are schema-valid SIRI-VM XML =====
