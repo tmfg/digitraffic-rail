@@ -383,8 +383,22 @@ Three options were considered:
    `currentVisitIndex` has one subtlety not needed by ET: it cannot just check whether a stop's arrival row has
    `actualTime == null` to decide "not yet completed" — a stop with both an arrival and a departure row is still the
    *current* stop while the train is **dwelling** there (arrival already has an actual time, departure doesn't).
-   The correct check uses a `completingRow()` concept: the departure row if the stop has one, otherwise the arrival
-   (for a terminus) — only that row's `actualTime` determines whether the stop has fully finished.
+   `Stop.isEligible()`/`isRowEligible()` check each leg (arrival, departure) independently for actual-time/
+   cancellation/commercial-stop eligibility — a stop is still current if *either* row, on its own, hasn't finished
+   yet (see the class javadoc in `CommercialStopVisits.java` for the full rationale, including why this must be
+   per-row rather than per-stop to mirror `GTFSTrainRepository.getTrainLocations`'s own per-row SQL filters).
+
+   `CommercialStopVisits.of()`/`EtJourneyInterpreter.pairRows()` also both had to reconstruct arrival/departure
+   pairing order themselves, since `GTFSTrain.timeTableRows` has no `@OrderBy` and JPA doesn't guarantee retrieval
+   order. Sorting by `scheduledTime` is not enough on its own when two or more rows share the *exact* same
+   scheduled instant (a zero-dwell stop, or a station-boundary tie with zero scheduled transit time) — several
+   review rounds went through a few tie-break approaches (a global type-based tie-break, then a station-aware
+   pairwise comparator) before landing on the current fix: sort by `scheduledTime` alone, then reconstruct each
+   same-instant run's order explicitly by grouping rows by station (`orderRows`/`reorderTiedGroup` in both files).
+   See those methods' own javadoc for a worked example and for why a pairwise comparator approach was rejected
+   (it violated Java's `Comparator` contract for 3+-way ties). A 90-day production-data check found no actual
+   occurrences of even the simplest tie case, so this is a defensive/correctness fix for a scenario not yet
+   observed in real data, not a fix for an observed production bug.
 
    This also meant no new query was needed for the planned-track data itself: `SiriVmGenerationService` already
    loads `NeTExPublishedJourney.tracks` (`findByDatasetVersionAndDepartureDatesFetchTracks`) — the exact same list
