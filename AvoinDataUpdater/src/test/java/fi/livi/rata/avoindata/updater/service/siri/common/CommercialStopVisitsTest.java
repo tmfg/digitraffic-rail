@@ -51,6 +51,29 @@ public class CommercialStopVisitsTest {
         assertEquals(0, visitIndex.getAsInt());
     }
 
+    // Regression test: while a train is still APPROACHING a stop (not yet arrived), only its ARRIVAL row
+    // typically carries a live estimate yet - the DEPARTURE hasn't been reached, let alone estimated, so it has
+    // no live estimate at all. The live-location query resolves this stop via that ARRIVAL row (its own
+    // eligibility test is per-row, not "does this stop's completing/departure row qualify"), so
+    // currentVisitIndex must check either leg too, not just the departure - otherwise it would wrongly miss
+    // this stop entirely (empty) even though the live query has already resolved it.
+    @Test
+    public void currentVisitIndex_findsApproachingVisitViaArrivalRowWhenDepartureHasNoEstimateYet() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // TPE ARRIVAL: not yet happened, but its live estimate is set and still in the future.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, null, T0.plusHours(1)));
+        // TPE DEPARTURE: not yet happened, and has no live estimate at all yet (train hasn't arrived).
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1).plusMinutes(2), false, null,
+                null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusMinutes(30));
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt());
+    }
+
     // Regression test for a bug where a cancelled visit with no actual completion time (the normal state for a
     // cancelled stop, since it's never actually run) was wrongly treated as "current". The live-location query
     // (GTFSTrainRepository.getTrainLocations) excludes cancelled rows outright, so once it resolves a station, it

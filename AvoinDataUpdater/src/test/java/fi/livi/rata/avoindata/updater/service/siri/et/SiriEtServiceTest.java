@@ -514,6 +514,47 @@ class SiriEtServiceTest {
         assertEquals(3, calls.get(2).getOrder().intValue());
     }
 
+    // Regression test for a bug where pairRows() broke a same-instant scheduled_time tie ARRIVAL-first
+    // (natural enum order) instead of DEPARTURE-first like CommercialStopVisits.of and
+    // GTFSTrainRepository.getTrainLocations. TPE's DEPARTURE and TKU's ARRIVAL below share the exact same
+    // scheduled time (zero scheduled transit time - a real occurrence, see TrainFactory's TPE DEPARTURE / JY
+    // ARRIVAL fixture rows). Sorting ARRIVAL-first on that tie interleaved the two stations' rows, pairing
+    // TPE's ARRIVAL with no departure (mistaken for a terminus) and TKU's ARRIVAL with TPE's DEPARTURE (wrong
+    // station identity) - corrupting the whole call sequence from that point on.
+    @Test
+    void givenDepartureAndNextArrivalTie_whenBuild_thenPairsRowsByStationNotInterleaved() {
+        // given
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null,
+                ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        addStop(train, "TPE",
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI), "1");
+        // TKU's ARRIVAL ties exactly with TPE's DEPARTURE above (zero scheduled transit time).
+        addStop(train, "TKU",
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI),
+                ZonedDateTime.of(2026, 7, 15, 9, 40, 0, 0, ZONE_ID_HKI), "3");
+        addStop(train, "OL",
+                ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — exactly 4 stops (HKI, TPE, TKU, OL), each correctly paired and station-identified; not 5 with
+        // TPE mistaken for a terminus and TKU's arrival wrongly merged with TPE's departure.
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
+        assertEquals(4, calls.size());
+        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:TKU-3", calls.get(2).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:OL-1", calls.get(3).getStopPointRef().getValue());
+        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(2, calls.get(1).getOrder().intValue());
+        assertEquals(3, calls.get(2).getOrder().intValue());
+        assertEquals(4, calls.get(3).getOrder().intValue());
+    }
+
     // --- ET-09: Stop with arrival.actualTime but no departure.actualTime → still RecordedCall ---
 
     @Test

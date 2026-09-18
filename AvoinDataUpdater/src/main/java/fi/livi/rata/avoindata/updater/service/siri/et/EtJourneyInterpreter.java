@@ -321,7 +321,14 @@ public class EtJourneyInterpreter {
     /**
      * Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
      * (ARRIVAL only). The {@code timeTableRows} association declares no order, so the rows are first sorted
-     * (into a copy) by scheduled time, then ARRIVAL before DEPARTURE — the same key used when they are ingested.
+     * (into a copy) by scheduled time, then DEPARTURE before ARRIVAL on a tie - matching
+     * {@code CommercialStopVisits.of} and {@code GTFSTrainRepository.getTrainLocations}'s own tie-break. This
+     * only matters when a station's DEPARTURE and the next station's ARRIVAL share the exact same scheduled
+     * time (zero scheduled transit time between adjacent stops - a real occurrence, see TrainFactory's TPE
+     * DEPARTURE / JY ARRIVAL fixture rows): sorting ARRIVAL-first on that tie would let the next station's
+     * ARRIVAL slot in between this station's own ARRIVAL/DEPARTURE pair below, pairing this station's ARRIVAL
+     * with no departure (mistaken for a terminus) and the next station's ARRIVAL with this station's DEPARTURE
+     * (wrong station identity) - corrupting every pairing (and visitIndex) from that point on.
      */
     private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
         final List<PairedStop> stops = new ArrayList<>();
@@ -330,7 +337,8 @@ public class EtJourneyInterpreter {
         }
 
         final List<GTFSTimeTableRow> ordered = new ArrayList<>(rows);
-        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime).thenComparing(r -> r.type));
+        ordered.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime)
+                .thenComparing(r -> r.type, Comparator.reverseOrder()));
 
         int i = 0;
         if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
