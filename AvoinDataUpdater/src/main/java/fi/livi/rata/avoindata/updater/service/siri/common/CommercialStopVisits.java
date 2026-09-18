@@ -42,34 +42,45 @@ public final class CommercialStopVisits {
 
         /**
          * Mirrors the live-location query's own eligibility test for its {@code next} row (see
-         * {@code GTFSTrainRepository.getTrainLocations}: {@code actual_time is null and live_estimate_time >
-         * CURRENT_TIMESTAMP()}), applied independently to <em>either</em> leg of this stop. The SQL query
-         * selects the single earliest not-yet-happened row train-wide regardless of whether it is an ARRIVAL or
-         * a DEPARTURE: while a train is still <em>approaching</em> a stop, only its ARRIVAL row typically
-         * carries a live estimate yet (the DEPARTURE hasn't been reached, let alone estimated) - checking only
-         * the departure (the usual "completing" row for a non-terminus stop) would then find no estimate and
-         * wrongly report this stop as not current/not eligible, even though the SQL query has already resolved
-         * it via that very ARRIVAL row. The *dwelling* case (ARRIVAL already actual, DEPARTURE pending) is still
-         * covered by checking either leg, since the ARRIVAL is then no longer eligible (actual_time set) and
-         * only the DEPARTURE can be. A row with no actual time yet but a <em>stale</em> estimate (no longer in
-         * the future - e.g. delay data hasn't refreshed) is not eligible either: the SQL query skips straight
-         * past such a row to the next one that qualifies, so a repeated-station visit stuck in that state must
-         * not be reported as current here, or {@link #currentVisitIndex} would return the wrong (earlier,
-         * already-superseded) occurrence.
+         * {@code GTFSTrainRepository.getTrainLocations}: {@code commercial_stop is true and cancelled is false
+         * and actual_time is null and live_estimate_time > CURRENT_TIMESTAMP()}), applied independently to
+         * <em>either</em> leg of this stop. The SQL query selects the single earliest not-yet-happened row
+         * train-wide regardless of whether it is an ARRIVAL or a DEPARTURE: while a train is still
+         * <em>approaching</em> a stop, only its ARRIVAL row typically carries a live estimate yet (the
+         * DEPARTURE hasn't been reached, let alone estimated) - checking only the departure (the usual
+         * "completing" row for a non-terminus stop) would then find no estimate and wrongly report this stop as
+         * not current/not eligible, even though the SQL query has already resolved it via that very ARRIVAL
+         * row. The *dwelling* case (ARRIVAL already actual, DEPARTURE pending) is still covered by checking
+         * either leg, since the ARRIVAL is then no longer eligible (actual_time set) and only the DEPARTURE can
+         * be. A row with no actual time yet but a <em>stale</em> estimate (no longer in the future - e.g. delay
+         * data hasn't refreshed) is not eligible either: the SQL query skips straight past such a row to the
+         * next one that qualifies, so a repeated-station visit stuck in that state must not be reported as
+         * current here, or {@link #currentVisitIndex} would return the wrong (earlier, already-superseded)
+         * occurrence.
+         *
+         * <p>Crucially, the {@code cancelled}/{@code commercial_stop} filters are per-row in the SQL, exactly
+         * like the other filters above - not applied to the paired stop as a whole. A cancelled or
+         * non-commercial ARRIVAL simply drops out of the SQL's candidate window; it does not disqualify a
+         * perfectly eligible DEPARTURE at the very same stop (see {@code
+         * GTFSTrainRepositoryTest#getTrainLocationsCancelledArrivalTreatedAsNoPairedArrival}, where the SQL
+         * selects PSL's active DEPARTURE even though PSL's own ARRIVAL was cancelled). So {@link
+         * #isRowEligible} checks cancellation/commercial-stop on each row independently, and this stop is
+         * eligible as soon as either row - on its own - passes every filter.
          */
         private boolean isEligible(final ZonedDateTime now) {
             return isRowEligible(arrival, now) || isRowEligible(departure, now);
         }
 
         private static boolean isRowEligible(final GTFSTimeTableRow row, final ZonedDateTime now) {
-            return row != null && row.actualTime == null && row.liveEstimateTime != null && row.liveEstimateTime.isAfter(now);
+            return row != null && !row.cancelled && BooleanUtils.isTrue(row.commercialStop) && row.actualTime == null
+                    && row.liveEstimateTime != null && row.liveEstimateTime.isAfter(now);
         }
 
         /** Mirrors {@code EtJourneyInterpreter}'s cancellation check: a stop is cancelled if either of its rows
-         * is. The live-location query (see {@code GTFSTrainRepository.getTrainLocations}) excludes cancelled
-         * rows outright, so a cancelled stop can never be the one it resolves - {@link #currentVisitIndex}
-         * mirrors that by never selecting a cancelled stop as current either, even when its rows happen to have
-         * no actual time (the usual case, since a cancelled stop is never actually run). */
+         * is. Only used by the arrived-terminus fallback in {@link #currentVisitIndex} (a single-row, ARRIVAL-
+         * only case there); the general "is this stop currently reportable" question is answered per-row by
+         * {@link #isEligible}/{@link #isRowEligible} instead, which already excludes a cancelled row from
+         * eligibility on its own, without disqualifying the other, non-cancelled leg of the same stop. */
         private boolean isCancelled() {
             if (arrival != null && arrival.cancelled) {
                 return true;
@@ -136,20 +147,17 @@ public final class CommercialStopVisits {
      * The 0-based occurrence of the first not-yet-completed commercial stop at {@code stationShortCode} within
      * {@code stops} (schedule order) — the same stop a live "next station" query resolves (see
      * {@code GTFSTrainRepository.getTrainLocations}), found here by scanning the full planned order instead of
-     * that query's {@code actual_time is null and live_estimate_time > CURRENT_TIMESTAMP()} SQL filter (see
-     * {@code now}, and {@link Stop#isEligible}, for how that filter is mirrored here - checking either leg of
-     * the stop, since the SQL query resolves whichever single row, ARRIVAL or DEPARTURE, is earliest). When a
-     * station is served more than once, an earlier visit is only skipped once neither of its rows (see {@link
-     * Stop#isEligible}) is eligible anymore — each already has an actual time, or its estimate has gone stale
-     * (no longer in the future) — so the first still-eligible match is unambiguous and never an occurrence the
-     * live query has itself already moved past. Cancelled visits still occupy a slot in the running count (so a
-     * later, real visit keeps its true visitIndex — same convention as {@code EtJourneyInterpreter}), but are
-     * never themselves returned as the current occurrence: the live-location query excludes cancelled rows
-     * outright (its {@code cancelled is false} filter), and a cancelled stop's rows typically never get an
-     * actual time either (it's never actually run), so without this exclusion a cancelled visit would be
-     * wrongly reported as current instead of the next, real visit. Empty when the station never occurs, or
-     * every (non-cancelled) occurrence is already completed/stale (should not normally happen for a station a
-     * live location still reports) — except the arrived-terminus case below.
+     * that query's {@code commercial_stop is true and cancelled is false and actual_time is null and
+     * live_estimate_time > CURRENT_TIMESTAMP()} SQL filter (see {@code now}, and {@link Stop#isEligible}, for
+     * how that filter is mirrored here - checking either leg of the stop independently, since the SQL query
+     * resolves whichever single row, ARRIVAL or DEPARTURE, is earliest, and applies every filter, cancellation
+     * and commercial-stop included, per row rather than to the paired stop as a whole). When a station is
+     * served more than once, an earlier visit is only skipped once neither of its rows (see {@link
+     * Stop#isEligible}) is eligible anymore — each already has an actual time, is cancelled or non-commercial,
+     * or its estimate has gone stale (no longer in the future) — so the first still-eligible match is
+     * unambiguous and never an occurrence the live query has itself already moved past. Empty when the station
+     * never occurs, or every occurrence is already completed/stale/cancelled (should not normally happen for a
+     * station a live location still reports) — except the arrived-terminus case below.
      *
      * <p>Terminus fallback: mirrors {@code GTFSTrainRepository.getTrainLocations}'s {@code term} lateral join.
      * A terminus has only an ARRIVAL row (no departure), so once that arrival's actual time is set (train has
@@ -172,7 +180,7 @@ public final class CommercialStopVisits {
             // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
             // counting pattern).
             final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
-            if (station.equals(stationShortCode) && !stop.isCancelled() && stop.isEligible(now)) {
+            if (station.equals(stationShortCode) && stop.isEligible(now)) {
                 return OptionalInt.of(visitIndex);
             }
         }

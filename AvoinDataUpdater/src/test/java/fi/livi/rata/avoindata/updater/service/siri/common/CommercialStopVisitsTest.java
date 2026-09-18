@@ -74,6 +74,30 @@ public class CommercialStopVisitsTest {
         assertEquals(0, visitIndex.getAsInt());
     }
 
+    // Regression test for the review-reported bug: cancellation/commercial-stop filters must be applied
+    // per-row, not to the whole paired stop. Mirrors
+    // GTFSTrainRepositoryTest#getTrainLocationsCancelledArrivalTreatedAsNoPairedArrival: PSL's ARRIVAL is
+    // cancelled (so it simply drops out of the SQL's candidate window - a cancelled row is invisible to the
+    // query, not a reason to disqualify the whole stop), while PSL's DEPARTURE is perfectly eligible on its
+    // own. Before the fix, Stop.isCancelled() (true because ARRIVAL was cancelled) gated the whole stop's
+    // eligibility, wrongly hiding this visit even though its DEPARTURE alone is exactly what the live query
+    // would resolve.
+    @Test
+    public void currentVisitIndex_findsVisitViaEligibleDepartureWhenOnlyArrivalIsCancelled() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // PSL ARRIVAL: cancelled, never actually recorded as happened - drops out of eligibility on its own.
+        rows.add(row("PSL", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), true, null));
+        // PSL DEPARTURE: not cancelled, not yet happened, with a future live estimate - eligible on its own.
+        rows.add(row("PSL", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1).plusMinutes(2), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "PSL", T0.plusMinutes(30));
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(0, visitIndex.getAsInt());
+    }
+
     // Regression test for a bug where a cancelled visit with no actual completion time (the normal state for a
     // cancelled stop, since it's never actually run) was wrongly treated as "current". The live-location query
     // (GTFSTrainRepository.getTrainLocations) excludes cancelled rows outright, so once it resolves a station, it
