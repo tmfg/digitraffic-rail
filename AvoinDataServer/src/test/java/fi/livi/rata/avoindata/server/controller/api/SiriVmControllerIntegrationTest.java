@@ -26,9 +26,8 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * for that "enabled but nothing generated yet" case; the separate "flag off entirely, no route mapped" case is
  * covered by {@link SiriVmControllerDisabledIntegrationTest}). Mirrors {@link SiriEtControllerIntegrationTest}.
  */
-// spring.cloud.aws.secretsmanager.enabled=false and spring.cloud.aws.region.static are already set globally
-// in the test application.properties. The test application.properties shadows the main one, so the SIRI-VM
-// endpoint must be re-enabled here for it to be mapped.
+// The test application.properties shadows the main one, so the SIRI-VM endpoint must be re-enabled here for
+// it to be mapped.
 @TestPropertySource(properties = {
         "avoindataserver.siri.vm.enabled=true"
 })
