@@ -100,8 +100,8 @@ public final class CommercialStopVisits {
         final List<GTFSTimeTableRow> ordered = orderRows(rows);
 
         int i = 0;
-        if (ordered.get(0).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
-            addIfCommercial(stops, null, ordered.get(0));
+        if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+            addIfCommercial(stops, null, ordered.getFirst());
             i = 1;
         }
 
