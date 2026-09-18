@@ -319,13 +319,11 @@ public class EtJourneyInterpreter {
         return effective != null && !effective.isBefore(now.minus(CARRYOVER_GRACE));
     }
 
-    /**
-     * Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
-     * (ARRIVAL only). The {@code timeTableRows} association declares no order, so the rows are first sorted
-     * (into a copy) by scheduled time via {@link #orderRows}, matching {@code CommercialStopVisits.of} and
-     * {@code GTFSTrainRepository.getTrainLocations}'s own logic (see {@link #orderRows}'s javadoc for why
-     * same-instant ties are resolved with a dedicated post-processing pass rather than a tie-break comparator).
-     */
+    /// Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
+    /// (ARRIVAL only). The `timeTableRows` association declares no order, so the rows are first sorted (into a
+    /// copy) by scheduled time via {@link #orderRows}, matching `CommercialStopVisits.of` and
+    /// `GTFSTrainRepository.getTrainLocations`'s own logic (see {@link #orderRows}'s javadoc for why same-instant
+    /// ties are resolved with a dedicated post-processing pass rather than a tie-break comparator).
     private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
         final List<PairedStop> stops = new ArrayList<>();
         if (rows.isEmpty()) {
@@ -354,17 +352,22 @@ public class EtJourneyInterpreter {
         return stops;
     }
 
-    /**
-     * Orders {@code rows} by scheduled time for {@link #pairRows}, which assumes rows strictly alternate
-     * ARRIVAL, DEPARTURE, ARRIVAL, DEPARTURE, ... Same-instant ties cannot be resolved with a plain pairwise
-     * tie-break comparator: an earlier version tried "DEPARTURE before ARRIVAL, unless same station" via
-     * {@code Comparator}, but that is not transitive (two DEPARTUREs at different stations compare equal to
-     * each other, yet each compares with the <em>opposite</em> sign against an ARRIVAL at one of those
-     * stations) - {@code List.sort} can throw "Comparator... violates its general contract" or silently
-     * misorder a three-or-more-row tie. So ties are instead resolved with a dedicated post-processing pass
-     * ({@link #reorderTiedGroup}) that reconstructs each same-instant run explicitly by station, rather than by
-     * a per-pair comparison rule.
-     */
+    /// Orders `rows` by scheduled time for {@link #pairRows}, which assumes rows strictly alternate ARRIVAL,
+    /// DEPARTURE, ARRIVAL, DEPARTURE, ... Same-instant ties cannot be resolved with a plain pairwise tie-break
+    /// comparator: an earlier version tried "DEPARTURE before ARRIVAL, unless same station" via `Comparator`,
+    /// but that is not transitive (two DEPARTUREs at different stations compare equal to each other, yet each
+    /// compares with the *opposite* sign against an ARRIVAL at one of those stations) - `List.sort` can throw
+    /// "Comparator... violates its general contract" or silently misorder a three-or-more-row tie. So ties are
+    /// instead resolved with a dedicated post-processing pass ({@link #reorderTiedGroup}) that reconstructs
+    /// each same-instant run explicitly by station, rather than by a per-pair comparison rule.
+    ///
+    /// Whether this level of care is actually needed is debatable: a 90-day production-data check found zero
+    /// occurrences of even the simplest cross-station tie (see `GTFSTrainRepositoryTest` history/PR discussion),
+    /// so real timetables appear to always allot at least a minute of scheduled transit time between stations.
+    /// This is arguably overkill for data that doesn't occur in practice - but a `Comparator` that violates its
+    /// contract is a latent bug regardless of today's data, and the fix costs nothing at runtime (still a single
+    /// linear pass), so it seemed better to spend a bit more code now than to debug a `Comparison method
+    /// violates its general contract!` crash later if a future data source or edge case ever does produce one.
     private static List<GTFSTimeTableRow> orderRows(final List<GTFSTimeTableRow> rows) {
         final List<GTFSTimeTableRow> byTime = new ArrayList<>(rows);
         byTime.sort(Comparator.comparing((GTFSTimeTableRow r) -> r.scheduledTime));
@@ -382,30 +385,31 @@ public class EtJourneyInterpreter {
         return result;
     }
 
-    /**
-     * Reconstructs the correct order of a run of rows sharing the exact same scheduled time, by station rather
-     * than by a global tie-break rule. Physically, a train visits stations one at a time, so such a run is
-     * always a single chain: at most one leading row completing a stay opened before the tie (a lone
-     * DEPARTURE, its own ARRIVAL scheduled earlier), zero or more stations fully contained in the tie (a
-     * zero-dwell stop: both its ARRIVAL and DEPARTURE share this same instant), and at most one trailing row
-     * opening a stay that continues after the tie (a lone ARRIVAL, its own DEPARTURE scheduled later). Ordering
-     * as [leading][zero-dwell pairs, each ARRIVAL before its own DEPARTURE][trailing] keeps every station's own
-     * rows correctly paired regardless of how many stations happen to tie at once - unlike a global type-based
-     * tie-break, this never depends on comparing one station's row against a different station's row.
-     *
-     * <p>Example: HKI's own ARRIVAL is scheduled earlier (not part of any tie); its DEPARTURE, TPE's own
-     * ARRIVAL and DEPARTURE (a zero-dwell stop), and TKU's own ARRIVAL all share one exact scheduled time; TKU's
-     * DEPARTURE is scheduled later (not part of the tie either):
-     * <pre>
-     * input group (order as received, i.e. arbitrary):  TKU ARR, HKI DEP, TPE DEP, TPE ARR
-     * grouped by station:                               HKI -&gt; [DEP]   TPE -&gt; [DEP, ARR]   TKU -&gt; [ARR]
-     * classified:                                        HKI leading    TPE middle (sorted ARR, DEP)  TKU trailing
-     * result:                                             HKI DEP, TPE ARR, TPE DEP, TKU ARR
-     * </pre>
-     * which the caller's {@code orderRows} then places between HKI's earlier ARRIVAL and TKU's later DEPARTURE,
-     * yielding the fully-correct sequence HKI ARR, HKI DEP, TPE ARR, TPE DEP, TKU ARR, TKU DEP - i.e. 3 clean
-     * stops (HKI, TPE, TKU) even though 4 of the 6 rows tie on scheduled time.
-     */
+    /// Reconstructs the correct order of a run of rows sharing the exact same scheduled time, by station rather
+    /// than by a global tie-break rule. Physically, a train visits stations one at a time, so such a run is
+    /// always a single chain: at most one leading row completing a stay opened before the tie (a lone
+    /// DEPARTURE, its own ARRIVAL scheduled earlier), zero or more stations fully contained in the tie (a
+    /// zero-dwell stop: both its ARRIVAL and DEPARTURE share this same instant), and at most one trailing row
+    /// opening a stay that continues after the tie (a lone ARRIVAL, its own DEPARTURE scheduled later). Ordering
+    /// as `[leading][zero-dwell pairs, each ARRIVAL before its own DEPARTURE][trailing]` keeps every station's
+    /// own rows correctly paired regardless of how many stations happen to tie at once - unlike a global
+    /// type-based tie-break, this never depends on comparing one station's row against a different station's
+    /// row.
+    ///
+    /// **Example**: HKI's own ARRIVAL is scheduled earlier (not part of any tie); its DEPARTURE, TPE's own
+    /// ARRIVAL and DEPARTURE (a zero-dwell stop), and TKU's own ARRIVAL all share one exact scheduled time;
+    /// TKU's DEPARTURE is scheduled later (not part of the tie either):
+    ///
+    /// | step | value |
+    /// |---|---|
+    /// | input group (order as received, i.e. arbitrary) | TKU ARR, HKI DEP, TPE DEP, TPE ARR |
+    /// | grouped by station | HKI -> [DEP]&nbsp;&nbsp;&nbsp;TPE -> [DEP, ARR]&nbsp;&nbsp;&nbsp;TKU -> [ARR] |
+    /// | classified | HKI leading&nbsp;&nbsp;&nbsp;TPE middle (sorted ARR, DEP)&nbsp;&nbsp;&nbsp;TKU trailing |
+    /// | result | HKI DEP, TPE ARR, TPE DEP, TKU ARR |
+    ///
+    /// The caller ({@link #orderRows}) then places this result between HKI's earlier ARRIVAL and TKU's later
+    /// DEPARTURE, yielding the fully-correct sequence `HKI ARR, HKI DEP, TPE ARR, TPE DEP, TKU ARR, TKU DEP` -
+    /// i.e. 3 clean stops (HKI, TPE, TKU) even though 4 of the 6 rows tie on scheduled time.
     private static List<GTFSTimeTableRow> reorderTiedGroup(final List<GTFSTimeTableRow> group) {
         if (group.size() == 1) {
             return group;
