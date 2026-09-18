@@ -38,6 +38,8 @@ import fi.livi.rata.avoindata.updater.service.siri.common.InvalidSiriOutputExcep
 import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.PetiUnavailableException;
+import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnavailableException;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;

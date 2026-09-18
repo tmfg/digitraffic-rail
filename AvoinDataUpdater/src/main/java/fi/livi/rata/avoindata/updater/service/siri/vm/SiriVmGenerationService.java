@@ -9,7 +9,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
@@ -39,6 +42,8 @@ import fi.livi.rata.avoindata.updater.service.siri.common.JourneyEndpoint;
 import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.PetiUnavailableException;
+import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnavailableException;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
@@ -48,16 +53,14 @@ import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationNameLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationUicLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.JourneyRefResolver;
 import fi.livi.rata.avoindata.updater.service.siri.et.MapPlannedTrackLookup;
-import fi.livi.rata.avoindata.updater.service.siri.et.PetiUnavailableException;
 import fi.livi.rata.avoindata.updater.service.siri.et.PlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneyRefResolver;
-import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneysUnavailableException;
 
 /**
- * Generates the SIRI-VM feed on a schedule (see {@code SiriUpdatingService}) from the live {@code train_location}
- * table, following the same prepare/build/validate/persist pipeline as {@code SiriEtGenerationService}. Reuses
- * the same NeTEx-published-journey and PETI-quay lookups as SIRI-ET so both feeds agree on line/journey/quay
- * identifiers for a given train.
+ * Generates the SIRI-VM feed on a schedule (see {@code SiriVmUpdatingService}) from the live {@code
+ * train_location} table, following the same prepare/build/validate/persist pipeline as {@code
+ * SiriEtGenerationService}. Reuses the same NeTEx-published-journey and PETI-quay lookups as SIRI-ET so both
+ * feeds agree on line/journey/quay identifiers for a given train.
  */
 @Service
 public class SiriVmGenerationService {
@@ -176,14 +179,19 @@ public class SiriVmGenerationService {
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
         // Only consulted when a location's live track is unknown (see VmJourneyConverter.resolveMonitoredCallStopRef):
-        // loads that one train's full row list on demand, since the live position query above only ever fetches
-        // a single upcoming-stop row per train.
+        // batched up-front for every such train in this cycle (one collection query), rather than one
+        // findBySourceVersionAndIdIn call per unknown-track train - GTFSTrain.timeTableRows is EAGER, so a
+        // per-train call here would otherwise fetch that train's full row set on every single generation cycle.
+        final Set<TrainId> unknownTrackTrainIds = locations.stream()
+                .filter(location -> BooleanUtils.isTrue(location.getUnknownTrack()))
+                .map(location -> new TrainId(location.getTrainNumber(), location.getDepartureDate()))
+                .collect(Collectors.toSet());
+        final Map<TrainId, List<GTFSTimeTableRow>> timeTableRowsByTrainId = unknownTrackTrainIds.isEmpty()
+                ? Map.of()
+                : gtfsTrainRepository.findBySourceVersionAndIdIn(0L, unknownTrackTrainIds).stream()
+                        .collect(Collectors.toMap(train -> train.id, train -> train.timeTableRows));
         final TimeTableRowsLookup timeTableRowsLookup = (trainNumber, departureDate) ->
-                gtfsTrainRepository.findBySourceVersionAndIdIn(0L, Set.of(new TrainId(trainNumber, departureDate)))
-                        .stream()
-                        .findFirst()
-                        .map(train -> train.timeTableRows)
-                        .orElseGet(List::of);
+                timeTableRowsByTrainId.getOrDefault(new TrainId(trainNumber, departureDate), List.of());
 
         final VmJourneyConverter converter = new VmJourneyConverter(journeyRefResolver, stationUicLookup,
                 siriStopResolver, stationNameLookup, dbSources.plannedTrackLookup(), timeTableRowsLookup);

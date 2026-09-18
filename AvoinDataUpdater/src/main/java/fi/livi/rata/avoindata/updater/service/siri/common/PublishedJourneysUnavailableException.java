@@ -1,9 +1,10 @@
-package fi.livi.rata.avoindata.updater.service.siri.et;
+package fi.livi.rata.avoindata.updater.service.siri.common;
 
 /**
- * Raised when SIRI-ET is configured to read published NeTEx journey refs from the database but they are
- * missing, cover none of the operating days, or are stale. SIRI-ET generation then fails for the cycle rather
- * than falling back to live resolution — the real-time feed must stay consistent with the published NeTEx.
+ * Raised when a SIRI generation service (SIRI-ET, SIRI-VM) is configured to read published NeTEx journey refs
+ * from the database but they are missing, cover none of the operating days, or are stale. Generation then fails
+ * for the cycle rather than falling back to live resolution — the real-time feed must stay consistent with the
+ * published NeTEx.
  */
 public class PublishedJourneysUnavailableException extends RuntimeException {
 

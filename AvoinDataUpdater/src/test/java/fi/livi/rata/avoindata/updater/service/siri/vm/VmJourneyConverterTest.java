@@ -79,6 +79,10 @@ class VmJourneyConverterTest {
         row.type = type;
         row.scheduledTime = scheduledTime;
         row.actualTime = actualTime;
+        // Mirrors a fresh (on-time) live estimate whenever there is no actual time yet - the estimate itself
+        // is only ever checked (see CommercialStopVisits.Stop#isCompletingRowEligible) when actualTime is null,
+        // so this has no effect on rows that already have one.
+        row.liveEstimateTime = actualTime == null ? scheduledTime : null;
         row.commercialStop = true;
         row.cancelled = false;
         return row;
@@ -110,8 +114,9 @@ class VmJourneyConverterTest {
                         ZonedDateTime.of(2026, 7, 15, 12, 5, 0, 0, ZONE_ID_HKI), null));
         final VmJourneyConverter converter =
                 converter(rows, Map.of("TPE#0", "5"));
+        final ZonedDateTime now = ZonedDateTime.of(2026, 7, 15, 11, 30, 0, 0, ZONE_ID_HKI);
 
-        final VmActivity activity = converter.convert(location("TPE", "9")).orElseThrow();
+        final VmActivity activity = converter.convert(location("TPE", "9"), now).orElseThrow();
 
         assertEquals("FSR:Quay:TPE-5", activity.monitoredCallStopRef().value());
     }
@@ -137,8 +142,9 @@ class VmJourneyConverterTest {
                         ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), null));
         final VmJourneyConverter converter =
                 converter(rows, Map.of("TPE#0", "1", "TPE#1", "2"));
+        final ZonedDateTime now = ZonedDateTime.of(2026, 7, 15, 10, 30, 0, 0, ZONE_ID_HKI);
 
-        final VmActivity activity = converter.convert(location("TPE", "9")).orElseThrow();
+        final VmActivity activity = converter.convert(location("TPE", "9"), now).orElseThrow();
 
         assertEquals("FSR:Quay:TPE-2", activity.monitoredCallStopRef().value());
     }
@@ -163,7 +169,7 @@ class VmJourneyConverterTest {
         final VmJourneyConverter converter =
                 converter(rows, Map.of("OL#0", "3"));
 
-        final VmActivity activity = converter.convert(location("OL", "9")).orElseThrow();
+        final VmActivity activity = converter.convert(location("OL", "9"), RECORDED_AT).orElseThrow();
 
         assertEquals("FSR:Quay:OL-3", activity.monitoredCallStopRef().value());
     }

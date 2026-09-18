@@ -155,11 +155,14 @@ each service gets:
   distinguishes the two) — i.e. the *upcoming or currently-dwelt-at* stop, matching this implementation's
   choice of "next commercial stop" from the SQL query.
 - **`VehicleAtStop`/`VehicleLocationAtStop` implemented**: the SQL query's resolved row is always the
-  train's earliest not-yet-happened commercial `time_table_row`. Since `time_table_row.type` (ARRIVAL/DEPARTURE)
-  is now also selected, `VehicleAtStop` is derived directly from it: if the resolved row is that stop's ARRIVAL,
-  the train hasn't reached it yet (`false`); if it's the DEPARTURE — because the ARRIVAL already happened
-  (dwelling) or never existed (the journey's origin stop) — the train is at (or hasn't yet left) that stop
-  (`true`). `VehicleLocationAtStop` is emitted only when `VehicleAtStop=true`, reusing the vehicle's own last
+  train's earliest not-yet-happened-or-stale-estimate commercial `time_table_row`. Since `time_table_row.type`
+  (ARRIVAL/DEPARTURE) is now also selected, `VehicleAtStop` is derived from it, but a selected DEPARTURE does
+  **not** always mean `true`: if the resolved row is that stop's ARRIVAL, the train hasn't reached it yet
+  (`false`); if it's the DEPARTURE, the query additionally checks whether that stop's paired ARRIVAL has
+  actually happened (`actual_time` set) or never existed (the journey's origin stop) — only then is the train
+  considered at (or not yet having left) that stop (`true`). A DEPARTURE whose paired ARRIVAL is still pending
+  (e.g. its live estimate is stale) is **not** at the stop yet, so `VehicleAtStop` is `false` in that case too.
+  `VehicleLocationAtStop` is emitted only when `VehicleAtStop=true`, reusing the vehicle's own last
   reported GPS fix (no more precise "at platform" position exists).
 - **Mandatory fields confirmed against the live SIRI-VM wiki page** (fixed during the wiki-crawl review):
   - `Delay` is **mandatory (1:1)**, defined as `"PT0S"` when there is no delay — it must never be omitted. Fixed

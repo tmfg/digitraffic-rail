@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -54,14 +55,14 @@ public class VmJourneyConverter {
         this.timeTableRowsLookup = timeTableRowsLookup;
     }
 
-    public Optional<VmActivity> convert(final GTFSTrainLocation location) {
+    public Optional<VmActivity> convert(final GTFSTrainLocation location, final ZonedDateTime now) {
         final Optional<ResolvedJourney> resolvedJourney =
                 journeyRefResolver.resolve(location.getTrainNumber(), location.getDepartureDate());
         if (resolvedJourney.isEmpty()) {
             return Optional.empty();
         }
 
-        final MonitoredCall monitoredCall = resolveMonitoredCall(location);
+        final MonitoredCall monitoredCall = resolveMonitoredCall(location, now);
         final ResolvedEndpoint origin = resolveEndpoint(resolvedJourney.get().origin());
         final ResolvedEndpoint destination = resolveEndpoint(resolvedJourney.get().destination());
         // getSpeed() is km/h; SIRI/GTFS-Realtime both report vehicle speed in m/s.
@@ -80,7 +81,7 @@ public class VmJourneyConverter {
      * {@code null} when the station/track/quay cannot be resolved — a {@code MonitoredCall} is optional in the
      * Nordic profile, unlike SIRI-ET's complete stop sequence.
      */
-    private MonitoredCall resolveMonitoredCall(final GTFSTrainLocation location) {
+    private MonitoredCall resolveMonitoredCall(final GTFSTrainLocation location, final ZonedDateTime now) {
         final String stationShortCode = location.getStationShortCode();
         if (stationShortCode == null) {
             return new MonitoredCall(null, null);
@@ -90,7 +91,7 @@ public class VmJourneyConverter {
         if (uic.isEmpty()) {
             return new MonitoredCall(null, stopName);
         }
-        return new MonitoredCall(resolveMonitoredCallStopRef(location, stationShortCode, uic.getAsInt()), stopName);
+        return new MonitoredCall(resolveMonitoredCallStopRef(location, stationShortCode, uic.getAsInt(), now), stopName);
     }
 
     /**
@@ -105,7 +106,7 @@ public class VmJourneyConverter {
      * cheap query.
      */
     private StopRef resolveMonitoredCallStopRef(final GTFSTrainLocation location, final String stationShortCode,
-                                                final int uic) {
+                                                final int uic, final ZonedDateTime now) {
         final String actualTrack = actualTrackOf(location);
         if (actualTrack != null) {
             return siriStopResolver.resolveQuayId(uic, actualTrack).orElse(null);
@@ -113,7 +114,7 @@ public class VmJourneyConverter {
         final List<GTFSTimeTableRow> rows =
                 timeTableRowsLookup.rowsFor(location.getTrainNumber(), location.getDepartureDate());
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, stationShortCode);
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, stationShortCode, now);
         if (visitIndex.isEmpty()) {
             return null;
         }

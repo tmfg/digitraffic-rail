@@ -25,15 +25,16 @@ public class SiriVmService {
 
     /// Builds the document + serialized bytes and the per-cycle {@link SiriVmStats} that back the wide event.
     public SiriVmResult buildVmDocumentWithStats(final List<GTFSTrainLocation> locations, final ZonedDateTime now) {
-        final List<VmActivity> activities = convertLocationsToActivities(locations);
+        final List<VmActivity> activities = convertLocationsToActivities(locations, now);
         final SiriVmStats stats = new SiriVmStats(locations.size(), activities.size());
         final Siri document = marshaller.marshal(activities, now);
         return new SiriVmResult(document, marshaller.marshalToBytes(document), stats);
     }
 
-    private List<VmActivity> convertLocationsToActivities(final List<GTFSTrainLocation> locations) {
+    private List<VmActivity> convertLocationsToActivities(final List<GTFSTrainLocation> locations,
+                                                           final ZonedDateTime now) {
         return locations.stream()
-            .flatMap(location -> converter.convert(location).stream())
+            .flatMap(location -> converter.convert(location, now).stream())
             .toList();
     }
 }

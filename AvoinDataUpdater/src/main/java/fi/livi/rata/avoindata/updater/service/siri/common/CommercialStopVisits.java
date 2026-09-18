@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.siri.common;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -47,6 +48,20 @@ public final class CommercialStopVisits {
          */
         private GTFSTimeTableRow completingRow() {
             return departure != null ? departure : arrival;
+        }
+
+        /**
+         * Mirrors the live-location query's own eligibility test for its {@code next} row (see
+         * {@code GTFSTrainRepository.getTrainLocations}: {@code actual_time is null and live_estimate_time >
+         * CURRENT_TIMESTAMP()}), applied to {@link #completingRow()}. A completing row with no actual time yet
+         * but a <em>stale</em> estimate (no longer in the future - e.g. delay data hasn't refreshed) is not
+         * eligible there either: the SQL query skips straight past such a row to the next one that qualifies,
+         * so a repeated-station visit stuck in that state must not be reported as current here, or {@link
+         * #currentVisitIndex} would return the wrong (earlier, already-superseded) occurrence.
+         */
+        private boolean isCompletingRowEligible(final ZonedDateTime now) {
+            final GTFSTimeTableRow row = completingRow();
+            return row.actualTime == null && row.liveEstimateTime != null && row.liveEstimateTime.isAfter(now);
         }
 
         /** Mirrors {@code EtJourneyInterpreter}'s cancellation check: a stop is cancelled if either of its rows
@@ -118,15 +133,18 @@ public final class CommercialStopVisits {
      * The 0-based occurrence of the first not-yet-completed commercial stop at {@code stationShortCode} within
      * {@code stops} (schedule order) — the same stop a live "next station" query resolves (see
      * {@code GTFSTrainRepository.getTrainLocations}), found here by scanning the full planned order instead of
-     * that query's {@code actual_time is null} SQL filter. When a station is served more than once, an earlier
-     * visit is only skipped once its completing row (see {@link Stop#completingRow()}) already has an actual
-     * time, so the first not-yet-completed match is unambiguous. Cancelled visits still occupy a slot in the
+     * that query's {@code actual_time is null and live_estimate_time > CURRENT_TIMESTAMP()} SQL filter (see
+     * {@code now}, and {@link Stop#isCompletingRowEligible}, for how that filter is mirrored here). When a
+     * station is served more than once, an earlier visit is only skipped once its completing row (see {@link
+     * Stop#completingRow()}) is no longer eligible — either it already has an actual time, or its estimate has
+     * gone stale (no longer in the future) — so the first still-eligible match is unambiguous and never an
+     * occurrence the live query has itself already moved past. Cancelled visits still occupy a slot in the
      * running count (so a later, real visit keeps its true visitIndex — same convention as {@code
      * EtJourneyInterpreter}), but are never themselves returned as the current occurrence: the live-location
      * query excludes cancelled rows outright (its {@code cancelled is false} filter), and a cancelled stop's
      * completing row typically never gets an actual time either (it's never actually run), so without this
      * exclusion a cancelled visit would be wrongly reported as current instead of the next, real visit. Empty
-     * when the station never occurs, or every (non-cancelled) occurrence is already completed (should not
+     * when the station never occurs, or every (non-cancelled) occurrence is already completed/stale (should not
      * normally happen for a station a live location still reports) — except the arrived-terminus case below.
      *
      * <p>Terminus fallback: mirrors {@code GTFSTrainRepository.getTrainLocations}'s {@code term} lateral join.
@@ -136,8 +154,13 @@ public final class CommercialStopVisits {
      * VehicleAtStop} when its live track is unknown. Since the arrived terminus is by definition the last
      * (non-cancelled) stop in the journey, it is still reported as current here, exactly as {@code term}
      * reports it in the live-location query.
+     *
+     * @param now the time to evaluate estimate staleness against - callers should pass the same instant used to
+     *            build the live locations being resolved (see {@code SiriVmGenerationService}), matching the
+     *            SQL's own {@code CURRENT_TIMESTAMP()}.
      */
-    public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode) {
+    public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode,
+                                                final ZonedDateTime now) {
         final Map<String, Integer> visitCounts = new HashMap<>();
         for (final Stop stop : stops) {
             final String station = stop.representative().stationShortCode;
@@ -145,7 +168,7 @@ public final class CommercialStopVisits {
             // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
             // counting pattern).
             final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
-            if (station.equals(stationShortCode) && !stop.isCancelled() && stop.completingRow().actualTime == null) {
+            if (station.equals(stationShortCode) && !stop.isCancelled() && stop.isCompletingRowEligible(now)) {
                 return OptionalInt.of(visitIndex);
             }
         }

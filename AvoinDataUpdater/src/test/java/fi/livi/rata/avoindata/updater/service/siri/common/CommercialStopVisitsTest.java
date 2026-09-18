@@ -20,6 +20,12 @@ public class CommercialStopVisitsTest {
 
     private static GTFSTimeTableRow row(final String station, final TimeTableRow.TimeTableRowType type,
             final ZonedDateTime scheduledTime, final boolean cancelled, final ZonedDateTime actualTime) {
+        return row(station, type, scheduledTime, cancelled, actualTime, actualTime == null ? scheduledTime : null);
+    }
+
+    private static GTFSTimeTableRow row(final String station, final TimeTableRow.TimeTableRowType type,
+            final ZonedDateTime scheduledTime, final boolean cancelled, final ZonedDateTime actualTime,
+            final ZonedDateTime liveEstimateTime) {
         final GTFSTimeTableRow row = new GTFSTimeTableRow();
         row.stationShortCode = station;
         row.type = type;
@@ -27,6 +33,7 @@ public class CommercialStopVisitsTest {
         row.commercialStop = true;
         row.cancelled = cancelled;
         row.actualTime = actualTime;
+        row.liveEstimateTime = liveEstimateTime;
         return row;
     }
 
@@ -38,7 +45,7 @@ public class CommercialStopVisitsTest {
         rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1).plusMinutes(2), false, null));
 
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusMinutes(30));
 
         assertTrue(visitIndex.isPresent());
         assertEquals(0, visitIndex.getAsInt());
@@ -61,7 +68,8 @@ public class CommercialStopVisitsTest {
         rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2).plusMinutes(2), false, null));
 
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        final OptionalInt visitIndex =
+                CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(1).plusMinutes(30));
 
         assertTrue(visitIndex.isPresent());
         // Must resolve to the second (real, live) visit, not the first (cancelled) one - but the cancelled visit
@@ -82,7 +90,7 @@ public class CommercialStopVisitsTest {
         rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
 
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(2));
 
         assertTrue(visitIndex.isPresent());
         assertEquals(0, visitIndex.getAsInt());
@@ -94,9 +102,37 @@ public class CommercialStopVisitsTest {
         rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
 
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0);
 
         assertTrue(visitIndex.isEmpty());
+    }
+
+    // Regression test: the live-location query only treats a not-yet-actual row as eligible while its
+    // live_estimate_time is still in the future (see GTFSTrainRepository.getTrainLocations: "actual_time is
+    // null and live_estimate_time > CURRENT_TIMESTAMP()"). A repeated station's first visit can be stuck with
+    // no actual time yet a *stale* (past) estimate - e.g. delay data hasn't refreshed - in which case the SQL
+    // query itself has already moved past it to the next eligible row. currentVisitIndex must mirror that and
+    // not return the stale first visit as current.
+    @Test
+    public void currentVisitIndex_skipsVisitWithStaleEstimateButNoActualTime() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        // First TPE visit: arrived, but its departure has no actual time and a stale (already-past) estimate.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusMinutes(50), false, T0.plusMinutes(50)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusMinutes(55), false, null,
+                T0.plusMinutes(55)));
+        // Second TPE visit: further out, with a fresh (future) estimate.
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(2), false, null,
+                T0.plusHours(2).plusMinutes(5)));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2).plusMinutes(5), false, null,
+                T0.plusHours(2).plusMinutes(5)));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        // "now" is after the first visit's stale estimate but before the second visit's fresh one.
+        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(2));
+
+        assertTrue(visitIndex.isPresent());
+        assertEquals(1, visitIndex.getAsInt());
     }
 
     // Regression test: a station's DEPARTURE and the next station's ARRIVAL can share the exact same
@@ -125,7 +161,8 @@ public class CommercialStopVisitsTest {
         assertTrue(stops.get(1).departure() != null);
         assertEquals("TPE", stops.get(1).departure().stationShortCode);
         // The train is still dwelling at TPE (its DEPARTURE has no actual time yet) - not yet at JY.
-        final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, "TPE");
+        final OptionalInt visitIndex =
+                CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(1).plusMinutes(30));
         assertTrue(visitIndex.isPresent());
         assertEquals(0, visitIndex.getAsInt());
     }
