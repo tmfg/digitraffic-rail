@@ -100,7 +100,7 @@ jobs:
       
       - name: Update rata-mqtt task-def
         id: update
-        uses: tmfg/digitraffic-actions@update-task-def/v2
+        uses: tmfg/digitraffic-actions@9ebf61d23b1f98c8683f1f8ea372a79836e4c4b6 # update-task-def/v2
         with:
           task-def-file-name: rail-${{ github.event.inputs.env }}-mqtt
           family-name: rata-mqtt
@@ -111,7 +111,7 @@ jobs:
           ci-repo-branch: ${{ github.event.inputs.config-repo-branch }}
           ci-ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
       - name: Update mqtt service
-        uses: tmfg/digitraffic-actions@ecs-service-update/v1
+        uses: tmfg/digitraffic-actions@5ac0b5680d70cdca1893ceaf3c4384f97344bf6e # ecs-service-update/v1
         with:
           aws-role: ${{ secrets.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
