@@ -408,16 +408,14 @@ public class NeTExService {
             return null;
         }
 
-        // Load PETI on demand so generation never depends on the daily warm-up having
-        // run first.
-        // When the feed is unavailable, generation degrades (no stop assignments)
-        // rather than failing.
-        petiStopSource.ensureLoaded();
-        final int petiStopPlaces = petiStopSource.getStops().size();
-        final int petiQuays = petiStopSource.getStops().stream().mapToInt(s -> s.quays().size()).sum();
+        // Fetched here rather than on a schedule of its own, so the package is always built on the
+        // platforms PETI publishes at generation time. An outage degrades to the last-good snapshot.
+        petiStopSource.refresh();
+        final List<PetiStop> petiStops = petiStopSource.getStops();
+        final int petiQuays = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
         log.info("event=generateNeTEx method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
                 + "peti_quays={}",
-                petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
+                petiStops.isEmpty() ? "empty" : "success", petiStops.size(), petiQuays);
 
         // Last-resort track fill, now that PETI is loaded and before any stop point or
         // route is
