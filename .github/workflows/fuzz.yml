@@ -6,7 +6,7 @@ on:
 jobs:
   fuzz:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Fuzz
         uses: mprencipe/waggers-action@d8c6cbcf4b3285bb579b8a4b556b67a113a842bd # v4
