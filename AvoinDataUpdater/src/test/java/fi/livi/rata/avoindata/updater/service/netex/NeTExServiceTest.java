@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -21,7 +22,8 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -37,12 +39,14 @@ class NeTExServiceTest {
     private NeTExService netExService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
+        // Generation refuses an empty PETI snapshot, so these orchestration tests need a stop place present.
+        final PetiStopSource petiStopSource = () -> List.of(
+                new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
@@ -50,6 +54,10 @@ class NeTExServiceTest {
                 routeService, new IdentityTrackSource(), stopsService,
                 writingService,
                 petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
+
+        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
+        field.setAccessible(true);
+        field.setDouble(netExService, 0.0);
     }
 
     // --- Filtering tests ---

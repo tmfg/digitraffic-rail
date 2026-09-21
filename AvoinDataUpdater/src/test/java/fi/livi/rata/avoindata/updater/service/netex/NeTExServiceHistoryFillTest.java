@@ -28,7 +28,8 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
-import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
@@ -75,7 +76,7 @@ class NeTExServiceHistoryFillTest {
             throws Exception {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final var petiSource = new EmptyPetiStopSource();
+        final var petiSource = petiSourceWithOneStopPlace();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
         when(scheduleProviderService.getAdhocSchedules(any())).thenReturn(List.of());
@@ -102,6 +103,12 @@ class NeTExServiceHistoryFillTest {
         field.setAccessible(true);
         field.setDouble(service, 0.0);
         return service;
+    }
+
+    /** Generation refuses an empty PETI snapshot; these tests are about track filling, not stop matching. */
+    private static PetiStopSource petiSourceWithOneStopPlace() {
+        return () -> List.of(
+                new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
     }
 
     private static List<Station> createStations() {

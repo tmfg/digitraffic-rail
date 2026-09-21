@@ -336,7 +336,9 @@ class NeTExDatasetLayoutTest {
                 return List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
         }
 
-        /** Built through the real service so the dataset checks cover id generation too. */
+        /**
+         * Built through the real service so the dataset checks cover id generation too.
+         */
         private static NeTExStopsData stopsData() {
                 return new NeTExStopsService(new NeTExIdGenerator(), new EmptyPetiStopSource())
                                 .createStopsData(

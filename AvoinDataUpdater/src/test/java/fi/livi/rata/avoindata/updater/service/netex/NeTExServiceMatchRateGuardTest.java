@@ -51,14 +51,15 @@ class NeTExServiceMatchRateGuardTest {
         private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     @Test
-    void givenEmptyPetiSource_whenGenerating_thenGuardDoesNotThrow() {
-        // given — empty PETI source, total == 0 → guard is skipped
+    void givenEmptyPetiSource_whenGenerating_thenGenerationIsRefused() {
+        // given — without PETI no stop can be given a location
         final NeTExService service = createServiceWithPetiSource(new EmptyPetiStopSource(), 0.95);
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
         final List<Station> stations = createStations(List.of("HKI", "TPE"));
 
-        // when/then — no exception
-        assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
+        // when/then — publishing a package with no stop assignments at all is worse than publishing none
+        assertThrows(IllegalStateException.class,
+                () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
     }
 
     @Test

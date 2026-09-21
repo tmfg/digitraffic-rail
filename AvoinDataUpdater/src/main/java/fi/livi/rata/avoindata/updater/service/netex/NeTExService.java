@@ -408,14 +408,26 @@ public class NeTExService {
             return null;
         }
 
-        // Fetched here rather than on a schedule of its own, so the package is always built on the
-        // platforms PETI publishes at generation time. An outage degrades to the last-good snapshot.
+        // Fetched here rather than on a schedule of its own, so the package is always
+        // built on the
+        // platforms PETI publishes at generation time. An outage degrades to the
+        // last-good snapshot.
         petiStopSource.refresh();
         final List<PetiStop> petiStops = petiStopSource.getStops();
         final int petiQuays = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
         log.info("event=generateNeTEx method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
                 + "peti_quays={}",
                 petiStops.isEmpty() ? "empty" : "success", petiStops.size(), petiQuays);
+
+        // Without PETI no stop gets a location, so the package would look complete while carrying nothing
+        // a consumer can place on a map.
+        if (petiStops.isEmpty()) {
+            log.error("event=generateNeTEx method=computeDataset outcome=error error.type=EmptyPetiSnapshot "
+                    + "message=\"PETI snapshot empty, refusing to publish a package in which no stop has a "
+                    + "location\"");
+            throw new IllegalStateException(
+                    "PETI snapshot empty, refusing to publish a package in which no stop has a location");
+        }
 
         // Last-resort track fill, now that PETI is loaded and before any stop point or
         // route is
