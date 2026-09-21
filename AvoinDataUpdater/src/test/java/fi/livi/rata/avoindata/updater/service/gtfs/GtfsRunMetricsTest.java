@@ -25,8 +25,9 @@ class GtfsRunMetricsTest {
 
         // When
         final List<Map<String, Object>> heartbeats = new ArrayList<>();
+        metrics.recordFeedAttempt("gtfs-all");
         for (int shape = 1; shape <= 500; shape++) {
-            metrics.recordShapeProcessed("gtfs-all", shape, 500).ifPresent(heartbeats::add);
+            metrics.recordShapeProcessed(shape, 500).ifPresent(heartbeats::add);
         }
 
         // Then
@@ -47,11 +48,11 @@ class GtfsRunMetricsTest {
         final GtfsRunMetrics metrics = metrics();
 
         // When
-        metrics.recordDummySegment(DummyReason.NO_START_NODE, "AAA");
-        metrics.recordDummySegment(DummyReason.NO_END_NODE, "BBB");
-        metrics.recordDummySegment(DummyReason.ROUTE_HTTP_ERROR, "CCC");
-        metrics.recordDummySegment(DummyReason.ROUTE_EMPTY_GEOMETRY, "DDD");
-        metrics.recordDummySegment(DummyReason.NO_DIJKSTRA_PATH, "EEE");
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "AAA");
+        recordDummySegment(metrics, NoGeometryReason.NO_END_NODE, "BBB");
+        recordDummySegment(metrics, NoGeometryReason.ROUTE_HTTP_ERROR, "CCC");
+        recordDummySegment(metrics, NoGeometryReason.ROUTE_EMPTY_GEOMETRY, "DDD");
+        recordDummySegment(metrics, NoGeometryReason.NO_DIJKSTRA_PATH, "EEE");
 
         // Then
         final Map<String, Object> event = metrics.finalEvent();
@@ -74,9 +75,26 @@ class GtfsRunMetricsTest {
         final Map<String, Object> event = metrics.finalEvent();
 
         // Then recording a reason and emitting it cannot drift apart
-        for (final DummyReason reason : DummyReason.values()) {
+        for (final NoGeometryReason reason : NoGeometryReason.values()) {
             assertThat(event).containsKey("rail.gtfs.segments.dummy.reason." + reason.attribute());
         }
+    }
+
+    @Test
+    void givenRouteOutcomesWhenRecordedThenTheyMapToThePublishedReasonNames() {
+        // Given the route service reports in its own vocabulary
+        final GtfsRunMetrics metrics = metrics();
+
+        // When
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.EMPTY_GEOMETRY);
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.NO_PATH);
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.RESOLVED);
+
+        // Then this class owns the mapping to the rail.* contract
+        assertThat(metrics.finalEvent())
+                .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 1)
+                .containsEntry("rail.gtfs.segments.dummy", 0);
     }
 
     @Test
@@ -167,7 +185,7 @@ class GtfsRunMetricsTest {
         // Given
         final GtfsRunMetrics metrics = metrics();
         metrics.recordRealSegment();
-        metrics.recordDummySegment(DummyReason.NO_START_NODE, "AAA");
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "AAA");
 
         // When / Then
         assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.DEGRADED);
@@ -177,14 +195,21 @@ class GtfsRunMetricsTest {
     void givenDummySegmentsWhenTopStationsAreReportedThenTheyAreOrderedByFrequency() {
         // Given
         final GtfsRunMetrics metrics = metrics();
-        metrics.recordDummySegment(DummyReason.NO_START_NODE, "HKI");
-        metrics.recordDummySegment(DummyReason.NO_START_NODE, "HKI");
-        metrics.recordDummySegment(DummyReason.NO_END_NODE, "TPE");
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "HKI");
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "HKI");
+        recordDummySegment(metrics, NoGeometryReason.NO_END_NODE, "TPE");
 
         // When
         final Map<String, Object> event = metrics.finalEvent();
 
         // Then
         assertThat(event).containsEntry("rail.gtfs.segments.dummy.stations.top", "HKI,TPE");
+    }
+
+    /** Mirrors what GTFSShapeService does: segment totals here, reason attribution alongside. */
+    private static void recordDummySegment(final GtfsRunMetrics metrics, final NoGeometryReason reason,
+                                           final String stationCode) {
+        metrics.recordNoGeometryReason(reason);
+        metrics.recordDummySegment(stationCode);
     }
 }

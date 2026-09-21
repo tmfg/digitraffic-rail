@@ -129,7 +129,7 @@ public class GTFSDtoServiceTest extends BaseTest {
         mockDPDateInHelsinki(LocalDate.of(2017, 9, 9));
         mockDPNowInHelsinki(ZonedDateTime.now());
 
-        given(gtfsShapeService.createShapesFromTrips(any(), any(), any(), any())).willReturn(Collections.emptyList());
+        given(gtfsShapeService.createShapesFromTrips(any(), any(), any(), any(), any())).willReturn(Collections.emptyList());
 
         given(platformDataService.getCurrentPlatformData(any())).willReturn(getMockPlatformData());
     }
@@ -145,8 +145,9 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     private GTFSDto createEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
                                  final Map<String, JsonNode> nodes) {
-        return gtfsService.createGTFSEntity(adhocSchedules, regularSchedules, nodes,
-                new GtfsRunContext(Duration.ofMinutes(10), Clock.systemUTC()));
+        return GtfsRunScope.call(new GtfsRunMetrics(Clock.systemUTC()),
+                () -> gtfsService.createGTFSEntity(adhocSchedules, regularSchedules, nodes, LocalDate.now(),
+                        new FailedSegments()));
     }
 
     @Test

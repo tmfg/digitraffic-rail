@@ -13,8 +13,6 @@ import org.locationtech.proj4j.ProjCoordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -47,39 +45,16 @@ public class TrakediaRouteService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
-    @Autowired(required = false)
-    private CacheManager cacheManager;
-
-    /** Whether a route is already cached, i.e. resolvable without any Infra API request. */
-    public boolean isCached(final String startTunniste, final String endTunniste) {
-        if (cacheManager == null) {
-            return false;
-        }
-        final Cache cache = cacheManager.getCache(CACHE_NAME);
-        return cache != null && cache.get(cacheKey(startTunniste, endTunniste)) != null;
-    }
-
-    private static String cacheKey(final String startTunniste, final String endTunniste) {
-        return startTunniste + ">" + endTunniste;
-    }
-
-    /** Coordinates of a resolved route, or the reason a dummy segment has to be used instead. */
-    public record RouteResult(List<Coordinate> coordinates, DummyReason fallbackReason) {
-        public static RouteResult of(final List<Coordinate> coordinates) {
-            return new RouteResult(coordinates, null);
-        }
-
-        public static RouteResult fallback(final DummyReason reason) {
-            return new RouteResult(List.of(), reason);
-        }
-    }
-
     // Stop has no equals/hashCode, so the default key generator falls back to identity and never
-    // hits across feeds, which rebuild their Stop objects. The tunniste pair is the real identity.
-    // Keep this expression and cacheKey() below in step.
-    @Cacheable(cacheNames = CACHE_NAME, key = "#startTunniste + '>' + #endTunniste")
-    public RouteResult createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
-        final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
+    // hits across feeds, which rebuild their Stop objects. The tunniste pair plus the route date is
+    // the real identity; the date matters because the response is scoped by the time parameter.
+    // Empty results are excluded: one transient empty response must not outlive the run that saw
+    // it. Spring unwraps the Optional before evaluating unless, so #result is the list or null.
+    @Cacheable(cacheNames = CACHE_NAME, key = "#routeDate + '|' + #startTunniste + '>' + #endTunniste",
+            unless = "#result == null")
+    public Optional<List<Coordinate>> createRoute(final Stop startStop, final Stop endStop, final String startTunniste,
+                                                  final String endTunniste, final LocalDate routeDate) throws InterruptedException {
+        final ZonedDateTime startOfDay = routeDate.atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
         final String timeParameter = String.format("%s/%s", startOfDayIso8601, startOfDayIso8601);
 
@@ -95,7 +70,8 @@ public class TrakediaRouteService {
             if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
                 log.warn("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
             }
-            return RouteResult.fallback(DummyReason.ROUTE_EMPTY_GEOMETRY);
+            GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.EMPTY_GEOMETRY);
+            return Optional.empty();
         }
         for (final JsonNode lineNode : geometria) {
             final List<Coordinate> output = new ArrayList<>();
@@ -106,7 +82,12 @@ public class TrakediaRouteService {
         }
 
         final List<Coordinate> shortestPath = getShortestPath(allLines, startStop, endStop);
-        return shortestPath.isEmpty() ? RouteResult.fallback(DummyReason.NO_DIJKSTRA_PATH) : RouteResult.of(shortestPath);
+        if (shortestPath.isEmpty()) {
+            GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.NO_PATH);
+            return Optional.empty();
+        }
+        GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.RESOLVED);
+        return Optional.of(shortestPath);
     }
 
     private List<Coordinate> simplifyCoordinates(final List<Coordinate> coordinates) {

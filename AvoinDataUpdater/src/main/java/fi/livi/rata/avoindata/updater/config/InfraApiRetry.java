@@ -12,9 +12,8 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiRunContext;
 
 /**
  * Retry policy for Infra API reads. 5xx is retried because the failure mode being addressed is
@@ -56,10 +55,7 @@ public final class InfraApiRetry {
             if (context.getRetryCount() <= 1) {
                 return;
             }
-            final InfraApiMetricsSink sink = InfraApiRunContext.current();
-            if (sink != null) {
-                sink.recordUpstreamRetry(datasetOf(throwable));
-            }
+            GtfsRunScope.infraApiMetrics().recordUpstreamRetry(datasetOf(throwable));
         }
 
         private static InfraApiDataset datasetOf(final Throwable throwable) {

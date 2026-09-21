@@ -27,16 +27,17 @@ import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
  * <p>
  * Not thread safe: one instance belongs to one run.
  */
-public class GtfsRunMetrics implements InfraApiMetricsSink {
+public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, ShapeMetricsSink, FeedMetricsSink {
     static final int HEARTBEAT_INTERVAL_SHAPES = 250;
     static final int MAX_ROUTE_FAILURE_SAMPLES = 20;
     private static final int TOP_DUMMY_STATIONS = 10;
+    private static final String NO_FEED = "unknown";
 
     private final Clock clock;
     private final Instant startedAt;
     private final Set<String> sampledFailureIdentities = new LinkedHashSet<>();
     private final List<Map<String, Object>> failureSamples = new ArrayList<>();
-    private final Map<DummyReason, Integer> dummyReasons = new EnumMap<>(DummyReason.class);
+    private final Map<NoGeometryReason, Integer> dummyReasons = new EnumMap<>(NoGeometryReason.class);
     private final Map<String, Integer> dummyStations = new LinkedHashMap<>();
     private final Set<String> attemptedFeedNames = new LinkedHashSet<>();
     private final Set<String> publishedFeedNames = new LinkedHashSet<>();
@@ -44,6 +45,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
     private final Set<String> degradedFeedNames = new LinkedHashSet<>();
     private final Map<InfraApiDataset, UpstreamMetrics> upstream = new EnumMap<>(InfraApiDataset.class);
     private Instant feedStartedAt;
+    private String currentFeedName = NO_FEED;
     private long suppressedFailures;
     private int routeLookups;
     private int segmentsTotal;
@@ -76,12 +78,29 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
         }
     }
 
-    public void recordDummySegment(final DummyReason reason, final String stationCode) {
+    /**
+     * Segment totals only. The reason counter is recorded separately by whichever layer knew the
+     * reason, so that the two are never incremented twice for one segment.
+     */
+    public void recordDummySegment(final String stationCode) {
         segmentsTotal++;
         dummySegments++;
-        dummyReasons.merge(reason, 1, Integer::sum);
         if (stationCode != null) {
             dummyStations.merge(stationCode, 1, Integer::sum);
+        }
+    }
+
+    public void recordNoGeometryReason(final NoGeometryReason reason) {
+        dummyReasons.merge(reason, 1, Integer::sum);
+    }
+
+    @Override
+    public void recordRouteOutcome(final RouteOutcome outcome) {
+        switch (outcome) {
+            case RESOLVED -> {
+            }
+            case EMPTY_GEOMETRY -> recordNoGeometryReason(NoGeometryReason.ROUTE_EMPTY_GEOMETRY);
+            case NO_PATH -> recordNoGeometryReason(NoGeometryReason.NO_DIJKSTRA_PATH);
         }
     }
 
@@ -92,6 +111,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
 
     public void recordFeedAttempt(final String feedName) {
         feedStartedAt = clock.instant();
+        currentFeedName = feedName;
         attemptedFeedNames.add(feedName);
     }
 
@@ -103,8 +123,8 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
         failedFeedNames.add(feedName);
     }
 
-    public void recordFeedDegraded(final String feedName) {
-        degradedFeedNames.add(feedName);
+    public void recordFeedDegraded() {
+        degradedFeedNames.add(currentFeedName);
     }
 
     @Override
@@ -152,7 +172,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
     /**
      * @return the heartbeat event when this shape lands on a heartbeat boundary, otherwise empty.
      */
-    public Optional<Map<String, Object>> recordShapeProcessed(final String feedName, final int processedShapes,
+    public Optional<Map<String, Object>> recordShapeProcessed(final int processedShapes,
                                                               final int totalShapesInFeed) {
         if (processedShapes <= 0 || processedShapes % HEARTBEAT_INTERVAL_SHAPES != 0) {
             return Optional.empty();
@@ -160,14 +180,14 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
         final Map<String, Object> event = new LinkedHashMap<>();
         event.put("operation", "generateGtfsFeed");
         event.put("outcome", "in_progress");
-        event.put("rail.gtfs.feed.name", feedName);
+        event.put("rail.gtfs.feed.name", currentFeedName);
         event.put("rail.gtfs.shapes.processed", processedShapes);
         event.put("rail.gtfs.shapes.total", totalShapesInFeed);
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
         event.put("rail.gtfs.segments.dummy", dummySegments);
-        for (final DummyReason reason : List.of(DummyReason.NO_START_NODE, DummyReason.NO_END_NODE,
-                DummyReason.ROUTE_HTTP_ERROR)) {
+        for (final NoGeometryReason reason : List.of(NoGeometryReason.NO_START_NODE, NoGeometryReason.NO_END_NODE,
+                NoGeometryReason.ROUTE_HTTP_ERROR)) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
         event.put("duration_ms", Duration.between(feedStartedAt, clock.instant()).toMillis());
@@ -215,7 +235,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink {
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
         event.put("rail.gtfs.segments.dummy", dummySegments);
-        for (final DummyReason reason : DummyReason.values()) {
+        for (final NoGeometryReason reason : NoGeometryReason.values()) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
         event.put("rail.gtfs.segments.dummy.stations.top", topDummyStations());

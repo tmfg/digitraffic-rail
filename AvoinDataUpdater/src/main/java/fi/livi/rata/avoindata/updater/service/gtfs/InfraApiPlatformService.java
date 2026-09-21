@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +30,8 @@ import com.google.common.base.Strings;
 
 @Component
 public class InfraApiPlatformService {
+    static final String CACHE_NAME = "infraApiPlatformNodes";
+
     private final RetryTemplate retryTemplate = InfraApiRetry.create();
 
     @Autowired
@@ -46,9 +47,8 @@ public class InfraApiPlatformService {
 
     public static final Pattern lastTwoLiikennepaikkaIdPlaces = Pattern.compile("\\d+.\\d+$");
 
-    @Cacheable("infraApiPlatformNodes")
-    public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart(final ZonedDateTime fromDate,
-            final ZonedDateTime toDate) {
+    @Cacheable(CACHE_NAME)
+    public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart() {
         final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = new HashMap<>();
 
         // An unconfigured endpoint means "no platform data", which is distinct from a fetch failure.

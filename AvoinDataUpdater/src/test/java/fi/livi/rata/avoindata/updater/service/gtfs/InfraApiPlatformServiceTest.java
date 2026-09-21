@@ -66,7 +66,7 @@ public class InfraApiPlatformServiceTest {
         clearInvocations(webClient);
 
         // When / Then
-        assertThatThrownBy(() -> service.getPlatformsByLiikennepaikkaIdPart(null, null))
+        assertThatThrownBy(() -> service.getPlatformsByLiikennepaikkaIdPart())
             .isSameAs(unavailable);
         verify(webClient, times(5)).get();
       }

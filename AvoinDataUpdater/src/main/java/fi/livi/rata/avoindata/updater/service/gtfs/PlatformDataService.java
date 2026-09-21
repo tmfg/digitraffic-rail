@@ -1,8 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import tools.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.PlatformData;
@@ -51,10 +47,8 @@ public class PlatformDataService {
     }
 
     public PlatformData getCurrentPlatformData(final Map<String, JsonNode> liikennePaikkaNodes) {
-        final ZonedDateTime currentDate = DateProvider.nowInHelsinki().truncatedTo(ChronoUnit.SECONDS).withZoneSameInstant(ZoneId.of("UTC"));
-
         final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart =
-                infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart(currentDate, currentDate.plusDays(10));
+                infraApiPlatformService.getPlatformsByLiikennepaikkaIdPart();
 
         final Map<String, List<InfraApiPlatform>> platformsByStation = liikennePaikkaNodes.keySet()
                 .stream()

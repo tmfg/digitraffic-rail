@@ -46,7 +46,8 @@ public class GTFSEntityService {
     }
 
     public GTFSDto createGTFSEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
-                                    final Map<String, JsonNode> nodes, final GtfsRunContext context) {
+                                    final Map<String, JsonNode> nodes, final LocalDate routeDate,
+                                    final FailedSegments failedSegments) {
         final Map<Long, Map<DateRange, Schedule>> scheduleIntervalsByTrain = createScheduleIntervals(adhocSchedules, regularSchedules);
         final List<SimpleTimeTableRow> timeTableRows = timeTableRowService.getNextTenDays();
         final PlatformData platformData = platformDataService.getCurrentPlatformData(nodes);
@@ -58,7 +59,7 @@ public class GTFSEntityService {
         gtfsDto.agencies = gtfsAgencyService.createAgencies(scheduleIntervalsByTrain);
         gtfsDto.trips = gtfsTripService.createTrips(scheduleIntervalsByTrain, stopMap, timeTableRows, platformData);
         gtfsDto.routes = gtfsRouteService.createRoutesFromTrips(gtfsDto.trips, stopMap);
-        gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap, nodes, context);
+        gtfsDto.shapes = gtfsShapeService.createShapesFromTrips(gtfsDto.trips, stopMap, nodes, routeDate, failedSegments);
         gtfsDto.translations = createTranslations(gtfsDto.stops, nodes);
 
         return gtfsDto;

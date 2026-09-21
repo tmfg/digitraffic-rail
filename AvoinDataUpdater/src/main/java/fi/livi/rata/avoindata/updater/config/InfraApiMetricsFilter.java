@@ -7,9 +7,9 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiRunContext;
 import reactor.core.publisher.Mono;
 
 /**
@@ -30,10 +30,7 @@ public class InfraApiMetricsFilter implements ExchangeFilterFunction {
         }
 
         // Resolved at subscribe time, while still on the thread that owns the run.
-        final InfraApiMetricsSink sink = InfraApiRunContext.current();
-        if (sink == null) {
-            return next.exchange(request);
-        }
+        final InfraApiMetricsSink sink = GtfsRunScope.infraApiMetrics();
 
         final InfraApiDataset dataset = InfraApiDataset.fromPath(path);
         final long startedAtMs = System.currentTimeMillis();

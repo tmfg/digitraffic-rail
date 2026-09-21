@@ -69,25 +69,34 @@ public class TrakediaLiikennepaikkaService {
     private final FailureWindow coordinateMapFailures = new FailureWindow();
 
     public InfraApiMapResult<Double[]> getTrakediaLiikennepaikkas() {
+        return loadThroughCache(lpCache, () -> loadMap(coordinateMapFailures, MapKind.COORDINATE, () -> {
+            final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
+            final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
+            final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
+
+            // Counts are captured per source before merging, which destroys the split.
+            final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
+            sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
+            sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikkaOsaMap.size());
+            sourceCounts.put(InfraApiDataset.RAIDEOSUUDET, raideosuusMap.size());
+
+            final var mergedMap = new HashMap<>(liikennepaikkaMap);
+            mergedMap.putAll(liikennepaikkaOsaMap);
+            mergedMap.putAll(raideosuusMap);
+            return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
+        }));
+    }
+
+    /**
+     * ExpiringCache is shared library code and does not report whether the supplier ran, so the
+     * cache state published as {@code cache.state} is inferred from whether the lambda executed.
+     */
+    private <V> InfraApiMapResult<V> loadThroughCache(final ExpiringCache<InfraApiMapResult<V>> cache,
+                                                      final Supplier<ExpiringCache.CacheResult<InfraApiMapResult<V>>> supplier) {
         final AtomicBoolean refreshed = new AtomicBoolean();
-        final InfraApiMapResult<Double[]> result = lpCache.get(() -> {
+        final InfraApiMapResult<V> result = cache.get(() -> {
             refreshed.set(true);
-            return loadMap(coordinateMapFailures, MapKind.COORDINATE, () -> {
-                final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
-                final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
-                final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
-
-                // Counts are captured per source before merging, which destroys the split.
-                final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
-                sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
-                sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikkaOsaMap.size());
-                sourceCounts.put(InfraApiDataset.RAIDEOSUUDET, raideosuusMap.size());
-
-                final var mergedMap = new HashMap<>(liikennepaikkaMap);
-                mergedMap.putAll(liikennepaikkaOsaMap);
-                mergedMap.putAll(raideosuusMap);
-                return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
-            });
+            return supplier.get();
         });
         return refreshed.get() ? result : result.asCacheHit();
     }
@@ -160,24 +169,19 @@ public class TrakediaLiikennepaikkaService {
     // Data format:
     // JRI -> {ArrayNode} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
     public InfraApiMapResult<JsonNode> getTrakediaLiikennepaikkaNodes() {
-        final AtomicBoolean refreshed = new AtomicBoolean();
-        final InfraApiMapResult<JsonNode> result = lpNodeCache.get(() -> {
-            refreshed.set(true);
-            return loadMap(nodeMapFailures, MapKind.NODE, () -> {
-                final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
-                final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
+        return loadThroughCache(lpNodeCache, () -> loadMap(nodeMapFailures, MapKind.NODE, () -> {
+            final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
+            final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
 
-                // Counts are captured per source before merging, which destroys the split.
-                final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
-                sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
-                sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikanOsaMap.size());
+            // Counts are captured per source before merging, which destroys the split.
+            final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
+            sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
+            sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikanOsaMap.size());
 
-                final var mergedMap = new HashMap<>(liikennepaikkaMap);
-                mergedMap.putAll(liikennepaikanOsaMap);
-                return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
-            });
-        });
-        return refreshed.get() ? result : result.asCacheHit();
+            final var mergedMap = new HashMap<>(liikennepaikkaMap);
+            mergedMap.putAll(liikennepaikanOsaMap);
+            return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
+        }));
     }
 
     /**

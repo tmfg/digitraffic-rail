@@ -10,7 +10,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.lang.reflect.Field;
+import java.time.Clock;
 
+import tools.jackson.databind.json.JsonMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -44,7 +48,7 @@ class TrakediaRouteServiceTest {
         clearInvocations(webClient);
 
         // When / Then
-        assertThatThrownBy(() -> service.createRoute(new Stop(null), new Stop(null), "start", "end"))
+        assertThatThrownBy(() -> service.createRoute(new Stop(null), new Stop(null), "start", "end", java.time.LocalDate.now()))
                 .isSameAs(unavailable);
 
         verify(webClient, times(5)).get();
@@ -59,10 +63,45 @@ class TrakediaRouteServiceTest {
         clearInvocations(webClient);
 
         // When / Then
-        assertThatThrownBy(() -> service.createRoute(new Stop(null), new Stop(null), "start", "end"))
+        assertThatThrownBy(() -> service.createRoute(new Stop(null), new Stop(null), "start", "end", java.time.LocalDate.now()))
                 .isSameAs(internalError);
 
         verify(webClient, times(1)).get();
+    }
+
+    @Test
+    void givenEmptyGeometryWhenCreatingRouteThenTheReasonIsRecordedHereAndNoRouteIsReturned() throws Exception {
+        // Given an HTTP 200 that carries no geometry, which no transport metric can detect
+        when(webClient.get().uri(anyString()).retrieve().bodyToMono(tools.jackson.databind.JsonNode.class).block())
+                .thenReturn(JsonMapper.builder().build().readTree("{\"geometria\":[]}"));
+        final GtfsRunMetrics metrics = new GtfsRunMetrics(Clock.systemUTC());
+
+        // When
+        final var result = GtfsRunScope.call(metrics,
+                () -> service.createRoute(stop(), stop(), "start", "end", java.time.LocalDate.now()));
+
+        // Then this layer owns the reason, because only it can tell empty geometry from no path
+        assertThat(result).isEmpty();
+        assertThat(metrics.finalEvent())
+                .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 0);
+    }
+
+    @Test
+    void givenNoBoundRunWhenCreatingRouteThenOutcomesAreDiscardedWithoutFailing() throws Exception {
+        // Given the cache is warmed outside a run
+        when(webClient.get().uri(anyString()).retrieve().bodyToMono(tools.jackson.databind.JsonNode.class).block())
+                .thenReturn(JsonMapper.builder().build().readTree("{\"geometria\":[]}"));
+
+        // When / Then the no-op sink keeps non-GTFS callers working
+        assertThat(service.createRoute(stop(), stop(), "start", "end", java.time.LocalDate.now())).isEmpty();
+    }
+
+    private static Stop stop() {
+        final Stop stop = new Stop(null);
+        stop.stopId = "AAA";
+        stop.stopCode = "AAA";
+        return stop;
     }
 
     private void setField(final String name, final Object value) throws Exception {

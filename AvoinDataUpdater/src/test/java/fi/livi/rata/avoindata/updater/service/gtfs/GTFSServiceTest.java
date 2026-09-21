@@ -86,7 +86,8 @@ public class GTFSServiceTest {
         ));
         gtfsDto.translations = new ArrayList<>(List.of(new Translation("Old", "en", "Old")));
 
-        when(gtfsEntityService.createGTFSEntity(anyList(), anyList(), anyMap(), any(GtfsRunContext.class)))
+        when(gtfsEntityService.createGTFSEntity(anyList(), anyList(), anyMap(), any(java.time.LocalDate.class),
+                any(FailedSegments.class)))
                 .thenReturn(gtfsDto);
 
         // createGtfs resolves and validates the node snapshot before building the feed.
