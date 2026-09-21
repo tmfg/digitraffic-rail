@@ -21,7 +21,7 @@ public interface ShapeMetricsSink {
 
     void recordNoGeometryReason(NoGeometryReason reason);
 
-    void recordRouteFailure(String segment, String url, int statusCode, String errorType);
+    Optional<Map<String, Object>> recordRouteFailure(String segment, String urlPath, int statusCode, String errorType);
 
     /** @return the heartbeat event when this shape lands on a heartbeat boundary. */
     Optional<Map<String, Object>> recordShapeProcessed(int processedShapes, int totalShapesInFeed);

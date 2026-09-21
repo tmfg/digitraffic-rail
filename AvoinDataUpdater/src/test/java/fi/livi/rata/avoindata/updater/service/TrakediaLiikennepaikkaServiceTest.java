@@ -96,7 +96,7 @@ public class TrakediaLiikennepaikkaServiceTest {
     }
 
     @Test
-    void givenARefreshFailsWhenRetriedImmediatelyThenTheNextRefreshIsSuppressed() {
+    void givenARefreshFailsWhenRetriedThenEachCallAttemptsTheSourceAgain() {
         // Given
         when(webClient.get().uri("nodes").retrieve().bodyToMono(JsonNode.class).block())
                 .thenThrow(new IllegalStateException("nodes unavailable"));
@@ -107,10 +107,10 @@ public class TrakediaLiikennepaikkaServiceTest {
         final InfraApiMapResult<JsonNode> first = service.getTrakediaLiikennepaikkaNodes();
         final InfraApiMapResult<JsonNode> second = service.getTrakediaLiikennepaikkaNodes();
 
-        // Then the failing source is fetched once, and the immediate retry is suppressed
+        // Then a failed refresh is never cached, so recovery needs no cool-off to expire
         assertThat(first.cacheState()).isEqualTo(InfraApiMapResult.CacheState.REFRESH_FAILED);
-        assertThat(second.cacheState()).isEqualTo(InfraApiMapResult.CacheState.REFRESH_SUPPRESSED);
-        verify(webClient, times(1)).get();
+        assertThat(second.cacheState()).isEqualTo(InfraApiMapResult.CacheState.REFRESH_FAILED);
+        verify(webClient, times(2)).get();
     }
 
     private void whenNodeResponse(final String url, final JsonNode response) {

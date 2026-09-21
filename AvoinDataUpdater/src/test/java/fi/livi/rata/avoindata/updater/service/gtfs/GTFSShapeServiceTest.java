@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -214,6 +215,32 @@ class GTFSShapeServiceTest {
         verify(routeService, times(1)).createRoute(start, end, "start-node", "end-node", ROUTE_DATE);
         assertThat(metrics.finalEvent())
                 .containsEntry("rail.gtfs.segments.dummy.reason.previously_failed", 1);
+    }
+
+    @Test
+    void givenTripsSharingShapesWhenProgressIsReportedThenTheDenominatorCountsGeometryWork() {
+        // Given 250 distinct stop sequences, each used by two trips
+        final Map<String, Stop> stops = new HashMap<>();
+        final List<Trip> trips = new ArrayList<>();
+        for (int shape = 0; shape < 250; shape++) {
+            final String start = "S" + shape;
+            final String end = "E" + shape;
+            stops.put(start, stop(start));
+            stops.put(end, stop(end));
+            trips.add(trip("trip-a-" + shape, start, end));
+            trips.add(trip("trip-b-" + shape, start, end));
+        }
+        when(splitterService.splitStoptimes(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> ((Trip) invocation.getArgument(0)).stopTimes);
+        final GtfsRunMetrics recorder = org.mockito.Mockito.spy(metrics);
+
+        // When
+        GtfsRunScope.run(recorder,
+                () -> service.createShapesFromTrips(trips, stops, Map.of(), ROUTE_DATE, failedSegments));
+
+        // Then progress and total are in the same unit, so a heartbeat can reach its total
+        verify(recorder, times(250)).recordShapeProcessed(org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.eq(250));
     }
 
     @Test

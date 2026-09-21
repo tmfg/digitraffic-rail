@@ -87,7 +87,7 @@ public class GTFSService {
     /** Emitted with an identical field set on every path; only the level differs. */
     private void logRunEvent(final GtfsRunMetrics metrics) {
         try {
-            final Map<String, Object> event = metrics.finalEvent();
+            final String event = GtfsRunMetrics.toLogFields(metrics.finalEvent());
             if (metrics.outcome() == GtfsOutcome.SUCCESS) {
                 log.info("{}", event);
             } else {

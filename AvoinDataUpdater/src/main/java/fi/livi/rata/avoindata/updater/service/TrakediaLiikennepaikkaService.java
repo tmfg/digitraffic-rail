@@ -29,8 +29,10 @@ import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
+import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunMetrics;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiSource;
 
 /**
  * infra-api version 0.4 or newer is needed!
@@ -59,17 +61,8 @@ public class TrakediaLiikennepaikkaService {
     private final ExpiringCache<InfraApiMapResult<Double[]>> lpCache = new ExpiringCache<>(Duration.ofHours(12));
     private final ExpiringCache<InfraApiMapResult<JsonNode>> lpNodeCache = new ExpiringCache<>(Duration.ofHours(12));
 
-    /**
-     * A failed fetch is not cacheable, so without this every caller would re-run the full retry
-     * sequence. Suppressing refreshes briefly keeps a degraded Infra API from stalling hot paths.
-     */
-    private static final Duration FAILURE_SUPPRESSION = Duration.ofMinutes(1);
-
-    private final FailureWindow nodeMapFailures = new FailureWindow();
-    private final FailureWindow coordinateMapFailures = new FailureWindow();
-
     public InfraApiMapResult<Double[]> getTrakediaLiikennepaikkas() {
-        return loadThroughCache(lpCache, () -> loadMap(coordinateMapFailures, MapKind.COORDINATE, () -> {
+        return loadThroughCache(lpCache, () -> loadMap(MapKind.COORDINATE, () -> {
             final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
             final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
             final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
@@ -169,7 +162,7 @@ public class TrakediaLiikennepaikkaService {
     // Data format:
     // JRI -> {ArrayNode} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
     public InfraApiMapResult<JsonNode> getTrakediaLiikennepaikkaNodes() {
-        return loadThroughCache(lpNodeCache, () -> loadMap(nodeMapFailures, MapKind.NODE, () -> {
+        return loadThroughCache(lpNodeCache, () -> loadMap(MapKind.NODE, () -> {
             final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
             final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
 
@@ -185,28 +178,18 @@ public class TrakediaLiikennepaikkaService {
     }
 
     /**
-     * Runs a refresh unless a recent failure is still being suppressed, and emits the source-tier
-     * event. This is the earliest point in the GTFS pipeline where degraded coverage is knowable.
+     * Runs a refresh and emits the source-tier event. This is the earliest point in the GTFS
+     * pipeline where degraded coverage is knowable.
      */
-    private <V> ExpiringCache.CacheResult<InfraApiMapResult<V>> loadMap(final FailureWindow failures,
-                                                                       final MapKind kind,
+    private <V> ExpiringCache.CacheResult<InfraApiMapResult<V>> loadMap(final MapKind kind,
                                                                        final Supplier<InfraApiMapResult<V>> fetch) {
         final long startedAt = System.currentTimeMillis();
 
-        if (failures.isSuppressed(Instant.now())) {
-            final InfraApiMapResult<V> suppressed = InfraApiMapResult.failed(failures.lastFailure(), Instant.now(),
-                    InfraApiMapResult.CacheState.REFRESH_SUPPRESSED);
-            logSourceRefresh(kind, suppressed, startedAt);
-            return new ExpiringCache.CacheResult<>(false, suppressed);
-        }
-
         try {
             final InfraApiMapResult<V> result = fetch.get();
-            failures.clear();
             logSourceRefresh(kind, result, startedAt);
             return new ExpiringCache.CacheResult<>(result.complete(), result);
         } catch (final RuntimeException e) {
-            failures.record(e, Instant.now().plus(FAILURE_SUPPRESSION));
             final InfraApiMapResult<V> failed = InfraApiMapResult.failed(e, Instant.now(),
                     InfraApiMapResult.CacheState.REFRESH_FAILED);
             logSourceRefresh(kind, failed, startedAt);
@@ -227,9 +210,7 @@ public class TrakediaLiikennepaikkaService {
         event.put("operation", kind.operation());
         event.put("outcome", result.complete() ? "success" : result.failure() == null ? "degraded" : "error");
         event.put("error.type", result.failure() == null ? "" : result.failure().getClass().getSimpleName());
-        event.put("rail.source.system", "DIGITRAFFIC");
-        event.put("rail.source.api", "infra-api");
-        event.put("rail.source.owner", "TRAKEDIA");
+        InfraApiSource.addTo(event);
         event.put("rail.entity.type", kind.entityType());
         event.put(kind.metricPrefix() + "cache.state", result.cacheState().name().toLowerCase(Locale.ROOT));
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
@@ -238,33 +219,9 @@ public class TrakediaLiikennepaikkaService {
         event.put("duration_ms", System.currentTimeMillis() - startedAt);
 
         if (result.complete()) {
-            logger.info("{}", event);
+            logger.info("{}", GtfsRunMetrics.toLogFields(event));
         } else {
-            logger.error("{}", event);
-        }
-    }
-
-    /** Remembers the most recent refresh failure so it can be reported without re-fetching. */
-    private static final class FailureWindow {
-        private volatile Instant suppressedUntil = Instant.EPOCH;
-        private volatile Throwable lastFailure;
-
-        private boolean isSuppressed(final Instant now) {
-            return now.isBefore(suppressedUntil);
-        }
-
-        private Throwable lastFailure() {
-            return lastFailure;
-        }
-
-        private void record(final Throwable failure, final Instant until) {
-            lastFailure = failure;
-            suppressedUntil = until;
-        }
-
-        private void clear() {
-            suppressedUntil = Instant.EPOCH;
-            lastFailure = null;
+            logger.error("{}", GtfsRunMetrics.toLogFields(event));
         }
     }
 

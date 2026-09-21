@@ -20,12 +20,10 @@ import java.util.stream.Collectors;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiSource;
 
 /**
- * Accumulates the values emitted as the wide event of one GTFS run. Records only; it makes no
- * decisions, so it can be swapped for a no-op without changing behaviour.
- * <p>
- * Not thread safe: one instance belongs to one run.
+ * Accumulates the values emitted as the wide event of one GTFS run. Records only.
  */
 public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, ShapeMetricsSink, FeedMetricsSink {
     static final int HEARTBEAT_INTERVAL_SHAPES = 250;
@@ -65,23 +63,33 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         this.feedStartedAt = startedAt;
     }
 
-    public void recordRouteFailure(final String segment, final String url, final int statusCode, final String errorType) {
+    /**
+     * @return the diagnostic event for this failure while the per-run cap allows it, otherwise
+     *         empty. Repeats of an identity already seen are never re-emitted.
+     */
+    public Optional<Map<String, Object>> recordRouteFailure(final String segment, final String urlPath,
+                                                            final int statusCode, final String errorType) {
         final String identity = segment + "|" + statusCode + "|" + errorType;
         if (!sampledFailureIdentities.add(identity)) {
-            return;
+            return Optional.empty();
         }
-        if (failureSamples.size() < MAX_ROUTE_FAILURE_SAMPLES) {
-            failureSamples.add(Map.of("url.full", url, "http.response.status_code", statusCode, "error.type", errorType,
-                    "rail.gtfs.segment", segment));
-        } else {
+        if (failureSamples.size() >= MAX_ROUTE_FAILURE_SAMPLES) {
             suppressedFailures++;
+            return Optional.empty();
         }
+        final Map<String, Object> event = new LinkedHashMap<>();
+        event.put("operation", "resolveGtfsRouteSegment");
+        event.put("outcome", "error");
+        InfraApiSource.addTo(event);
+        event.put("rail.gtfs.feed.name", currentFeedName);
+        event.put("rail.gtfs.segment", segment);
+        event.put("url.path", urlPath);
+        event.put("http.response.status_code", statusCode);
+        event.put("error.type", errorType);
+        failureSamples.add(event);
+        return Optional.of(event);
     }
 
-    /**
-     * Segment totals only. The reason counter is recorded separately by whichever layer knew the
-     * reason, so that the two are never incremented twice for one segment.
-     */
     public void recordDummySegment(final String stationCode) {
         segmentsTotal++;
         dummySegments++;
@@ -203,8 +211,6 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
     }
 
     public GtfsOutcome outcome() {
-        // A feed failure always propagates and sets errorType, so this has to be tested first or
-        // PARTIAL is unreachable and a run that published four of five feeds looks like total loss.
         if (!failedFeedNames.isEmpty()) {
             return publishedFeedNames.isEmpty() ? GtfsOutcome.ERROR : GtfsOutcome.PARTIAL;
         }
@@ -221,9 +227,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("outcome", outcome().attribute());
         event.put("duration_ms", Duration.between(startedAt, clock.instant()).toMillis());
         event.put("error.type", errorType == null ? "" : errorType);
-        event.put("rail.source.system", "DIGITRAFFIC");
-        event.put("rail.source.api", "infra-api");
-        event.put("rail.source.owner", "TRAKEDIA");
+        InfraApiSource.addTo(event);
         event.put("rail.gtfs.feeds.attempted", attemptedFeedNames.size());
         event.put("rail.gtfs.feeds.published", publishedFeedNames.size());
         event.put("rail.gtfs.feeds.failed", failedFeedNames.size());
@@ -241,8 +245,9 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.segments.dummy.stations.top", topDummyStations());
         event.put("rail.gtfs.shapes.total", totalShapes);
         event.put("rail.gtfs.shapes.real", realShapes);
+        // Samples are emitted as their own events; a nested list cannot survive key=value rendering.
+        event.put("rail.gtfs.route_failures.sampled", failureSamples.size());
         event.put("rail.gtfs.route_failures.suppressed", suppressedFailures);
-        event.put("rail.gtfs.route_failures.samples", failureSamples);
 
         for (final String feedName : attemptedFeedNames) {
             final String prefix = "rail.gtfs.feed." + feedName + ".";
@@ -263,6 +268,30 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
 
     private UpstreamMetrics dataset(final InfraApiDataset dataset) {
         return upstream.computeIfAbsent(dataset, ignored -> new UpstreamMetrics());
+    }
+
+    /**
+     * Renders an event as the space-separated {@code key=value} message that
+     * {@code LoggerMessageKeyValuePairJsonProvider} turns into JSON fields. Logging the map itself
+     * would produce {@code Map.toString()}, which that provider cannot parse.
+     */
+    public static String toLogFields(final Map<String, Object> event) {
+        return event.entrySet().stream()
+                .map(field -> field.getKey() + "=" + logValue(field.getValue()))
+                .collect(Collectors.joining(" "));
+    }
+
+    /** The provider drops blank values, so absent ones are spelled out to keep the field set stable. */
+    private static String logValue(final Object value) {
+        if (value == null) {
+            return "NULL";
+        }
+        final String text = String.valueOf(value);
+        if (text.isBlank()) {
+            return "NULL";
+        }
+        // The provider splits on spaces and on the first '=', so either would truncate the field.
+        return text.replace(' ', '_').replace('=', '_');
     }
 
     private String topDummyStations() {

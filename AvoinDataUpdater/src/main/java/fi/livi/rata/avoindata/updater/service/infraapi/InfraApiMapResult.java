@@ -18,8 +18,7 @@ public record InfraApiMapResult<V>(Map<String, V> values,
     public enum CacheState {
         HIT,
         MISS,
-        REFRESH_FAILED,
-        REFRESH_SUPPRESSED
+        REFRESH_FAILED
     }
 
     public static <V> InfraApiMapResult<V> success(final Map<String, V> values,

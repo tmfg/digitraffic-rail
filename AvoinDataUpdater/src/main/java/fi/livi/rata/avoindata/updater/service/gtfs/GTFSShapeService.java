@@ -37,10 +37,14 @@ public class GTFSShapeService {
                                              final FailedSegments failedSegments) {
         final ShapeMetricsSink metrics = GtfsRunScope.shapeMetrics();
         final Map<Integer, List<Shape>> shapeCache = new HashMap<>();
+        final int distinctShapes = (int) trips.stream()
+                .map(GTFSShapeService::shapeKey)
+                .distinct()
+                .count();
         int processedShapes = 0;
         int realShapes = 0;
         for (final Trip trip : trips) {
-            final Integer stops = trip.stopTimes.stream().map(s -> s.stopId).collect(Collectors.joining(">")).hashCode();
+            final Integer stops = shapeKey(trip);
 
             if (!shapeCache.containsKey(stops)) {
                 final ShapeGroup group = createShapes(stopMap, trakediaNodes, trip, stops, routeDate, failedSegments);
@@ -48,8 +52,8 @@ public class GTFSShapeService {
                 if (group.complete()) {
                     realShapes += group.shapes().size();
                 }
-                metrics.recordShapeProcessed(++processedShapes, trips.size())
-                        .ifPresent(heartbeat -> log.info("{}", heartbeat));
+                metrics.recordShapeProcessed(++processedShapes, distinctShapes)
+                        .ifPresent(heartbeat -> log.info("{}", GtfsRunMetrics.toLogFields(heartbeat)));
             }
 
             trip.shapeId = stops;
@@ -60,6 +64,10 @@ public class GTFSShapeService {
             metrics.recordFeedDegraded();
         }
         return shapes;
+    }
+
+    private static Integer shapeKey(final Trip trip) {
+        return trip.stopTimes.stream().map(s -> s.stopId).collect(Collectors.joining(">")).hashCode();
     }
 
     /** Shapes for one stop sequence; incomplete when any segment fell back to straight-line geometry. */
@@ -154,9 +162,11 @@ public class GTFSShapeService {
             return new SegmentGeometry(route.get(), false);
         } catch (final WebClientResponseException e) {
             failedSegments.record(segment);
+            // Path only: the provider splits values on '=', so a query string would truncate it.
             GtfsRunScope.shapeMetrics().recordRouteFailure(segment,
-                    e.getRequest() == null ? "" : String.valueOf(e.getRequest().getURI()),
-                    e.getStatusCode().value(), e.getClass().getSimpleName());
+                            e.getRequest() == null ? "" : e.getRequest().getURI().getPath(),
+                            e.getStatusCode().value(), e.getClass().getSimpleName())
+                    .ifPresent(sample -> log.warn("{}", GtfsRunMetrics.toLogFields(sample)));
             return fallback(startStop, endStop, NoGeometryReason.ROUTE_HTTP_ERROR);
         } catch (final Exception e) {
             failedSegments.record(segment);

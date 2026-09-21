@@ -291,8 +291,6 @@ public class JourneyCompositionConverter {
 
     private Station getStationByTrafficLocationOid(final String stationOid, final Integer uicCodeFallback) {
         // JRI -> {ArrayNode@25383} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
-        // The node map is an index over the UIC-code fallback below, so a degraded map degrades the
-        // lookup rather than failing composition ingestion.
         final Optional<JsonNode> liikennepaikka =
                 trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes().valuesOrEmpty().values().stream()
                         .map(arrayNode -> arrayNode.get(0))

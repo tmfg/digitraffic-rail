@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,23 +102,40 @@ class GtfsRunMetricsTest {
     void givenMoreThanTwentyDistinctRouteFailuresWhenRecordedThenSamplesAreCappedAndDuplicatesSuppressed() {
         // Given
         final GtfsRunMetrics metrics = metrics();
+        final List<Map<String, Object>> emitted = new ArrayList<>();
         for (int failure = 0; failure < 25; failure++) {
-            metrics.recordRouteFailure(
-                    "AAA" + failure + "->BBB",
-                    "https://infra.example/reitit/" + failure,
-                    503,
-                    "ServiceUnavailable");
+            metrics.recordRouteFailure("AAA" + failure + "->BBB", "/infra-api/latest/reitit/" + failure, 503,
+                    "ServiceUnavailable").ifPresent(emitted::add);
         }
-        metrics.recordRouteFailure("AAA0->BBB", "https://infra.example/reitit/duplicate", 503, "ServiceUnavailable");
+        final var duplicate =
+                metrics.recordRouteFailure("AAA0->BBB", "/infra-api/latest/reitit/0", 503, "ServiceUnavailable");
 
         // When
         final var samples = metrics.routeFailureSamples();
 
-        // Then the duplicate identity does not consume a sample slot
+        // Then the duplicate identity neither consumes a sample slot nor is re-emitted
+        assertThat(duplicate).isEmpty();
+        assertThat(emitted).hasSize(20);
         assertThat(samples).hasSize(20);
         assertThat(samples.getFirst())
-                .containsKeys("url.full", "http.response.status_code", "error.type");
+                .containsKeys("url.path", "http.response.status_code", "error.type", "rail.gtfs.segment");
         assertThat(metrics.suppressedRouteFailures()).isEqualTo(5);
+    }
+
+    @Test
+    void givenRouteFailuresWhenTheFinalEventIsBuiltThenItCarriesCountsRatherThanANestedList() {
+        // Given a nested list cannot survive key=value rendering
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordRouteFailure("AAA->BBB", "/infra-api/latest/reitit/1", 503, "ServiceUnavailable");
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(event)
+                .containsEntry("rail.gtfs.route_failures.sampled", 1)
+                .containsEntry("rail.gtfs.route_failures.suppressed", 0L);
+        assertThat(event.values()).noneMatch(value -> value instanceof List);
     }
 
     @Test
@@ -204,6 +222,42 @@ class GtfsRunMetricsTest {
 
         // Then
         assertThat(event).containsEntry("rail.gtfs.segments.dummy.stations.top", "HKI,TPE");
+    }
+
+    @Test
+    void givenAnEventWhenRenderedForLoggingThenPairsAreSpaceSeparated() {
+        // Given the log provider splits on spaces and on the first '='
+        final Map<String, Object> event = new LinkedHashMap<>();
+        event.put("operation", "generateGtfs");
+        event.put("rail.gtfs.segments.dummy", 3);
+        event.put("rail.gtfs.feed.published", true);
+
+        // When / Then
+        assertThat(GtfsRunMetrics.toLogFields(event))
+                .isEqualTo("operation=generateGtfs rail.gtfs.segments.dummy=3 rail.gtfs.feed.published=true");
+    }
+
+    @Test
+    void givenAbsentValuesWhenRenderedForLoggingThenTheFieldSurvivesAsNull() {
+        // Given success and error events must share one field set
+        final Map<String, Object> event = new LinkedHashMap<>();
+        event.put("error.type", "");
+        event.put("rail.gtfs.feeds.degraded", null);
+
+        // When / Then a blank value would otherwise be dropped by the provider
+        assertThat(GtfsRunMetrics.toLogFields(event)).isEqualTo("error.type=NULL rail.gtfs.feeds.degraded=NULL");
+    }
+
+    @Test
+    void givenValuesWithSeparatorsWhenRenderedForLoggingThenTheFieldIsNotTruncated() {
+        // Given
+        final Map<String, Object> event = new LinkedHashMap<>();
+        event.put("error.message", "too many concurrent operations");
+        event.put("url.full", "https://example.invalid/reitit?time=now");
+
+        // When / Then the value stays in one parseable token instead of losing its tail
+        assertThat(GtfsRunMetrics.toLogFields(event))
+                .isEqualTo("error.message=too_many_concurrent_operations url.full=https://example.invalid/reitit?time_now");
     }
 
     /** Mirrors what GTFSShapeService does: segment totals here, reason attribution alongside. */
