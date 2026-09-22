@@ -21,14 +21,7 @@ public final class LogFields {
 
     /** The provider drops blank values, so absent ones are spelled out to keep the field set stable. */
     private static String value(final Object value) {
-        if (value == null) {
-            return "NULL";
-        }
-        final String text = String.valueOf(value);
-        if (text.isBlank()) {
-            return "NULL";
-        }
-        // The provider splits on spaces and on the first '=', so either would truncate the field.
-        return text.replace(' ', '_').replace('=', '_');
+        final String text = value == null ? "" : String.valueOf(value);
+        return text.isBlank() ? "NULL" : text;
     }
 }

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The log provider splits the message on spaces and on the first {@code =}, so these rules decide
- * whether the {@code rail.*} fields end up indexed or silently mangled.
+ * The log provider splits the message on spaces and keeps only the first {@code =}, so these rules
+ * decide whether the {@code rail.*} fields end up indexed.
  */
 class LogFieldsTest {
 
@@ -38,14 +38,14 @@ class LogFieldsTest {
     }
 
     @Test
-    void givenValuesWithSeparatorsWhenRenderedThenTheFieldIsNotTruncated() {
-        // Given
+    void givenValuesWithSeparatorsWhenRenderedThenTheyArePassedThroughVerbatim() {
+        // Given the provider offers no escaping: quoting preserves type, not spaces
         final Map<String, Object> event = new LinkedHashMap<>();
         event.put("error.message", "too many concurrent operations");
         event.put("url.full", "https://example.invalid/reitit?time=now");
 
-        // When / Then the value stays in one parseable token instead of losing its tail
+        // When / Then the field may extract partially, but the text stays intact and searchable
         assertThat(LogFields.of(event))
-                .isEqualTo("error.message=too_many_concurrent_operations url.full=https://example.invalid/reitit?time_now");
+                .isEqualTo("error.message=too many concurrent operations url.full=https://example.invalid/reitit?time=now");
     }
 }
