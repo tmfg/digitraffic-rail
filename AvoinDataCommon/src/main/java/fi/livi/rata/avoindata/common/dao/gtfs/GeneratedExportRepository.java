@@ -15,13 +15,18 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 public interface GeneratedExportRepository extends CustomGeneralRepository<GeneratedExport, Long> {
     GeneratedExport findFirstByFileNameOrderByIdDesc(String s);
 
-    /** The newest export generated on a given day, for requesting an older package. */
+    /**
+     * The latest export generated on a given day, for requesting an older package.
+     */
     GeneratedExport findFirstByFileNameAndCreatedGreaterThanEqualAndCreatedLessThanOrderByIdDesc(
             String fileName, ZonedDateTime from, ZonedDateTime until);
 
-    /** The rows the API serves — excluded from pruning so a feed is never left with nothing to serve. */
+    /**
+     * The rows the API serves — excluded from pruning so a feed is never left with
+     * nothing to serve.
+     */
     @Query("select max(gtfs.id) from GeneratedExport gtfs group by gtfs.fileName")
-    List<Long> findNewestIdPerFileName();
+    List<Long> findLatestIdPerFileName();
 
     @Query("delete from GeneratedExport gtfs where gtfs.created < ?1 and gtfs.id not in ?2")
     @Modifying

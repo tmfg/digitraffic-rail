@@ -20,7 +20,8 @@ import org.mockito.ArgumentCaptor;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 
 /**
- * Pruning must never remove the newest export of a file name, or a feed whose generation has been failing
+ * Pruning must never remove the newest export of a file name, or a feed whose
+ * generation has been failing
  * ends up with nothing to serve.
  */
 class GTFSWritingServiceDeleteOldZipsTest {
@@ -39,7 +40,7 @@ class GTFSWritingServiceDeleteOldZipsTest {
 
     @Test
     void givenExportsExist_whenDeletingOldZips_thenNewestPerFileNameIsKept() {
-        when(gtfsRepository.findNewestIdPerFileName()).thenReturn(List.of(10L, 20L, 30L));
+        when(gtfsRepository.findLatestIdPerFileName()).thenReturn(List.of(10L, 20L, 30L));
         when(gtfsRepository.deleteOldZips(any(), anyCollection())).thenReturn(5);
 
         service.deleteOldZips();
@@ -53,7 +54,7 @@ class GTFSWritingServiceDeleteOldZipsTest {
     @Test
     void givenEmptyTable_whenDeletingOldZips_thenNoDeleteIsIssued() {
         // "not in ()" is not valid SQL, and there is nothing to prune anyway
-        when(gtfsRepository.findNewestIdPerFileName()).thenReturn(List.of());
+        when(gtfsRepository.findLatestIdPerFileName()).thenReturn(List.of());
 
         service.deleteOldZips();
 

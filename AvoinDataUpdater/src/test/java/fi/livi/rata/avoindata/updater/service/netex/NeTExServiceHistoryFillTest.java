@@ -41,7 +41,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 /**
  * Filling a track from what the train was last seen on, matched on the exact
  * schedule
- * part ({@code attapId}).
+ * part (attapId).
  */
 class NeTExServiceHistoryFillTest {
 

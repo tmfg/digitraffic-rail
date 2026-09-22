@@ -20,7 +20,7 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 
 /**
  * Retry behaviour of the package service: only a RIPA fetch failure is retried, and only after the
- * configured wait. Generation returning {@code null} (no data) is enough to exercise the loop, so these
+ * configured wait. Generation returning null (no data) is enough to exercise the loop, so these
  * tests never reach the persist step.
  */
 class NeTExPackageServiceRetryTest {

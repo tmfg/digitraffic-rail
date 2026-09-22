@@ -19,68 +19,58 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 @Repository
 public interface TimeTableRowRepository extends CustomGeneralRepository<TimeTableRow, TimeTableRowId> {
 
-    @Query("""
-            SELECT sttr FROM SimpleTimeTableRow sttr \
-            WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
-            sttr.scheduledTime > :scheduledTimeStart AND sttr.scheduledTime < :scheduledTimeEnd""")
-    List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(
-            @Param("departureDateStart")
-            LocalDate departureDateStart,
-            @Param("departureDateEnd")
-            LocalDate departureDateEnd,
-            @Param("scheduledTimeStart")
-            ZonedDateTime scheduledTimeStart,
-            @Param("scheduledTimeEnd")
-            ZonedDateTime scheduledTimeEnd);
+        @Query("""
+                        SELECT sttr FROM SimpleTimeTableRow sttr \
+                        WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
+                        sttr.scheduledTime > :scheduledTimeStart AND sttr.scheduledTime < :scheduledTimeEnd""")
+        List<SimpleTimeTableRow> findSimpleByScheduledTimeBetween(
+                        @Param("departureDateStart") LocalDate departureDateStart,
+                        @Param("departureDateEnd") LocalDate departureDateEnd,
+                        @Param("scheduledTimeStart") ZonedDateTime scheduledTimeStart,
+                        @Param("scheduledTimeEnd") ZonedDateTime scheduledTimeEnd);
 
-    /**
-     * A stop the train was booked to make and that was not cancelled. Not every such
-     * stop reports an actual time, so requiring one would discard platforms that are
-     * recorded.
-     */
-    @Query("""
-            SELECT new fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation( \
-            sttr.id.trainNumber, sttr.id.attapId, sttr.stationShortCode, sttr.type, \
-            sttr.commercialTrack, sttr.scheduledTime) \
-            FROM SimpleTimeTableRow sttr \
-            WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
-            sttr.id.trainNumber IN :trainNumbers AND \
-            sttr.commercialTrack IS NOT NULL AND \
-            sttr.trainStopping = true AND sttr.cancelled = false \
-            ORDER BY sttr.scheduledTime DESC""")
-    List<TrackObservation> findObservedTracks(
-            @Param("departureDateStart")
-            LocalDate departureDateStart,
-            @Param("departureDateEnd")
-            LocalDate departureDateEnd,
-            @Param("trainNumbers")
-            Collection<Long> trainNumbers);
+        /**
+         * Only stops the train was scheduled to make, excluding pass-throughs and
+         * cancelled stops.
+         * Not every such stop reports an actual time, so requiring one would discard
+         * platforms
+         * that are recorded.
+         */
+        @Query("""
+                        SELECT new fi.livi.rata.avoindata.common.domain.gtfs.TrackObservation( \
+                        sttr.id.trainNumber, sttr.id.attapId, sttr.stationShortCode, sttr.type, \
+                        sttr.commercialTrack, sttr.scheduledTime) \
+                        FROM SimpleTimeTableRow sttr \
+                        WHERE sttr.departureDate BETWEEN :departureDateStart AND :departureDateEnd AND \
+                        sttr.id.trainNumber IN :trainNumbers AND \
+                        sttr.commercialTrack IS NOT NULL AND \
+                        sttr.trainStopping = true AND sttr.cancelled = false \
+                        ORDER BY sttr.scheduledTime DESC""")
+        List<TrackObservation> findObservedTracks(
+                        @Param("departureDateStart") LocalDate departureDateStart,
+                        @Param("departureDateEnd") LocalDate departureDateEnd,
+                        @Param("trainNumbers") Collection<Long> trainNumbers);
 
-    @Query("""
-            SELECT sttr \
-            FROM SimpleTimeTableRow sttr \
-            WHERE sttr.id.trainNumber = :trainNumber AND \
-            sttr.departureDate = :departureDate AND \
-            sttr.scheduledTime = :scheduledTime AND \
-            sttr.stationShortCode = UPPER(:stationShortCode) AND \
-            sttr.type = :type""")
-    Optional<SimpleTimeTableRow> findSimpleBy(
-            @Param("trainNumber")
-            final long trainNumber,
-            @Param("departureDate")
-            final LocalDate departureDate,
-            @Param("scheduledTime")
-            final ZonedDateTime scheduledTime,
-            @Param("stationShortCode")
-            final String stationShortCode,
-            @Param("type")
-            final TimeTableRow.TimeTableRowType type);
+        @Query("""
+                        SELECT sttr \
+                        FROM SimpleTimeTableRow sttr \
+                        WHERE sttr.id.trainNumber = :trainNumber AND \
+                        sttr.departureDate = :departureDate AND \
+                        sttr.scheduledTime = :scheduledTime AND \
+                        sttr.stationShortCode = UPPER(:stationShortCode) AND \
+                        sttr.type = :type""")
+        Optional<SimpleTimeTableRow> findSimpleBy(
+                        @Param("trainNumber") final long trainNumber,
+                        @Param("departureDate") final LocalDate departureDate,
+                        @Param("scheduledTime") final ZonedDateTime scheduledTime,
+                        @Param("stationShortCode") final String stationShortCode,
+                        @Param("type") final TimeTableRow.TimeTableRowType type);
 
-    @Query(value = """
-            select attap_id, stop_sector
-            from time_table_row ttr
-            where departure_date = ?1 and train_number = ?2
-            and stop_sector is not null
-""", nativeQuery = true)
-    List<Object[]> getRowsWithStopSectors(final LocalDate departureDate, final Long trainNumber);
+        @Query(value = """
+                                    select attap_id, stop_sector
+                                    from time_table_row ttr
+                                    where departure_date = ?1 and train_number = ?2
+                                    and stop_sector is not null
+                        """, nativeQuery = true)
+        List<Object[]> getRowsWithStopSectors(final LocalDate departureDate, final Long trainNumber);
 }

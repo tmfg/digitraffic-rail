@@ -10,7 +10,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 /**
  * {@link JourneyRefResolver} backed by NeTEx-published journey refs read from
  * the DB, keyed per
- * {@code (trainNumber, departureDate)}. The DB read path uses this instead of
+ * (trainNumber, departureDate). The DB read path uses this instead of
  * re-resolving from the
  * schedules.
  */

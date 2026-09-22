@@ -8,8 +8,8 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
 /**
  * {@link PlannedTrackLookup} backed by a
- * {@code (trainNumber, departureDate) -> stationShortCode -> visitIndex
- * -> plannedTrack} map read from the DB. Keying by visit index (not station
+ * (trainNumber, departureDate) -> stationShortCode -> visitIndex
+ * -> plannedTrack map read from the DB. Keying by visit index (not station
  * alone) keeps a distinct planned
  * track for each visit when a journey serves the same station more than once.
  * The DB read path uses this

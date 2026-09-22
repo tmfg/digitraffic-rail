@@ -21,12 +21,10 @@ import reactor.core.Exceptions;
  * parses it with
  * PetiNeTExParser, and caches the result as a last-good snapshot.
  *
- * <p>
  * Refreshed by its consumers rather than on a schedule: NeTEx package
  * generation refreshes at the
  * start of a run, and {@link #ensureLoaded()} covers a cold JVM.
  *
- * <p>
  * On fetch/parse failure, the last-good snapshot is preserved — generation
  * continues with stale but valid data rather than empty/partial.
  */
@@ -103,12 +101,12 @@ public class CachingPetiStopSource implements PetiStopSource {
 
             httpStatus = entity != null ? entity.getStatusCode().value() : 0;
             final byte[] xmlBytes = entity != null ? entity.getBody() : null;
-            bodySize = xmlBytes != null ? xmlBytes.length : 0;
 
             if (xmlBytes == null || xmlBytes.length == 0) {
                 throw new PetiParseException("Empty response body from PETI",
                         new IllegalStateException("null or empty body"));
             }
+            bodySize = xmlBytes.length;
 
             final List<PetiStop> parsed = parseXmlBytes(xmlBytes);
             final long durationMs = (System.nanoTime() - startNanos) / 1_000_000;

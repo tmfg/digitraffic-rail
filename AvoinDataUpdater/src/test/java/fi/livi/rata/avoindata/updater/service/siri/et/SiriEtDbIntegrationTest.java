@@ -57,14 +57,13 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * resolved journey refs to the real
  * database (dbrail docker compose), then SIRI-ET generation reads them back
  * from the DB and publishes a doc
- * that references the same published {@code ServiceJourney} id. The external
+ * that references the same published ServiceJourney id. The external
  * systems — schedules,
  * PETI stops, station metadata and the live-train store — are mocked; only the
  * persistence layer is real.
  *
- * <p>
- * Requires the {@code dbrail/} MySQL to be running (see
- * {@code dbrail/docker-compose.yml}).
+ * Requires the dbrail/ MySQL to be running (see
+ * dbrail/docker-compose.yml).
  */
 class SiriEtDbIntegrationTest extends BaseTest {
 

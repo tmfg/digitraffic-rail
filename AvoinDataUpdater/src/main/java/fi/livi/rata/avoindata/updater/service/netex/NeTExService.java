@@ -262,7 +262,7 @@ public class NeTExService {
     }
 
     /**
-     * How far a generation cycle got — emitted as {@code stage=…} so an error line
+     * How far a generation cycle got — emitted as stage=… so an error line
      * says where it failed.
      */
     private enum Stage {
@@ -270,11 +270,11 @@ public class NeTExService {
     }
 
     /**
-     * Emits the one-line {@code rail.netex.generation} wide event — same field set
+     * Emits the one-line rail.netex.generation wide event — same field set
      * on every outcome (zeros /
-     * NULL where unavailable); {@code error} is logged at ERROR (with
-     * {@code error.type} + {@code stage}),
-     * everything else at INFO. All counts are {@code rail.netex.*}-namespaced to
+     * NULL where unavailable); error is logged at ERROR (with
+     * error.type + stage),
+     * everything else at INFO. All counts are rail.netex.*-namespaced to
      * match the SIRI wide event.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
@@ -313,7 +313,7 @@ public class NeTExService {
      * chaining the three stages:
      * {@link #computeDataset} (the data), {@link #buildFiles} (the XML) and
      * {@link #zip} (the archive).
-     * Returns {@code null} when no schedules match.
+     * Returns null when no schedules match.
      */
     public NeTExGenerationResult generateNeTEx(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules,
@@ -372,7 +372,7 @@ public class NeTExService {
      * persist the resolved
      * journey refs: the winning passenger schedules (overall and per operating
      * day), stops, routes, lines,
-     * operators, service journeys and the calendar. Returns {@code null} when no
+     * operators, service journeys and the calendar. Returns null when no
      * schedules match; does no
      * XML/ZIP work.
      */
@@ -489,14 +489,13 @@ public class NeTExService {
     }
 
     /**
-     * Joins each winning {@code (train, date)} schedule to its built
-     * {@code ServiceJourney} once, producing the
+     * Joins each winning (train, date) schedule to its built
+     * ServiceJourney once, producing the
      * per-journey drafts the writer persists. Doing the id-join here (rather than
      * in the writer) keeps the
      * persisted shape — refs plus planned tracks — explicit at the point the data
      * is computed.
      *
-     * <p>
      * Skipped entirely when journey persistence is off, so the run does not join a
      * draft per train per day
      * for a writer that will not store any of them.
@@ -559,9 +558,9 @@ public class NeTExService {
      * The computed NeTEx data (stage 1 output): everything needed to render the XML
      * <em>and</em> to persist the
      * resolved journey refs, without re-fetching or re-resolving.
-     * {@code publishedJourneys} is the per-journey
+     * publishedJourneys is the per-journey
      * aggregate (refs + planned tracks) for every winning
-     * {@code (trainNumber, operatingDate)} across the feed
+     * (trainNumber, operatingDate) across the feed
      * horizon — already joined so the writer just maps it to rows.
      */
     public record NeTExDataset(List<Schedule> winningSchedules,

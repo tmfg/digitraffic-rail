@@ -142,7 +142,8 @@ public class NeTExStopsService {
         // lose in a long run.
         // Each needs a human decision: either PETI is missing a passenger platform, or
         // the schedule put a
-        // passenger train on a track that is not one.
+        // passenger train on a track that does not map to a platform (in other words,
+        // wrong track since these are passenger trains).
         if (!tracksWithoutQuay.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData "
                     + "count={} tracks={} message=\"no PETI quay for these tracks, stops published without a "
@@ -184,7 +185,7 @@ public class NeTExStopsService {
 
     /**
      * Station names in the rail metadata carry an " asema" ("station") suffix that
-     * passengers do not use. Anchored on whitespace so compounds such as
+     * is better left out. Anchored on whitespace so compounds such as
      * "Lentoasema" and "Pasila autojuna-asema" are left alone.
      */
     public static String publicStationName(final String stationName) {

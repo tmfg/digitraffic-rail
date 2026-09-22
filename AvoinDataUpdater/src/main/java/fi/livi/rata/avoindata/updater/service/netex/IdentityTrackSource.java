@@ -16,27 +16,31 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
- * Borrows a platform from another journey that shares this train's stable service identity, for
- * stops that no observation could fill. A journey running only in a future timetable period has no
- * history and no upcoming run, but another journey of the same identity usually does, and platforms
- * rarely differ between them.
+ * Fills a stop's platform from another schedule that calls at the same station: for commuter
+ * trains another schedule of the same line travelling the same direction, for other trains another
+ * schedule of the same train type and number. Used for stops that neither the coming days nor
+ * history could fill. A schedule starting in a future timetable period has never run and has no
+ * upcoming train, but such a sibling usually does, and the platform rarely differs between them.
  *
- * <p>The identity is the thing that outlives a timetable change:
- * <ul>
- * <li><b>commuter trains</b> key on the line code (I, K, E \u2026); the running number is reassigned
- * every period. A line uses different platforms in each direction, so the key also carries the
- * direction of travel \u2014 derived from a per-line canonical stop order, not the immediate
- * neighbour, so every journey going the same way shares a key even when their exact next stop
- * differs (skip-stops, short turns). It tries, in order, {@code (line, station, direction)}, then
- * {@code (line, station)} across both directions, then {@code (station, direction)} across all
- * lines — the last for a station whose platform is known from another line but not this one. That
- * cross-line direction is only used for lines oriented against a shared anchor (HKI/PSL) so
- * "forward" means the same way for every line.</li>
- * <li><b>every other train</b> keys on train type + number (IC:1, PYO:2), which is itself a single
- * directed service \u2014 so no direction is needed and adding one would fragment the pool.</li>
- * </ul>
+ * Commuter trains cannot be matched on train number, because it is reassigned every timetable
+ * period, and a line uses different platforms in each direction. Direction comes from a per-line
+ * canonical stop order rather than the immediate neighbour, so two schedules going the same way
+ * match even when their next stop differs (skip-stops, short turns). Three matches are tried in
+ * order: line + station + direction, then line + station across both directions, then station +
+ * direction across all lines. The last of these covers a station whose platform is known from
+ * another line but not this one.
  *
- * <p>The pool is built from tracks resolved by the exact sources (upcoming and history) that run
+ * That last match compares directions between different lines, which only means something if every
+ * line measures direction from the same place. Commuter lines run to or through Helsinki, so
+ * Helsinki and Pasila are that reference point, called the anchor here and below. A line's stop
+ * order is reversed when needed to put HKI or PSL near its start, and "forward" then means away
+ * from Helsinki on every line. A line anchored to neither station has no common reference and is
+ * left out of the cross-line match.
+ *
+ * Train type and number is already one directed service, so those trains need no direction and
+ * adding one would only split the pool.
+ *
+ * The pool is built from tracks resolved by the exact sources (upcoming and history) that run
  * before this one, so a borrowed platform is always a real observation of a sibling, never another
  * guess.
  */
@@ -91,9 +95,8 @@ public class IdentityTrackSource {
                             keys.add(line + "|" + station + "|" + dir);
                         }
                         keys.add(line + "|" + station);
-                        // cross-line last resort: a station's platform known from another line, but
-                        // only when this line is oriented against the shared anchor so the direction
-                        // means the same for every line
+                        // cross-line last resort: a platform known from another line at this
+                        // station, used only for anchored lines where forward means the same thing
                         if (dir != null && lo != null && lo.anchored()) {
                             keys.add("S:" + station + "|" + dir);
                         }
@@ -122,10 +125,9 @@ public class IdentityTrackSource {
     }
 
     /**
-     * The longest commercial-stop sequence a line runs, used as its canonical order, oriented so a
-     * shared anchor (HKI/PSL) sits near the start. That makes "forward" mean the same direction for
-     * every anchored line, so the {@code (station, direction)} cross-line tier is comparable. A
-     * journey travelling the other way visits the same stations in decreasing order.
+     * The longest commercial-stop sequence a line runs, used as its canonical order, reversed when
+     * needed so that the anchor sits near the start. A journey travelling the other way visits the
+     * same stations in decreasing order.
      */
     private Map<String, LineOrder> buildLineOrders(final List<List<Schedule>> schedulesByKind) {
         final Map<String, List<String>> longest = new HashMap<>();
@@ -153,7 +155,7 @@ public class IdentityTrackSource {
         return orders;
     }
 
-    /** Position of the first shared anchor station, or -1 when the line touches neither. */
+    /** Position of the line's first anchor stop (HKI or PSL), or -1 when it passes through neither. */
     private static int anchorIndex(final List<String> seq) {
         int best = -1;
         for (final String anchor : List.of("HKI", "PSL")) {
@@ -214,7 +216,10 @@ public class IdentityTrackSource {
                 .orElse(null);
     }
 
-    /** A line's canonical stop order, oriented toward the shared anchor when it touches one. */
+    /**
+     * A line's canonical stop order, and whether it is anchored — only an anchored line has a
+     * direction comparable with other lines.
+     */
     private record LineOrder(List<String> order, boolean anchored) {
     }
 }
