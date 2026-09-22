@@ -44,7 +44,8 @@ class NeTExServiceTest {
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        // Generation refuses an empty PETI snapshot, so these orchestration tests need a stop place present.
+        // Generation refuses an empty PETI snapshot, so these orchestration tests need
+        // a stop place present.
         final PetiStopSource petiStopSource = () -> List.of(
                 new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);

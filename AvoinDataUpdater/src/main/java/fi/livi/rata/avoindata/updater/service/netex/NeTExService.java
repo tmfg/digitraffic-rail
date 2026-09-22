@@ -118,14 +118,14 @@ public class NeTExService {
 
     /**
      * The Nordic profile wants a quay on every stop assignment, and a quay can only
-     * be found once a stop names a track. Schedules mostly do not assign a track in
-     * advance,
-     * so the track is taken from the coming days first, from what the train last
-     * actually used second, and finally borrowed from another journey of the same
-     * service identity. Done on the schedules themselves, before any NeTEx entity
-     * is
-     * derived, so that the stop point ids and the stop assignments cannot disagree
-     * about which track a stop uses.
+     * be found once a stop names a track. The track is taken from the coming days
+     * first, from what the train last actually used second, and finally borrowed
+     * from another journey of the same service identity. The coming days override a
+     * track the schedule already names, because that one is a plan nothing rechecks
+     * while the train row is written days before departure. Done on the schedules
+     * themselves, before any NeTEx entity is derived, so that the stop point ids
+     * and
+     * the stop assignments cannot disagree about which track a stop uses.
      */
     private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
         final long upcomingStart = System.currentTimeMillis();
@@ -137,14 +137,11 @@ public class NeTExService {
             for (final Schedule schedule : schedules) {
                 final var rows = commercialTrackResolver.rowsForSchedule(schedule, byTrainNumber);
                 for (final ScheduleRow row : schedule.scheduleRows) {
-                    if (StringUtils.isNotBlank(row.commercialTrack)) {
-                        continue;
-                    }
                     final var upcoming = commercialTrackResolver.resolveTrack(row, rows);
                     if (upcoming.isPresent()) {
                         row.commercialTrack = upcoming.get();
                         fromUpcoming++;
-                    } else {
+                    } else if (StringUtils.isBlank(row.commercialTrack)) {
                         gaps.add(new TrackGap(schedule.trainNumber, row));
                     }
                 }
@@ -419,7 +416,8 @@ public class NeTExService {
                 + "peti_quays={}",
                 petiStops.isEmpty() ? "empty" : "success", petiStops.size(), petiQuays);
 
-        // Without PETI no stop gets a location, so the package would look complete while carrying nothing
+        // Without PETI no stop gets a location, so the package would look complete
+        // while carrying nothing
         // a consumer can place on a map.
         if (petiStops.isEmpty()) {
             log.error("event=generateNeTEx method=computeDataset outcome=error error.type=EmptyPetiSnapshot "

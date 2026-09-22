@@ -48,7 +48,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * Tests for NeTExService match-rate guard logic.
  */
 class NeTExServiceMatchRateGuardTest {
-        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
+    private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     @Test
     void givenEmptyPetiSource_whenGenerating_thenGenerationIsRefused() {
@@ -57,7 +57,8 @@ class NeTExServiceMatchRateGuardTest {
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
         final List<Station> stations = createStations(List.of("HKI", "TPE"));
 
-        // when/then — publishing a package with no stop assignments at all is worse than publishing none
+        // when/then — publishing a package with no stop assignments at all is worse
+        // than publishing none
         assertThrows(IllegalStateException.class,
                 () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
     }

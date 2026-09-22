@@ -39,7 +39,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * Filling a track from what the train was last seen on, matched on the exact schedule
+ * Filling a track from what the train was last seen on, matched on the exact
+ * schedule
  * part ({@code attapId}).
  */
 class NeTExServiceHistoryFillTest {
@@ -48,7 +49,8 @@ class NeTExServiceHistoryFillTest {
     private static final List<String> STATIONS = List.of("HKI", "PSL", "TPE");
 
     /**
-     * A departure observation of the exact schedule part fills the stop: a row that both
+     * A departure observation of the exact schedule part fills the stop: a row that
+     * both
      * arrives and departs carries one track, so either part answers it.
      */
     @Test
@@ -105,7 +107,10 @@ class NeTExServiceHistoryFillTest {
         return service;
     }
 
-    /** Generation refuses an empty PETI snapshot; these tests are about track filling, not stop matching. */
+    /**
+     * Generation refuses an empty PETI snapshot; these tests are about track
+     * filling, not stop matching.
+     */
     private static PetiStopSource petiSourceWithOneStopPlace() {
         return () -> List.of(
                 new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
@@ -127,7 +132,10 @@ class NeTExServiceHistoryFillTest {
         return stations;
     }
 
-    /** Long-distance IC schedule; PSL (index 1) has arrival part 4 and departure part 5. */
+    /**
+     * Long-distance IC schedule; PSL (index 1) has arrival part 4 and departure
+     * part 5.
+     */
     private static Schedule createSchedule() {
         final Schedule schedule = new Schedule();
         schedule.id = 1L;
