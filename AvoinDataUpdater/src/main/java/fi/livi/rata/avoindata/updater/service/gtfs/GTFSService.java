@@ -15,6 +15,11 @@ import java.util.stream.Stream;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.FeedMetricsSink;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsOutcome;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
@@ -87,7 +92,7 @@ public class GTFSService {
     /** Emitted with an identical field set on every path; only the level differs. */
     private void logRunEvent(final GtfsRunMetrics metrics) {
         try {
-            final String event = GtfsRunMetrics.toLogFields(metrics.finalEvent());
+            final String event = LogFields.of(metrics.finalEvent());
             if (metrics.outcome() == GtfsOutcome.SUCCESS) {
                 log.info("{}", event);
             } else {

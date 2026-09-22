@@ -14,6 +14,9 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.ShapeMetricsSink;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Shape;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
@@ -53,7 +56,7 @@ public class GTFSShapeService {
                     realShapes += group.shapes().size();
                 }
                 metrics.recordShapeProcessed(++processedShapes, distinctShapes)
-                        .ifPresent(heartbeat -> log.info("{}", GtfsRunMetrics.toLogFields(heartbeat)));
+                        .ifPresent(heartbeat -> log.info("{}", LogFields.of(heartbeat)));
             }
 
             trip.shapeId = stops;
@@ -166,7 +169,7 @@ public class GTFSShapeService {
             GtfsRunScope.shapeMetrics().recordRouteFailure(segment,
                             e.getRequest() == null ? "" : e.getRequest().getURI().getPath(),
                             e.getStatusCode().value(), e.getClass().getSimpleName())
-                    .ifPresent(sample -> log.warn("{}", GtfsRunMetrics.toLogFields(sample)));
+                    .ifPresent(sample -> log.warn("{}", LogFields.of(sample)));
             return fallback(startStop, endStop, NoGeometryReason.ROUTE_HTTP_ERROR);
         } catch (final Exception e) {
             failedSegments.record(segment);

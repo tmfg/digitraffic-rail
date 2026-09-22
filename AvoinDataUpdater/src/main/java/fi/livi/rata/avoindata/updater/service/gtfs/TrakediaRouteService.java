@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.RouteMetricsSink;
 import fi.livi.rata.avoindata.updater.service.gtfs.djikstra.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import org.locationtech.jts.geom.Coordinate;

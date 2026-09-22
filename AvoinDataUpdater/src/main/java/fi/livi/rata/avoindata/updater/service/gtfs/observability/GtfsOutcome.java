@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 import java.util.Locale;
 

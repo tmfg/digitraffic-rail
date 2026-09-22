@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 /**
  * What {@link TrakediaRouteService} knows about its own work, in its own vocabulary. The caller's

@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -17,10 +17,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiSource;
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiMetricsSink;
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiSource;
 
 /**
  * Accumulates the values emitted as the wide event of one GTFS run. Records only.
@@ -268,30 +269,6 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
 
     private UpstreamMetrics dataset(final InfraApiDataset dataset) {
         return upstream.computeIfAbsent(dataset, ignored -> new UpstreamMetrics());
-    }
-
-    /**
-     * Renders an event as the space-separated {@code key=value} message that
-     * {@code LoggerMessageKeyValuePairJsonProvider} turns into JSON fields. Logging the map itself
-     * would produce {@code Map.toString()}, which that provider cannot parse.
-     */
-    public static String toLogFields(final Map<String, Object> event) {
-        return event.entrySet().stream()
-                .map(field -> field.getKey() + "=" + logValue(field.getValue()))
-                .collect(Collectors.joining(" "));
-    }
-
-    /** The provider drops blank values, so absent ones are spelled out to keep the field set stable. */
-    private static String logValue(final Object value) {
-        if (value == null) {
-            return "NULL";
-        }
-        final String text = String.valueOf(value);
-        if (text.isBlank()) {
-            return "NULL";
-        }
-        // The provider splits on spaces and on the first '=', so either would truncate the field.
-        return text.replace(' ', '_').replace('=', '_');
     }
 
     private String topDummyStations() {

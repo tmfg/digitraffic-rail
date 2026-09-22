@@ -17,6 +17,9 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.locationtech.proj4j.ProjCoordinate;
 
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsOutcome;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Shape;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;

@@ -4,6 +4,8 @@ import fi.livi.rata.avoindata.updater.config.InfraApiRetry;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.djikstra.NearestPointsService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;

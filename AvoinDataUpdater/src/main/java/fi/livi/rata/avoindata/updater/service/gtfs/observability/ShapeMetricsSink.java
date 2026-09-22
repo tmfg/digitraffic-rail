@@ -1,7 +1,9 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 import java.util.Map;
 import java.util.Optional;
+
+import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 
 /**
  * What {@link GTFSShapeService} records while building one feed's geometry. Feed lifecycle and run

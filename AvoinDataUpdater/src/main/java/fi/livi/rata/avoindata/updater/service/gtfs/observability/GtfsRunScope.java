@@ -1,6 +1,6 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiMetricsSink;
 
 /**
  * The metrics accumulator of the GTFS run executing on this thread. Bound for the duration of a run.

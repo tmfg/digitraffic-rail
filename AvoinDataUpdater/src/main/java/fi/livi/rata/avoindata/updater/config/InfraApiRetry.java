@@ -12,7 +12,7 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 
 /**

@@ -14,6 +14,8 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.*;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;

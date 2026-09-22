@@ -29,10 +29,10 @@ import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
-import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunMetrics;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiSource;
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiSource;
 
 /**
  * infra-api version 0.4 or newer is needed!
@@ -219,9 +219,9 @@ public class TrakediaLiikennepaikkaService {
         event.put("duration_ms", System.currentTimeMillis() - startedAt);
 
         if (result.complete()) {
-            logger.info("{}", GtfsRunMetrics.toLogFields(event));
+            logger.info("{}", LogFields.of(event));
         } else {
-            logger.error("{}", GtfsRunMetrics.toLogFields(event));
+            logger.error("{}", LogFields.of(event));
         }
     }
 

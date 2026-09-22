@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service.gtfs;
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.updater.observability.LogFields;
+import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -222,42 +225,6 @@ class GtfsRunMetricsTest {
 
         // Then
         assertThat(event).containsEntry("rail.gtfs.segments.dummy.stations.top", "HKI,TPE");
-    }
-
-    @Test
-    void givenAnEventWhenRenderedForLoggingThenPairsAreSpaceSeparated() {
-        // Given the log provider splits on spaces and on the first '='
-        final Map<String, Object> event = new LinkedHashMap<>();
-        event.put("operation", "generateGtfs");
-        event.put("rail.gtfs.segments.dummy", 3);
-        event.put("rail.gtfs.feed.published", true);
-
-        // When / Then
-        assertThat(GtfsRunMetrics.toLogFields(event))
-                .isEqualTo("operation=generateGtfs rail.gtfs.segments.dummy=3 rail.gtfs.feed.published=true");
-    }
-
-    @Test
-    void givenAbsentValuesWhenRenderedForLoggingThenTheFieldSurvivesAsNull() {
-        // Given success and error events must share one field set
-        final Map<String, Object> event = new LinkedHashMap<>();
-        event.put("error.type", "");
-        event.put("rail.gtfs.feeds.degraded", null);
-
-        // When / Then a blank value would otherwise be dropped by the provider
-        assertThat(GtfsRunMetrics.toLogFields(event)).isEqualTo("error.type=NULL rail.gtfs.feeds.degraded=NULL");
-    }
-
-    @Test
-    void givenValuesWithSeparatorsWhenRenderedForLoggingThenTheFieldIsNotTruncated() {
-        // Given
-        final Map<String, Object> event = new LinkedHashMap<>();
-        event.put("error.message", "too many concurrent operations");
-        event.put("url.full", "https://example.invalid/reitit?time=now");
-
-        // When / Then the value stays in one parseable token instead of losing its tail
-        assertThat(GtfsRunMetrics.toLogFields(event))
-                .isEqualTo("error.message=too_many_concurrent_operations url.full=https://example.invalid/reitit?time_now");
     }
 
     /** Mirrors what GTFSShapeService does: segment totals here, reason attribution alongside. */

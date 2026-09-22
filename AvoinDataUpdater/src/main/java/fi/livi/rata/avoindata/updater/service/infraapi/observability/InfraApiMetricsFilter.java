@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.config;
+package fi.livi.rata.avoindata.updater.service.infraapi.observability;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -7,9 +7,8 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 
-import fi.livi.rata.avoindata.updater.service.gtfs.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
-import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMetricsSink;
 import reactor.core.publisher.Mono;
 
 /**

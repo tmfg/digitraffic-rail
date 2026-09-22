@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import tools.jackson.databind.json.JsonMapper;
 
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiMetricsFilter;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;

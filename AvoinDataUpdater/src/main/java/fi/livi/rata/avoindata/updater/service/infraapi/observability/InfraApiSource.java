@@ -1,4 +1,4 @@
-package fi.livi.rata.avoindata.updater.service.infraapi;
+package fi.livi.rata.avoindata.updater.service.infraapi.observability;
 
 import java.util.Map;
 
