@@ -1,8 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +69,7 @@ public class GTFSService {
     @Scheduled(cron = "${updater.gtfs.cron}", zone = "UTC")
     public void generateGTFS() {
         TimingUtil.log(log, "generateGTFS", () -> {
-            final GtfsRunMetrics metrics = new GtfsRunMetrics(Clock.systemUTC());
+            final GtfsRunMetrics metrics = new GtfsRunMetrics();
             GtfsRunScope.run(metrics, () -> {
                 try {
                     final LocalDate start = DateProvider.dateInHelsinki().minusDays(7);
@@ -148,7 +148,7 @@ public class GTFSService {
                               final List<Schedule> passengerRegularSchedules,
                               final String zipFileName,
                               final boolean filterOutNonStopsAndMuseumTrains) throws IOException {
-        final GtfsRunMetrics metrics = new GtfsRunMetrics(Clock.systemUTC());
+        final GtfsRunMetrics metrics = new GtfsRunMetrics();
         return GtfsRunScope.call(metrics, () -> {
             try {
                 return createGtfs(passengerAdhocSchedules, passengerRegularSchedules, zipFileName,
@@ -202,7 +202,7 @@ public class GTFSService {
     }
 
     public void generateGTFS(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) throws IOException {
-        final GtfsRunMetrics metrics = new GtfsRunMetrics(Clock.systemUTC());
+        final GtfsRunMetrics metrics = new GtfsRunMetrics();
         GtfsRunScope.call(metrics, () -> {
             try {
                 generateGTFS(adhocSchedules, regularSchedules, metrics);
@@ -218,7 +218,7 @@ public class GTFSService {
 
     /** Fixed for the run so every feed queries the same infrastructure validity date. */
     private static LocalDate runDate() {
-        return LocalDate.now(Clock.systemUTC());
+        return LocalDate.now(ZoneOffset.UTC);
     }
 
     /**

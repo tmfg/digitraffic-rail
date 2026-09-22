@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.infraapi.observability;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -32,7 +33,7 @@ public class InfraApiMetricsFilter implements ExchangeFilterFunction {
         final InfraApiMetricsSink sink = GtfsRunScope.infraApiMetrics();
 
         final InfraApiDataset dataset = InfraApiDataset.fromPath(path);
-        final long startedAtMs = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
 
         return next.exchange(request)
                 // Recorded when the body completes, not when headers arrive: latency has to include
@@ -43,15 +44,15 @@ public class InfraApiMetricsFilter implements ExchangeFilterFunction {
                             return body
                                     .doOnNext(buffer -> bytes.addAndGet(buffer.readableByteCount()))
                                     .doOnComplete(() -> sink.recordUpstreamResponse(dataset,
-                                            response.statusCode().value(), elapsedMs(startedAtMs), bytes.get()))
+                                            response.statusCode().value(), elapsedMs(stopWatch), bytes.get()))
                                     .doOnError(error -> sink.recordUpstreamTransportError(dataset,
-                                            elapsedMs(startedAtMs), error));
+                                            elapsedMs(stopWatch), error));
                         })
                         .build())
-                .doOnError(error -> sink.recordUpstreamTransportError(dataset, elapsedMs(startedAtMs), error));
+                .doOnError(error -> sink.recordUpstreamTransportError(dataset, elapsedMs(stopWatch), error));
     }
 
-    private static long elapsedMs(final long startedAtMs) {
-        return System.currentTimeMillis() - startedAtMs;
+    private static long elapsedMs(final StopWatch stopWatch) {
+        return stopWatch.getDuration().toMillis();
     }
 }

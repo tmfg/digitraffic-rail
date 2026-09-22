@@ -1,7 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.lang.reflect.Field;
-import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +49,7 @@ class GTFSShapeServiceTest {
         service = new GTFSShapeService();
         routeService = mock(TrakediaRouteService.class);
         splitterService = mock(StoptimesSplitterService.class);
-        metrics = new GtfsRunMetrics(Clock.systemUTC());
+        metrics = new GtfsRunMetrics();
         failedSegments = new FailedSegments();
         final Wgs84ConversionService conversionService = mock(Wgs84ConversionService.class);
         when(conversionService.wgs84Tolivi(org.mockito.ArgumentMatchers.anyDouble(),

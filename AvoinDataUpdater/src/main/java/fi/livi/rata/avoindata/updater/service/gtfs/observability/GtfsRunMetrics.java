@@ -1,7 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
-import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +14,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.time.StopWatch;
 
 import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
@@ -32,8 +32,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
     private static final int TOP_DUMMY_STATIONS = 10;
     private static final String NO_FEED = "unknown";
 
-    private final Clock clock;
-    private final Instant startedAt;
+    private final StopWatch runTimer = StopWatch.createStarted();
     private final Set<String> sampledFailureIdentities = new LinkedHashSet<>();
     private final List<Map<String, Object>> failureSamples = new ArrayList<>();
     private final Map<NoGeometryReason, Integer> dummyReasons = new EnumMap<>(NoGeometryReason.class);
@@ -43,7 +42,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
     private final Set<String> failedFeedNames = new LinkedHashSet<>();
     private final Set<String> degradedFeedNames = new LinkedHashSet<>();
     private final Map<InfraApiDataset, UpstreamMetrics> upstream = new EnumMap<>(InfraApiDataset.class);
-    private Instant feedStartedAt;
+    private StopWatch feedTimer = StopWatch.createStarted();
     private String currentFeedName = NO_FEED;
     private long suppressedFailures;
     private int routeLookups;
@@ -57,12 +56,6 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
     private String nodeCacheState = "";
     private long nodeCacheAgeMs;
     private String errorType;
-
-    public GtfsRunMetrics(final Clock clock) {
-        this.clock = clock;
-        this.startedAt = clock.instant();
-        this.feedStartedAt = startedAt;
-    }
 
     /**
      * @return the diagnostic event for this failure while the per-run cap allows it, otherwise
@@ -119,7 +112,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
     }
 
     public void recordFeedAttempt(final String feedName) {
-        feedStartedAt = clock.instant();
+        feedTimer = StopWatch.createStarted();
         currentFeedName = feedName;
         attemptedFeedNames.add(feedName);
     }
@@ -169,7 +162,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         stationCount = nodeMap.countOf(InfraApiDataset.RAUTATIELIIKENNEPAIKAT);
         stationPartCount = nodeMap.countOf(InfraApiDataset.LIIKENNEPAIKANOSAT);
         nodeCacheState = nodeMap.cacheState().name().toLowerCase(Locale.ROOT);
-        nodeCacheAgeMs = nodeMap.age(clock.instant()).toMillis();
+        nodeCacheAgeMs = nodeMap.age(Instant.now()).toMillis();
     }
 
     public void markError(final Throwable throwable) {
@@ -199,7 +192,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
                 NoGeometryReason.ROUTE_HTTP_ERROR)) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
-        event.put("duration_ms", Duration.between(feedStartedAt, clock.instant()).toMillis());
+        event.put("duration_ms", feedTimer.getDuration().toMillis());
         return Optional.of(event);
     }
 
@@ -226,7 +219,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("operation", "generateGtfs");
         event.put("rail.entity.type", "gtfs_feed");
         event.put("outcome", outcome().attribute());
-        event.put("duration_ms", Duration.between(startedAt, clock.instant()).toMillis());
+        event.put("duration_ms", runTimer.getDuration().toMillis());
         event.put("error.type", errorType == null ? "" : errorType);
         InfraApiSource.addTo(event);
         event.put("rail.gtfs.feeds.attempted", attemptedFeedNames.size());

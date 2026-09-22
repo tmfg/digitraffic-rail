@@ -12,7 +12,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.lang.reflect.Field;
-import java.time.Clock;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -76,7 +75,7 @@ class TrakediaRouteServiceTest {
         // Given an HTTP 200 that carries no geometry, which no transport metric can detect
         when(webClient.get().uri(anyString()).retrieve().bodyToMono(tools.jackson.databind.JsonNode.class).block())
                 .thenReturn(JsonMapper.builder().build().readTree("{\"geometria\":[]}"));
-        final GtfsRunMetrics metrics = new GtfsRunMetrics(Clock.systemUTC());
+        final GtfsRunMetrics metrics = new GtfsRunMetrics();
 
         // When
         final var result = GtfsRunScope.call(metrics,

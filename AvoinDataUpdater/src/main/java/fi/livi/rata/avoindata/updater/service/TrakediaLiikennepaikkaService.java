@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.locationtech.jts.geom.Coordinate;
+import org.apache.commons.lang3.time.StopWatch;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
@@ -183,16 +184,16 @@ public class TrakediaLiikennepaikkaService {
      */
     private <V> ExpiringCache.CacheResult<InfraApiMapResult<V>> loadMap(final MapKind kind,
                                                                        final Supplier<InfraApiMapResult<V>> fetch) {
-        final long startedAt = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
 
         try {
             final InfraApiMapResult<V> result = fetch.get();
-            logSourceRefresh(kind, result, startedAt);
+            logSourceRefresh(kind, result, stopWatch);
             return new ExpiringCache.CacheResult<>(result.complete(), result);
         } catch (final RuntimeException e) {
             final InfraApiMapResult<V> failed = InfraApiMapResult.failed(e, Instant.now(),
                     InfraApiMapResult.CacheState.REFRESH_FAILED);
-            logSourceRefresh(kind, failed, startedAt);
+            logSourceRefresh(kind, failed, stopWatch);
             return new ExpiringCache.CacheResult<>(false, failed);
         }
     }
@@ -205,7 +206,7 @@ public class TrakediaLiikennepaikkaService {
                 new MapKind("refreshInfraApiCoordinateMap", "infra_coordinate_map", "rail.infra.coordinates.");
     }
 
-    private void logSourceRefresh(final MapKind kind, final InfraApiMapResult<?> result, final long startedAt) {
+    private void logSourceRefresh(final MapKind kind, final InfraApiMapResult<?> result, final StopWatch stopWatch) {
         final Map<String, Object> event = new LinkedHashMap<>();
         event.put("operation", kind.operation());
         event.put("outcome", result.complete() ? "success" : result.failure() == null ? "degraded" : "error");
@@ -216,7 +217,7 @@ public class TrakediaLiikennepaikkaService {
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
             event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
         }
-        event.put("duration_ms", System.currentTimeMillis() - startedAt);
+        event.put("duration_ms", stopWatch.getDuration().toMillis());
 
         if (result.complete()) {
             logger.info("{}", LogFields.of(event));

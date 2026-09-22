@@ -37,8 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -147,7 +145,7 @@ public class GTFSDtoServiceTest extends BaseTest {
 
     private GTFSDto createEntity(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules,
                                  final Map<String, JsonNode> nodes) {
-        return GtfsRunScope.call(new GtfsRunMetrics(Clock.systemUTC()),
+        return GtfsRunScope.call(new GtfsRunMetrics(),
                 () -> gtfsService.createGTFSEntity(adhocSchedules, regularSchedules, nodes, LocalDate.now(),
                         new FailedSegments()));
     }

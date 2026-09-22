@@ -1,25 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GtfsRunMetricsTest {
-    private static final Clock CLOCK = Clock.fixed(Instant.parse("2025-09-17T03:00:00Z"), ZoneOffset.UTC);
 
     private static GtfsRunMetrics metrics() {
-        return new GtfsRunMetrics(CLOCK);
+        return new GtfsRunMetrics();
     }
 
     @Test
