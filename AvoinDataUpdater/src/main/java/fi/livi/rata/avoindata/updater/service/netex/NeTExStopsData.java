@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -102,7 +101,6 @@ public class NeTExStopsData {
     public record NeTExDestinationDisplay(String id, String frontText) {
     }
 
-    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String stopPlaceRef,
-            String quayRef) {
+    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String quayRef) {
     }
 }

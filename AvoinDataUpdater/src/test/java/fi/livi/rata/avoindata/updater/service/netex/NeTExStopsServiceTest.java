@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.updater.service.netex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -163,8 +162,10 @@ class NeTExStopsServiceTest {
 
         @Test
         void givenMatchingPetiStop_whenCreatingStops_thenAssignmentProduced() {
-                // given — station UIC 1 matches PETI stop with UIC 1_000_001
-                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null, List.of());
+                // given — station UIC 1 matches PETI stop with UIC 1_000_001, track "1" is a
+                // quay there
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:11", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
                                 fixturePetiSource(List.of(petiStop)));
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,
@@ -172,13 +173,13 @@ class NeTExStopsServiceTest {
 
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
-                                nullTrackPairs(List.of(station)));
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "1")));
 
                 // then
                 assertEquals(1, stopsData.getStopAssignments().size());
                 final var assignment = stopsData.getStopAssignments().get(0);
-                assertEquals("FTR:ScheduledStopPoint:HKI", assignment.scheduledStopPointRef());
-                assertEquals("FSR:StopPlace:1", assignment.stopPlaceRef());
+                assertEquals("FTR:ScheduledStopPoint:HKI-1", assignment.scheduledStopPointRef());
+                assertEquals("FSR:Quay:11", assignment.quayRef());
         }
 
         @Test
@@ -204,7 +205,8 @@ class NeTExStopsServiceTest {
         @Test
         void givenMixedMatchAndUnmatch_whenCreatingStops_thenCountsSumCorrectly() {
                 // given — two passenger stations: one matched, one unmatched
-                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null, List.of());
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:11", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
                                 fixturePetiSource(List.of(petiStop)));
                 final Station matchedStation = createStation("HKI", "Helsinki asema", 1, true,
@@ -215,7 +217,8 @@ class NeTExStopsServiceTest {
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(
                                 List.of(matchedStation, unmatchedStation),
-                                nullTrackPairs(List.of(matchedStation, unmatchedStation)));
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "1"),
+                                                new NeTExStopsService.StationTrackPair("TPE", null)));
 
                 // then
                 assertEquals(1, stopsData.getStopAssignments().size());
@@ -243,11 +246,11 @@ class NeTExStopsServiceTest {
         }
 
         @Test
-        void givenMatchingPetiStop_whenCreatingStops_thenStopPlaceRefIsVerbatimFromPetiStop() {
-                // given — verify the stopPlaceRef is the verbatim string from PetiStop, not
+        void givenMatchingQuay_whenCreatingStops_thenQuayRefIsVerbatimFromPetiQuay() {
+                // given — verify the quayRef is the verbatim string from PetiQuay, not
                 // computed
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:42", 1_000_001, "Helsinki", true, null,
-                                List.of());
+                                List.of(quay("FSR:Quay:4711", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
                                 fixturePetiSource(List.of(petiStop)));
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,
@@ -255,15 +258,15 @@ class NeTExStopsServiceTest {
 
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
-                                nullTrackPairs(List.of(station)));
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "1")));
 
-                // then — stopPlaceRef is the verbatim string from the matched PetiStop
+                // then — quayRef is the verbatim string from the matched PetiQuay
                 assertEquals(1, stopsData.getStopAssignments().size());
-                assertEquals("FSR:StopPlace:42", stopsData.getStopAssignments().get(0).stopPlaceRef());
+                assertEquals("FSR:Quay:4711", stopsData.getStopAssignments().get(0).quayRef());
         }
 
         @Test
-        void givenNoTrackAndSingleQuayStopPlace_whenCreatingStops_thenLeavesQuayUnset() {
+        void givenNoTrackAndSingleQuayStopPlace_whenCreatingStops_thenNoAssignmentIsProduced() {
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:7", 1_000_001, "Dragsvik", true, null,
                                 List.of(quay("FSR:Quay:70", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -275,12 +278,12 @@ class NeTExStopsServiceTest {
                                 nullTrackPairs(List.of(station)));
 
                 // no track: the quay is chosen upstream from the resolved track, not guessed
-                // here
-                assertNull(stopsData.getStopAssignments().get(0).quayRef());
+                // here, and an assignment without a quay says nothing
+                assertTrue(stopsData.getStopAssignments().isEmpty());
         }
 
         @Test
-        void givenNoTrackAndSeveralQuays_whenCreatingStops_thenLeavesQuayUnset() {
+        void givenNoTrackAndSeveralQuays_whenCreatingStops_thenNoAssignmentIsProduced() {
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:8", 1_000_001, "Helsinki", true, null,
                                 List.of(quay("FSR:Quay:82", "2"), quay("FSR:Quay:81", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
@@ -292,14 +295,15 @@ class NeTExStopsServiceTest {
                                 nullTrackPairs(List.of(station)));
 
                 // no track: the quay is chosen upstream from the resolved track, not guessed
-                // here
-                assertNull(stopsData.getStopAssignments().get(0).quayRef());
+                // here, and an assignment without a quay says nothing
+                assertTrue(stopsData.getStopAssignments().isEmpty());
         }
 
         @Test
         void givenMatchingPetiStop_whenCreatingStops_thenAssignmentIdFollowsPattern() {
                 // given
-                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null, List.of());
+                final PetiStop petiStop = new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null,
+                                List.of(quay("FSR:Quay:11", "1")));
                 final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
                                 fixturePetiSource(List.of(petiStop)));
                 final Station station = createStation("HKI", "Helsinki asema", 1, true,
@@ -307,11 +311,11 @@ class NeTExStopsServiceTest {
 
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station),
-                                nullTrackPairs(List.of(station)));
+                                List.of(new NeTExStopsService.StationTrackPair("HKI", "1")));
 
-                // then — assignment ID follows FTR:PassengerStopAssignment:{shortCode}
+                // then — assignment ID follows FTR:PassengerStopAssignment:{shortCode}-{track}
                 assertEquals(1, stopsData.getStopAssignments().size());
-                assertEquals("FTR:PassengerStopAssignment:HKI", stopsData.getStopAssignments().get(0).id());
+                assertEquals("FTR:PassengerStopAssignment:HKI-1", stopsData.getStopAssignments().get(0).id());
         }
 
         @Test
@@ -337,7 +341,7 @@ class NeTExStopsServiceTest {
         }
 
         @Test
-        void givenStationAndTrackWithMatchingQuay_whenCreatingStops_thenAssignmentHasStopPlaceRefAndQuayRef() {
+        void givenStationAndTrackWithMatchingQuay_whenCreatingStops_thenAssignmentHasQuayRef() {
                 // given — station HKI / track "4", PetiStop with quay PublicCode "4" →
                 // FSR:Quay:7
                 final PetiQuay quay4 = quayAt("FSR:Quay:7", "4", "60.172500", "24.942000");
@@ -352,17 +356,16 @@ class NeTExStopsServiceTest {
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station), trackPairs);
 
-                // then — assignment must have both StopPlaceRef AND QuayRef
+                // then — assignment must carry the QuayRef
                 final var assignment = stopsData.getStopAssignments().stream()
                                 .filter(a -> a.scheduledStopPointRef().contains("HKI"))
                                 .findFirst();
                 assertTrue(assignment.isPresent(), "Expected an assignment for HKI");
-                assertEquals("FSR:StopPlace:1", assignment.get().stopPlaceRef());
                 assertEquals("FSR:Quay:7", assignment.get().quayRef());
         }
 
         @Test
-        void givenStationAndTrackWithNoMatchingQuay_whenCreatingStops_thenAssignmentHasNoQuayRef() {
+        void givenStationAndTrackWithNoMatchingQuay_whenCreatingStops_thenNoAssignmentIsProduced() {
                 // given — station TPE / track "3", PetiStop has quays but none with PublicCode
                 // "3"
                 final PetiQuay quay1 = quay("FSR:Quay:20", "1");
@@ -378,13 +381,8 @@ class NeTExStopsServiceTest {
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station), trackPairs);
 
-                // then — assignment has stopPlaceRef but quayRef is null
-                final var assignment = stopsData.getStopAssignments().stream()
-                                .filter(a -> a.scheduledStopPointRef().contains("TPE"))
-                                .findFirst();
-                assertTrue(assignment.isPresent(), "Expected an assignment for TPE");
-                assertEquals("FSR:StopPlace:2", assignment.get().stopPlaceRef());
-                assertNull(assignment.get().quayRef(), "QuayRef should be null when no matching quay");
+                // then — no assignment, because no quay resolves
+                assertTrue(stopsData.getStopAssignments().isEmpty(), "Expected no assignment for TPE");
                 // SSP should still be track-qualified
                 final boolean hasTrackSsp = stopsData.getScheduledStopPoints().stream()
                                 .anyMatch(ssp -> "FTR:ScheduledStopPoint:TPE-3".equals(ssp.id()));
@@ -586,6 +584,44 @@ class NeTExStopsServiceTest {
         }
 
         @Test
+        void givenStopPlaceWithNoQuays_whenCreatingStops_thenSummaryErrorNamesTheStation() {
+                // given — the stop place exists but publishes no platform, so no QuayRef can be
+                // written
+                final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
+                                List.of());
+                final NeTExStopsService serviceWithPeti = new NeTExStopsService(idGenerator,
+                                fixturePetiSource(List.of(tampere)));
+                final Station station = createStation("TPE", "Tampere", 160, true,
+                                new BigDecimal("61.498500"), new BigDecimal("23.773000"));
+
+                final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExStopsService.class);
+                final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+                appender.start();
+                logbackLogger.addAppender(appender);
+
+                try {
+                        // when
+                        serviceWithPeti.createStopsData(List.of(station),
+                                        List.of(new NeTExStopsService.StationTrackPair("TPE", null)));
+
+                        // then
+                        final String summary = appender.list.stream()
+                                        .filter(e -> e.getLevel() == Level.ERROR)
+                                        .map(ILoggingEvent::getFormattedMessage)
+                                        .filter(m -> m.contains("publishes no quays"))
+                                        .findFirst()
+                                        .orElseThrow(() -> new AssertionError(
+                                                        "Expected a summary of stop places without quays, got: "
+                                                                        + appender.list));
+
+                        assertTrue(summary.contains("count=1"), summary);
+                        assertTrue(summary.contains("TPE(160)"), summary);
+                } finally {
+                        logbackLogger.detachAppender(appender);
+                }
+        }
+
+        @Test
         void givenEveryStationMatchesPeti_whenCreatingStops_thenNoStationSummaryIsLogged() {
                 final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
                                 List.of(quay("FSR:Quay:20", "1")));
@@ -630,15 +666,14 @@ class NeTExStopsServiceTest {
                 final boolean hasStationLevelSsp = stopsData.getScheduledStopPoints().stream()
                                 .anyMatch(ssp -> "FTR:ScheduledStopPoint:OL".equals(ssp.id()));
                 assertTrue(hasStationLevelSsp, "Expected station-level SSP 'FTR:ScheduledStopPoint:OL'");
-                // assignment (if present) should have no QuayRef
-                stopsData.getStopAssignments().stream()
-                                .filter(a -> a.scheduledStopPointRef().contains("OL"))
-                                .forEach(a -> assertNull(a.quayRef(),
-                                                "Station-level assignment should have no QuayRef"));
+                // and no assignment, because no quay resolves without a track
+                assertTrue(stopsData.getStopAssignments().stream()
+                                .noneMatch(a -> a.scheduledStopPointRef().contains("OL")),
+                                "Station-level stop point should have no assignment");
         }
 
         @Test
-        void givenStopPlaceWithNoQuays_whenCreatingStopsWithTrack_thenAssignmentHasNoQuayRef() {
+        void givenStopPlaceWithNoQuays_whenCreatingStopsWithTrack_thenNoAssignmentIsProduced() {
                 // given — PetiStop has no quays at all, but track "1" is present in schedule
                 final PetiStop petiStop = new PetiStop("FSR:StopPlace:5", 1_000_300, "Seinäjoki", true, null,
                                 List.of());
@@ -651,13 +686,8 @@ class NeTExStopsServiceTest {
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station), trackPairs);
 
-                // then — assignment has stopPlaceRef, but quayRef is null (no quays to match)
-                final var assignment = stopsData.getStopAssignments().stream()
-                                .filter(a -> a.scheduledStopPointRef().contains("SK"))
-                                .findFirst();
-                assertTrue(assignment.isPresent(), "Expected an assignment for SK");
-                assertEquals("FSR:StopPlace:5", assignment.get().stopPlaceRef());
-                assertNull(assignment.get().quayRef(), "QuayRef should be null when StopPlace has no quays");
+                // then — no assignment, because the stop place has no quay to point at
+                assertTrue(stopsData.getStopAssignments().isEmpty(), "Expected no assignment for SK");
         }
 
         @Test
@@ -759,12 +789,11 @@ class NeTExStopsServiceTest {
                 // when
                 final NeTExStopsData stopsData = serviceWithPeti.createStopsData(List.of(station), trackPairs);
 
-                // then — assignment has both StopPlaceRef and QuayRef
+                // then — assignment carries the QuayRef
                 final var assignment = stopsData.getStopAssignments().stream()
                                 .filter(a -> a.scheduledStopPointRef().contains("TRV"))
                                 .findFirst();
                 assertTrue(assignment.isPresent(), "Expected an assignment for Tervola");
-                assertEquals("FSR:StopPlace:1", assignment.get().stopPlaceRef());
                 assertEquals("FSR:Quay:10", assignment.get().quayRef());
         }
 

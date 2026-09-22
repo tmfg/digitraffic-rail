@@ -35,7 +35,7 @@ class NeTExWritingServiceStopAssignmentTest {
                 // given
                 final var testData = createTestDataWithAssignments(List.of(
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:Quay:1")));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
@@ -48,7 +48,7 @@ class NeTExWritingServiceStopAssignmentTest {
                 assertTrue(xml.contains("<PassengerStopAssignment"), "Should contain PassengerStopAssignment element");
                 assertTrue(xml.contains("FTR:PassengerStopAssignment:HKI"), "Should contain assignment ID");
                 assertTrue(xml.contains("FTR:ScheduledStopPoint:HKI"), "Should contain ScheduledStopPointRef");
-                assertTrue(xml.contains("FSR:StopPlace:1"), "Should contain StopPlaceRef");
+                assertTrue(xml.contains("FSR:Quay:1"), "Should contain QuayRef");
         }
 
         @Test
@@ -91,11 +91,11 @@ class NeTExWritingServiceStopAssignmentTest {
                 // so a missing or repeated order fails validation outright
                 final var testData = createTestDataWithAssignments(List.of(
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:Quay:1"),
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
-                                                "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null),
+                                                "FTR:ScheduledStopPoint:TPE", "FSR:Quay:2"),
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:OL",
-                                                "FTR:ScheduledStopPoint:OL", "FSR:StopPlace:3", null)));
+                                                "FTR:ScheduledStopPoint:OL", "FSR:Quay:3")));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
@@ -124,9 +124,9 @@ class NeTExWritingServiceStopAssignmentTest {
                 // given
                 final var testData = createTestDataWithAssignments(List.of(
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null),
+                                                "FTR:ScheduledStopPoint:HKI", "FSR:Quay:1"),
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TPE",
-                                                "FTR:ScheduledStopPoint:TPE", "FSR:StopPlace:2", null)));
+                                                "FTR:ScheduledStopPoint:TPE", "FSR:Quay:2")));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
@@ -153,7 +153,7 @@ class NeTExWritingServiceStopAssignmentTest {
                 // given — assignment with quayRef set
                 final var testData = createTestDataWithAssignments(List.of(
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
-                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:Quay:10")));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(
@@ -168,30 +168,11 @@ class NeTExWritingServiceStopAssignmentTest {
         }
 
         @Test
-        void givenAssignmentWithNullQuayRef_whenWritingZip_thenXmlDoesNotContainQuayRef() throws Exception {
-                // given — assignment with quayRef null (station-level only)
-                final var testData = createTestDataWithAssignments(List.of(
-                                new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:HKI",
-                                                "FTR:ScheduledStopPoint:HKI", "FSR:StopPlace:1", null)));
-
-                // when
-                final byte[] zip = writingService.writeNeTExZip(
-                                testData.stopsData(), testData.routeData(),
-                                testData.lines(), testData.operators(), testData.serviceJourneys(),
-                                testData.timestamp());
-
-                // then — XML does NOT contain QuayRef but still has StopPlaceRef
-                final String xml = extractXmlFromZip(zip);
-                assertFalse(xml.contains("QuayRef"), "Should NOT contain QuayRef when quayRef is null");
-                assertTrue(xml.contains("FSR:StopPlace:1"), "Should still contain StopPlaceRef");
-        }
-
-        @Test
         void givenAssignmentsWithQuayRefs_whenWritingZip_thenBothCodespacesPresent() throws Exception {
-                // given — assignment with FSR StopPlaceRef and FSR QuayRef
+                // given — FTR ids on our own entities, FSR on the quay we reference
                 final var testData = createTestDataWithAssignments(List.of(
                                 new NeTExStopsData.NeTExStopAssignment("FTR:PassengerStopAssignment:TRV-2",
-                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:StopPlace:1", "FSR:Quay:10")));
+                                                "FTR:ScheduledStopPoint:TRV-2", "FSR:Quay:10")));
 
                 // when
                 final byte[] zip = writingService.writeNeTExZip(

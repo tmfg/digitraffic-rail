@@ -86,7 +86,6 @@ import org.rutebanken.netex.model.ServiceCalendarFrame;
 import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.ServiceJourney;
 import org.rutebanken.netex.model.StopAssignmentsInFrame_RelStructure;
-import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPointInJourneyPattern;
 import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
@@ -452,12 +451,8 @@ public class NeTExWritingService {
                                                                 new ScheduledStopPointRefStructure()
                                                                                 .withRef(a.scheduledStopPointRef())
                                                                                 .withVersion("1")))
-                                                .withStopPlaceRef(FACTORY.createStopPlaceRef(
-                                                                new StopPlaceRefStructure().withRef(a.stopPlaceRef())));
-                                if (a.quayRef() != null) {
-                                        psa.withQuayRef(FACTORY.createQuayRef(
-                                                        new QuayRefStructure().withRef(a.quayRef())));
-                                }
+                                                .withQuayRef(FACTORY.createQuayRef(
+                                                                new QuayRefStructure().withRef(a.quayRef())));
                                 assignments.getStopAssignment().add(FACTORY.createPassengerStopAssignment(psa));
                         }
                         frame.withStopAssignments(assignments);

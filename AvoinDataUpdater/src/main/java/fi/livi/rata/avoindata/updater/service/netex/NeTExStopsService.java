@@ -45,7 +45,8 @@ public class NeTExStopsService {
      * produces
      * a track-qualified ScheduledStopPoint
      * (DT:ScheduledStopPoint:{shortCode}-{track})
-     * and, when PETI matches, a PassengerStopAssignment with StopPlaceRef and
+     * and, when PETI publishes a quay for the track, a PassengerStopAssignment
+     * carrying its
      * QuayRef.
      *
      * @param stations          station metadata (for coordinates, names)
@@ -77,6 +78,7 @@ public class NeTExStopsService {
         final Map<String, String> projectionTargets = new HashMap<>();
         final List<String> tracksWithoutQuay = new ArrayList<>();
         final Map<String, Station> stationsWithoutStopPlace = new LinkedHashMap<>();
+        final Map<String, Station> stationsWithoutQuays = new LinkedHashMap<>();
 
         for (final StationTrackPair pair : uniquePairs) {
             final Station station = stationByShortCode.get(pair.stationShortCode());
@@ -116,6 +118,7 @@ public class NeTExStopsService {
                     case MATCHED_NO_TRACK -> {
                         matchedCount++;
                         quayNoTrackCount++;
+                        stationsWithoutQuays.putIfAbsent(station.shortCode, station);
                     }
 
                     case UNMATCHED -> {
@@ -143,8 +146,21 @@ public class NeTExStopsService {
         if (!tracksWithoutQuay.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData "
                     + "count={} tracks={} message=\"no PETI quay for these tracks, stops published without a "
-                    + "QuayRef\"",
+                    + "PassengerStopAssignment\"",
                     tracksWithoutQuay.size(), tracksWithoutQuay);
+        }
+
+        // The stop place exists but publishes no platform at all, so there is no quay
+        // to assign and the
+        // stop has no location anywhere in the package.
+        if (!stationsWithoutQuays.isEmpty()) {
+            log.error("event=generateNeTEx method=createStopsData "
+                    + "count={} stations={} message=\"PETI stop place publishes no quays, stops published "
+                    + "without a PassengerStopAssignment\"",
+                    stationsWithoutQuays.size(),
+                    stationsWithoutQuays.values().stream()
+                            .map(s -> s.shortCode + "(" + s.uicCode + ")")
+                            .toList());
         }
 
         // Every stop point of these stations goes out with no assignment at all, so it
@@ -176,7 +192,7 @@ public class NeTExStopsService {
     }
 
     /**
-     * No location: it resolves through the assignment's quay, or its stop place.
+     * No location: it resolves through the quay its assignment points at.
      */
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
             final Station station) {
@@ -206,24 +222,19 @@ public class NeTExStopsService {
             // A matched station takes its first platform as a track upstream, so a track is
             // only
             // blank here when the stop place publishes no quays at all — nothing to assign.
-            return new AssignmentResult(
-                    Optional.of(new NeTExStopsData.NeTExStopAssignment(
-                            assignmentId, sspId, matched.stopPlaceId(), null)),
-                    Optional.empty(),
-                    MatchOutcome.MATCHED_NO_TRACK);
+            return new AssignmentResult(Optional.empty(), Optional.empty(), MatchOutcome.MATCHED_NO_TRACK);
         }
 
         final Optional<PetiQuay> quay = matched.resolveQuay(track);
         if (quay.isPresent()) {
             return new AssignmentResult(
                     Optional.of(new NeTExStopsData.NeTExStopAssignment(
-                            assignmentId, sspId, matched.stopPlaceId(), quay.get().quayId())),
+                            assignmentId, sspId, quay.get().quayId())),
                     quay,
                     MatchOutcome.MATCHED_QUAY);
         }
 
-        // the schedule names a track PETI does not know, so the assignment loses its
-        // quay and the stop is only locatable to the station
+        // the schedule names a track PETI does not know, so there is no quay to assign
         log.error("event=generateNeTEx method=buildAssignment PETI quay not found for track station={} "
                 + "uic={} track={} stopPlace={} stopPlaceName={} petiTracks={} assignment={}",
                 pair.stationShortCode(), station.uicCode, track,
@@ -231,11 +242,7 @@ public class NeTExStopsService {
                 matched.quays().stream().map(PetiQuay::publicCode).toList(),
                 assignmentId);
 
-        return new AssignmentResult(
-                Optional.of(new NeTExStopsData.NeTExStopAssignment(
-                        assignmentId, sspId, matched.stopPlaceId(), null)),
-                Optional.empty(),
-                MatchOutcome.MATCHED_NO_QUAY);
+        return new AssignmentResult(Optional.empty(), Optional.empty(), MatchOutcome.MATCHED_NO_QUAY);
     }
 
     private enum MatchOutcome {
