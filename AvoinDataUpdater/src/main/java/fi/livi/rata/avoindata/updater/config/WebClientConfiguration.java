@@ -13,6 +13,7 @@ import org.springframework.http.codec.json.JacksonJsonDecoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiMetricsFilter;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -85,6 +86,7 @@ public class WebClientConfiguration {
                 // more memory for default web-client
                 return WebClient.builder()
                                 .clientConnector(new ReactorClientHttpConnector(defaultHttpClient))
+                                .filter(new InfraApiMetricsFilter())
                                 .exchangeStrategies(ExchangeStrategies.builder()
                                                 .codecs(codecs -> codecs
                                                                 .defaultCodecs().maxInMemorySize(200 * 1024 * 1024))

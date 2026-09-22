@@ -1,0 +1,230 @@
+package fi.livi.rata.avoindata.updater.service.gtfs.observability;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class GtfsRunMetricsTest {
+
+    private static GtfsRunMetrics metrics() {
+        return new GtfsRunMetrics();
+    }
+
+    @Test
+    void givenShapeProgressWhenEvery250ShapesAreProcessedThenAHeartbeatIsRecorded() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+
+        // When
+        final List<Map<String, Object>> heartbeats = new ArrayList<>();
+        metrics.recordFeedAttempt("gtfs-all");
+        for (int shape = 1; shape <= 500; shape++) {
+            metrics.recordShapeProcessed(shape, 500).ifPresent(heartbeats::add);
+        }
+
+        // Then
+        assertThat(heartbeats).hasSize(2);
+        assertThat(heartbeats.get(0))
+                .containsEntry("operation", "generateGtfsFeed")
+                .containsEntry("outcome", "in_progress")
+                .containsEntry("rail.gtfs.feed.name", "gtfs-all")
+                .containsEntry("rail.gtfs.shapes.processed", 250)
+                .containsEntry("rail.gtfs.shapes.total", 500);
+        assertThat(heartbeats.get(1))
+                .containsEntry("rail.gtfs.shapes.processed", 500);
+    }
+
+    @Test
+    void givenDummySegmentReasonsWhenRecordedThenEachReasonHasItsOwnCounter() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+
+        // When
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "AAA");
+        recordDummySegment(metrics, NoGeometryReason.NO_END_NODE, "BBB");
+        recordDummySegment(metrics, NoGeometryReason.ROUTE_HTTP_ERROR, "CCC");
+        recordDummySegment(metrics, NoGeometryReason.ROUTE_EMPTY_GEOMETRY, "DDD");
+        recordDummySegment(metrics, NoGeometryReason.NO_DIJKSTRA_PATH, "EEE");
+
+        // Then
+        final Map<String, Object> event = metrics.finalEvent();
+        assertThat(event)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_start_node", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_end_node", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.route_http_error", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 1)
+                .containsEntry("rail.gtfs.segments.dummy", 5)
+                .containsEntry("rail.gtfs.segments.total", 5);
+    }
+
+    @Test
+    void givenEveryDummyReasonWhenTheFinalEventIsBuiltThenEachOneHasACounter() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then recording a reason and emitting it cannot drift apart
+        for (final NoGeometryReason reason : NoGeometryReason.values()) {
+            assertThat(event).containsKey("rail.gtfs.segments.dummy.reason." + reason.attribute());
+        }
+    }
+
+    @Test
+    void givenRouteOutcomesWhenRecordedThenTheyMapToThePublishedReasonNames() {
+        // Given the route service reports in its own vocabulary
+        final GtfsRunMetrics metrics = metrics();
+
+        // When
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.EMPTY_GEOMETRY);
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.NO_PATH);
+        metrics.recordRouteOutcome(RouteMetricsSink.RouteOutcome.RESOLVED);
+
+        // Then this class owns the mapping to the rail.* contract
+        assertThat(metrics.finalEvent())
+                .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
+                .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 1)
+                .containsEntry("rail.gtfs.segments.dummy", 0);
+    }
+
+    @Test
+    void givenMoreThanTwentyDistinctRouteFailuresWhenRecordedThenSamplesAreCappedAndDuplicatesSuppressed() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+        final List<Map<String, Object>> emitted = new ArrayList<>();
+        for (int failure = 0; failure < 25; failure++) {
+            metrics.recordRouteFailure("AAA" + failure + "->BBB", "/infra-api/latest/reitit/" + failure, 503,
+                    "ServiceUnavailable").ifPresent(emitted::add);
+        }
+        final var duplicate =
+                metrics.recordRouteFailure("AAA0->BBB", "/infra-api/latest/reitit/0", 503, "ServiceUnavailable");
+
+        // When
+        final var samples = metrics.routeFailureSamples();
+
+        // Then the duplicate identity neither consumes a sample slot nor is re-emitted
+        assertThat(duplicate).isEmpty();
+        assertThat(emitted).hasSize(20);
+        assertThat(samples).hasSize(20);
+        assertThat(samples.getFirst())
+                .containsKeys("url.path", "http.response.status_code", "error.type", "rail.gtfs.segment");
+        assertThat(metrics.suppressedRouteFailures()).isEqualTo(5);
+    }
+
+    @Test
+    void givenRouteFailuresWhenTheFinalEventIsBuiltThenItCarriesCountsRatherThanANestedList() {
+        // Given a nested list cannot survive key=value rendering
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordRouteFailure("AAA->BBB", "/infra-api/latest/reitit/1", 503, "ServiceUnavailable");
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(event)
+                .containsEntry("rail.gtfs.route_failures.sampled", 1)
+                .containsEntry("rail.gtfs.route_failures.suppressed", 0L);
+        assertThat(event.values()).noneMatch(value -> value instanceof List);
+    }
+
+    @Test
+    void givenAnyRunOutcomeWhenFinalEventIsBuiltThenSuccessAndErrorUseTheSameWideFieldSet() {
+        // Given
+        final GtfsRunMetrics successful = metrics();
+        final GtfsRunMetrics failed = metrics();
+        failed.markError(new IllegalStateException("boom"));
+
+        // When
+        final Map<String, Object> success = successful.finalEvent();
+        final Map<String, Object> error = failed.finalEvent();
+
+        // Then
+        assertThat(success.keySet()).containsExactlyInAnyOrderElementsOf(error.keySet());
+        assertThat(success)
+                .containsEntry("operation", "generateGtfs")
+                .containsEntry("rail.entity.type", "gtfs_feed")
+                .containsEntry("outcome", GtfsOutcome.SUCCESS.attribute())
+                .containsEntry("error.type", "")
+                .containsKeys("duration_ms", "rail.gtfs.feeds.attempted",
+                        "rail.gtfs.feeds.published", "rail.gtfs.feeds.failed", "rail.gtfs.feeds.degraded");
+        assertThat(error)
+                .containsEntry("outcome", GtfsOutcome.ERROR.attribute())
+                .containsEntry("error.type", "IllegalStateException");
+    }
+
+    @Test
+    void givenFeedFailureWhenOutcomeIsDerivedThenRunIsPartial() {
+        // Given a feed failure always propagates and marks the run, as production does
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordFeedAttempt("gtfs-all.zip");
+        metrics.recordFeedPublished("gtfs-all.zip");
+        metrics.recordFeedAttempt("gtfs-vr.zip");
+        metrics.recordFeedFailed("gtfs-vr.zip");
+        metrics.markError(new IllegalStateException("feed write failed"));
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.PARTIAL);
+        assertThat(event)
+                .containsEntry("rail.gtfs.feeds.attempted", 2)
+                .containsEntry("rail.gtfs.feeds.published", 1)
+                .containsEntry("rail.gtfs.feeds.failed", 1)
+                .containsEntry("rail.gtfs.feed.gtfs-vr.zip.failed", true)
+                .containsEntry("rail.gtfs.feed.gtfs-all.zip.published", true);
+    }
+
+    @Test
+    void givenFirstFeedFailsWhenOutcomeIsDerivedThenRunIsError() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordFeedAttempt("gtfs-all.zip");
+        metrics.recordFeedFailed("gtfs-all.zip");
+        metrics.markError(new IllegalStateException("feed write failed"));
+
+        // When / Then
+        assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.ERROR);
+    }
+
+    @Test
+    void givenFallbackGeometryWhenOutcomeIsDerivedThenRunIsDegraded() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordRealSegment();
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "AAA");
+
+        // When / Then
+        assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.DEGRADED);
+    }
+
+    @Test
+    void givenDummySegmentsWhenTopStationsAreReportedThenTheyAreOrderedByFrequency() {
+        // Given
+        final GtfsRunMetrics metrics = metrics();
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "HKI");
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "HKI");
+        recordDummySegment(metrics, NoGeometryReason.NO_END_NODE, "TPE");
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(event).containsEntry("rail.gtfs.segments.dummy.stations.top", "HKI,TPE");
+    }
+
+    /** Mirrors what GTFSShapeService does: segment totals here, reason attribution alongside. */
+    private static void recordDummySegment(final GtfsRunMetrics metrics, final NoGeometryReason reason,
+                                           final String stationCode) {
+        metrics.recordNoGeometryReason(reason);
+        metrics.recordDummySegment(stationCode);
+    }
+}
