@@ -33,10 +33,10 @@ public class GtfsController {
     /** An older package never changes, so it can be cached far longer than the current one. */
     private static final int CACHE_SECONDS_FOR_ARCHIVED = 60 * 60 * 24;
 
-    /** Not named "date": a global filter mirrors that into departure_date, which these endpoints reject. */
     private static final String DATE_PARAM_DESCRIPTION =
             "Return the package generated on this date instead of the current one. "
                     + "Packages are kept for 14 days.";
+
     public GtfsController(final GeneratedExportRepository gtfsRepository) {
         this.gtfsRepository = gtfsRepository;
     }
@@ -46,10 +46,12 @@ public class GtfsController {
     @Transactional(readOnly = true)
     public byte[] getGtfsForAllTrains(final HttpServletResponse response,
             @Parameter(description = DATE_PARAM_DESCRIPTION)
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-all.zip", on_date, CACHE_SECONDS_FOR_STATIC);
+            // Named on_date rather than date: a servlet filter copies any "date" parameter into
+            // "departure_date", which these endpoints do not declare, so the request would be rejected.
+            final LocalDate onDate) {
+        return getData(response, "gtfs-all.zip", onDate, CACHE_SECONDS_FOR_STATIC);
     }
 
     @Operation(summary = "Returns GTFS zip file")
@@ -57,10 +59,10 @@ public class GtfsController {
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerTrains(final HttpServletResponse response,
             @Parameter(description = DATE_PARAM_DESCRIPTION)
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-passenger.zip", on_date, CACHE_SECONDS_FOR_STATIC);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-passenger.zip", onDate, CACHE_SECONDS_FOR_STATIC);
     }
 
     @Operation(summary = "Returns GTFS Realtime locations")
@@ -68,10 +70,10 @@ public class GtfsController {
     @Transactional(readOnly = true)
     public byte[] getGtfsRtLocations(final HttpServletResponse response,
             @Parameter(description = DATE_PARAM_DESCRIPTION)
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-rt-locations", on_date, CACHE_SECONDS_FOR_RT_LOCATIONS);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-rt-locations", onDate, CACHE_SECONDS_FOR_RT_LOCATIONS);
     }
 
     @Operation(summary = "Returns GTFS Realtime updates")
@@ -79,40 +81,40 @@ public class GtfsController {
     @Transactional(readOnly = true)
     public byte[] getGtfsRtUpdates(final HttpServletResponse response,
             @Parameter(description = DATE_PARAM_DESCRIPTION)
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-rt-updates", on_date, CACHE_SECONDS_FOR_RT_UPDATES);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-rt-updates", onDate, CACHE_SECONDS_FOR_RT_UPDATES);
     }
 
     @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr-tre.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTRETrains(final HttpServletResponse response,
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-vr-tre.zip", on_date, CACHE_SECONDS_FOR_STATIC);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-vr-tre.zip", onDate, CACHE_SECONDS_FOR_STATIC);
     }
 
     @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-passenger-stops.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForPassengerNoNonstops(final HttpServletResponse response,
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-passenger-stops.zip", on_date, CACHE_SECONDS_FOR_STATIC);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-passenger-stops.zip", onDate, CACHE_SECONDS_FOR_STATIC);
     }
 
     @Hidden
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-vr.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getGtfsForVRTrains(final HttpServletResponse response,
-            @RequestParam(required = false)
+            @RequestParam(name = "on_date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            final LocalDate on_date) {
-        return getData(response, "gtfs-vr.zip", on_date, CACHE_SECONDS_FOR_STATIC);
+            final LocalDate onDate) {
+        return getData(response, "gtfs-vr.zip", onDate, CACHE_SECONDS_FOR_STATIC);
     }
 
     private byte[] getData(final HttpServletResponse response, final String fileName, final LocalDate onDate,
