@@ -20,7 +20,10 @@ public class NeTExPublishedJourneyTrack {
     public String plannedTrack;
     /** 0-based occurrence of this station within the journey, so a station served twice keeps a track per visit.
      * This is a per-station counter, not the track's position in the journey — do not use it for ordering
-     * {@link NeTExPublishedJourney#tracks} (see {@link #sequenceIndex}). */
+     * {@link NeTExPublishedJourney#tracks} (see {@link #sequenceIndex}). It is also the key SIRI-ET/VM generation
+     * uses to look up this track ({@code PlannedTrackLookup}): they compute the same 0-based per-station count
+     * independently from the live train's own stop list, with no access to this entity or {@link #sequenceIndex}
+     * (which only exists here, on the stored NeTEx side, and can't be derived from a live train alone). */
     public int visitIndex;
     /** 0-based position of this track within the journey's own visitation order, monotonically increasing
      * regardless of station repeats. This — not {@link #visitIndex} — is what makes the first/last element of

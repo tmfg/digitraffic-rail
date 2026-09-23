@@ -8,7 +8,10 @@ import java.util.Optional;
  * against the actual track and emit a SIRI {@code StopAssignment} on a genuine platform change. A seam kept
  * out of the timetable-entity layer; the generation side supplies {@link MapPlannedTrackLookup}. The
  * {@code visitIndex} (0-based occurrence of the station within the journey) disambiguates a station served more
- * than once.
+ * than once. It — not {@code NeTExPublishedJourneyTrack#sequenceIndex} — is the lookup key because callers here
+ * (SIRI-ET/VM generation) derive it independently from the live train's own stop list, with no shared state or
+ * position information from the stored NeTEx journey; {@code sequenceIndex} only exists on that stored side and
+ * cannot be recomputed from a live train alone.
  */
 @FunctionalInterface
 public interface PlannedTrackLookup {
