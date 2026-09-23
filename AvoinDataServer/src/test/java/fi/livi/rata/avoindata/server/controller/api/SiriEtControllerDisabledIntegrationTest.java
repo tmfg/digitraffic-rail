@@ -14,6 +14,12 @@ import fi.livi.rata.avoindata.server.MockMvcBaseTest;
  * {@code @ConditionalOnProperty} bean that is never registered, so the route isn't mapped at all and Spring
  * itself returns 404 (distinct from {@link SiriEtControllerIntegrationTest}'s "enabled but nothing generated
  * yet" 404, which comes from the controller's own logic).
+ * <p>
+ * Deliberately does <em>not</em> set the property to {@code false} via {@code @TestPropertySource}: {@code
+ * @ConditionalOnProperty(havingValue = "true")} without {@code matchIfMissing} already defaults to disabled
+ * when the property is absent, so leaving it unset exercises exactly that real-world "not configured" path —
+ * the one actual deployments hit before anyone opts in — rather than a synthetic "explicitly disabled" case
+ * nothing in production ever sets.
  */
 class SiriEtControllerDisabledIntegrationTest extends MockMvcBaseTest {
 
