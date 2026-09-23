@@ -57,23 +57,23 @@ public class VmJourneyConverter {
     }
 
     public Optional<VmActivity> convert(final GTFSTrainLocation location, final ZonedDateTime now) {
-        final Optional<ResolvedJourney> resolvedJourney =
-                journeyRefResolver.resolve(location.getTrainNumber(), location.getDepartureDate());
-        if (resolvedJourney.isEmpty()) {
-            return Optional.empty();
-        }
+        return journeyRefResolver.resolve(location.getTrainNumber(), location.getDepartureDate())
+                .map(resolvedJourney -> toVmActivity(location, resolvedJourney, now));
+    }
 
+    private VmActivity toVmActivity(final GTFSTrainLocation location, final ResolvedJourney resolvedJourney,
+                                      final ZonedDateTime now) {
         final MonitoredCall monitoredCall = resolveMonitoredCall(location, now);
-        final ResolvedEndpoint origin = resolveEndpoint(resolvedJourney.get().origin());
-        final ResolvedEndpoint destination = resolveEndpoint(resolvedJourney.get().destination());
+        final ResolvedEndpoint origin = resolveEndpoint(resolvedJourney.origin());
+        final ResolvedEndpoint destination = resolveEndpoint(resolvedJourney.destination());
         // getSpeed() is km/h; SIRI/GTFS-Realtime both report vehicle speed in m/s.
         final double speedMetersPerSecond = location.getSpeed() / 3.6;
 
-        return Optional.of(new VmActivity(location.getTrainNumber(), resolvedJourney.get(), location.getTimestamp(),
+        return new VmActivity(location.getTrainNumber(), resolvedJourney, location.getTimestamp(),
                 location.getX(), location.getY(), speedMetersPerSecond,
                 monitoredCall.stopRef(), monitoredCall.stopName(), location.getDelaySeconds(),
                 origin.stopRef(), origin.stopName(), destination.stopRef(), destination.stopName(),
-                location.getVehicleAtStop(), location.getUnknownDelay()));
+                location.getVehicleAtStop(), location.getUnknownDelay());
     }
 
     /**
