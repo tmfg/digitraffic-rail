@@ -15,11 +15,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
+import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.StopRef;
-import fi.livi.rata.avoindata.updater.service.siri.common.TimeTableRowOrdering;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.CallPoint;
@@ -28,17 +28,15 @@ import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.QuayChange;
 
-/**
- * Interprets a live {@link GTFSTrain} into the domain {@link EtJourney} IR: it decides <em>what the
- * real-time situation is</em> (journey ref, per-stop recorded/estimated, delay status, cancellation
- * boundary, quay ref) without touching any SIRI/JAXB type. Marshalling is a separate concern
- * ({@link EtJourneyMarshaller}).
- *
- * <p>Returns an {@link InterpretResult.Skipped} when the journey does not resolve to a published
- * {@code ServiceJourney} ({@code UNRESOLVED_JOURNEY}), or when any commercial stop cannot be resolved to a PETI
- * {@code FSR:Quay} ({@code UNRESOLVED_STOP_NO_STOP} / {@code UNRESOLVED_STOP_NO_QUAY}) — because the profile
- * requires a complete stop sequence, an incomplete journey is skipped rather than emitted.
- */
+/// Interprets a live [GTFSTrain] into the domain [EtJourney] IR: it decides *what the
+/// real-time situation is* (journey ref, per-stop recorded/estimated, delay status, cancellation
+/// boundary, quay ref) without touching any SIRI/JAXB type. Marshalling is a separate concern
+/// ([EtJourneyMarshaller]).
+///
+/// Returns an [InterpretResult.Skipped] when the journey does not resolve to a published
+/// `ServiceJourney` (`UNRESOLVED_JOURNEY`), or when any commercial stop cannot be resolved to a PETI
+/// `FSR:Quay` (`UNRESOLVED_STOP_NO_STOP` / `UNRESOLVED_STOP_NO_QUAY`) — because the profile
+/// requires a complete stop sequence, an incomplete journey is skipped rather than emitted.
 public class EtJourneyInterpreter {
 
     // Deviations within a minute are treated as on-time.
@@ -186,12 +184,10 @@ public class EtJourneyInterpreter {
                 isPredictionInaccurate(stop), stopName, quayChange);
     }
 
-    /**
-     * Detects a platform change: returns a {@link QuayChange} only when the planned track is known, the real-time
-     * platform is known, and the planned quay genuinely differs from the actual quay. When the real-time platform
-     * is unknown, {@code actualQuay} was itself resolved from this same planned track (see {@link
-     * #resolveStopRef}), so it can never differ from it — we skip the lookup rather than assert a no-op change.
-     */
+    /// Detects a platform change: returns a [QuayChange] only when the planned track is known, the real-time
+    /// platform is known, and the planned quay genuinely differs from the actual quay. When the real-time platform
+    /// is unknown, `actualQuay` was itself resolved from this same planned track (see [#resolveStopRef]), so it
+    /// can never differ from it — we skip the lookup rather than assert a no-op change.
     private QuayChange computeQuayChange(final long trainNumber, final LocalDate departureDate, final PairedStop stop,
                                          final StopRef actualQuay, final int visitIndex) {
         final GTFSTimeTableRow representative = representativeRow(stop);
@@ -213,12 +209,10 @@ public class EtJourneyInterpreter {
         return new QuayChange(plannedQuay.get(), actualQuay);
     }
 
-    /**
-     * Resolves a commercial stop's Quay from its actual (real-time) track, falling back to the planned (NeTEx)
-     * track when the actual track is unknown ({@code unknownTrack=true}) — i.e. if the confirmed real-time track
-     * isn't known yet, the planned value is used in its place. This recovers a resolvable Quay for the common
-     * "no live track yet/lost" case instead of dropping the whole journey.
-     */
+    /// Resolves a commercial stop's Quay from its actual (real-time) track, falling back to the planned (NeTEx)
+    /// track when the actual track is unknown (`unknownTrack=true`) — i.e. if the confirmed real-time track
+    /// isn't known yet, the planned value is used in its place. This recovers a resolvable Quay for the common
+    /// "no live track yet/lost" case instead of dropping the whole journey.
     private Optional<StopRef> resolveStopRef(final long trainNumber, final LocalDate departureDate,
                                              final PairedStop stop, final int visitIndex) {
         final GTFSTimeTableRow representative = representativeRow(stop);
@@ -235,7 +229,7 @@ public class EtJourneyInterpreter {
         return plannedTrack.flatMap(track -> siriStopResolver.resolveQuayId(uic.getAsInt(), track));
     }
 
-    /** Why a commercial stop didn't resolve: no PETI stop place for the station, or a stop place but no quay. */
+    /// Why a commercial stop didn't resolve: no PETI stop place for the station, or a stop place but no quay.
     private InterpretResult.SkipReason unresolvedStopReason(final PairedStop stop) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final OptionalInt uic = stationUicLookup.uicFor(representative.stationShortCode);
@@ -306,11 +300,9 @@ public class EtJourneyInterpreter {
                 || (stop.departure != null && stop.departure.hasEstimateOrActualTime());
     }
 
-    /**
-     * A carried-over previous-day journey is still running until its final commercial stop is served. A small
-     * grace window keeps a just-arrived train briefly, and drops journeys whose data went stale without ever
-     * completing (final stop never got an actual time and its expected time is well in the past).
-     */
+    /// A carried-over previous-day journey is still running until its final commercial stop is served. A small
+    /// grace window keeps a just-arrived train briefly, and drops journeys whose data went stale without ever
+    /// completing (final stop never got an actual time and its expected time is well in the past).
     private static boolean isStillRunning(final List<PairedStop> commercialStops, final ZonedDateTime now) {
         if (commercialStops.isEmpty()) {
             return false;
@@ -327,7 +319,7 @@ public class EtJourneyInterpreter {
 
     /// Pairs time table rows into stops: origin (DEPARTURE only), middle (ARRIVAL+DEPARTURE), terminus
     /// (ARRIVAL only). The `timeTableRows` association declares no order, so the rows are first sorted (into a
-    /// copy) by scheduled time via {@link TimeTableRowOrdering#orderRows}, matching `CommercialStopVisits.of` and
+    /// copy) by scheduled time via {@link SortableTimeTableRow#orderRows}, matching `CommercialStopVisits.of` and
     /// `GTFSTrainRepository.getTrainLocations`'s own logic.
     private static List<PairedStop> pairRows(final List<GTFSTimeTableRow> rows) {
         final List<PairedStop> stops = new ArrayList<>();
@@ -335,7 +327,7 @@ public class EtJourneyInterpreter {
             return stops;
         }
 
-        final List<GTFSTimeTableRow> ordered = TimeTableRowOrdering.orderRows(rows);
+        final List<GTFSTimeTableRow> ordered = SortableTimeTableRow.orderRows(rows);
 
         int i = 0;
         if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
@@ -359,6 +351,6 @@ public class EtJourneyInterpreter {
 
     private record PairedStop(GTFSTimeTableRow arrival, GTFSTimeTableRow departure) {}
 
-    /** A commercial stop paired with its resolved PETI stop ref and station name, carried as one unit. */
+    /// A commercial stop paired with its resolved PETI stop ref and station name, carried as one unit.
     private record ResolvedStop(PairedStop stop, StopRef stopRef, String stopName) {}
 }

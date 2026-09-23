@@ -231,14 +231,14 @@ public class CommercialStopVisitsTest {
     }
 
     // Cross-station same-instant ties (this station's DEPARTURE and the next station's ARRIVAL sharing the
-    // exact same scheduled_time) are not handled by ordering alone - see {@link TimeTableRowOrdering}'s javadoc.
+    // exact same scheduled_time) are not handled by ordering alone - see {@link SortableTimeTableRow}'s javadoc.
     // Empirically confirmed absent from production (a 365-day check across `time_table_row` found zero such
     // ties), unlike the same-station zero-dwell tie below, which is common and is handled correctly.
 
     // Regression test for the review-reported bug: a station's OWN ARRIVAL and DEPARTURE can also share the
     // exact same scheduled_time (a zero-dwell stop, e.g. a scheduled pass-by point) - this is common in
     // production (a 365-day check found millions of such rows) and must pair correctly: {@link
-    // TimeTableRowOrdering#orderRows} sorts ARRIVAL before DEPARTURE on a tie, so a same-station pair is never
+    // SortableTimeTableRow#orderRows} sorts ARRIVAL before DEPARTURE on a tie, so a same-station pair is never
     // split into two bogus stops (one with only a departure, mistaken for an origin; one with only an arrival,
     // mistaken for a terminus).
     @Test

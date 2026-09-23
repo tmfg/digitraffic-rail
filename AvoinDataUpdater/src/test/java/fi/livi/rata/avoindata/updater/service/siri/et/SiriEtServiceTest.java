@@ -201,7 +201,7 @@ class SiriEtServiceTest {
         return frames.get(0).getEstimatedVehicleJourneies();
     }
 
-    /** EVJs tolerating an absent delivery/frame — an empty feed emits a bare delivery with no frame. */
+    /// EVJs tolerating an absent delivery/frame — an empty feed emits a bare delivery with no frame.
     private List<EstimatedVehicleJourney> getEvjsOrEmpty(final Siri siri) {
         final List<EstimatedTimetableDeliveryStructure> deliveries =
                 siri.getServiceDelivery().getEstimatedTimetableDeliveries();
@@ -515,14 +515,14 @@ class SiriEtServiceTest {
     }
 
     // Cross-station same-instant ties (this station's departure and the next station's arrival sharing the
-    // exact same scheduled time) are not handled by ordering alone - see {@code TimeTableRowOrdering}'s javadoc.
+    // exact same scheduled time) are not handled by ordering alone - see {@code SortableTimeTableRow}'s javadoc.
     // Empirically confirmed absent from production (a 365-day check across `time_table_row` found zero such
     // ties), unlike the same-station zero-dwell tie below, which is common and is handled correctly.
 
     // Regression test for the review-reported bug: a station's OWN arrival and departure can also share the
     // exact same scheduled time (a zero-dwell stop, e.g. a scheduled pass-by point) - this is common in
     // production (a 365-day check found millions of such rows) and must pair correctly: {@code
-    // TimeTableRowOrdering#orderRows} sorts arrival before departure on a tie, so a same-station pair is never
+    // SortableTimeTableRow#orderRows} sorts arrival before departure on a tie, so a same-station pair is never
     // split into two bogus stops (one arrival-only, mistaken for a terminus; one departure-only, mistaken for
     // an origin).
     @Test
@@ -1745,7 +1745,7 @@ class SiriEtServiceTest {
         return train;
     }
 
-    /** Origin (HKI) → terminus (OL) train; the terminus arrival's scheduled/estimate/actual times are set explicitly. */
+    /// Origin (HKI) → terminus (OL) train; the terminus arrival's scheduled/estimate/actual times are set explicitly.
     private GTFSTrain overnightTrain(final long trainNumber, final LocalDate departureDate,
                                      final ZonedDateTime lastArrivalScheduled,
                                      final ZonedDateTime lastArrivalEstimate,
