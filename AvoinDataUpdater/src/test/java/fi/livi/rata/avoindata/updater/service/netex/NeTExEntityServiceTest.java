@@ -418,10 +418,10 @@ class NeTExEntityServiceTest {
 
         // then — times stay on the operating day, none roll past 24:00
         final var passingTimes = journeys.get(0).passingTimes();
-        assertEquals("12:06:00", passingTimes.get(0).departureTime());
-        assertEquals("12:07:00", passingTimes.get(1).arrivalTime());
-        assertEquals("12:08:00", passingTimes.get(1).departureTime());
-        assertEquals("12:20:00", passingTimes.get(2).arrivalTime());
+        assertEquals("14:06:00", passingTimes.get(0).departureTime());
+        assertEquals("14:07:00", passingTimes.get(1).arrivalTime());
+        assertEquals("14:08:00", passingTimes.get(1).departureTime());
+        assertEquals("14:20:00", passingTimes.get(2).arrivalTime());
     }
 
     // --- Line naming ---
@@ -608,14 +608,14 @@ class NeTExEntityServiceTest {
     }
 
     /**
-     * HKI 12:06 → TPE 12:07/12:08 → OL 12:20, Helsinki local (UTC+2 on the
-     * reference date).
+     * HKI 14:06 → TPE 14:07/14:08 → OL 14:20. An origin past noon is what arms the
+     * past-midnight rollover check, so this fixture exercises it.
      */
     private List<ScheduleRow> createAfternoonStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
         final String[] stations = { "HKI", "TPE", "OL" };
-        final Duration[] arrivals = { null, Duration.ofHours(10).plusMinutes(7), Duration.ofHours(10).plusMinutes(20) };
-        final Duration[] departures = { Duration.ofHours(10).plusMinutes(6), Duration.ofHours(10).plusMinutes(8),
+        final Duration[] arrivals = { null, Duration.ofHours(14).plusMinutes(7), Duration.ofHours(14).plusMinutes(20) };
+        final Duration[] departures = { Duration.ofHours(14).plusMinutes(6), Duration.ofHours(14).plusMinutes(8),
                 null };
 
         for (int i = 0; i < stations.length; i++) {
