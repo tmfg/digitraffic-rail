@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import org.junit.jupiter.api.Test;
 
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow.TimeTableRowType;
@@ -13,11 +15,13 @@ public class SortableTimeTableRowTest {
 
     private record Row(ZonedDateTime scheduledTime, TimeTableRowType type) implements SortableTimeTableRow {
         @Override
+        @Nonnull
         public ZonedDateTime getScheduledTime() {
             return scheduledTime;
         }
 
         @Override
+        @Nonnull
         public TimeTableRowType getType() {
             return type;
         }
