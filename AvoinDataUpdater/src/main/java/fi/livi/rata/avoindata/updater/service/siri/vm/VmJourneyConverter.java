@@ -99,12 +99,15 @@ public class VmJourneyConverter {
      * Resolves the upcoming stop's Quay from its live (real-time) track, falling back to the planned (NeTEx)
      * track when the live track is unknown ({@code unknownTrack=true}) — mirrors SIRI-ET's {@code
      * EtJourneyInterpreter.resolveStopRef} fallback: if the confirmed real-time track isn't known yet, the
-     * planned value is used in its place. Unlike ET (which already holds the train's full row list while
-     * converting), SIRI-VM only loads a single upcoming-stop row per train for its live position query, so it
-     * has no visitIndex to pick the right planned track when a station is served more than once — that is
-     * resolved here, on demand, by loading the train's full row list via {@link #timeTableRowsLookup}
-     * <em>only</em> in this fallback path, so the common case (live track known) stays the original single
-     * cheap query.
+     * planned value is used in its place. {@code unknownTrack} itself has no SIRI/{@link
+     * fi.livi.rata.avoindata.updater.service.siri.vm.model.VmActivity VmActivity} field of its own — it is a
+     * purely internal signal that only decides which track source to resolve the Quay from; the resolved Quay
+     * (from whichever source) is all that ever reaches the output. Unlike ET (which already holds the train's
+     * full row list while converting), SIRI-VM only loads a single upcoming-stop row per train for its live
+     * position query, so it has no visitIndex to pick the right planned track when a station is served more
+     * than once — that is resolved here, on demand, by loading the train's full row list via
+     * {@link #timeTableRowsLookup} <em>only</em> in this fallback path, so the common case (live track known)
+     * stays the original single cheap query.
      */
     private StopRef resolveMonitoredCallStopRef(final GTFSTrainLocation location, final String stationShortCode,
                                                 final int uic, final ZonedDateTime now) {
@@ -117,6 +120,12 @@ public class VmJourneyConverter {
         final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
         final OptionalInt visitIndex = CommercialStopVisits.currentVisitIndex(stops, stationShortCode, now);
         if (visitIndex.isEmpty()) {
+            // Defensive: the SQL query that produced this location already picked an eligible upcoming stop at
+            // stationShortCode (see GTFSTrainRepository.getTrainLocations), so this recomputation from the full
+            // row list should normally agree and find it too. If it somehow doesn't - e.g. the row list changed
+            // between the two queries, or an edge case in eligibility/pairing diverges from the SQL's own rules
+            // - there is no safe visit to pick a planned track for, so the MonitoredCall is dropped rather than
+            // guessing.
             return null;
         }
         return plannedTrackLookup.plannedTrack(location.getTrainNumber(), location.getDepartureDate(),
