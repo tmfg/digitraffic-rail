@@ -28,7 +28,9 @@ import reactor.util.retry.Retry;
 /**
  * HTTP-backed PetiStopSource that fetches the Kooste PETI-rail-NeTEx.zip,
  * extracts stops.xml, parses it with PetiNeTExParser, and caches the result
- * as a last-good snapshot. Refreshes on schedule (03:30 UTC).
+ * as a last-good snapshot. Refreshes on schedule (03:30 UTC), with an hourly
+ * safety-net retry ({@link #retryIfLastFailed()}) so a failed nightly run
+ * doesn't leave the snapshot stale for a full day.
  *
  * <p>
  * Transient failures (5xx responses, connection errors, per-attempt timeouts) are
@@ -129,6 +131,26 @@ public class CachingPetiStopSource implements PetiStopSource {
         synchronized (refreshLock) {
             nextInitialLoadAttempt = Instant.now().plus(INITIAL_LOAD_RETRY_DELAY);
             refreshLocked();
+        }
+    }
+
+    /**
+     * Safety-net retry for a failed {@link #refresh()}: without this, a nightly run that fails would leave the
+     * snapshot stale for a full day, since a failure keeps {@code lastGood} intact (non-empty) and therefore
+     * never triggers {@link #ensureLoaded()}'s on-demand path either. Runs hourly but is a no-op whenever the
+     * last attempt (scheduled or on-demand) succeeded, so it only does work while genuinely needed.
+     */
+    @Scheduled(cron = "${updater.netex.peti.retry-cron:0 0 * * * *}", zone = "UTC")
+    public void retryIfLastFailed() {
+        if (lastFetchResult == null || PetiFetchResult.OUTCOME_SUCCESS.equals(lastFetchResult.outcome())) {
+            return;
+        }
+        synchronized (refreshLock) {
+            if (lastFetchResult != null && PetiFetchResult.OUTCOME_ERROR.equals(lastFetchResult.outcome())) {
+                log.info("method=retryIfLastFailed event=rail.upstream.peti operation=retryIfLastFailed "
+                        + "outcome=refresh reason=previous_attempt_failed");
+                refreshLocked();
+            }
         }
     }
 
