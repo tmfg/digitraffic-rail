@@ -31,7 +31,7 @@ jobs:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
-        uses: tmfg/digitraffic-actions@c747ae840e77f660fa8598482893be66685daeeb # gh-pages-publish/v1
+        uses: tmfg/digitraffic-actions@339b5aa5afc3459cba11653adbc0e7132f356c1d # gh-pages-publish/v1
         with:
           GH_PAGES_BRANCH: gh-pages
           FILE_PATH: target/dependency-check-report.html
@@ -39,7 +39,7 @@ jobs:
           LINK_TEXT: Dependency check report
       - name: Notify Slack
         if: failure()
-        uses: tmfg/digitraffic-actions@88cc4d1a9c5cb96c037cb0dec41e1c64804b4d0e # slack-notify/v1
+        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
         with:
           status: failure
           text: FAILED Rail Dependency Check
