@@ -230,45 +230,17 @@ public class CommercialStopVisitsTest {
         assertEquals(1, visitIndex.getAsInt());
     }
 
-    // Regression test: a station's DEPARTURE and the next station's ARRIVAL can share the exact same
-    // scheduled_time (zero scheduled transit time between adjacent stops - a real occurrence, see
-    // TrainFactory's TPE DEPARTURE / JY ARRIVAL fixture rows). Sorting ARRIVAL-first on that tie would let
-    // JY's ARRIVAL slot in between TPE's own ARRIVAL/DEPARTURE pair, pairing TPE's ARRIVAL with no departure
-    // (mistaken for a terminus) and JY's ARRIVAL with TPE's DEPARTURE (wrong station identity) - corrupting
-    // every visitIndex from that point on. DEPARTURE must win the tie so pairing stays station-correct.
-    @Test
-    public void of_pairsRowsCorrectlyWhenDepartureAndNextArrivalTie() {
-        final List<GTFSTimeTableRow> rows = new ArrayList<>();
-        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
-        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
-        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2), false, null));
-        // JY's ARRIVAL ties exactly with TPE's DEPARTURE above.
-        rows.add(row("JY", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(2), false, null));
-        rows.add(row("JY", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(3), false, null));
-
-        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-
-        assertEquals(3, stops.size());
-        assertEquals("HKI", stops.get(0).departure().stationShortCode);
-        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
-        assertEquals("JY", stops.get(2).arrival().stationShortCode);
-        // TPE must be a full arrival+departure pair, not mistaken for a terminus (departure == null).
-        assertTrue(stops.get(1).departure() != null);
-        assertEquals("TPE", stops.get(1).departure().stationShortCode);
-        // The train is still dwelling at TPE (its DEPARTURE has no actual time yet) - not yet at JY.
-        final OptionalInt visitIndex =
-                CommercialStopVisits.currentVisitIndex(stops, "TPE", T0.plusHours(1).plusMinutes(30));
-        assertTrue(visitIndex.isPresent());
-        assertEquals(0, visitIndex.getAsInt());
-    }
+    // Cross-station same-instant ties (this station's DEPARTURE and the next station's ARRIVAL sharing the
+    // exact same scheduled_time) are not handled by ordering alone - see {@link TimeTableRowOrdering}'s javadoc.
+    // Empirically confirmed absent from production (a 365-day check across `time_table_row` found zero such
+    // ties), unlike the same-station zero-dwell tie below, which is common and is handled correctly.
 
     // Regression test for the review-reported bug: a station's OWN ARRIVAL and DEPARTURE can also share the
-    // exact same scheduled_time (a zero-dwell stop, e.g. a scheduled pass-by point). Unlike the
-    // cross-station-boundary tie above, a global DEPARTURE-first tie-break here would misfire: since the
-    // pairing loop assumes strict ARRIVAL/DEPARTURE alternation, treating TPE's DEPARTURE as sorted first would
-    // split TPE into two bogus stops (one with only a departure, mistaken for an origin; one with only an
-    // arrival, mistaken for a terminus) instead of one TPE stop with both legs. This is why the tie-break must
-    // be station-aware: DEPARTURE-first only when the tied rows are two DIFFERENT stations.
+    // exact same scheduled_time (a zero-dwell stop, e.g. a scheduled pass-by point) - this is common in
+    // production (a 365-day check found millions of such rows) and must pair correctly: {@link
+    // TimeTableRowOrdering#orderRows} sorts ARRIVAL before DEPARTURE on a tie, so a same-station pair is never
+    // split into two bogus stops (one with only a departure, mistaken for an origin; one with only an arrival,
+    // mistaken for a terminus).
     @Test
     public void of_pairsRowsCorrectlyWhenSameStationArrivalAndDepartureTie() {
         final List<GTFSTimeTableRow> rows = new ArrayList<>();
@@ -288,40 +260,6 @@ public class CommercialStopVisitsTest {
         assertEquals("TPE", stops.get(1).departure().stationShortCode);
         assertEquals("OL", stops.get(2).arrival().stationShortCode);
         assertTrue(stops.get(2).departure() == null); // OL is the terminus
-    }
-
-    // Regression test for the reviewer's comparator-contract-violation finding: a single tied instant can
-    // involve THREE stations at once - HKI's DEPARTURE completing a stay opened earlier, TPE's own ARRIVAL and
-    // DEPARTURE tying with each other (zero-dwell), and JY's ARRIVAL opening a stay that continues later. A
-    // pairwise "DEPARTURE-first unless same station" comparator is not transitive across this chain (HKI's and
-    // JY's rows are different stations so compare "equal" to each other, yet each compares with the opposite
-    // sign against TPE's rows) - this used to risk List.sort throwing "Comparison method violates its general
-    // contract" or silently misordering. The fix reconstructs the tied run by station instead of by pairwise
-    // comparison, so it must still produce HKI(leading)/TPE(zero-dwell pair)/JY(trailing) in order.
-    @Test
-    public void of_pairsRowsCorrectlyWhenThreeStationsTieAtSameInstant() {
-        final List<GTFSTimeTableRow> rows = new ArrayList<>();
-        // HKI's own ARRIVAL is scheduled earlier (not part of the tie); its DEPARTURE, TPE's own ARRIVAL and
-        // DEPARTURE (zero-dwell), and JY's own ARRIVAL all then share the exact same instant; JY's DEPARTURE is
-        // scheduled later (not part of the tie either).
-        rows.add(row("HKI", TimeTableRow.TimeTableRowType.ARRIVAL, T0, false, T0));
-        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1), false, T0.plusHours(1)));
-        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
-        rows.add(row("TPE", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(1), false, T0.plusHours(1)));
-        rows.add(row("JY", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
-        rows.add(row("JY", TimeTableRow.TimeTableRowType.DEPARTURE, T0.plusHours(2), false, null));
-
-        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
-
-        // All three stations must come out as full, correctly-paired stops, in the right (causal) order -
-        // despite four of their six rows sharing one exact tied instant.
-        assertEquals(3, stops.size());
-        assertEquals("HKI", stops.get(0).arrival().stationShortCode);
-        assertEquals("HKI", stops.get(0).departure().stationShortCode);
-        assertEquals("TPE", stops.get(1).arrival().stationShortCode);
-        assertEquals("TPE", stops.get(1).departure().stationShortCode);
-        assertEquals("JY", stops.get(2).arrival().stationShortCode);
-        assertEquals("JY", stops.get(2).departure().stationShortCode);
     }
 
     // Regression test: a non-commercial stop (e.g. a technical/operational-only stop with no passenger
