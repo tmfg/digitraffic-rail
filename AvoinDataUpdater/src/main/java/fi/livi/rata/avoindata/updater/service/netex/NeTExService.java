@@ -209,10 +209,10 @@ public class NeTExService {
         }
 
         final List<PetiStop> petiStops = petiStopSource.getStops();
-        final int petiStopPlaces = petiStops.size();
-        final int petiQuays = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
+        final int petiStopCount = petiStops.size();
+        final int petiQuayCount = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
         log.info("method=computeDataset peti_fetch_outcome={} peti_stop_places={} peti_quays={}",
-                petiStopPlaces > 0 ? "success" : "empty", petiStopPlaces, petiQuays);
+                petiStopCount > 0 ? "success" : "empty", petiStopCount, petiQuayCount);
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
