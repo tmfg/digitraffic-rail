@@ -37,7 +37,7 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     /// (SIRI-VM/Nordic profile carries both position and delay - see Handbook N801 5.1); null when no upcoming
     /// stop was resolved.
     ///
-    /// unknownDelay: `time_table_row.unknown_delay` is set by the source system (LIIKE) when it cannot
+    /// unknownDelay: `time_table_row.unknown_delay` is set by the source system (RAMI) when it cannot
     /// estimate how long a train will actually have to wait - i.e. `delay_seconds`/`live_estimate_time` exist
     /// but are known to be unreliable. The Nordic SIRI-VM profile has no dedicated "estimate is unreliable"
     /// field, so this is surfaced via `InCongestion` (see `VmJourneyConverter`/`VmJourneyMarshaller`) instead:

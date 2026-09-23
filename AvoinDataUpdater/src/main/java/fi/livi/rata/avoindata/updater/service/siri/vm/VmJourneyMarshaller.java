@@ -143,7 +143,7 @@ public class VmJourneyMarshaller {
         mvj.setDelay(activity.delaySeconds() != null ? Duration.ofSeconds(activity.delaySeconds()) : Duration.ZERO);
 
         // InCongestion is optional (0:1); the profile has no dedicated "delay estimate is unreliable" field,
-        // so it is only set (to true) when the source system (LIIKE) flags unknownDelay - left unset (not
+        // so it is only set (to true) when the source system (RAMI) flags unknownDelay - left unset (not
         // false) otherwise, since we have no positive signal either way. Delay above is still always computed
         // and emitted regardless of this flag - it is never suppressed or replaced with PT0S because of it.
         if (BooleanUtils.isTrue(activity.unknownDelay())) {

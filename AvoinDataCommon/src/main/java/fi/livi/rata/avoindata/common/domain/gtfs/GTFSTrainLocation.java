@@ -42,7 +42,11 @@ public interface GTFSTrainLocation {
     /// Station short code of the upcoming (not yet reached) commercial stop, resolved via
     /// `time_table_row` — the same stop used for {@link #getDelaySeconds()}. `null` when no upcoming stop
     /// could be resolved (e.g. the train has no more commercial stops left, or all remaining stops are
-    /// cancelled/non-commercial).
+    /// cancelled/non-commercial) — **except** for the terminus fallback (`term` lateral join, see
+    /// `GTFSTrainRepository#getTrainLocations`): once the train has actually arrived at its terminus and has
+    /// no further stop to report, this field instead reports that already-arrived terminus so the train is
+    /// not silently dropped from the feed while dwelling there. Callers must not assume a non-null value here
+    /// is always still ahead of the train.
     String getStationShortCode();
 
     /// Planned/commercial track of the upcoming stop identified by {@link #getStationShortCode()}. `null`
@@ -52,7 +56,7 @@ public interface GTFSTrainLocation {
     /// Whether the upcoming stop's track (see {@link #getCommercialTrack()}) is not yet confirmed/known.
     Boolean getUnknownTrack();
 
-    /// Whether the source system (LIIKE) has flagged the upcoming stop's delay estimate (see
+    /// Whether the source system (RAMI) has flagged the upcoming stop's delay estimate (see
     /// {@link #getDelaySeconds()}) as unreliable — i.e. it genuinely does not know how long the train will
     /// have to wait. `null`/`false` in the normal case. Consumed by SIRI-VM's `InCongestion` (there is no
     /// dedicated "estimate is unreliable" field in the Nordic profile — see

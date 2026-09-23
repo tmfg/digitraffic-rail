@@ -1,7 +1,7 @@
 # SIRI (Real-Time Data) — Unified Overview
 
-This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented,
-in master), **SIRI-VM** (implemented, this branch), and **SIRI-SX** (not yet implemented — planned). It covers
+This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented)
+and **SIRI-VM** (implemented), and **SIRI-SX** (not yet implemented — planned). It covers
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
@@ -140,7 +140,7 @@ each service gets:
 - `DirectionRef` is mandatory in the SIRI-ET schema but unused by the Norwegian profile; per spec guidance we
   emit the fixed value `"0"`.
 
-### SIRI-VM (implemented, this branch — `feature/DPO-4881-SIRI-VM`)
+### SIRI-VM (implemented)
 
 - **Flags**: `avoindataserver.siri.vm.enabled` (server), `updater.siri.vm.enabled` (updater) — independent of
   the ET flags, per the original requirement.
@@ -187,7 +187,7 @@ each service gets:
     `NeTExPublishedJourneyTrack`), distinct from `visitIndex` (a per-station occurrence counter used for
     keyed lookups): ordering by `visitIndex` alone misplaces a repeated station's later visit.
   - `MonitoredCall.VehicleAtStop`/`VehicleLocationAtStop` — see above.
-  - `InCongestion` — derived from `time_table_row.unknown_delay`: set by the source system (LIIKE) when it
+  - `InCongestion` — derived from `time_table_row.unknown_delay`: set by the source system (RAMI) when it
     cannot reliably estimate how long a train will actually have to wait (`Delay`/the live estimate exist but
     are known to be unreliable). The Nordic SIRI-VM profile has no dedicated "estimate is unreliable" field, so
     this is surfaced via `InCongestion` instead — its wording ("affected by ... other circumstances which may
