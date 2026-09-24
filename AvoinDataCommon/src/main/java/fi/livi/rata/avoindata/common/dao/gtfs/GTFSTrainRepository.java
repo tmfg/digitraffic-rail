@@ -110,6 +110,8 @@ from train_location tl
 -- next: the trains current/upcoming commercial stop - the earliest commercial row that has not happened yet
 -- (actual_time is null) and whose live estimate is still in the future (see the class-level comment above for
 -- why this filter exists and how it derives vehicle_at_stop).
+-- lateral allows the subquery to reference the outer query's tl.train_number and tl.departure_date, so it can
+-- select the next stop for that specific train with limit = 1.
 left join lateral (
     select station_short_code, commercial_track, unknown_track, unknown_delay, delay_seconds, vehicle_at_stop
     from (
