@@ -70,7 +70,7 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     /// ARRIVAL (the latest ARRIVAL at the same station scheduled at or before it) has actually happened
     /// (`actual_time` is not null) - or there is no such ARRIVAL at all, i.e. the station is the train's
     /// origin, which has no ARRIVAL row and is "at stop" (not yet departed) from the very start. Computed with
-    /// a window function (`row_number`/`lag` over each station's own rows, ordered by `scheduled_time`) rather
+    /// a window function (`row_number`/`max` over each station's own rows, ordered by `scheduled_time`) rather
     /// than a per-row correlated subquery, so every candidate row's paired-ARRIVAL check is a single pass
     /// instead of one extra lookup per row.
     ///
@@ -128,12 +128,25 @@ left join lateral (
                 -- DEPARTURE row could itself be assigned rank 1, wrongly reporting vehicle_at_stop = true
                 -- before the train has actually arrived.
                 row_number() over (partition by tr.station_short_code order by tr.scheduled_time, tr.type) = 1
-                -- Otherwise: the immediately preceding row for this station is the paired ARRIVAL (stations
-                -- are never interleaved in time across repeated visits - each visits own ARRIVAL/DEPARTURE
-                -- pair is always chronologically adjacent) - at stop only once that ARRIVAL actually
-                -- happened (its actual_time is set). Same "type" tiebreak as above, for the same reason.
-                or lag(tr.actual_time) over (partition by tr.station_short_code order by tr.scheduled_time, tr.type)
-                    is not null
+                -- Otherwise: a preceding ARRIVAL row for this station has actually happened (its own
+                -- actual_time is set) - the nearest one, skipping past any cancelled ARRIVAL still present in
+                -- the trains own rows (cancelled rows carry no actual_time of their own, so they cannot
+                -- themselves satisfy this): MAX ignores every preceding row that is not itself an ARRIVAL
+                -- (the CASE otherwise contributes null), and, among the ARRIVALs that remain, resolves to the
+                -- most recent (largest) actual_time - which, since actual_time only ever advances forward as a
+                -- train progresses through its own schedule, is exactly the same row a plain "nearest
+                -- preceding ARRIVAL" search would have found. A plain lag() here (the immediately preceding
+                -- row by position, regardless of type) would be wrong whenever that nearest ARRIVAL is itself
+                -- cancelled and thus absent from these rows entirely - on a repeated-visit (loop-line) station
+                -- this can leave an unrelated, earlier visits DEPARTURE row immediately before the current
+                -- one, which lag() would wrongly consult instead of skipping back to the true, still-earlier
+                -- ARRIVAL. Same "type" tiebreak as above, for the same reason.
+                or max(case when tr.type = 0 then tr.actual_time end) over (
+                    -- Same partition/order as above, but the frame is narrowed to rows strictly before this
+                    -- one - excluding the current row explicitly rather than relying on the default frame.
+                    partition by tr.station_short_code order by tr.scheduled_time, tr.type
+                    rows between unbounded preceding and 1 preceding
+                   ) is not null
              )
             ) as vehicle_at_stop
         from time_table_row tr

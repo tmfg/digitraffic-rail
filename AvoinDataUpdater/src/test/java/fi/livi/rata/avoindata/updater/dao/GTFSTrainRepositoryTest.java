@@ -410,6 +410,58 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
 
+    // Regression test for a repeated (loop-line) station visit whose own ARRIVAL is cancelled: the paired-ARRIVAL
+    // check must still skip past the cancelled occurrence and find the earlier visits ARRIVAL, exactly like the
+    // single-visit cancelled-ARRIVAL case above - not stop at (or wrongly consult) whatever row happens to
+    // immediately precede it once the cancelled one is excluded. AAA is visited twice: the first visit is fully
+    // completed; the second visits ARRIVAL is cancelled, and its DEPARTURE (still pending) is the candidate row.
+    // Between the two visits, the first visits own DEPARTURE is deliberately left pending too (simulated
+    // stale/incomplete data), so that a position-based "immediately preceding row" check (rather than a
+    // type-filtered "nearest preceding ARRIVAL" one) would wrongly land on it instead of skipping back to the
+    // first visits ARRIVAL - proving the type-filtered skip-back is load-bearing, not incidental.
+    @Test
+    public void getTrainLocationsRepeatedStationSkipsCancelledArrivalOccurrence() {
+        final TrainId id = new TrainId(54L, LocalDate.now());
+        Train t = new Train(id.trainNumber, id.departureDate, 1, "test", 1L, 1L, "Z", true, false, 1L,
+                Train.TimetableType.REGULAR, ZonedDateTime.now());
+        t = trainRepository.save(t);
+
+        final ZonedDateTime base = ZonedDateTime.now().plusHours(1);
+        final List<TimeTableRow> rows = new ArrayList<>();
+        rows.add(ttrf.create(t, base, base, new StationEmbeddable("HKI", 1, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        // First AAA visit: ARRIVAL has happened; DEPARTURE deliberately left pending (simulated stale data -
+        // see class comment on this test) so it cannot be mistaken for a completed ARRIVAL by a position-based
+        // (rather than type-filtered) check.
+        rows.add(ttrf.create(t, base.plusHours(1), base.plusHours(1), new StationEmbeddable("AAA", 9, "FI"),
+                TimeTableRow.TimeTableRowType.ARRIVAL));
+        final TimeTableRow firstDeparture = ttrf.create(t, base.plusHours(1).plusMinutes(1), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE);
+        firstDeparture.liveEstimateTime = ZonedDateTime.now().minusDays(1); // stale: clearly in the past, excludes it as a candidate
+        rows.add(firstDeparture);
+        // Second AAA visit: ARRIVAL is cancelled (never happens, no actual_time); DEPARTURE is the pending
+        // candidate row with a future estimate.
+        final TimeTableRow secondArrival = ttrf.create(t, base.plusHours(1).plusMinutes(2), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL);
+        secondArrival.cancelled = true;
+        rows.add(secondArrival);
+        final TimeTableRow secondDeparture = ttrf.create(t, base.plusHours(1).plusMinutes(3), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE);
+        secondDeparture.liveEstimateTime = secondDeparture.scheduledTime;
+        rows.add(secondDeparture);
+        rows.add(ttrf.create(t, base.plusHours(2), null, new StationEmbeddable("OL", 5, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL));
+
+        t.timeTableRows = timeTableRowRepository.saveAll(rows);
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThat(locations.getFirst().getStationShortCode()).isEqualTo("AAA");
+        // The first visits ARRIVAL (the nearest non-cancelled one) has actually happened, so the train is at
+        // stop - even though the row immediately preceding the candidate (once the cancelled ARRIVAL is
+        // excluded) is that same first visits still-pending DEPARTURE.
+        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+    }
+
     /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx
      * refers to. Proves MySQL executes the row-value tuple IN at real-time operating-day scale (~200 ids)
      * and returns exactly the requested, sourced trains. */
