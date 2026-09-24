@@ -219,8 +219,8 @@ public class SiriEtGenerationService {
                     j.journeyPatternRef != null ? new JourneyPatternRef(j.journeyPatternRef) : null));
             for (final NeTExPublishedJourneyTrack t : j.tracks) {
                 if (t.plannedTrack != null && t.stationShortCode != null) {
-                    tracksByTrainId.computeIfAbsent(j.trainId, k -> new HashMap<>())
-                            .computeIfAbsent(t.stationShortCode, k -> new HashMap<>())
+                    tracksByTrainId.computeIfAbsent(j.trainId, _ -> new HashMap<>())
+                            .computeIfAbsent(t.stationShortCode, _ -> new HashMap<>())
                             .put(t.visitIndex, t.plannedTrack);
                 }
             }
