@@ -462,6 +462,50 @@ public class GTFSTrainRepositoryTest extends BaseTest {
         assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
     }
 
+    // Regression test for a repeated (loop-line) station visit whose ARRIVAL exists but has not happened yet:
+    // a completed first visit must not keep reporting at-stop = true once a closer, still-pending ARRIVAL for
+    // the repeat visit exists - the check must compare the *nearest* preceding ARRIVAL, not merely whether
+    // *some* earlier ARRIVAL happened. AAA is visited twice: the first visit is fully completed; the second
+    // visits ARRIVAL is still pending (stale estimate, not cancelled), and its DEPARTURE (also pending, with a
+    // future estimate) is the candidate row.
+    @Test
+    public void getTrainLocationsRepeatedStationRequiresNearestArrivalNotJustAnyEarlierOne() {
+        final TrainId id = new TrainId(55L, LocalDate.now());
+        Train t = new Train(id.trainNumber, id.departureDate, 1, "test", 1L, 1L, "Z", true, false, 1L,
+                Train.TimetableType.REGULAR, ZonedDateTime.now());
+        t = trainRepository.save(t);
+
+        final ZonedDateTime base = ZonedDateTime.now().plusHours(1);
+        final List<TimeTableRow> rows = new ArrayList<>();
+        rows.add(ttrf.create(t, base, base, new StationEmbeddable("HKI", 1, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        // First AAA visit: fully completed.
+        rows.add(ttrf.create(t, base.plusHours(1), base.plusHours(1), new StationEmbeddable("AAA", 9, "FI"),
+                TimeTableRow.TimeTableRowType.ARRIVAL));
+        rows.add(ttrf.create(t, base.plusHours(1).plusMinutes(1), base.plusHours(1).plusMinutes(1),
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE));
+        // Second AAA visit: ARRIVAL is not cancelled, but has not happened yet (stale estimate, actual_time
+        // still null) - the train has not yet arrived for this visit.
+        final TimeTableRow secondArrival = ttrf.create(t, base.plusHours(1).plusMinutes(2), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL);
+        secondArrival.liveEstimateTime = ZonedDateTime.now().minusDays(1); // stale: clearly in the past
+        rows.add(secondArrival);
+        final TimeTableRow secondDeparture = ttrf.create(t, base.plusHours(1).plusMinutes(3), null,
+                new StationEmbeddable("AAA", 9, "FI"), TimeTableRow.TimeTableRowType.DEPARTURE);
+        secondDeparture.liveEstimateTime = secondDeparture.scheduledTime;
+        rows.add(secondDeparture);
+        rows.add(ttrf.create(t, base.plusHours(2), null, new StationEmbeddable("OL", 5, "FI"), TimeTableRow.TimeTableRowType.ARRIVAL));
+
+        t.timeTableRows = timeTableRowRepository.saveAll(rows);
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThat(locations.getFirst().getStationShortCode()).isEqualTo("AAA");
+        // The nearest preceding ARRIVAL (the second visits, still pending) has not happened, even though an
+        // older ARRIVAL (the first visits) has - the train has not yet arrived for this visit.
+        assertThat(locations.getFirst().getVehicleAtStop()).isFalse();
+    }
+
     /** SIRI-ET fetches live trains by the composite (train_number, departure_date) ids the published NeTEx
      * refers to. Proves MySQL executes the row-value tuple IN at real-time operating-day scale (~200 ids)
      * and returns exactly the requested, sourced trains. */
