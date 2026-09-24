@@ -35,6 +35,7 @@ import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
+import fi.livi.rata.avoindata.updater.service.siri.common.CommercialStopVisits;
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.InvalidSiriOutputException;
 import fi.livi.rata.avoindata.updater.service.siri.common.JourneyEndpoint;
@@ -54,6 +55,8 @@ import fi.livi.rata.avoindata.updater.service.siri.et.JourneyRefResolver;
 import fi.livi.rata.avoindata.updater.service.siri.et.MapPlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PlannedTrackLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneyRefResolver;
+
+import static fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository.ANY_SOURCE_VERSION;
 
 /**
  * Generates the SIRI-VM feed on a schedule (see {@code SiriVmUpdatingService}) from the live {@code
@@ -100,7 +103,6 @@ public class SiriVmGenerationService {
     @Transactional
     public void generate() {
         final StopWatch stopWatch = StopWatch.createStarted();
-        long locationsReceived = 0;
         SiriVmStats stats = SiriVmStats.empty();
         int outputSize = 0;
         Stage stage = Stage.PREPARE;
@@ -111,7 +113,7 @@ public class SiriVmGenerationService {
             final VmGenerationContext context = prepareContext();
             journeySourceVersion = context.journeySourceVersion();
             journeySourceGeneratedAt = context.journeySourceGeneratedAt();
-            locationsReceived = context.locations().size();
+            final long locationsReceived = context.locations().size();
             // Seeded now (not just derived from result.stats() below) so a failure in BUILD/VALIDATE/PERSIST
             // still reports the true received count on its error event, instead of falling back to
             // SiriVmStats.empty()'s locationsReceived=0 and hiding the affected batch size.
@@ -178,8 +180,26 @@ public class SiriVmGenerationService {
 
         final List<Long> locationIds = trainLocationRepository.findLatestForPassengerTrains(
                 DateProvider.nowInHelsinki().minusMinutes(LOCATION_MAX_AGE_MINUTES));
-        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(locationIds);
+        final List<GTFSTrainLocation> rawLocations = gtfsTrainRepository.getTrainLocations(locationIds);
         final ZonedDateTime now = DateProvider.nowInHelsinki();
+
+        // Trains whose upcoming-stop query (GTFSTrainRepository.getTrainLocations) found nothing to report - a
+        // train that has already arrived at its terminus has none left, so its stationShortCode comes back
+        // null (see that query's own javadoc). Batched up-front for every such train in this cycle (one
+        // collection query), same rationale as plannedTrackFallbackTrainIds below.
+        final Set<TrainId> terminusFallbackTrainIds = rawLocations.stream()
+                .filter(location -> location.getStationShortCode() == null)
+                .map(location -> new TrainId(location.getTrainNumber(), location.getDepartureDate()))
+                .collect(Collectors.toSet());
+        final Map<TrainId, List<GTFSTimeTableRow>> terminusFallbackRowsByTrainId = terminusFallbackTrainIds.isEmpty()
+                ? Map.of()
+                : gtfsTrainRepository
+                        .findBySourceVersionAndIdIn(ANY_SOURCE_VERSION, terminusFallbackTrainIds)
+                        .stream()
+                        .collect(Collectors.toMap(train -> train.id, train -> train.timeTableRows));
+        final List<GTFSTrainLocation> locations = rawLocations.stream()
+                .map(location -> resolveTerminusFallback(location, terminusFallbackRowsByTrainId))
+                .toList();
 
         // Only consulted when a location's live track can't be used directly (see
         // VmJourneyConverter.needsPlannedTrackFallback / resolveMonitoredCallStopRef): batched up-front for every
@@ -190,10 +210,20 @@ public class SiriVmGenerationService {
                 .filter(VmJourneyConverter::needsPlannedTrackFallback)
                 .map(location -> new TrainId(location.getTrainNumber(), location.getDepartureDate()))
                 .collect(Collectors.toSet());
-        final Map<TrainId, List<GTFSTimeTableRow>> timeTableRowsByTrainId = plannedTrackFallbackTrainIds.isEmpty()
+        // Trains already fetched above (terminusFallbackRowsByTrainId) are skipped here - a train needing both
+        // fallbacks (e.g. arrived at a terminus whose track also turns out to be unknown) must not have its row
+        // set fetched twice.
+        final Set<TrainId> missingTrainIdsToFetch = plannedTrackFallbackTrainIds.stream()
+                .filter(trainId -> !terminusFallbackRowsByTrainId.containsKey(trainId))
+                .collect(Collectors.toSet());
+        final Map<TrainId, List<GTFSTimeTableRow>> missingRowsByTrainId = missingTrainIdsToFetch.isEmpty()
                 ? Map.of()
-                : gtfsTrainRepository.findBySourceVersionAndIdIn(0L, plannedTrackFallbackTrainIds).stream()
+                : gtfsTrainRepository
+                        .findBySourceVersionAndIdIn(ANY_SOURCE_VERSION, missingTrainIdsToFetch)
+                        .stream()
                         .collect(Collectors.toMap(train -> train.id, train -> train.timeTableRows));
+        final Map<TrainId, List<GTFSTimeTableRow>> timeTableRowsByTrainId = new HashMap<>(terminusFallbackRowsByTrainId);
+        timeTableRowsByTrainId.putAll(missingRowsByTrainId);
         final TimeTableRowsLookup timeTableRowsLookup = (trainNumber, departureDate) ->
                 timeTableRowsByTrainId.getOrDefault(new TrainId(trainNumber, departureDate), List.of());
 
@@ -205,6 +235,24 @@ public class SiriVmGenerationService {
 
         return new VmGenerationContext(vmService, locations, now,
                 dbSources.datasetVersion(), dbSources.newestGeneratedAt());
+    }
+
+    /// Fills in `location`'s stop fields from its train's arrived terminus (see
+    /// {@code CommercialStopVisits#resolveTerminusFallback}) when {@code GTFSTrainRepository.getTrainLocations}'
+    /// own "next stop" query resolved nothing for it (a {@code null} {@code stationShortCode}) - returns
+    /// `location` unchanged otherwise, or when no terminus row is found (e.g. every commercial stop happens to
+    /// be cancelled).
+    private static GTFSTrainLocation resolveTerminusFallback(final GTFSTrainLocation location,
+            final Map<TrainId, List<GTFSTimeTableRow>> rowsByTrainId) {
+        if (location.getStationShortCode() != null) {
+            return location;
+        }
+        final TrainId trainId = new TrainId(location.getTrainNumber(), location.getDepartureDate());
+        final List<GTFSTimeTableRow> rows = rowsByTrainId.getOrDefault(trainId, List.of());
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        return CommercialStopVisits.resolveTerminusFallback(stops)
+                .<GTFSTrainLocation>map(terminusRow -> new TerminusFallbackTrainLocation(location, terminusRow))
+                .orElse(location);
     }
 
     /**
@@ -257,8 +305,8 @@ public class SiriVmGenerationService {
                     endpointOf(j.tracks, j.tracks.size() - 1)));
             for (final NeTExPublishedJourneyTrack t : j.tracks) {
                 if (t.plannedTrack != null && t.stationShortCode != null) {
-                    tracksByTrainId.computeIfAbsent(j.trainId, k -> new HashMap<>())
-                            .computeIfAbsent(t.stationShortCode, k -> new HashMap<>())
+                    tracksByTrainId.computeIfAbsent(j.trainId, _ -> new HashMap<>())
+                            .computeIfAbsent(t.stationShortCode, _ -> new HashMap<>())
                             .put(t.visitIndex, t.plannedTrack);
                 }
             }

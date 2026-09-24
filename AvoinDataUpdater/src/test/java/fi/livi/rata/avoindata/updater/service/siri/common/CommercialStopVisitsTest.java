@@ -1,18 +1,18 @@
 package fi.livi.rata.avoindata.updater.service.siri.common;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import org.junit.jupiter.api.Test;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CommercialStopVisitsTest {
 
@@ -202,6 +202,52 @@ public class CommercialStopVisitsTest {
         assertTrue(visitIndex.isEmpty());
     }
 
+    // Regression coverage for SiriVmGenerationService's terminus-fallback wiring: GTFSTrainRepository
+    // .getTrainLocations's own "next stop" query deliberately reports no stop at all for an arrived terminus
+    // (see its javadoc) - resolveTerminusFallback is what fills that in, from the train's full row list,
+    // without needing a target stationShortCode (unlike currentVisitIndex, which currentVisitIndex's own
+    // terminus tests above already cover from the "station is known" side).
+    @Test
+    public void resolveTerminusFallback_returnsArrivedTerminus() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, T0.plusHours(1)));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final Optional<GTFSTimeTableRow> terminusRow = CommercialStopVisits.resolveTerminusFallback(stops);
+
+        assertTrue(terminusRow.isPresent());
+        assertEquals("TPE", terminusRow.get().stationShortCode);
+    }
+
+    // Mirrors currentVisitIndex_skipsCancelledVisitButKeepsItInTheCount's approaching case: while the train is
+    // still approaching (not yet arrived at) its terminus, there is nothing to fall back to yet - the terminus
+    // ARRIVAL itself is still a valid "next" candidate for the live-location query, so resolveTerminusFallback
+    // must not report it as already-arrived.
+    @Test
+    public void resolveTerminusFallback_emptyWhenApproachingNotYetArrived() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, false, T0));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), false, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final Optional<GTFSTimeTableRow> terminusRow = CommercialStopVisits.resolveTerminusFallback(stops);
+
+        assertTrue(terminusRow.isEmpty());
+    }
+
+    @Test
+    public void resolveTerminusFallback_emptyWhenEveryStopIsCancelled() {
+        final List<GTFSTimeTableRow> rows = new ArrayList<>();
+        rows.add(row("HKI", TimeTableRow.TimeTableRowType.DEPARTURE, T0, true, null));
+        rows.add(row("TPE", TimeTableRow.TimeTableRowType.ARRIVAL, T0.plusHours(1), true, null));
+
+        final List<CommercialStopVisits.Stop> stops = CommercialStopVisits.of(rows);
+        final Optional<GTFSTimeTableRow> terminusRow = CommercialStopVisits.resolveTerminusFallback(stops);
+
+        assertTrue(terminusRow.isEmpty());
+    }
+
     // Regression test: the live-location query only treats a not-yet-actual row as eligible while its
     // live_estimate_time is still in the future (see GTFSTrainRepository.getTrainLocations: "actual_time is
     // null and live_estimate_time > CURRENT_TIMESTAMP()"). A repeated station's first visit can be stuck with
@@ -256,10 +302,10 @@ public class CommercialStopVisitsTest {
         assertEquals("HKI", stops.get(0).departure().stationShortCode);
         // TPE must be a single, full arrival+departure pair - not split into two stops.
         assertEquals("TPE", stops.get(1).arrival().stationShortCode);
-        assertTrue(stops.get(1).departure() != null);
+        assertNotNull(stops.get(1).departure());
         assertEquals("TPE", stops.get(1).departure().stationShortCode);
         assertEquals("OL", stops.get(2).arrival().stationShortCode);
-        assertTrue(stops.get(2).departure() == null); // OL is the terminus
+        assertNull(stops.get(2).departure()); // OL is the terminus
     }
 
     // Regression test: a non-commercial stop (e.g. a technical/operational-only stop with no passenger

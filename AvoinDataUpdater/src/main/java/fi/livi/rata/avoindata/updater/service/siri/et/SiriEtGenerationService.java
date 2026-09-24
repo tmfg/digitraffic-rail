@@ -45,6 +45,8 @@ import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 
+import static fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository.*;
+
 @Service
 public class SiriEtGenerationService {
 
@@ -116,7 +118,7 @@ public class SiriEtGenerationService {
                     stopWatch.getDuration().toMillis(), trainsReceived, stats, outputSize,
                     journeySourceVersion, journeySourceGeneratedAt, unavailableReason);
         } catch (final Exception e) {
-            if (e instanceof PublishedJourneysUnavailableException pjue) {
+            if (e instanceof final PublishedJourneysUnavailableException pjue) {
                 unavailableReason = pjue.reason().name();
             } else if (e instanceof PetiUnavailableException) {
                 unavailableReason = PetiUnavailableException.REASON;
@@ -159,7 +161,8 @@ public class SiriEtGenerationService {
         }
         final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
 
-        final List<GTFSTrain> trains = gtfsTrainRepository.findBySourceVersionAndIdIn(0L, dbSources.trainIds());
+        final List<GTFSTrain> trains = gtfsTrainRepository
+                .findBySourceVersionAndIdIn(ANY_SOURCE_VERSION, dbSources.trainIds());
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
         final SiriEtService etService = new SiriEtService(

@@ -205,13 +205,16 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     }
 
     @Test
-    public void getTrainLocationsDwellingAtTerminus() {
+    public void getTrainLocationsArrivedAtTerminusResolvesNoStop() {
         final Train t = createTrainWithoutActualTimes();
         final TrainLocation tl = trainLocationFactory.create(t);
 
         // Train has arrived at (and is dwelling at) the terminus: every row, including the terminus ARRIVAL,
         // now has an actual time. A terminus has no DEPARTURE row, so the "next unresolved row" query has
-        // nothing left to match - it must fall back to reporting the terminus itself as the current stop.
+        // nothing left to match - it deliberately returns no stop for this case (see the query's own javadoc):
+        // reporting the already-arrived terminus is SIRI-VM-only and resolved separately in Java from the
+        // train's full row list (see CommercialStopVisitsTest#resolveTerminusFallback_returnsArrivedTerminus and
+        // SiriVmGenerationServiceTest's terminus-fallback wiring coverage).
         for (final TimeTableRow row : t.timeTableRows) {
             row.actualTime = row.scheduledTime;
         }
@@ -219,8 +222,39 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
 
-        assertLocations(locations, 1, "OL", "1");
-        assertThat(locations.getFirst().getVehicleAtStop()).isTrue();
+        assertLocations(locations, 1, null, null);
+        assertThat(locations.getFirst().getVehicleAtStop()).isNull();
+    }
+
+    // Regression test for the vehicle_at_stop window function's own tiebreak (as opposed to the outer
+    // "next stop" selection tiebreak covered by getTrainLocationsTieAtStationBoundaryPrefersDeparture below):
+    // PSL's own ARRIVAL and DEPARTURE (rows 1-2) are forced to share the exact same scheduled_time (a
+    // zero-dwell stop - see CommercialStopVisits/EtJourneyInterpreter's own tie-break handling for the same,
+    // real-if-rare occurrence). The train is still approaching PSL (neither row has happened yet), so
+    // PSL's DEPARTURE - selected as "next" because the outer tiebreak also prefers DEPARTURE - must NOT be
+    // reported as vehicle_at_stop=true: without a deterministic secondary sort key in the window functions
+    // that compute vehicle_at_stop, MySQL is free to rank the not-yet-arrived DEPARTURE first within its
+    // own same-scheduled_time station partition, wrongly satisfying the "no earlier row -> at stop" branch.
+    @Test
+    public void getTrainLocationsZeroDwellTieDoesNotWronglyReportAtStop() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        // Train has departed HKI (row 0); PSL's ARRIVAL and DEPARTURE (rows 1-2) now share one scheduled_time
+        // and are both still pending, with a live estimate at that shared instant.
+        t.timeTableRows.getFirst().actualTime = t.timeTableRows.getFirst().scheduledTime;
+        t.timeTableRows.get(2).scheduledTime = t.timeTableRows.get(1).scheduledTime;
+        t.timeTableRows.get(1).liveEstimateTime = t.timeTableRows.get(1).scheduledTime;
+        t.timeTableRows.get(2).liveEstimateTime = t.timeTableRows.get(2).scheduledTime;
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+        final TimeTableRow ttr = t.timeTableRows.get(2);
+
+        assertLocations(locations, 1, ttr.station.stationShortCode, ttr.commercialTrack);
+        // The train has not actually reached PSL yet (its ARRIVAL has not happened) - so despite PSL's
+        // DEPARTURE being the resolved "next" row, vehicle_at_stop must be false.
+        assertThat(locations.getFirst().getVehicleAtStop()).isFalse();
     }
 
     // Regression test: TPE's DEPARTURE (row 4) and JY's ARRIVAL (row 5) share the exact same scheduled_time

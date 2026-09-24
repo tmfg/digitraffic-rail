@@ -215,6 +215,19 @@ class SiriVmGenerationServiceTest {
         return train;
     }
 
+    /**
+     * Same rows as {@link #train59Rows()}, but with every row's actualTime set - the train has run its whole
+     * journey and is now dwelling at its terminus (OL), which as a terminus has only an ARRIVAL row (no
+     * DEPARTURE) - see CommercialStopVisits#resolveTerminusFallback.
+     */
+    private static GTFSTrain train59RowsArrivedAtTerminus() {
+        final GTFSTrain train = train59Rows();
+        for (final GTFSTimeTableRow row : train.timeTableRows) {
+            row.actualTime = row.scheduledTime;
+        }
+        return train;
+    }
+
     private static void addRow(final GTFSTrain train, final String stationShortCode,
                                final TimeTableRow.TimeTableRowType type, final ZonedDateTime scheduledTime,
                                final String track) {
@@ -302,6 +315,32 @@ class SiriVmGenerationServiceTest {
         assertTrue(xml.contains("FSR:Quay:TPE-1"),
                 "Expected the planned-track fallback to resolve TPE's MonitoredCall even though "
                         + "commercialTrack was blank rather than null");
+    }
+
+    // ===== GEN-VM-01e: A location whose stationShortCode is null (GTFSTrainRepository.getTrainLocations' own
+    // "next stop" query resolved nothing - the train has already arrived at its terminus, see that query's
+    // javadoc) must be filled in via the terminus fallback (CommercialStopVisits#resolveTerminusFallback),
+    // resolving the train's arrived terminus (OL) as its MonitoredCall/VehicleAtStop from the train's full row
+    // list - the same prefetch mechanism as the planned-track fallback above. =====
+
+    @Test
+    void givenNoNextStopResolvedByQuery_whenGenerate_thenResolvesTerminusFallbackFromFullRowList() {
+        seedPublished(publishedJourney59());
+        setupStationsAndPeti();
+        final TestGTFSTrainLocation location = new TestGTFSTrainLocation(
+                1L, TODAY, 59L, DateProvider.nowInHelsinki().minusMinutes(1),
+                25.759588, 61.437778, 0, 10, null, null, null, null, null, null);
+        setupLiveLocation(location);
+        when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any()))
+                .thenReturn(List.of(train59RowsArrivedAtTerminus()));
+
+        service.generate();
+
+        final List<GeneratedExport> exports = capturePersistedExports();
+        final String xml = new String(exports.getFirst().data);
+        assertTrue(xml.contains("FSR:Quay:OL-1"),
+                "Expected the terminus fallback to resolve OL (the train's arrived terminus) as the "
+                        + "MonitoredCall, even though the SQL query itself resolved no next stop at all");
     }
 
     // ===== GEN-VM-02: Happy path — persisted bytes are schema-valid SIRI-VM XML =====

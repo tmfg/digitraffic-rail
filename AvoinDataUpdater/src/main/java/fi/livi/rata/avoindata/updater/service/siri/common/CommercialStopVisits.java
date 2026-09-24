@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -154,16 +155,16 @@ public final class CommercialStopVisits {
     /// never occurs, or every occurrence is already completed/stale/cancelled (should not normally happen for a
     /// station a live location still reports) — except the arrived-terminus case below.
     ///
-    /// Terminus fallback: mirrors `GTFSTrainRepository.getTrainLocations`'s `term` lateral join.
-    /// A terminus has only an ARRIVAL row (no departure), so once that arrival's actual time is set (train has
-    /// arrived), there is no later not-yet-completed row left to match for it — the loop above would find
-    /// nothing and this stop's live location would silently lose its `MonitoredCall`/`VehicleAtStop` when its
-    /// live track is unknown. Since the arrived terminus is by definition the last (non-cancelled) stop in the
-    /// journey, it is still reported as current here, exactly as `term` reports it in the live-location query.
-    /// Like `term`'s own row selection, this looks at the *last commercial, non-cancelled row overall* (see
-    /// [Stop#lastNonCancelledCommercialRow]) - not "the last wholly non-cancelled stop" - so a partially
-    /// cancelled stop (e.g. a non-cancelled, already arrived ARRIVAL paired with a cancelled DEPARTURE) still
-    /// surfaces its still-valid ARRIVAL leg here, exactly as `term` would pick it.
+    /// Terminus fallback: shares [#findArrivedTerminus] with [#resolveTerminusFallback] (see its
+    /// javadoc for the full rationale - this is the same fallback, just additionally matched against
+    /// `stationShortCode`). A terminus has only an ARRIVAL row (no departure), so once that arrival's actual
+    /// time is set (train has arrived), there is no later not-yet-completed row left to match for it — the loop
+    /// above would find nothing and this stop's live location would silently lose its
+    /// `MonitoredCall`/`VehicleAtStop` when its live track is unknown. Since the arrived terminus is by
+    /// definition the last (non-cancelled) stop in the journey, it is still reported as current here. Like
+    /// [Stop#lastNonCancelledCommercialRow], this looks at the *last commercial, non-cancelled row overall* -
+    /// not "the last wholly non-cancelled stop" - so a partially cancelled stop (e.g. a non-cancelled, already
+    /// arrived ARRIVAL paired with a cancelled DEPARTURE) still surfaces its still-valid ARRIVAL leg here.
     ///
     /// @param now the time to evaluate estimate staleness against - callers should pass the same instant used to
     ///            build the live locations being resolved (see `SiriVmGenerationService`), matching the
@@ -190,17 +191,50 @@ public final class CommercialStopVisits {
                 return OptionalInt.of(visitIndex);
             }
         }
+        final Optional<TerminusMatch> terminusMatch = findArrivedTerminus(stops);
+        if (terminusMatch.isPresent() && terminusMatch.get().row().stationShortCode.equals(stationShortCode)) {
+            return OptionalInt.of(visitIndexPerStop[terminusMatch.get().stopIndex()]);
+        }
+        return OptionalInt.empty();
+    }
+
+    /// The train's arrived terminus (see class-level and [#currentVisitIndex] javadoc for why this fallback
+    /// exists), for callers that don't have - or want to match against - a specific `stationShortCode`. Used by
+    /// `SiriVmGenerationService`/`VmJourneyConverter` when `GTFSTrainRepository.getTrainLocations`'s own "next
+    /// stop" query resolved nothing at all for a train (a `null` `stationShortCode` - see that query's own
+    /// javadoc for why it deliberately leaves the terminus case unresolved), to fill in the location's stop
+    /// fields from the train's full row list instead. `Optional.empty()` when no stop qualifies (e.g. every
+    /// commercial stop is cancelled, or the last usable row isn't an arrived ARRIVAL) - the location then stays
+    /// as the query left it (no stop resolved).
+    public static Optional<GTFSTimeTableRow> resolveTerminusFallback(final List<Stop> stops) {
+        return findArrivedTerminus(stops).map(TerminusMatch::row);
+    }
+
+    /// Pairs a matched terminus fallback's own stop index within `stops` with the already-resolved row itself -
+    /// so callers never need to re-derive the row from the index (which [Stop#lastNonCancelledCommercialRow]
+    /// can, in general, return `null` for - re-invoking it after the fact would force every caller to redundantly
+    /// re-handle that, even though [#findArrivedTerminus] itself already ruled it out for the matched index).
+    private record TerminusMatch(int stopIndex, GTFSTimeTableRow row) {
+    }
+
+    /// Scans `stops` backward for the train's arrived terminus - the chronologically last commercial,
+    /// non-cancelled row overall (see [Stop#lastNonCancelledCommercialRow]), only when that row is an ARRIVAL
+    /// whose actual time is set (the train has genuinely arrived there and has nothing further planned).
+    /// Shared by [#currentVisitIndex] (which additionally matches the result against a specific station) and
+    /// [#resolveTerminusFallback] (which does not). Returns the matched stop's own index and row together (see
+    /// [TerminusMatch]) so [#currentVisitIndex] can still report the matched occurrence's own visitIndex without
+    /// re-deriving the row.
+    private static Optional<TerminusMatch> findArrivedTerminus(final List<Stop> stops) {
         for (int i = stops.size() - 1; i >= 0; i--) {
             final GTFSTimeTableRow lastRow = stops.get(i).lastNonCancelledCommercialRow();
             if (lastRow == null) {
                 continue;
             }
-            if (lastRow.type == TimeTableRow.TimeTableRowType.ARRIVAL && lastRow.actualTime != null
-                    && lastRow.stationShortCode.equals(stationShortCode)) {
-                return OptionalInt.of(visitIndexPerStop[i]);
+            if (lastRow.type == TimeTableRow.TimeTableRowType.ARRIVAL && lastRow.actualTime != null) {
+                return Optional.of(new TerminusMatch(i, lastRow));
             }
             break;
         }
-        return OptionalInt.empty();
+        return Optional.empty();
     }
 }

@@ -41,12 +41,14 @@ public interface GTFSTrainLocation {
 
     /// Station short code of the upcoming (not yet reached) commercial stop, resolved via
     /// `time_table_row` — the same stop used for {@link #getDelaySeconds()}. `null` when no upcoming stop
-    /// could be resolved (e.g. the train has no more commercial stops left, or all remaining stops are
-    /// cancelled/non-commercial) — **except** for the terminus fallback (`term` lateral join, see
-    /// `GTFSTrainRepository#getTrainLocations`): once the train has actually arrived at its terminus and has
-    /// no further stop to report, this field instead reports that already-arrived terminus so the train is
-    /// not silently dropped from the feed while dwelling there. Callers must not assume a non-null value here
-    /// is always still ahead of the train.
+    /// could be resolved — including once the train has actually arrived at its terminus and has no further
+    /// stop to report: unlike the "next stop" lookup itself (shared, unchanged, with GTFS-Realtime), resolving
+    /// an *already-arrived* terminus is only ever needed by SIRI-VM, so this query deliberately leaves it
+    /// `null` here and SIRI-VM resolves it separately, in Java, from the train's full row list (see
+    /// `CommercialStopVisits#resolveTerminusFallback`, wired in `SiriVmGenerationService` via
+    /// `TerminusFallbackTrainLocation`) rather than reporting it through this field. Callers other than
+    /// SIRI-VM (e.g. GTFS-Realtime) must not assume a `null` value here means the train has left the network —
+    /// it may simply be dwelling at its terminus.
     String getStationShortCode();
 
     /// Planned/commercial track of the upcoming stop identified by {@link #getStationShortCode()}. `null`
