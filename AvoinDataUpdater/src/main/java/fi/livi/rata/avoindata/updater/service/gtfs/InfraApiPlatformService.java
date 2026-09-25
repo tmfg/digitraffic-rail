@@ -1,6 +1,5 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +19,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.retry.support.RetryTemplate;
+import fi.livi.rata.avoindata.updater.config.InfraApiRetry;
 
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.InfraApiPlatform;
 import tools.jackson.databind.JsonNode;
 
+import com.google.common.base.Strings;
+
 @Component
 public class InfraApiPlatformService {
+    static final String CACHE_NAME = "infraApiPlatformNodes";
+
+    private final RetryTemplate retryTemplate = InfraApiRetry.create();
 
     @Autowired
     private WebClient webClient;
@@ -41,32 +47,36 @@ public class InfraApiPlatformService {
 
     public static final Pattern lastTwoLiikennepaikkaIdPlaces = Pattern.compile("\\d+.\\d+$");
 
-    @Cacheable("infraApiPlatformNodes")
-    public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart(final ZonedDateTime fromDate,
-            final ZonedDateTime toDate) {
+    @Cacheable(CACHE_NAME)
+    public Map<String, List<InfraApiPlatform>> getPlatformsByLiikennepaikkaIdPart() {
         final Map<String, List<InfraApiPlatform>> platformsByLiikennepaikkaIdPart = new HashMap<>();
 
-        try {
-            logger.info("Fetching Infra-API platform data from {}", baseUrl);
+        // An unconfigured endpoint means "no platform data", which is distinct from a fetch failure.
+        if (Strings.isNullOrEmpty(baseUrl)) {
+            return platformsByLiikennepaikkaIdPart;
+        }
 
-            final JsonNode jsonNode = webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("Fetching Infra-API platform data from {}", baseUrl);
 
-            for (final JsonNode node : jsonNode) {
-                // Parse each platform independently so one malformed record does not discard
-                // the whole batch.
-                try {
-                    final InfraApiPlatform platform = deserializePlatform(node.get(0));
-                    final String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
-                    platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
-                    platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
-                } catch (final Exception e) {
-                    logger.warn(
-                            "method=getPlatformsByLiikennepaikkaIdPart Could not parse Infra-API platform data for platform {}",
-                            node.path(0).path("tunnus").asString(), e);
-                }
+        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(baseUrl).retrieve().bodyToMono(JsonNode.class).block());
+
+        if (jsonNode == null) {
+            throw new IllegalStateException("Infra-API returned null for " + baseUrl);
+        }
+
+        for (final JsonNode node : jsonNode) {
+            // Parse each platform independently so one malformed record does not discard
+            // the whole batch.
+            try {
+                final InfraApiPlatform platform = deserializePlatform(node.get(0));
+                final String liikennepaikkaIdPart = extractLiikennepaikkaIdPart(platform.liikennepaikkaId);
+                platformsByLiikennepaikkaIdPart.putIfAbsent(liikennepaikkaIdPart, new ArrayList<>());
+                platformsByLiikennepaikkaIdPart.get(liikennepaikkaIdPart).add(platform);
+            } catch (final Exception e) {
+                logger.warn(
+                        "method=getPlatformsByLiikennepaikkaIdPart Could not parse Infra-API platform data for platform {}",
+                        node.path(0).path("tunnus").asString(), e);
             }
-        } catch (final Exception e) {
-            logger.error("Could not fetch Infra-API platform data", e);
         }
 
         return platformsByLiikennepaikkaIdPart;

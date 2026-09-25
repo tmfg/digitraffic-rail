@@ -2,6 +2,9 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Agency;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Route;
@@ -19,13 +22,18 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,13 +46,15 @@ public class GTFSServiceTest {
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
         final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
         final GTFSTripService gtfsTripService = mock(GTFSTripService.class);
+        final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService = mock(TrakediaLiikennepaikkaService.class);
 
         final GTFSService gtfsService = new GTFSService(
                 gtfsEntityService,
                 gtfsWritingService,
                 scheduleProviderService,
                 lastUpdateService,
-                gtfsTripService);
+                gtfsTripService,
+                trakediaLiikennepaikkaService);
 
         final GTFSDto gtfsDto = new GTFSDto();
         gtfsDto.trips = new ArrayList<>(List.of(
@@ -76,7 +86,16 @@ public class GTFSServiceTest {
         ));
         gtfsDto.translations = new ArrayList<>(List.of(new Translation("Old", "en", "Old")));
 
-        when(gtfsEntityService.createGTFSEntity(anyList(), anyList())).thenReturn(gtfsDto);
+        when(gtfsEntityService.createGTFSEntity(anyList(), anyList(), anyMap(), any(java.time.LocalDate.class),
+                any(FailedSegments.class)))
+                .thenReturn(gtfsDto);
+
+        // createGtfs resolves and validates the node snapshot before building the feed.
+        final Map<InfraApiDataset, Integer> sourceCounts = new EnumMap<>(InfraApiDataset.class);
+        sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, 1);
+        sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, 1);
+        when(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes())
+                .thenReturn(InfraApiMapResult.success(Map.of(), sourceCounts, Instant.now()));
 
         final Schedule regularSchedule = new Schedule();
         final GTFSDto result = gtfsService.createGtfs(Collections.emptyList(), List.of(regularSchedule), "gtfs-test.zip", true);

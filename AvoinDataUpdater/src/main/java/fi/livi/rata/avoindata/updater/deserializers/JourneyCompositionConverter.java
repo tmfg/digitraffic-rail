@@ -292,7 +292,8 @@ public class JourneyCompositionConverter {
     private Station getStationByTrafficLocationOid(final String stationOid, final Integer uicCodeFallback) {
         // JRI -> {ArrayNode@25383} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
         final Optional<JsonNode> liikennepaikka =
-                trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes().values().stream().map(arrayNode -> arrayNode.get(0))
+                trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes().valuesOrEmpty().values().stream()
+                        .map(arrayNode -> arrayNode.get(0))
                         .filter(jsonNode -> jsonNode.get("tunniste").asText().equals(stationOid)).findFirst();
         if (liikennepaikka.isPresent()) {
             final Optional<Station> station = stationRepository.findByShortCodeIgnoreCase(liikennepaikka.get().get("lyhenne").asText());

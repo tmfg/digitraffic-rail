@@ -8,18 +8,18 @@ on:
 jobs:
   dependency-check:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           java-version: 25
           distribution: corretto
           cache: maven
       - name: Cache dependency-check files
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository/org/owasp
           key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
@@ -31,7 +31,7 @@ jobs:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
-        uses: tmfg/digitraffic-actions@gh-pages-publish/v1
+        uses: tmfg/digitraffic-actions@339b5aa5afc3459cba11653adbc0e7132f356c1d # gh-pages-publish/v1
         with:
           GH_PAGES_BRANCH: gh-pages
           FILE_PATH: target/dependency-check-report.html
@@ -39,7 +39,7 @@ jobs:
           LINK_TEXT: Dependency check report
       - name: Notify Slack
         if: failure()
-        uses: tmfg/digitraffic-actions@slack-notify/v1
+        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
         with:
           status: failure
           text: FAILED Rail Dependency Check

@@ -11,14 +11,14 @@ jobs:
   update-swagger:
     if: github.repository != 'tmfg/digitraffic-rail'
     environment: ${{ github.event.inputs.env }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
       actions: read
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.1
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.AWS_SWAGGER_ROLE }}
           role-session-name: gh-actions-update-swagger-rail-${{ github.event.inputs.env }}
