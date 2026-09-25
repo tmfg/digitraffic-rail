@@ -14,8 +14,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>25</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>4.0.7</spring.boot.version>
-        <spring.cloud.version>5.0.1</spring.cloud.version>
+        <spring.boot.version>4.0.8</spring.boot.version>
+        <spring.cloud.version>5.0.3</spring.cloud.version>
 
         <com.google.guava.version>33.6.0-jre</com.google.guava.version>
         <aws.advanced.jdbc.wrapper.version>4.4.0</aws.advanced.jdbc.wrapper.version>
@@ -97,38 +97,47 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- TODO: Remove Netty and Tomcat overrides when Spring Boot includes Netty ≥4.2.16 and Tomcat ≥11.0.24
-                 Added 2026-05-22 to fix CVE-2026-42581 (Netty) and CVE-2026-41293 (Tomcat).
-                 Updated 2026-08-05 to fix a lot of new CVEs
+            <!-- TODO: Remove Tomcat overrides when Spring Boot includes Tomcat ≥11.0.26
 
                  This project imports the Spring Boot BOM (not parent), so property overrides don't work —
                  explicit entries in dependencyManagement are required to override transitive versions. -->
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>4.2.16.Final</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
-                <version>11.0.25</version>
+                <version>11.0.26</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-el</artifactId>
-                <version>11.0.24</version>
+                <version>11.0.26</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-websocket</artifactId>
-                <version>11.0.24</version>
+                <version>11.0.26</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-annotations-api</artifactId>
-                <version>11.0.24</version>
+                <version>11.0.26</version>
+            </dependency>
+            <!-- TODO: Remove HttpComponents overrides when Spring Boot includes httpclient5 ≥5.6.4.
+                 Fixes CVE-2026-71290 (9.1) in httpclient5, and CVE-2026-54399 and CVE-2026-54428
+                 in httpcore5. -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.6.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>5.4.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5-h2</artifactId>
+                <version>5.4.3</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
