@@ -418,13 +418,99 @@ class NeTExEntityServiceTest {
 
         // then — times stay on the operating day, none roll past 24:00
         final var passingTimes = journeys.get(0).passingTimes();
-        assertEquals("12:06:00", passingTimes.get(0).departureTime());
-        assertEquals("12:07:00", passingTimes.get(1).arrivalTime());
-        assertEquals("12:08:00", passingTimes.get(1).departureTime());
-        assertEquals("12:20:00", passingTimes.get(2).arrivalTime());
+        assertEquals("14:06:00", passingTimes.get(0).departureTime());
+        assertEquals("14:07:00", passingTimes.get(1).arrivalTime());
+        assertEquals("14:08:00", passingTimes.get(1).departureTime());
+        assertEquals("14:20:00", passingTimes.get(2).arrivalTime());
+    }
+
+    // --- Line naming ---
+
+    @Test
+    void givenShorterWorking_whenCreatingLines_thenItsDestinationBecomesAVia() {
+        // given — some journeys turn back at Lappeenranta, the rest run to Joensuu
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "LH", "KV", "LR"),
+                List.of("HKI", "LH", "KV", "LR", "IMR", "JNS"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Lappeenranta-Joensuu", lines.get(0).name());
+    }
+
+    @Test
+    void givenRingLine_whenCreatingLines_thenMidpointIsUsedRatherThanTurnBacks() {
+        // given — a route returning to its origin
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "PSL", "KVS", "TKL", "HKI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Kivistö-Helsinki", lines.get(0).name());
+    }
+
+    @Test
+    void givenOppositeDirectionRoute_whenCreatingLines_thenItContributesNoVia() {
+        // given — the same corridor served both ways
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "LH", "KV", "JNS"),
+                List.of("JNS", "KV", "LH", "HKI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Joensuu", lines.get(0).name());
+    }
+
+    @Test
+    void givenRouteLeavingTheCorridor_whenCreatingLines_thenItContributesNoVia() {
+        // given — a branch that does not run along the longest route
+        final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
+        final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
+                List.of("HKI", "TPE", "SK", "OL"),
+                List.of("HKI", "TPE", "PRI"));
+
+        // when
+        final List<NeTExEntityService.NeTExLine> lines = entityService.createLines(List.of(schedule),
+                routeData, FINNISH_STATION_NAMES);
+
+        // then
+        assertEquals("Helsinki-Oulu", lines.get(0).name());
     }
 
     // --- Helpers ---
+
+    private static final Map<String, String> FINNISH_STATION_NAMES = Map.ofEntries(
+            Map.entry("HKI", "Helsinki"), Map.entry("PSL", "Pasila"), Map.entry("KVS", "Kivistö"),
+            Map.entry("TKL", "Tikkurila"), Map.entry("LH", "Lahti"), Map.entry("KV", "Kouvola"),
+            Map.entry("LR", "Lappeenranta"), Map.entry("IMR", "Imatra"), Map.entry("JNS", "Joensuu"),
+            Map.entry("TPE", "Tampere"), Map.entry("SK", "Seinäjoki"), Map.entry("OL", "Oulu"),
+            Map.entry("PRI", "Pori"));
+
+    @SafeVarargs
+    private static NeTExRouteData routeDataFor(final String lineId, final List<String>... routes) {
+        final List<NeTExRouteData.NeTExRoute> built = new ArrayList<>();
+        for (int i = 0; i < routes.length; i++) {
+            final List<String> stations = routes[i];
+            built.add(new NeTExRouteData.NeTExRoute(
+                    "FTR:Route:" + i,
+                    stations.get(0) + " - " + stations.get(stations.size() - 1),
+                    lineId,
+                    stations.stream().map(code -> "FTR:RoutePoint:" + code).toList()));
+        }
+        return new NeTExRouteData(built, List.of(), Map.of());
+    }
 
     private static NeTExRouteData emptyRouteData() {
         return new NeTExRouteData(List.of(), List.of(), Map.of());
@@ -522,14 +608,14 @@ class NeTExEntityServiceTest {
     }
 
     /**
-     * HKI 12:06 → TPE 12:07/12:08 → OL 12:20, Helsinki local (UTC+2 on the
-     * reference date).
+     * HKI 14:06 → TPE 14:07/14:08 → OL 14:20. An origin past noon is what arms the
+     * past-midnight rollover check, so this fixture exercises it.
      */
     private List<ScheduleRow> createAfternoonStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
         final String[] stations = { "HKI", "TPE", "OL" };
-        final Duration[] arrivals = { null, Duration.ofHours(10).plusMinutes(7), Duration.ofHours(10).plusMinutes(20) };
-        final Duration[] departures = { Duration.ofHours(10).plusMinutes(6), Duration.ofHours(10).plusMinutes(8),
+        final Duration[] arrivals = { null, Duration.ofHours(14).plusMinutes(7), Duration.ofHours(14).plusMinutes(20) };
+        final Duration[] departures = { Duration.ofHours(14).plusMinutes(6), Duration.ofHours(14).plusMinutes(8),
                 null };
 
         for (int i = 0; i < stations.length; i++) {

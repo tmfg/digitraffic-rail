@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -21,7 +22,9 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -31,22 +34,31 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * Tests for NeTExService — orchestration and filtering logic.
  */
 class NeTExServiceTest {
+    private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     private NeTExService netExService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
-        final EmptyPetiStopSource petiStopSource = new EmptyPetiStopSource();
+        // Generation refuses an empty PETI snapshot, so these orchestration tests need
+        // a stop place present.
+        final PetiStopSource petiStopSource = () -> List.of(
+                new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiStopSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         netExService = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService, writingService,
-                petiStopSource, null, todaysScheduleService, null);
+                routeService, new IdentityTrackSource(), stopsService,
+                writingService,
+                petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
+
+        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
+        field.setAccessible(true);
+        field.setDouble(netExService, 0.0);
     }
 
     // --- Filtering tests ---
@@ -124,7 +136,7 @@ class NeTExServiceTest {
     }
 
     @Test
-    void givenMuseumTrain_whenFiltering_thenIncluded() {
+    void givenMuseumTrain_whenFiltering_thenExcluded() {
         // given
         final Schedule schedule = createSchedule("MUS", "Long-distance", true);
 
@@ -132,7 +144,7 @@ class NeTExServiceTest {
         final List<Schedule> result = netExService.filterPassengerTrains(List.of(schedule));
 
         // then
-        assertEquals(1, result.size());
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -171,7 +183,7 @@ class NeTExServiceTest {
         final List<Schedule> result = netExService.filterPassengerTrains(List.of(passenger, cargo, museum));
 
         // then
-        assertEquals(List.of("IC", "MUS"), result.stream().map(s -> s.trainType.name).toList());
+        assertEquals(List.of("IC"), result.stream().map(s -> s.trainType.name).toList());
     }
 
     // --- Generation orchestration tests ---
@@ -189,6 +201,27 @@ class NeTExServiceTest {
         // then
         assertNotNull(result);
         assertTrue(result.zip().length > 0);
+    }
+
+    @Test
+    void givenATrainPassesThroughAStation_whenGenerating_thenNoStopPointIsMadeForIt() {
+        final List<String> codes = List.of("HKI", "TPE", "OL");
+        final List<Station> stations = createStations(codes);
+
+        final Schedule stopping = createFullSchedule(1L, 59L, "IC", "Long-distance", codes);
+        stopping.scheduleRows.get(1).commercialTrack = "1";
+        final int withStop = netExService.generateNeTEx(List.of(), List.of(stopping), stations)
+                .scheduledStopPoints();
+
+        final Schedule passing = createFullSchedule(1L, 59L, "IC", "Long-distance", codes);
+        final ScheduleRow tpe = passing.scheduleRows.get(1);
+        tpe.arrival.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        tpe.departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        tpe.commercialTrack = "902";
+        final int withPassing = netExService.generateNeTEx(List.of(), List.of(passing), stations)
+                .scheduledStopPoints();
+
+        assertEquals(withStop - 1, withPassing, "a passing track must not become a stop point");
     }
 
     @Test

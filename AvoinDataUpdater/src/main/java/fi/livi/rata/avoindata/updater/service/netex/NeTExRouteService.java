@@ -10,10 +10,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
-import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
  * Derives Routes and JourneyPatterns from schedule data.
@@ -49,6 +47,16 @@ public class NeTExRouteService {
     }
 
     /**
+     * A Route carries only station-level RoutePoints, so its identity must not move
+     * when a train is reallocated to another platform.
+     */
+    public String computeStationHash(final List<StopWithTrack> stopsWithTrack) {
+        return stopsWithTrack.stream()
+                .map(StopWithTrack::stationShortCode)
+                .collect(Collectors.joining("_"));
+    }
+
+    /**
      * Creates routes and journey patterns with track-qualified SSP references.
      * Trains with identical (station+track) sequences share a JourneyPattern.
      * Route points remain station-level (not track-qualified).
@@ -70,9 +78,10 @@ public class NeTExRouteService {
             scheduleToPatternId.put(schedule.id, patternId);
 
             if (!patternMap.containsKey(patternId)) {
-                final String routeId = idGenerator.routeId(lineIdentifier, hash);
+                final String routeId = idGenerator.routeId(lineIdentifier,
+                        computeStationHash(commercialStopsWithTrack));
 
-                routeMap.put(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack));
+                routeMap.putIfAbsent(routeId, buildRoute(lineIdentifier, routeId, commercialStopsWithTrack));
                 patternMap.put(patternId, buildJourneyPattern(patternId, routeId, commercialStopsWithTrack));
             }
         }
@@ -135,14 +144,7 @@ public class NeTExRouteService {
 
     private boolean isCommercialStop(final ScheduleRow row) {
         // Must select the same stops as the SIRI-ET feed — see CommercialStopRule.
-        return CommercialStopRule.isCommercialStop(leg(row.arrival), leg(row.departure));
-    }
-
-    private static Leg leg(final ScheduleRowPart part) {
-        if (part == null) {
-            return Leg.ABSENT;
-        }
-        return part.stopType == ScheduleRow.ScheduleRowStopType.COMMERCIAL ? Leg.COMMERCIAL : Leg.NON_COMMERCIAL;
+        return CommercialStopRule.isCommercialStop(row);
     }
 
     private String deriveLineIdentifier(final Schedule schedule) {

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -25,12 +24,13 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
  * Tests for NeTExWritingService — XML marshalling and ZIP output.
  */
 class NeTExWritingServiceTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
         private NeTExWritingService writingService;
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                writingService = new NeTExWritingService(new NeTExIdGenerator(), PETI_URL);
         }
 
         @Test
@@ -186,6 +186,47 @@ class NeTExWritingServiceTest {
                 // then
                 final String xml = extractSharedXmlFromZip(zip);
                 assertTrue(xml.contains("ServiceCalendarFrame") || xml.contains("dayTypes"));
+        }
+
+        @Test
+        void givenValidData_whenWritingZip_thenNetworkIsOwnedByTheInfrastructureAuthority() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then
+                final String xml = extractSharedXmlFromZip(zip);
+                assertTrue(xml.contains("<Authority version=\"1\" id=\"FTR:Authority:ftia\">"),
+                                "shared data should define the authority");
+                assertTrue(xml.contains("<Name>Finnish Transport Infrastructure Agency</Name>"));
+                assertTrue(xml.contains("<LegalName>Väylävirasto</LegalName>"));
+                assertTrue(xml.contains("<Url>https://vayla.fi/en/</Url>"),
+                                "ContactDetails needs an http(s) Url");
+                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\" version=\"1\"/>"),
+                                "the Network must name the authority responsible for it, "
+                                                + "with a version or the reference reads as external");
+        }
+
+        @Test
+        void givenValidData_whenWritingZip_thenFsrCodespacePointsAtThePetiExport() throws Exception {
+                // given
+                final var testData = createMinimalTestData();
+
+                // when
+                final byte[] zip = writingService.writeNeTExZip(
+                                testData.stopsData, testData.routeData,
+                                testData.lines, testData.operators, testData.serviceJourneys,
+                                testData.timestamp);
+
+                // then — an FSR id means nothing without saying which registry issued it
+                final String xml = extractXmlFromZip(zip);
+                assertTrue(xml.contains("<Xmlns>FSR</Xmlns>"));
+                assertTrue(xml.contains("<XmlnsUrl>" + PETI_URL + "</XmlnsUrl>"));
         }
 
         @Test
@@ -387,9 +428,9 @@ class NeTExWritingServiceTest {
         private TestData createMinimalTestData() {
                 final NeTExStopsData stopsData = new NeTExStopsData(
                                 List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI",
-                                                "Helsinki", "HKI",
-                                                new BigDecimal("60.172133"), new BigDecimal("24.941662"))),
-                                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI")),
+                                                "Helsinki", "HKI")),
+                                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI",
+                                                "FTR:ScheduledStopPoint:HKI")),
                                 List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI",
                                                 "Helsinki")));
 

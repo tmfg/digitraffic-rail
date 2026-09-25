@@ -25,6 +25,10 @@ public class SimpleTimeTableRow {
     @Column(insertable = false, updatable = false)
     public ZonedDateTime scheduledTime;
     @Column(insertable = false, updatable = false)
+    public boolean trainStopping;
+    @Column(insertable = false, updatable = false)
+    public boolean cancelled;
+    @Column(insertable = false, updatable = false)
     public String stationShortCode;
     @Column(insertable = false, updatable = false)
     public TimeTableRow.TimeTableRowType type;
@@ -41,6 +45,7 @@ public class SimpleTimeTableRow {
         this.scheduledTime = scheduledTime;
         this.stationShortCode = stationShortCode;
         this.type = type;
+        this.trainStopping = true;
     }
 
     public Long getTrainNumber() { return id.trainNumber; }

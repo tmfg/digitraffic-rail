@@ -53,12 +53,17 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * End-to-end DB round-trip for TICKET-04.3: NeTEx generation persists the resolved journey refs to the real
- * database (dbrail docker compose), then SIRI-ET generation reads them back from the DB and publishes a doc
- * that references the same published {@code ServiceJourney} id. The external systems — RIPA/LIIKE schedules,
- * PETI stops, station metadata and the live-train store — are mocked; only the persistence layer is real.
+ * End-to-end DB round-trip for TICKET-04.3: NeTEx generation persists the
+ * resolved journey refs to the real
+ * database (dbrail docker compose), then SIRI-ET generation reads them back
+ * from the DB and publishes a doc
+ * that references the same published ServiceJourney id. The external
+ * systems — schedules,
+ * PETI stops, station metadata and the live-train store — are mocked; only the
+ * persistence layer is real.
  *
- * <p>Requires the {@code dbrail/} MySQL to be running (see {@code dbrail/docker-compose.yml}).
+ * Requires the dbrail/ MySQL to be running (see
+ * dbrail/docker-compose.yml).
  */
 class SiriEtDbIntegrationTest extends BaseTest {
 
@@ -67,7 +72,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
     private static final long TRAIN_NUMBER = 100L;
     private static final long SCHEDULE_ID = 1L;
 
-    // RIPA/LIIKE (schedules), PETI (stops), station metadata and the live-train store are the external inputs.
+    // Schedules, PETI (stops), station metadata and the live-train store are the
+    // external inputs.
     @MockitoBean
     private ScheduleProviderService scheduleProviderService;
     @MockitoBean
@@ -95,7 +101,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
 
     @Test
     void netexGeneratedToDb_thenSiriEtReadsRefsFromDb() throws Exception {
-        // given — the external systems return a single passenger train 100 (HKI → TPE) valid today
+        // given — the external systems return a single passenger train 100 (HKI → TPE)
+        // valid today
         final List<Station> stations = List.of(station("HKI", 1), station("TPE", 160));
         final List<PetiStop> petiStops = petiStops();
         when(stationRepository.findAll()).thenReturn(stations);
@@ -107,14 +114,16 @@ class SiriEtDbIntegrationTest extends BaseTest {
         when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any()))
                 .thenReturn(List.of(liveTrain100()));
 
-        // when — NeTEx generation persists the ZIP package + the resolved journey refs to the real DB
+        // when — NeTEx generation persists the ZIP package + the resolved journey refs
+        // to the real DB
         neTExPackageService.generatePackage();
 
-        // then — the published journey for (100, today) is in the database, with its planned tracks
+        // then — the published journey for (100, today) is in the database, with its
+        // planned tracks
         final Long version = publishedJourneyRepository.getMaxDatasetVersion();
         assertNotNull(version, "NeTEx generation must persist a dataset version");
-        final List<NeTExPublishedJourney> published =
-                publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, List.of(TODAY));
+        final List<NeTExPublishedJourney> published = publishedJourneyRepository
+                .findByDatasetVersionAndDepartureDatesFetchTracks(version, List.of(TODAY));
         assertFalse(published.isEmpty(), "expected a published journey for train 100 on today");
         final NeTExPublishedJourney journey = published.getFirst();
         final String serviceJourneyId = journey.serviceJourneyId;
@@ -127,7 +136,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
         // when — SIRI-ET generation reads the refs back from the DB (no RIPA)
         siriEtGenerationService.generate();
 
-        // then — the persisted SIRI-ET doc references the same DB-published ServiceJourney id
+        // then — the persisted SIRI-ET doc references the same DB-published
+        // ServiceJourney id
         final GeneratedExport siri = generatedExportRepository.findFirstByFileNameOrderByIdDesc("siri-et.xml");
         assertNotNull(siri, "SIRI-ET must be published");
         final String siriXml = new String(siri.data, StandardCharsets.UTF_8);
@@ -143,7 +153,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
         // when
         siriEtGenerationService.generate();
 
-        // then — SIRI has a hard dependency on the published NeTEx: it fails the cycle and publishes nothing
+        // then — SIRI has a hard dependency on the published NeTEx: it fails the cycle
+        // and publishes nothing
         assertNull(generatedExportRepository.findFirstByFileNameOrderByIdDesc("siri-et.xml"),
                 "SIRI-ET must not be published without NeTEx refs in the DB");
     }
@@ -169,7 +180,10 @@ class SiriEtDbIntegrationTest extends BaseTest {
                         List.of(new PetiQuay("FSR:Quay:TPE-2", "2", null, null, null))));
     }
 
-    /** A regular passenger schedule for train 100 (HKI → TPE) that runs every day across the feed horizon. */
+    /**
+     * A regular passenger schedule for train 100 (HKI → TPE) that runs every day
+     * across the feed horizon.
+     */
     private static Schedule schedule100() {
         final Schedule schedule = new Schedule();
         schedule.id = SCHEDULE_ID;
@@ -209,7 +223,7 @@ class SiriEtDbIntegrationTest extends BaseTest {
     }
 
     private static ScheduleRow scheduleRow(final String shortCode, final int uic, final String track,
-                                           final boolean arrival, final boolean departure) {
+            final boolean arrival, final boolean departure) {
         final ScheduleRow row = new ScheduleRow();
         row.station = new StationEmbeddable(shortCode, uic, "FI");
         row.commercialTrack = track;
@@ -230,7 +244,9 @@ class SiriEtDbIntegrationTest extends BaseTest {
         return row;
     }
 
-    /** The live train 100 dated today: departs HKI (track 1), arrives TPE (track 2). */
+    /**
+     * The live train 100 dated today: departs HKI (track 1), arrives TPE (track 2).
+     */
     private static GTFSTrain liveTrain100() {
         final GTFSTrain train = new GTFSTrain();
         train.id = new TrainId(TRAIN_NUMBER, TODAY);
@@ -242,8 +258,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
     }
 
     private static void addStop(final GTFSTrain train, final String stationShortCode,
-                                final ZonedDateTime arrivalTime, final ZonedDateTime departureTime,
-                                final String track) {
+            final ZonedDateTime arrivalTime, final ZonedDateTime departureTime,
+            final String track) {
         if (arrivalTime != null) {
             train.timeTableRows.add(stopRow(train, stationShortCode, TimeTableRow.TimeTableRowType.ARRIVAL,
                     arrivalTime, track));
@@ -255,8 +271,8 @@ class SiriEtDbIntegrationTest extends BaseTest {
     }
 
     private static GTFSTimeTableRow stopRow(final GTFSTrain train, final String stationShortCode,
-                                            final TimeTableRow.TimeTableRowType type, final ZonedDateTime time,
-                                            final String track) {
+            final TimeTableRow.TimeTableRowType type, final ZonedDateTime time,
+            final String track) {
         final GTFSTimeTableRow row = new GTFSTimeTableRow();
         row.stationShortCode = stationShortCode;
         row.type = type;

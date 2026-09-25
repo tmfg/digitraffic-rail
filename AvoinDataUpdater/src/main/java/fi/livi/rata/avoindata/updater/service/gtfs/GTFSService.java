@@ -30,9 +30,11 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.GTFSDto;
+import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
