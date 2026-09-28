@@ -1,14 +1,13 @@
 package fi.livi.rata.avoindata.updater.service.hack;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
-import fi.livi.rata.avoindata.common.domain.common.TrainId;
-import fi.livi.rata.avoindata.common.domain.train.Train;
-import fi.livi.rata.avoindata.updater.service.RipaService;
-import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
-import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
-import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +15,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.dao.train.TrainSourceVersion;
+import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.RipaService;
+import fi.livi.rata.avoindata.updater.service.TrainLockExecutor;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
+import fi.livi.rata.avoindata.updater.updaters.abstractup.persist.TrainPersistService;
 
 @Service
 public class OldTrainService {
@@ -50,15 +56,23 @@ public class OldTrainService {
 
         log.info("method=updateOldTrains Starting to check for updated old trains from {} to {}", start, end);
 
+        int updatedTotal = 0;
+
         try {
             for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
-                log.debug("method=updateOldTrains Checking for updated old trains. Date: {}", date);
+                final LocalDate departureDate = date;
 
-                final List<Train> trainResponse = getChangedTrains(date);
+                log.debug("method=updateOldTrains Checking for updated old trains. Date: {}", departureDate);
 
-                if(!trainResponse.isEmpty()) {
+                final List<Train> trainResponse = getChangedTrains(departureDate);
+
+                if (!trainResponse.isEmpty()) {
+                    updatedTotal += trainResponse.size();
+
                     trainLockExecutor.executeInLock("oldTrains", () -> {
-                        log.info("method=updateOldTrains Updating: {}", Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.version)));
+                        log.info("method=updateOldTrains date={} updatedCount={} Updating: {}", departureDate,
+                                trainResponse.size(),
+                                Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.sourceVersion)));
 
                         trainPersistService.updateEntities(trainResponse);
 
@@ -75,8 +89,12 @@ public class OldTrainService {
             }
 
             lastUpdateService.update(LastUpdateService.LastUpdatedType.OLD_TRAINS);
+
+            log.info("method=updateOldTrains Finished checking old trains from {} to {} updatedTotal={}", start, end,
+                    updatedTotal);
         } catch (final Exception e) {
-            log.error("method=updateOldTrains Error while checking for updated old trains.", e);
+            log.error("method=updateOldTrains Error while checking for updated old trains. updatedTotal={}",
+                    updatedTotal, e);
             throw e;
         }
     }
@@ -84,9 +102,9 @@ public class OldTrainService {
     private List<Train> getChangedTrains(final LocalDate date) {
         final List<Train> changedTrains = new ArrayList<>();
 
-        final List<Object[]> trains = trainRepository.findByDepartureDateLite(date);
+        final List<TrainSourceVersion> trains = trainRepository.findSourceVersionsByDepartureDate(date);
 
-        for (final List<Object[]> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
+        for (final List<TrainSourceVersion> oldTrainPartition : Lists.partition(trains, TRAINS_TO_FETCH_PER_QUERY)) {
             changedTrains.addAll(getChangedTrainsByIds(date, oldTrainPartition));
             try {
                 Thread.sleep(400);
@@ -98,20 +116,21 @@ public class OldTrainService {
         return changedTrains;
     }
 
-    private List<Train> getChangedTrainsByIds(final LocalDate date, final List<Object[]> oldTrainPartition) {
+    private List<Train> getChangedTrainsByIds(final LocalDate date, final List<TrainSourceVersion> oldTrainPartition) {
         final Map<Long, Long> versions = new HashMap<>(oldTrainPartition.size());
-        for (final Object[] train : oldTrainPartition) {
-            final TrainId id = (TrainId) train[0];
-            final Long version = (Long) train[1];
-            versions.put(id.trainNumber, version);
+        for (final TrainSourceVersion train : oldTrainPartition) {
+            versions.put(train.getId().trainNumber, train.getSourceVersion());
         }
 
         final HashMap<String, Object> parts = new HashMap<>();
         parts.put("date", date.toString());
         parts.put("versions", versions);
 
-        log.info("method=getChangedTrainsByIds Fetching {} changed trains for {}", oldTrainPartition.size(), date);
+        final List<Train> changedTrains = Arrays.asList(ripaService.postToRipa("old-trains", parts, Train[].class));
 
-        return Arrays.asList(ripaService.postToRipa("old-trains", parts, Train[].class));
+        log.info("method=getChangedTrainsByIds date={} askedCount={} changedCount={}", date, oldTrainPartition.size(),
+                changedTrains.size());
+
+        return changedTrains;
     }
 }
