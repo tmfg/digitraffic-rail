@@ -1,25 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
@@ -28,9 +10,21 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * HTTP-level tests for CachingPetiStopSource using ExchangeFunction stubs.
@@ -322,6 +316,53 @@ class CachingPetiStopSourceHttpTest {
 
         // then
         assertTrue(source.getStops().isEmpty());
+        assertNotNull(source.getLastFetchResult());
+        assertEquals("error", source.getLastFetchResult().outcome());
+    }
+
+    // --- B8b: HTTP 200 with a well-formed zip/XML that parses to zero stops → keeps last-good and reports
+    // error, not success - a zero-stop result is applySnapshot()'s own no-op case, so telemetry must not call
+    // it a success either, or the hourly retryIfLastFailed() safety-net would never fire for it. ---
+
+    @Test
+    void givenHttp200WithZeroParsedStops_whenRefresh_thenKeepsLastGoodAndReportsError() throws IOException {
+        // given — first: a successful fetch establishes a last-good snapshot
+        final String emptyStopsXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <PublicationDelivery xmlns="http://www.netex.org.uk/netex" version="1.0">
+                  <PublicationTimestamp>2025-01-15T10:00:00Z</PublicationTimestamp>
+                  <ParticipantRef>FSR</ParticipantRef>
+                  <dataObjects>
+                    <CompositeFrame id="FSR:CompositeFrame:1" version="1">
+                      <frames>
+                        <SiteFrame id="FSR:SiteFrame:1" version="1">
+                          <stopPlaces/>
+                        </SiteFrame>
+                      </frames>
+                    </CompositeFrame>
+                  </dataObjects>
+                </PublicationDelivery>
+                """;
+        final byte[] emptyStopsZip = buildZip("stops.xml", emptyStopsXml.getBytes(StandardCharsets.UTF_8));
+        final AtomicInteger callCount = new AtomicInteger(0);
+        final ExchangeFunction statefulExchange = request -> {
+            final byte[] body = callCount.getAndIncrement() == 0 ? fixtureZipBytes : emptyStopsZip;
+            return Mono.just(ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(body)))
+                    .build());
+        };
+        final CachingPetiStopSource source = sourceWithExchange(statefulExchange);
+        source.refresh();
+        assertEquals(4, source.getStops().size());
+
+        // when — second fetch: HTTP 200, well-formed XML, but zero StopPlaces
+        source.refresh();
+
+        // then — last-good snapshot is retained (applySnapshot's own no-op)...
+        assertEquals(4, source.getStops().size());
+        // ...but the fetch itself must be recorded as an error, not a success, so retryIfLastFailed()'s
+        // hourly safety-net still fires instead of treating this as a healthy refresh.
         assertNotNull(source.getLastFetchResult());
         assertEquals("error", source.getLastFetchResult().outcome());
     }

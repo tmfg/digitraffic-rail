@@ -186,6 +186,17 @@ public class CachingPetiStopSource implements PetiStopSource {
             }
 
             final List<PetiStop> parsed = parseZipBytes(zipBytes);
+
+            if (parsed.isEmpty()) {
+                // A well-formed archive that yields zero stops is still not usable data: applySnapshot()
+                // deliberately ignores it and keeps the last-good snapshot, so recording this as success would
+                // silently disable retryIfLastFailed()'s hourly safety-net until the next nightly refresh - as
+                // if the empty result were as good as a real one. Route it through the same catch block as
+                // any other parse failure instead, so it is recorded as an error and retried.
+                throw new PetiParseException("Parsed PETI archive contained zero stops",
+                        new IllegalStateException("empty parsed result"));
+            }
+
             final long durationMs = stopWatch.getDuration().toMillis();
 
             applySnapshot(parsed);
