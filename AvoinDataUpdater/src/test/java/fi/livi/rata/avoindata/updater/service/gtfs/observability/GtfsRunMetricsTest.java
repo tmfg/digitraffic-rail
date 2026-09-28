@@ -1,12 +1,15 @@
 package fi.livi.rata.avoindata.updater.service.gtfs.observability;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,7 +63,7 @@ class GtfsRunMetricsTest {
                 .containsEntry("rail.gtfs.segments.dummy.reason.route_http_error", 1)
                 .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
                 .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 1)
-                .containsEntry("rail.gtfs.segments.dummy", 5)
+                .containsEntry("rail.gtfs.segments.dummy.total", 5)
                 .containsEntry("rail.gtfs.segments.total", 5);
     }
 
@@ -92,7 +95,7 @@ class GtfsRunMetricsTest {
         assertThat(metrics.finalEvent())
                 .containsEntry("rail.gtfs.segments.dummy.reason.route_empty_geometry", 1)
                 .containsEntry("rail.gtfs.segments.dummy.reason.no_dijkstra_path", 1)
-                .containsEntry("rail.gtfs.segments.dummy", 0);
+                .containsEntry("rail.gtfs.segments.dummy.total", 0);
     }
 
     @Test
@@ -179,8 +182,8 @@ class GtfsRunMetricsTest {
                 .containsEntry("rail.gtfs.feeds.attempted", 2)
                 .containsEntry("rail.gtfs.feeds.published", 1)
                 .containsEntry("rail.gtfs.feeds.failed", 1)
-                .containsEntry("rail.gtfs.feed.gtfs-vr.zip.failed", true)
-                .containsEntry("rail.gtfs.feed.gtfs-all.zip.published", true);
+                .containsEntry("rail.gtfs.feed.gtfs_vr.failed", true)
+                .containsEntry("rail.gtfs.feed.gtfs_all.published", true);
     }
 
     @Test
@@ -219,6 +222,56 @@ class GtfsRunMetricsTest {
 
         // Then
         assertThat(event).containsEntry("rail.gtfs.segments.dummy.stations.top", "HKI,TPE");
+    }
+
+    @Test
+    void givenEveryEmittedEventWhenKeysAreCollectedThenNoKeyIsAPrefixOfAnother() {
+        // Given OpenSearch reads a dot as object nesting, so a scalar "a.b" and an "a.b.c" anywhere
+        // in the same index conflict and the whole document is dropped at ingest.
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordFeedAttempt("gtfs-all.zip");
+        metrics.recordUpstreamResponse(InfraApiDataset.REITIT, 503, 5L, 10L);
+        recordDummySegment(metrics, NoGeometryReason.NO_START_NODE, "HKI");
+
+        // When
+        final Set<String> keys = new HashSet<>(metrics.finalEvent().keySet());
+        metrics.recordShapeProcessed(GtfsRunMetrics.HEARTBEAT_INTERVAL_SHAPES, 1000)
+                .ifPresent(heartbeat -> keys.addAll(heartbeat.keySet()));
+        metrics.recordRouteFailure("AAA->BBB", "/infra-api/latest/reitit/1", 503, "ServiceUnavailable")
+                .ifPresent(sample -> keys.addAll(sample.keySet()));
+
+        // Then
+        for (final String key : keys) {
+            assertThat(keys).as("%s is used as both a value and an object", key)
+                    .noneMatch(other -> other.startsWith(key + "."));
+        }
+    }
+
+    @Test
+    void givenFeedNamesWhenUsedAsFieldNamesThenTheyCarryNoDotsOrHyphens() {
+        // Given a dot nests and a hyphen is a query-syntax operator in OpenSearch DSL
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordFeedAttempt("gtfs-vr-tre.zip");
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(event).containsKey("rail.gtfs.feed.gtfs_vr_tre.published");
+    }
+
+    @Test
+    void givenUntouchedUpstreamDatasetsWhenTheFinalEventIsBuiltThenTheyAreOmitted() {
+        // Given zero-valued aggregates only inflate the shared index mapping
+        final GtfsRunMetrics metrics = metrics();
+        metrics.recordUpstreamResponse(InfraApiDataset.REITIT, 200, 5L, 10L);
+
+        // When
+        final Map<String, Object> event = metrics.finalEvent();
+
+        // Then
+        assertThat(event).containsEntry("rail.upstream.infra_api.reitit.requests.total", 1);
+        assertThat(event).doesNotContainKey("rail.upstream.infra_api.radat.requests.total");
     }
 
     /** Mirrors what GTFSShapeService does: segment totals here, reason attribution alongside. */

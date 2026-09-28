@@ -17,7 +17,6 @@ import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.FeedMetricsSink;
-import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsOutcome;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
@@ -93,10 +92,12 @@ public class GTFSService {
     private void logRunEvent(final GtfsRunMetrics metrics) {
         try {
             final String event = LogFields.of(metrics.finalEvent());
-            if (metrics.outcome() == GtfsOutcome.SUCCESS) {
-                log.info("{}", event);
-            } else {
-                log.error("{}", event);
+            // Some fallback geometry occurs on almost every run, so degraded cannot be an error
+            // level without making every run look like an outage. The outcome field carries severity.
+            switch (metrics.outcome()) {
+                case SUCCESS -> log.info("{}", event);
+                case DEGRADED -> log.warn("{}", event);
+                case PARTIAL, ERROR -> log.error("{}", event);
             }
         } catch (final RuntimeException e) {
             // Must never mask the generation failure that is already propagating.

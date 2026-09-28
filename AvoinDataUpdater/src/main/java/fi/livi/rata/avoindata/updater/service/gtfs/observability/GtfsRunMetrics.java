@@ -187,7 +187,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.shapes.total", totalShapesInFeed);
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
-        event.put("rail.gtfs.segments.dummy", dummySegments);
+        event.put("rail.gtfs.segments.dummy.total", dummySegments);
         for (final NoGeometryReason reason : List.of(NoGeometryReason.NO_START_NODE, NoGeometryReason.NO_END_NODE,
                 NoGeometryReason.ROUTE_HTTP_ERROR)) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
@@ -232,7 +232,9 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.nodes.cache.age_ms", nodeCacheAgeMs);
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
-        event.put("rail.gtfs.segments.dummy", dummySegments);
+        // Leaf keys must not also be branches: OpenSearch reads a dot as object nesting, so a scalar
+        // rail.gtfs.segments.dummy next to rail.gtfs.segments.dummy.reason.* rejects the whole document.
+        event.put("rail.gtfs.segments.dummy.total", dummySegments);
         for (final NoGeometryReason reason : NoGeometryReason.values()) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
@@ -244,13 +246,18 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.route_failures.suppressed", suppressedFailures);
 
         for (final String feedName : attemptedFeedNames) {
-            final String prefix = "rail.gtfs.feed." + feedName + ".";
+            final String prefix = "rail.gtfs.feed." + feedKey(feedName) + ".";
             event.put(prefix + "published", publishedFeedNames.contains(feedName));
             event.put(prefix + "failed", failedFeedNames.contains(feedName));
             event.put(prefix + "degraded", degradedFeedNames.contains(feedName));
         }
+        // Datasets the run never touched would add ~13 zero-valued fields each to a shared,
+        // dynamically mapped index for no diagnostic value.
         for (final InfraApiDataset dataset : InfraApiDataset.values()) {
-            dataset(dataset).addTo(event, "rail.upstream.infra_api." + dataset.metricKey() + ".");
+            final UpstreamMetrics datasetMetrics = upstream.get(dataset);
+            if (datasetMetrics != null && datasetMetrics.hasTraffic()) {
+                datasetMetrics.addTo(event, "rail.upstream.infra_api." + dataset.metricKey() + ".");
+            }
         }
 
         final String reititPrefix = "rail.upstream.infra_api." + InfraApiDataset.REITIT.metricKey() + ".";
@@ -262,6 +269,11 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
 
     private UpstreamMetrics dataset(final InfraApiDataset dataset) {
         return upstream.computeIfAbsent(dataset, ignored -> new UpstreamMetrics());
+    }
+
+    /** Field-name segment for a feed. A dot would nest, a hyphen is a query-syntax operator in OpenSearch DSL. */
+    private static String feedKey(final String feedName) {
+        return feedName.toLowerCase(Locale.ROOT).replaceAll("\\.zip$", "").replaceAll("[^a-z0-9]+", "_");
     }
 
     private String topDummyStations() {
@@ -325,6 +337,10 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
             event.put(prefix + "latency_max_ms", sorted.isEmpty() ? 0L : sorted.getLast());
             event.put(prefix + "response_size_bytes.total", responseSize);
             event.put(prefix + "retries.total", retries);
+        }
+
+        private boolean hasTraffic() {
+            return requests > 0 || retries > 0;
         }
 
         /** Distinct route calls that reached the network, i.e. excluding retried attempts. */

@@ -115,7 +115,7 @@ class GTFSShapeServiceTest {
         // Then
         assertThat(metrics.finalEvent())
                 .containsEntry("rail.gtfs.segments.real", 1)
-                .containsEntry("rail.gtfs.segments.dummy", 0)
+                .containsEntry("rail.gtfs.segments.dummy.total", 0)
                 .containsEntry("rail.gtfs.shapes.total", shapes.size())
                 .containsEntry("rail.gtfs.shapes.real", shapes.size());
         assertThat(metrics.outcome()).isEqualTo(GtfsOutcome.SUCCESS);
@@ -136,7 +136,7 @@ class GTFSShapeServiceTest {
 
         // Then the segment totals are recorded here, but the reason is not counted twice
         final Map<String, Object> event = metrics.finalEvent();
-        assertThat(event).containsEntry("rail.gtfs.segments.dummy", 1);
+        assertThat(event).containsEntry("rail.gtfs.segments.dummy.total", 1);
         assertThat(attributedReasons(event)).isZero();
         assertThat(metrics.routeFailureSamples()).isEmpty();
     }
@@ -156,7 +156,7 @@ class GTFSShapeServiceTest {
 
         // Then
         final Map<String, Object> event = metrics.finalEvent();
-        assertThat(event).containsEntry("rail.gtfs.segments.dummy", 2);
+        assertThat(event).containsEntry("rail.gtfs.segments.dummy.total", 2);
         assertThat(attributedReasons(event)).isEqualTo(2);
     }
 
