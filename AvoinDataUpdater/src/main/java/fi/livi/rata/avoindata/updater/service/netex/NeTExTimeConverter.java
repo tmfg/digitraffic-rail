@@ -1,48 +1,31 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 import org.springframework.stereotype.Service;
 
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-
 /**
- * Converts schedule times (UTC Duration from midnight) to NeTEx Nordic local
- * time strings.
- * NeTEx Nordic uses Europe/Helsinki local time with >24:00:00 notation for
- * past-midnight stops.
+ * Formats schedule times as NeTEx Nordic time strings.
+ *
+ * Schedule times arrive as a duration from midnight and are already Helsinki
+ * local wall-clock, the
+ * same value the /trains API and the GTFS package publish, so nothing is
+ * converted here. Only the
+ * >24:00:00 notation for stops past midnight is applied.
  */
 @Service
 public class NeTExTimeConverter {
 
-    /**
-     * Converts a UTC Duration timestamp to NeTEx local time string.
-     */
-    public String toNeTExTime(final Duration utcTimestamp, final Duration firstDepartureUtc) {
-        // Both are on the same reference date; use a fixed date for conversion
-        final LocalDate refDate = LocalDate.of(2026, 1, 1);
-        final LocalTime localTime = toHelsinkiLocalTime(utcTimestamp, refDate);
-        final LocalTime firstLocal = toHelsinkiLocalTime(firstDepartureUtc, refDate);
-        return formatNeTExTime(localTime, firstLocal);
+    public String toNeTExTime(final Duration timestamp, final Duration firstDeparture) {
+        return formatNeTExTime(toLocalTime(timestamp), toLocalTime(firstDeparture));
     }
 
-    /**
-     * Converts a UTC Duration timestamp to local Helsinki time, accounting for DST.
-     */
-    public LocalTime toHelsinkiLocalTime(final Duration utcTimestamp, final LocalDate referenceDate) {
-        final long totalSeconds = utcTimestamp.getSeconds();
-        final int hours = (int) (totalSeconds / 3600);
-        final int minutes = (int) ((totalSeconds % 3600) / 60);
-        final int seconds = (int) (totalSeconds % 60);
-
-        final ZonedDateTime utcDateTime = ZonedDateTime.of(referenceDate, LocalTime.of(hours % 24, minutes, seconds),
-                ZoneOffset.UTC);
-        final ZonedDateTime helsinkiDateTime = utcDateTime.withZoneSameInstant(DateProvider.ZONE_ID_HKI);
-        return helsinkiDateTime.toLocalTime();
+    public LocalTime toLocalTime(final Duration timestamp) {
+        final long totalSeconds = timestamp.getSeconds();
+        return LocalTime.of((int) (totalSeconds / 3600) % 24,
+                (int) ((totalSeconds % 3600) / 60),
+                (int) (totalSeconds % 60));
     }
 
     /**

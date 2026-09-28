@@ -1,8 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Holds the stop-related NeTEx data produced by NeTExStopsService.
@@ -94,17 +92,15 @@ public class NeTExStopsData {
         return quayNoTrackCount;
     }
 
-    public record NeTExScheduledStopPoint(String id, String name, String privateCode, BigDecimal latitude,
-            BigDecimal longitude) {
+    public record NeTExScheduledStopPoint(String id, String name, String privateCode) {
     }
 
-    public record NeTExRoutePoint(String id, String stationShortCode) {
+    public record NeTExRoutePoint(String id, String stationShortCode, String projectedStopPointId) {
     }
 
     public record NeTExDestinationDisplay(String id, String frontText) {
     }
 
-    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String stopPlaceRef,
-            String quayRef) {
+    public record NeTExStopAssignment(String id, String scheduledStopPointRef, String quayRef) {
     }
 }

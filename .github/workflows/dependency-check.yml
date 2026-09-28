@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: "0 8 * * *" # UTC
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or SHA to run the dependency check against. Defaults to the ref the workflow was started from."
+        required: false
+        type: string
 jobs:
   dependency-check:
     if: github.repository != 'tmfg/digitraffic-rail'
@@ -12,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -29,12 +36,27 @@ jobs:
         run: mvn -Pdepcheck
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      # gh-pages-publish overwrites the report at its exact path, so runs against a
+      # custom ref get their own filename and leave the master report untouched.
+      - name: Resolve report path
+        id: report
+        if: ${{ success() || failure() }}
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          path=target/dependency-check-report.html
+          if [ -n "$REF" ] && [ -f "$path" ]; then
+            slug=$(printf '%s' "$REF" | tr -c 'A-Za-z0-9._-' '-')
+            path="target/dependency-check-report-$slug.html"
+            cp target/dependency-check-report.html "$path"
+          fi
+          echo "path=$path" >> "$GITHUB_OUTPUT"
       - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
         uses: tmfg/digitraffic-actions@339b5aa5afc3459cba11653adbc0e7132f356c1d # gh-pages-publish/v1
         with:
           GH_PAGES_BRANCH: gh-pages
-          FILE_PATH: target/dependency-check-report.html
+          FILE_PATH: ${{ steps.report.outputs.path }}
           COMMIT_MESSAGE: Upload dependency check report
           LINK_TEXT: Dependency check report
       - name: Notify Slack

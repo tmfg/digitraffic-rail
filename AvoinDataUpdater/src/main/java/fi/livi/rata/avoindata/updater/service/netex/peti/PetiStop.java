@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,5 +36,24 @@ public record PetiStop(
         return quays.stream()
                 .filter(q -> commercialTrack.equals(q.publicCode()))
                 .findFirst();
+    }
+
+    /**
+     * The lowest-numbered platform's public code, used as the last-resort track when no observation
+     * named one. Numeric codes sort by value ("2" before "10"); non-numeric ones sort last.
+     */
+    public Optional<String> firstPlatformCode() {
+        return quays.stream()
+                .min(Comparator.comparingInt(PetiStop::platformOrder)
+                        .thenComparing(PetiQuay::publicCode, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(PetiQuay::publicCode);
+    }
+
+    private static int platformOrder(final PetiQuay quay) {
+        try {
+            return Integer.parseInt(quay.publicCode().trim());
+        } catch (final NumberFormatException | NullPointerException e) {
+            return Integer.MAX_VALUE;
+        }
     }
 }
