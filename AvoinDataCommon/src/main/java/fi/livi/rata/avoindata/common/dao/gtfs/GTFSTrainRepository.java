@@ -105,9 +105,10 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
         -- scheduled_time - used only to derive vehicle_at_stop above. Resolved once per train (correlated
         -- against the single already-resolved next row, not against every candidate row), so this adds one
         -- extra lookup per train, not one per row.
-        -- found is a presence marker: it lets vehicle_at_stop tell "no such ARRIVAL exists at all" (found is
-        -- null, e.g. the origin station) apart from "it exists but has not happened yet" (found = 1,
-        -- actual_time still null) - both would otherwise look identical if only actual_time were selected.
+        -- found is 1 when a matching ARRIVAL row exists, and null when none exists - this lets vehicle_at_stop
+        -- tell "no such ARRIVAL at all" (found is null, e.g. the origin station) apart from "it exists but
+        -- has not happened yet" (found = 1, actual_time still null). actual_time alone cannot tell these
+        -- apart, since both cases show up as null actual_time once nothing matches at all.
         LEFT JOIN LATERAL (
             SELECT
                 1 AS found,
