@@ -23,10 +23,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
+import org.rutebanken.netex.model.Authority;
+import org.rutebanken.netex.model.AuthorityRef;
 import org.rutebanken.netex.model.AvailabilityCondition;
 import org.rutebanken.netex.model.Codespace;
 import org.rutebanken.netex.model.Codespaces_RelStructure;
 import org.rutebanken.netex.model.CompositeFrame;
+import org.rutebanken.netex.model.ContactStructure;
 import org.rutebanken.netex.model.DayOfWeekEnumeration;
 import org.rutebanken.netex.model.DayType;
 import org.rutebanken.netex.model.DayTypeAssignment;
@@ -47,7 +50,6 @@ import org.rutebanken.netex.model.Line;
 import org.rutebanken.netex.model.LineRefStructure;
 import org.rutebanken.netex.model.LinesInFrame_RelStructure;
 import org.rutebanken.netex.model.LocaleStructure;
-import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.Network;
 import org.rutebanken.netex.model.ObjectFactory;
@@ -84,7 +86,6 @@ import org.rutebanken.netex.model.ServiceCalendarFrame;
 import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.ServiceJourney;
 import org.rutebanken.netex.model.StopAssignmentsInFrame_RelStructure;
-import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPointInJourneyPattern;
 import org.rutebanken.netex.model.StopPointInJourneyPatternRefStructure;
 import org.rutebanken.netex.model.TimetableFrame;
@@ -95,6 +96,7 @@ import org.rutebanken.netex.model.ValidityConditions_RelStructure;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.xml.bind.JAXBContext;
@@ -111,14 +113,26 @@ public class NeTExWritingService {
         private static final Logger log = LoggerFactory.getLogger(NeTExWritingService.class);
         private static final String SHARED_DATA_XML = NeTExFileNaming.SHARED_DATA_XML;
         private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
+        /**
+         * The state agency that owns the rail network; not derivable from schedules.
+         */
+        private static final String AUTHORITY_ID = "FTR:Authority:ftia";
+        private static final String AUTHORITY_NAME = "Finnish Transport Infrastructure Agency";
+        private static final String AUTHORITY_LEGAL_NAME = "Väylävirasto";
+        private static final String AUTHORITY_URL = "https://vayla.fi/en/";
+        private static final String AUTHORITY_PHONE = "+358 295 34 3000";
+        private static final String AUTHORITY_EMAIL = "ftia@ftia.fi";
         // Latest arrival of a journey belonging to the previous operating day.
         private static final LocalTime SERVICE_DAY_END = LocalTime.of(4, 0);
         private static final ObjectFactory FACTORY = new ObjectFactory();
 
         private final NeTExIdGenerator idGenerator;
+        private final String petiSourceUrl;
 
-        public NeTExWritingService(final NeTExIdGenerator idGenerator) {
+        public NeTExWritingService(final NeTExIdGenerator idGenerator,
+                        @Value("${updater.netex.peti.url:}") final String petiSourceUrl) {
                 this.idGenerator = idGenerator;
+                this.petiSourceUrl = petiSourceUrl;
         }
 
         private volatile JAXBContext jaxbContext;
@@ -183,7 +197,8 @@ public class NeTExWritingService {
                 final NeTExDatasetPartition partition = NeTExDatasetPartition.partition(
                                 lines, routeData, serviceJourneys);
                 if (!partition.orphans().isEmpty()) {
-                        log.warn("method=buildDataset dropped orphaned entities routes={} journeyPatterns={} "
+                        log.warn("event=generateNeTEx method=buildDataset dropped orphaned entities "
+                                        + "routes={} journeyPatterns={} "
                                         + "serviceJourneys={}",
                                         partition.orphans().routes().size(),
                                         partition.orphans().journeyPatterns().size(),
@@ -294,12 +309,10 @@ public class NeTExWritingService {
                                                                                 .withId("ftr")
                                                                                 .withXmlns("FTR")
                                                                                 .withXmlnsUrl("https://rata.digitraffic.fi"),
-                                                                // FSR is PETI's/Fintraffic's codespace; we only
-                                                                // reference it. PETI's own
-                                                                // NeTEx export declares no XmlnsUrl for FSR.
                                                                 new Codespace()
                                                                                 .withId("fsr")
-                                                                                .withXmlns("FSR")))
+                                                                                .withXmlns("FSR")
+                                                                                .withXmlnsUrl(petiSourceUrl)))
                                 .withFrameDefaults(new VersionFrameDefaultsStructure()
                                                 .withDefaultLocale(new LocaleStructure()
                                                                 .withTimeZone("Europe/Helsinki")
@@ -353,6 +366,15 @@ public class NeTExWritingService {
          */
         private ResourceFrame buildSharedResourceFrame(final List<NeTExEntityService.NeTExOperator> operators) {
                 final OrganisationsInFrame_RelStructure organisations = new OrganisationsInFrame_RelStructure();
+                organisations.getOrganisation_().add(FACTORY.createAuthority(new Authority()
+                                .withId(AUTHORITY_ID)
+                                .withVersion("1")
+                                .withName(new MultilingualString().withValue(AUTHORITY_NAME))
+                                .withLegalName(new MultilingualString().withValue(AUTHORITY_LEGAL_NAME))
+                                .withContactDetails(new ContactStructure()
+                                                .withUrl(AUTHORITY_URL)
+                                                .withPhone(AUTHORITY_PHONE)
+                                                .withEmail(AUTHORITY_EMAIL))));
                 for (final var op : operators) {
                         organisations.getOrganisation_().add(FACTORY.createOperator(new Operator()
                                         .withId(op.id())
@@ -365,9 +387,7 @@ public class NeTExWritingService {
                 final ResourceFrame frame = new ResourceFrame()
                                 .withId("FTR:ResourceFrame:shared")
                                 .withVersion("1");
-                if (!operators.isEmpty()) {
-                        frame.withOrganisations(organisations);
-                }
+                frame.withOrganisations(organisations);
 
                 return frame;
         }
@@ -385,6 +405,8 @@ public class NeTExWritingService {
                                 .withId("FTR:Network:FIN")
                                 .withVersion("1")
                                 .withName(new MultilingualString().withValue("Finnish Railways"))
+                                .withTransportOrganisationRef(FACTORY.createAuthorityRef(
+                                                new AuthorityRef().withRef(AUTHORITY_ID).withVersion("1")))
                                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL));
 
                 final DestinationDisplaysInFrame_RelStructure destDisplays = new DestinationDisplaysInFrame_RelStructure();
@@ -402,10 +424,7 @@ public class NeTExWritingService {
                                         .withId(stop.id())
                                         .withVersion("1")
                                         .withName(new MultilingualString().withValue(stop.name()))
-                                        .withPrivateCode(new PrivateCodeStructure().withValue(stop.privateCode()))
-                                        .withLocation(new LocationStructure()
-                                                        .withLatitude(stop.latitude())
-                                                        .withLongitude(stop.longitude())));
+                                        .withPrivateCode(new PrivateCodeStructure().withValue(stop.privateCode())));
                 }
                 frame.withScheduledStopPoints(stopPoints);
 
@@ -414,7 +433,7 @@ public class NeTExWritingService {
                         routePointsStructure.getRoutePoint().add(new RoutePoint()
                                         .withId(rp.id())
                                         .withVersion("1")
-                                        .withProjections(routePointProjection(rp.stationShortCode())));
+                                        .withProjections(routePointProjection(rp)));
                 }
                 frame.withRoutePoints(routePointsStructure);
 
@@ -432,12 +451,8 @@ public class NeTExWritingService {
                                                                 new ScheduledStopPointRefStructure()
                                                                                 .withRef(a.scheduledStopPointRef())
                                                                                 .withVersion("1")))
-                                                .withStopPlaceRef(FACTORY.createStopPlaceRef(
-                                                                new StopPlaceRefStructure().withRef(a.stopPlaceRef())));
-                                if (a.quayRef() != null) {
-                                        psa.withQuayRef(FACTORY.createQuayRef(
-                                                        new QuayRefStructure().withRef(a.quayRef())));
-                                }
+                                                .withQuayRef(FACTORY.createQuayRef(
+                                                                new QuayRefStructure().withRef(a.quayRef())));
                                 assignments.getStopAssignment().add(FACTORY.createPassengerStopAssignment(psa));
                         }
                         frame.withStopAssignments(assignments);
@@ -633,19 +648,19 @@ public class NeTExWritingService {
         }
 
         /**
-         * A RoutePoint carries no geography of its own, so it is projected onto the
-         * station-level ScheduledStopPoint that does.
+         * Name and location are deliberately absent: the projected ScheduledStopPoint
+         * already carries both.
          */
-        private Projections_RelStructure routePointProjection(final String stationShortCode) {
+        private Projections_RelStructure routePointProjection(final NeTExStopsData.NeTExRoutePoint routePoint) {
                 return new Projections_RelStructure()
                                 .withProjectionRefOrProjection(FACTORY.createPointProjection(
                                                 new PointProjection()
-                                                                .withId(idGenerator.pointProjectionId(stationShortCode))
+                                                                .withId(idGenerator.pointProjectionId(
+                                                                                routePoint.stationShortCode()))
                                                                 .withVersion("1")
                                                                 .withProjectedPointRef(new PointRefStructure()
-                                                                                .withRef(idGenerator
-                                                                                                .scheduledStopPointId(
-                                                                                                                stationShortCode))
+                                                                                .withRef(routePoint
+                                                                                                .projectedStopPointId())
                                                                                 .withVersion("1"))));
         }
 

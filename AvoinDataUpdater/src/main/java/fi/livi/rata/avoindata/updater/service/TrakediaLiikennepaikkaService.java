@@ -1,12 +1,19 @@
 package fi.livi.rata.avoindata.updater.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.locationtech.jts.geom.Coordinate;
+import org.apache.commons.lang3.time.StopWatch;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
@@ -16,17 +23,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.retry.support.RetryTemplate;
+import fi.livi.rata.avoindata.updater.config.InfraApiRetry;
 
 import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
+import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
+import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiSource;
 
 /**
  * infra-api version 0.4 or newer is needed!
  */
 @Component
 public class TrakediaLiikennepaikkaService {
+
+    private final RetryTemplate retryTemplate = InfraApiRetry.create();
 
     @Autowired
     private WebClient webClient;
@@ -44,23 +59,40 @@ public class TrakediaLiikennepaikkaService {
     @Value("${updater.raideosuudet.url}")
     private String raideosuudetUrl;
 
-    private final ExpiringCache<Map<String, Double[]>> lpCache = new ExpiringCache<>(Duration.ofHours(12));
-    private final ExpiringCache<Map<String, JsonNode>> lpNodeCache = new ExpiringCache<>(Duration.ofHours(12));
+    private final ExpiringCache<InfraApiMapResult<Double[]>> lpCache = new ExpiringCache<>(Duration.ofHours(12));
+    private final ExpiringCache<InfraApiMapResult<JsonNode>> lpNodeCache = new ExpiringCache<>(Duration.ofHours(12));
 
-    public Map<String, Double[]> getTrakediaLiikennepaikkas() {
-        return lpCache.get(() -> {
+    public InfraApiMapResult<Double[]> getTrakediaLiikennepaikkas() {
+        return loadThroughCache(lpCache, () -> loadMap(MapKind.COORDINATE, () -> {
             final var liikennepaikkaMap = fetchLiikennepaikkaMap(liikennepaikatUrl);
             final var liikennepaikkaOsaMap = fetchLiikennepaikkaMap(liikennepaikanosatUrl);
             final var raideosuusMap = fetchRaideosuusMap(raideosuudetUrl);
 
-            liikennepaikkaMap.putAll(liikennepaikkaOsaMap);
-            liikennepaikkaMap.putAll(raideosuusMap);
+            // Counts are captured per source before merging, which destroys the split.
+            final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
+            sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
+            sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikkaOsaMap.size());
+            sourceCounts.put(InfraApiDataset.RAIDEOSUUDET, raideosuusMap.size());
 
-            // only populate cache if all maps have data
-            final var cacheable = !liikennepaikkaMap.isEmpty() && !liikennepaikkaOsaMap.isEmpty() && !raideosuusMap.isEmpty();
+            final var mergedMap = new HashMap<>(liikennepaikkaMap);
+            mergedMap.putAll(liikennepaikkaOsaMap);
+            mergedMap.putAll(raideosuusMap);
+            return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
+        }));
+    }
 
-            return new ExpiringCache.CacheResult<>(cacheable, liikennepaikkaMap);
+    /**
+     * ExpiringCache is shared library code and does not report whether the supplier ran, so the
+     * cache state published as {@code cache.state} is inferred from whether the lambda executed.
+     */
+    private <V> InfraApiMapResult<V> loadThroughCache(final ExpiringCache<InfraApiMapResult<V>> cache,
+                                                      final Supplier<ExpiringCache.CacheResult<InfraApiMapResult<V>>> supplier) {
+        final AtomicBoolean refreshed = new AtomicBoolean();
+        final InfraApiMapResult<V> result = cache.get(() -> {
+            refreshed.set(true);
+            return supplier.get();
         });
+        return refreshed.get() ? result : result.asCacheHit();
     }
 
     private Double[] calculateCenterPoint(final JsonNode geometria) {
@@ -86,24 +118,18 @@ public class TrakediaLiikennepaikkaService {
             return raideosuusMap;
         }
 
-        try {
-            logger.info("method=fetchRaideosuusMap Fetching Trakedia data from {}", url);
+        logger.info("method=fetchRaideosuusMap Fetching Trakedia data from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
+        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
-            if (jsonNode == null) {
-                logger.error("method=fetchRaideosuusMap from {} returned null", url);
-                return raideosuusMap;
-            }
+        if (jsonNode == null) {
+            throw new IllegalStateException("Infra-API returned null for " + url);
+        }
 
-            for (final JsonNode node : jsonNode) {
-                final JsonNode geometria = node.get(0).get("geometria");
-                final JsonNode lyhenne = node.get(0).get("lyhenne");
-                raideosuusMap.put(lyhenne.asText().toUpperCase(), calculateCenterPoint(geometria));
-            }
-
-        } catch(final Exception e) {
-            logger.error("method=fetchRaideosuusMap could not fetch Trakedia data", e);
+        for (final JsonNode node : jsonNode) {
+            final JsonNode geometria = node.get(0).get("geometria");
+            final JsonNode lyhenne = node.get(0).get("lyhenne");
+            raideosuusMap.put(lyhenne.asText().toUpperCase(), calculateCenterPoint(geometria));
         }
 
         return raideosuusMap;
@@ -116,24 +142,19 @@ public class TrakediaLiikennepaikkaService {
             return liikennepaikkaMap;
         }
 
-        try {
-            logger.info("method=fetchLiikennepaikkaMap Fetching Trakedia data from {}", url);
+        logger.info("method=fetchLiikennepaikkaMap Fetching Trakedia data from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).share().block();
+        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
-            if (jsonNode == null) {
-                logger.error("method=fetchLiikennepaikkaMap from {} returned null", url);
-                return liikennepaikkaMap;
-            }
+        if (jsonNode == null) {
+            throw new IllegalStateException("Infra-API returned null for " + url);
+        }
 
-            for (final JsonNode node : jsonNode) {
-                final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
-                final JsonNode lyhenne = node.get(0).get("lyhenne");
-                liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
-                        .get(1).asDouble()});
-            }
-        } catch (final Exception e) {
-            logger.error("method=fetchLiikennepaikkaMap could not fetch Trakedia data", e);
+        for (final JsonNode node : jsonNode) {
+            final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
+            final JsonNode lyhenne = node.get(0).get("lyhenne");
+            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
+                    .get(1).asDouble()});
         }
 
         return liikennepaikkaMap;
@@ -141,17 +162,68 @@ public class TrakediaLiikennepaikkaService {
 
     // Data format:
     // JRI -> {ArrayNode} "[{"tunniste":"1.2.245.578.9.01.23456","virallinenSijainti":[496612,6718700],"lyhenne":"Jri","nimiSe":null,"nimiEn":null}]"
-    public Map<String, JsonNode> getTrakediaLiikennepaikkaNodes() {
-        return lpNodeCache.get(() -> {
+    public InfraApiMapResult<JsonNode> getTrakediaLiikennepaikkaNodes() {
+        return loadThroughCache(lpNodeCache, () -> loadMap(MapKind.NODE, () -> {
             final var liikennepaikkaMap = fetchNodeMap(liikennepaikatUrl);
             final var liikennepaikanOsaMap = fetchNodeMap(liikennepaikanosatUrl);
 
-            liikennepaikkaMap.putAll(liikennepaikanOsaMap);
+            // Counts are captured per source before merging, which destroys the split.
+            final var sourceCounts = new EnumMap<InfraApiDataset, Integer>(InfraApiDataset.class);
+            sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, liikennepaikkaMap.size());
+            sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, liikennepaikanOsaMap.size());
 
-            // only populate cache if all maps have data
-            final var cacheable = !liikennepaikkaMap.isEmpty() && !liikennepaikanOsaMap.isEmpty();
-            return new ExpiringCache.CacheResult<>(cacheable, liikennepaikkaMap);
-        });
+            final var mergedMap = new HashMap<>(liikennepaikkaMap);
+            mergedMap.putAll(liikennepaikanOsaMap);
+            return InfraApiMapResult.success(mergedMap, sourceCounts, Instant.now());
+        }));
+    }
+
+    /**
+     * Runs a refresh and emits the source-tier event. This is the earliest point in the GTFS
+     * pipeline where degraded coverage is knowable.
+     */
+    private <V> ExpiringCache.CacheResult<InfraApiMapResult<V>> loadMap(final MapKind kind,
+                                                                       final Supplier<InfraApiMapResult<V>> fetch) {
+        final StopWatch stopWatch = StopWatch.createStarted();
+
+        try {
+            final InfraApiMapResult<V> result = fetch.get();
+            logSourceRefresh(kind, result, stopWatch);
+            return new ExpiringCache.CacheResult<>(result.complete(), result);
+        } catch (final RuntimeException e) {
+            final InfraApiMapResult<V> failed = InfraApiMapResult.failed(e, Instant.now(),
+                    InfraApiMapResult.CacheState.REFRESH_FAILED);
+            logSourceRefresh(kind, failed, stopWatch);
+            return new ExpiringCache.CacheResult<>(false, failed);
+        }
+    }
+
+    /** The two maps have different consumers, so they must not share an entity type or namespace. */
+    private record MapKind(String operation, String entityType, String metricPrefix) {
+        private static final MapKind NODE =
+                new MapKind("refreshInfraApiNodeMap", "infra_node_map", "rail.gtfs.nodes.");
+        private static final MapKind COORDINATE =
+                new MapKind("refreshInfraApiCoordinateMap", "infra_coordinate_map", "rail.infra.coordinates.");
+    }
+
+    private void logSourceRefresh(final MapKind kind, final InfraApiMapResult<?> result, final StopWatch stopWatch) {
+        final Map<String, Object> event = new LinkedHashMap<>();
+        event.put("operation", kind.operation());
+        event.put("outcome", result.complete() ? "success" : result.failure() == null ? "degraded" : "error");
+        event.put("error.type", result.failure() == null ? "" : result.failure().getClass().getSimpleName());
+        InfraApiSource.addTo(event);
+        event.put("rail.entity.type", kind.entityType());
+        event.put(kind.metricPrefix() + "cache.state", result.cacheState().name().toLowerCase(Locale.ROOT));
+        for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
+            event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
+        }
+        event.put("duration_ms", stopWatch.getDuration().toMillis());
+
+        if (result.complete()) {
+            logger.info("{}", LogFields.of(event));
+        } else {
+            logger.error("{}", LogFields.of(event));
+        }
     }
 
     public Map<String, JsonNode> fetchNodeMap(final String url) {
@@ -161,22 +233,17 @@ public class TrakediaLiikennepaikkaService {
             return liikennepaikkaMap;
         }
 
-        try {
-            logger.info("method=fetchNodeMap Fetching Trakedia nodes from {}", url);
+        logger.info("method=fetchNodeMap Fetching Trakedia nodes from {}", url);
 
-            final JsonNode jsonNode = webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block();
+        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
-            if (jsonNode == null) {
-                logger.error("method=fetchNodeMap from {} returned null", url);
-                return liikennepaikkaMap;
-            }
+        if (jsonNode == null) {
+            throw new IllegalStateException("Infra-API returned null for " + url);
+        }
 
-            for (final JsonNode node : jsonNode) {
-                final JsonNode lyhenne = node.get(0).get("lyhenne");
-                liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
-            }
-        } catch (final Exception e) {
-            logger.error("method=fetchNodeMap could not fetch Trakedia data", e);
+        for (final JsonNode node : jsonNode) {
+            final JsonNode lyhenne = node.get(0).get("lyhenne");
+            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
         }
 
         return liikennepaikkaMap;

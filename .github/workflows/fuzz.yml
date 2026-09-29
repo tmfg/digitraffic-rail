@@ -6,7 +6,7 @@ on:
 jobs:
   fuzz:
     if: github.repository != 'tmfg/digitraffic-rail'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Fuzz
         uses: mprencipe/waggers-action@d8c6cbcf4b3285bb579b8a4b556b67a113a842bd # v4
@@ -16,7 +16,7 @@ jobs:
           headers: "digitraffic-user:internal-digitraffic-fuzz"
       - name: Notify Slack
         if: failure()
-        uses: tmfg/digitraffic-actions@slack-notify/v1
+        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
         with:
           status: failure
           text: FAILED Rail fuzz

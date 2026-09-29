@@ -44,11 +44,13 @@ public class RailApplicationConfiguration {
             @Value("${spring.datasource.hikari.leak-detection-threshold}")
             final int leakDetectionThreshold,
             @Value("${spring.datasource.hikari.read-only}")
-            final boolean readOnly
-    ) {
+            final boolean readOnly,
+            @Value("${spring.datasource.hikari.exception-override-class-name}")
+            final String exceptionOverrideClassName) {
 
         log.info("method=dataSource url {} driver {} maximumPoolSize {}",
-                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default", maximumPoolSize);
+                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default",
+                maximumPoolSize);
 
         final HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
@@ -64,10 +66,11 @@ public class RailApplicationConfiguration {
         config.setPoolName("application_pool");
         // register mbeans for debug
         config.setRegisterMbeans(true);
+        config.setExceptionOverrideClassName(exceptionOverrideClassName);
 
         log.info("method=dataSource url {} driver {} maximumPoolSize {}",
-                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default", maximumPoolSize);
-
+                url, StringUtils.isNotBlank(driverClassName) ? driverClassName : "default",
+                maximumPoolSize);
 
         return new HikariDataSource(config);
     }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,15 +25,19 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
+import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
+import fi.livi.rata.avoindata.updater.service.timetable.HistoricalTrackSource;
 import fi.livi.rata.avoindata.updater.service.timetable.ScheduleProviderService;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
@@ -43,16 +48,19 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
  * Tests for NeTExService match-rate guard logic.
  */
 class NeTExServiceMatchRateGuardTest {
+    private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     @Test
-    void givenEmptyPetiSource_whenGenerating_thenGuardDoesNotThrow() {
-        // given — empty PETI source, total == 0 → guard is skipped
+    void givenEmptyPetiSource_whenGenerating_thenGenerationIsRefused() {
+        // given — without PETI no stop can be given a location
         final NeTExService service = createServiceWithPetiSource(new EmptyPetiStopSource(), 0.95);
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
         final List<Station> stations = createStations(List.of("HKI", "TPE"));
 
-        // when/then — no exception
-        assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
+        // when/then — publishing a package with no stop assignments at all is worse
+        // than publishing none
+        assertThrows(IllegalStateException.class,
+                () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
     }
 
     @Test
@@ -201,11 +209,12 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService,
-                writingService, petiSource, null, todaysScheduleService, null);
+                routeService, new IdentityTrackSource(), stopsService,
+                writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null,
+                null);
 
         // Set minMatchRate via reflection (normally injected by @Value)
         try {
@@ -316,7 +325,7 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
         final NeTExRouteService routeService = new NeTExRouteService(idGenerator);
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
-        final NeTExWritingService writingService = new NeTExWritingService(idGenerator);
+        final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
 
         final ScheduleProviderService scheduleProviderService = mock(ScheduleProviderService.class);
@@ -331,9 +340,18 @@ class NeTExServiceMatchRateGuardTest {
         final List<Station> stations = createStations(stationCodes);
         when(stationRepository.findAll()).thenReturn(stations);
 
+        final TimeTableRowService timeTableRowService = mock(TimeTableRowService.class);
+        when(timeTableRowService.getNextTenDays()).thenReturn(List.of());
+
+        final TimeTableRowRepository timeTableRowRepository = mock(TimeTableRowRepository.class);
+        when(timeTableRowRepository.findObservedTracks(any(), any(), anyCollection())).thenReturn(List.of());
+
+        final HistoricalTrackSource historicalTrackSource = new HistoricalTrackSource(timeTableRowRepository);
+
         final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
-                routeService, stopsService,
-                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository);
+                routeService, new IdentityTrackSource(), stopsService,
+                writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
+                new CommercialTrackResolver(), timeTableRowService, historicalTrackSource);
 
         // Set minMatchRate via reflection
         final Field field = NeTExService.class.getDeclaredField("minMatchRate");

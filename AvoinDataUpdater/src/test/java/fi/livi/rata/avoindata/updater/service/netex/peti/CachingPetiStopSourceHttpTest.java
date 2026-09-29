@@ -1,6 +1,21 @@
 package fi.livi.rata.avoindata.updater.service.netex.peti;
 
-import org.jspecify.annotations.NonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
@@ -10,39 +25,27 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * HTTP-level tests for CachingPetiStopSource using ExchangeFunction stubs.
  * Mirrors the RipaServiceTest pattern: stubs control HTTP responses, exercises
- * the full refresh() → WebClient.retrieve().bodyToMono(byte[]).block() code path.
+ * the full refresh() → WebClient.retrieve().bodyToMono(byte[]).block() code
+ * path.
  */
 class CachingPetiStopSourceHttpTest {
 
-    private static byte[] fixtureZipBytes;
-    private static final String PETI_URL = "https://rae-test.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
+    private static byte[] fixtureXmlBytes;
+    private static final String PETI_URL = "https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail";
 
     @BeforeAll
-    static void buildFixtureZip() throws IOException {
+    static void readFixture() throws IOException {
         try (final InputStream is = CachingPetiStopSourceHttpTest.class.getClassLoader()
                 .getResourceAsStream("peti/stops-fixture.xml")) {
             assertNotNull(is, "stops-fixture.xml must exist in test resources");
-            final byte[] xmlBytes = is.readAllBytes();
-            fixtureZipBytes = buildZipWithStopsAndAuthorities(xmlBytes);
+            fixtureXmlBytes = is.readAllBytes();
         }
     }
 
@@ -60,18 +63,18 @@ class CachingPetiStopSourceHttpTest {
     private static ExchangeFunction exchangeReturning(final HttpStatus status, final byte[] body) {
         return request -> Mono.just(
                 ClientResponse.create(status)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                         .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(body)))
                         .build());
     }
 
-    // --- B1: HTTP 200 with valid zip body → successful refresh ---
+    // --- B1: HTTP 200 with valid body → successful refresh ---
 
     @Test
-    void givenHttp200WithValidZip_whenRefresh_thenGetStopsReturnsParsedStops() {
+    void givenHttp200WithValidXml_whenRefresh_thenGetStopsReturnsParsedStops() {
         // given
         final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.OK, fixtureZipBytes));
+                exchangeReturning(HttpStatus.OK, fixtureXmlBytes));
 
         // when — trigger refresh (which fetches via WebClient)
         source.refresh();
@@ -102,17 +105,17 @@ class CachingPetiStopSourceHttpTest {
         assertEquals(500, source.getLastFetchResult().httpStatus());
     }
 
-    private static @NonNull ExchangeFunction getStatefulExchange() {
+    private static ExchangeFunction getStatefulExchange() {
         final AtomicInteger callCount = new AtomicInteger(0);
         return request -> {
             if (callCount.getAndIncrement() == 0) {
                 return Mono.just(ClientResponse.create(HttpStatus.OK)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                        .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                        .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                         .build());
             }
             return Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                     .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
                     .build());
         };
@@ -145,7 +148,7 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction countingExchange = request -> {
             callCount.incrementAndGet();
             return Mono.just(ClientResponse.create(HttpStatus.NOT_FOUND)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                     .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
                     .build());
         };
@@ -172,13 +175,13 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction flakyExchange = request -> {
             if (callCount.getAndIncrement() < 2) {
                 return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                         .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
                         .build());
             }
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build());
         };
         final CachingPetiStopSource source = sourceWithExchange(flakyExchange);
@@ -202,7 +205,7 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction alwaysFailingExchange = request -> {
             callCount.incrementAndGet();
             return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                     .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
                     .build());
         };
@@ -230,8 +233,8 @@ class CachingPetiStopSourceHttpTest {
                 return Mono.error(new ConnectException("Connection refused"));
             }
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build());
         };
         final CachingPetiStopSource source = sourceWithExchange(flakyExchange);
@@ -251,8 +254,7 @@ class CachingPetiStopSourceHttpTest {
     @Test
     void givenNetworkError_whenRefresh_thenKeepsLastGoodAndReportsStatusZero() {
         // given
-        final ExchangeFunction failingExchange = request ->
-                Mono.error(new ConnectException("Connection refused"));
+        final ExchangeFunction failingExchange = request -> Mono.error(new ConnectException("Connection refused"));
         final CachingPetiStopSource source = sourceWithExchange(failingExchange);
 
         // when
@@ -283,14 +285,14 @@ class CachingPetiStopSourceHttpTest {
         assertEquals("error", source.getLastFetchResult().outcome());
     }
 
-    // --- B7: HTTP 200 but body is not a valid zip → keeps last-good ---
+    // --- B7: HTTP 200 but body is not XML → keeps last-good ---
 
     @Test
-    void givenHttp200WithNonZipBody_whenRefresh_thenKeepsLastGoodAndReportsError() {
+    void givenHttp200WithNonXmlBody_whenRefresh_thenKeepsLastGoodAndReportsError() {
         // given
-        final byte[] notAZip = "hello world".getBytes(StandardCharsets.UTF_8);
+        final byte[] notXml = "hello world".getBytes(StandardCharsets.UTF_8);
         final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.OK, notAZip));
+                exchangeReturning(HttpStatus.OK, notXml));
 
         // when
         source.refresh();
@@ -301,15 +303,14 @@ class CachingPetiStopSourceHttpTest {
         assertEquals("error", source.getLastFetchResult().outcome());
     }
 
-    // --- B8: HTTP 200 with valid zip but invalid XML in stops.xml → keeps last-good ---
+    // --- B8: HTTP 200 with malformed XML → keeps last-good ---
 
     @Test
-    void givenHttp200WithInvalidXmlInZip_whenRefresh_thenKeepsLastGoodAndReportsError() throws IOException {
+    void givenHttp200WithInvalidXml_whenRefresh_thenKeepsLastGoodAndReportsError() {
         // given
         final byte[] badXml = "<<<NOT VALID XML>>>".getBytes(StandardCharsets.UTF_8);
-        final byte[] badZip = buildZip("stops.xml", badXml);
         final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.OK, badZip));
+                exchangeReturning(HttpStatus.OK, badXml));
 
         // when
         source.refresh();
@@ -325,7 +326,7 @@ class CachingPetiStopSourceHttpTest {
     // it a success either, or the hourly retryIfLastFailed() safety-net would never fire for it. ---
 
     @Test
-    void givenHttp200WithZeroParsedStops_whenRefresh_thenKeepsLastGoodAndReportsError() throws IOException {
+    void givenHttp200WithZeroParsedStops_whenRefresh_thenKeepsLastGoodAndReportsError() {
         // given — first: a successful fetch establishes a last-good snapshot
         final String emptyStopsXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -343,12 +344,12 @@ class CachingPetiStopSourceHttpTest {
                   </dataObjects>
                 </PublicationDelivery>
                 """;
-        final byte[] emptyStopsZip = buildZip("stops.xml", emptyStopsXml.getBytes(StandardCharsets.UTF_8));
+        final byte[] emptyStopsBytes = emptyStopsXml.getBytes(StandardCharsets.UTF_8);
         final AtomicInteger callCount = new AtomicInteger(0);
         final ExchangeFunction statefulExchange = request -> {
-            final byte[] body = callCount.getAndIncrement() == 0 ? fixtureZipBytes : emptyStopsZip;
+            final byte[] body = callCount.getAndIncrement() == 0 ? fixtureXmlBytes : emptyStopsBytes;
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                     .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(body)))
                     .build());
         };
@@ -389,7 +390,7 @@ class CachingPetiStopSourceHttpTest {
     void givenSuccessfulFetch_whenRefreshCompletes_thenDurationIsNonNegative() {
         // given
         final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.OK, fixtureZipBytes));
+                exchangeReturning(HttpStatus.OK, fixtureXmlBytes));
 
         // when
         source.refresh();
@@ -405,14 +406,14 @@ class CachingPetiStopSourceHttpTest {
     void givenSuccessfulFetch_whenRefreshCompletes_thenBodySizeMatchesPayload() {
         // given
         final CachingPetiStopSource source = sourceWithExchange(
-                exchangeReturning(HttpStatus.OK, fixtureZipBytes));
+                exchangeReturning(HttpStatus.OK, fixtureXmlBytes));
 
         // when
         source.refresh();
 
         // then
         assertNotNull(source.getLastFetchResult());
-        assertEquals(fixtureZipBytes.length, source.getLastFetchResult().bodySize());
+        assertEquals(fixtureXmlBytes.length, source.getLastFetchResult().bodySize());
     }
 
     @Test
@@ -425,8 +426,8 @@ class CachingPetiStopSourceHttpTest {
             requestStarted.countDown();
             assertTrue(releaseRequest.await(5, TimeUnit.SECONDS));
             return ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build();
         });
         final CachingPetiStopSource source = sourceWithExchange(exchange);
@@ -477,13 +478,13 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction exchange = request -> {
             if (callCount.getAndIncrement() == 0) {
                 return Mono.just(ClientResponse.create(HttpStatus.NOT_FOUND)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
                         .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(new byte[0])))
                         .build());
             }
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build());
         };
         final CachingPetiStopSource source = sourceWithExchange(exchange);
@@ -507,8 +508,8 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction exchange = request -> {
             callCount.incrementAndGet();
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build());
         };
         final CachingPetiStopSource source = sourceWithExchange(exchange);
@@ -529,8 +530,8 @@ class CachingPetiStopSourceHttpTest {
         final ExchangeFunction exchange = request -> {
             callCount.incrementAndGet();
             return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureZipBytes)))
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE)
+                    .body(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(fixtureXmlBytes)))
                     .build());
         };
         final CachingPetiStopSource source = sourceWithExchange(exchange);
@@ -540,30 +541,5 @@ class CachingPetiStopSourceHttpTest {
 
         // then — nothing to retry yet (lastFetchResult is null), so no-op
         assertEquals(0, callCount.get());
-    }
-
-    // --- Helper methods ---
-
-    private static byte[] buildZipWithStopsAndAuthorities(final byte[] stopsXmlBytes) throws IOException {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
-            zos.putNextEntry(new ZipEntry("stops.xml"));
-            zos.write(stopsXmlBytes);
-            zos.closeEntry();
-            zos.putNextEntry(new ZipEntry("authorities.xml"));
-            zos.write("<xml>authorities</xml>".getBytes(StandardCharsets.UTF_8));
-            zos.closeEntry();
-        }
-        return baos.toByteArray();
-    }
-
-    private static byte[] buildZip(final String name, final byte[] content) throws IOException {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
-            zos.putNextEntry(new ZipEntry(name));
-            zos.write(content);
-            zos.closeEntry();
-        }
-        return baos.toByteArray();
     }
 }

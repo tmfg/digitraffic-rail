@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.RouteMetricsSink;
 import fi.livi.rata.avoindata.updater.service.gtfs.djikstra.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import org.locationtech.jts.geom.Coordinate;
@@ -16,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.retry.support.RetryTemplate;
+import fi.livi.rata.avoindata.updater.config.InfraApiRetry;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -28,6 +32,9 @@ import static org.locationtech.jts.simplify.DouglasPeuckerSimplifier.simplify;
 
 @Service
 public class TrakediaRouteService {
+    static final String CACHE_NAME = "trakediaRoute";
+
+    private final RetryTemplate retryTemplate = InfraApiRetry.create();
     private Set<String> ignoredStations = Set.of("PYE");
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -40,9 +47,16 @@ public class TrakediaRouteService {
     @Autowired
     private Wgs84ConversionService wgs84ConversionService;
 
-    @Cacheable("trakediaRoute")
-    public List<Coordinate> createRoute(final Stop startStop, final Stop endStop, final String startTunniste, final String endTunniste) throws InterruptedException {
-        final ZonedDateTime startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC);
+    // Stop has no equals/hashCode, so the default key generator falls back to identity and never
+    // hits across feeds, which rebuild their Stop objects. The tunniste pair plus the route date is
+    // the real identity; the date matters because the response is scoped by the time parameter.
+    // Empty results are excluded: one transient empty response must not outlive the run that saw
+    // it. Spring unwraps the Optional before evaluating unless, so #result is the list or null.
+    @Cacheable(cacheNames = CACHE_NAME, key = "#routeDate + '|' + #startTunniste + '>' + #endTunniste",
+            unless = "#result == null")
+    public Optional<List<Coordinate>> createRoute(final Stop startStop, final Stop endStop, final String startTunniste,
+                                                  final String endTunniste, final LocalDate routeDate) throws InterruptedException {
+        final ZonedDateTime startOfDay = routeDate.atStartOfDay(ZoneOffset.UTC);
         final String startOfDayIso8601 = startOfDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
         final String timeParameter = String.format("%s/%s", startOfDayIso8601, startOfDayIso8601);
 
@@ -50,9 +64,7 @@ public class TrakediaRouteService {
                 "https://rata.digitraffic.fi/infra-api/latest/reitit/kaikki/%s/%s.json?propertyName=geometria&time=%s&jatkokerroin=1",
                 correctTunniste(startTunniste), correctTunniste(endTunniste), timeParameter);
 
-        log.info(routeUrl);
-
-        final JsonNode apiRoute = webClient.get().uri(routeUrl).retrieve().bodyToMono(JsonNode.class).block();
+        final JsonNode apiRoute = retryTemplate.execute(context -> webClient.get().uri(routeUrl).retrieve().bodyToMono(JsonNode.class).block());
 
         final List<List<Coordinate>> allLines = new ArrayList<>();
         final JsonNode geometria = apiRoute.get("geometria");
@@ -60,7 +72,8 @@ public class TrakediaRouteService {
             if (!ignoredStations.contains(startStop.stopId) && !ignoredStations.contains(endStop.stopId)) {
                 log.warn("Trakedia returned 0 size geometry for {}->{} ({})", startStop.stopCode, endStop.stopCode, routeUrl);
             }
-            return new ArrayList<>();
+            GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.EMPTY_GEOMETRY);
+            return Optional.empty();
         }
         for (final JsonNode lineNode : geometria) {
             final List<Coordinate> output = new ArrayList<>();
@@ -70,7 +83,13 @@ public class TrakediaRouteService {
             allLines.add(simplifyCoordinates(output));
         }
 
-        return getShortestPath(allLines, startStop, endStop);
+        final List<Coordinate> shortestPath = getShortestPath(allLines, startStop, endStop);
+        if (shortestPath.isEmpty()) {
+            GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.NO_PATH);
+            return Optional.empty();
+        }
+        GtfsRunScope.routeMetrics().recordRouteOutcome(RouteMetricsSink.RouteOutcome.RESOLVED);
+        return Optional.of(shortestPath);
     }
 
     private List<Coordinate> simplifyCoordinates(final List<Coordinate> coordinates) {

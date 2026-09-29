@@ -197,8 +197,13 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
     @Query("select count(train) from Train train where train.id.departureDate = ?1")
     int countByDepartureDate(final LocalDate departureDate);
 
-    @Query("select distinct train.id,train.version from Train train where train.id.departureDate = ?1")
-    List<Object[]> findByDepartureDateLite(final LocalDate date);
+    /// Trains whose source version is known. Rows with a null source_version
+    /// predate the
+    /// column (V46) or come from schedule extraction, and their version cannot be
+    /// compared
+    /// against the source system.
+    @Query("select distinct train.id as id, train.sourceVersion as sourceVersion from Train train where train.id.departureDate = ?1 and train.sourceVersion is not null")
+    List<TrainSourceVersion> findSourceVersionsByDepartureDate(final LocalDate date);
 
     @Query("select train.id from Train train where train.id.departureDate = ?1")
     List<TrainId> findTrainIdByDepartureDate(final LocalDate date);

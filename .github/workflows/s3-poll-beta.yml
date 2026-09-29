@@ -13,14 +13,14 @@ jobs:
   update_applications:
     if: github.repository != 'tmfg/digitraffic-rail'
     environment: beta
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
       actions: write
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.1
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.S3_ROLE }}
           role-session-name: gh-actions-deploy-rail-beta
@@ -40,7 +40,7 @@ jobs:
         shell: bash
       - name: Checkout
         if: ${{ steps.versions.outputs.infra || steps.versions.outputs.etj2 }}
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Update etj2-api
         if: ${{ steps.versions.outputs.etj2 }}
         env:

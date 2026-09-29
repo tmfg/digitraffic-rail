@@ -399,6 +399,26 @@ class NeTExRouteServiceTest {
         // then — two distinct journey patterns (hash differs due to track at HKI)
         assertEquals(2, routeData.getJourneyPatterns().size());
         assertNotEquals(routeData.getJourneyPatternIdForSchedule(1L), routeData.getJourneyPatternIdForSchedule(2L));
+
+        // but one shared route: the station sequence is the same
+        assertEquals(1, routeData.getRoutes().size());
+        assertEquals(routeData.getRoutes().get(0).id(), routeData.getJourneyPatterns().get(0).routeRef());
+        assertEquals(routeData.getRoutes().get(0).id(), routeData.getJourneyPatterns().get(1).routeRef());
+    }
+
+    @Test
+    void givenTrackedSchedule_whenCreatingTrackAwareRouteData_thenRouteIdOmitsTracks() {
+        // given
+        final Schedule schedule = createScheduleWithTrackedStops(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL"), List.of("4", "1", "2"));
+
+        // when
+        final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
+
+        // then — the route is named by its stations alone
+        assertEquals("FTR:Route:IC-59_HKI_TPE_OL", routeData.getRoutes().get(0).id());
+        // while the journey pattern still carries them
+        assertEquals("FTR:JourneyPattern:IC-59_HKI-4_TPE-1_OL-2", routeData.getJourneyPatterns().get(0).id());
     }
 
     @Test

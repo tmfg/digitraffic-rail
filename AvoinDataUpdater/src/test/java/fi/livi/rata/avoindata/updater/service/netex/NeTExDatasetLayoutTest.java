@@ -25,12 +25,15 @@ import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.common.domain.metadata.Station;
+import fi.livi.rata.avoindata.updater.service.netex.peti.EmptyPetiStopSource;
 
 /**
  * Dataset-level invariants of the per-Line split: file scoping rules of the
  * Nordic profile, and id uniqueness across the files of the dataset.
  */
 class NeTExDatasetLayoutTest {
+        private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
         private static final Pattern NETEX_ID = Pattern.compile("\\bid=\"(FTR:[^\"]+)\"");
 
@@ -38,7 +41,7 @@ class NeTExDatasetLayoutTest {
 
         @BeforeEach
         void setUp() {
-                writingService = new NeTExWritingService(new NeTExIdGenerator());
+                writingService = new NeTExWritingService(new NeTExIdGenerator(), PETI_URL);
         }
 
         @Test
@@ -47,6 +50,11 @@ class NeTExDatasetLayoutTest {
 
                 assertEquals(Set.of("_FTR_shared_data.xml", "FTR_IC-1_Helsinki-Oulu.xml", "FTR_Z_Helsinki-Lahti.xml"),
                                 files.keySet());
+        }
+
+        @Test
+        void givenDataset_whenValidatedAgainstNordicProfile_thenThereAreNoErrors() throws Exception {
+                assertEquals(List.of(), NeTExProfileValidation.errors(build()));
         }
 
         @Test
@@ -328,21 +336,33 @@ class NeTExDatasetLayoutTest {
                 return List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
         }
 
+        /**
+         * Built through the real service so the dataset checks cover id generation too.
+         */
         private static NeTExStopsData stopsData() {
-                return new NeTExStopsData(
-                                List.of(new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:HKI",
-                                                "Helsinki", "HKI",
-                                                new BigDecimal("60.172133"), new BigDecimal("24.941662")),
-                                                new NeTExStopsData.NeTExScheduledStopPoint("FTR:ScheduledStopPoint:OL",
-                                                                "Oulu", "OL",
-                                                                new BigDecimal("65.011153"),
-                                                                new BigDecimal("25.470834"))),
-                                List.of(new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:HKI", "HKI"),
-                                                new NeTExStopsData.NeTExRoutePoint("FTR:RoutePoint:OL", "OL")),
-                                List.of(new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:HKI",
-                                                "Helsinki"),
-                                                new NeTExStopsData.NeTExDestinationDisplay("FTR:DestinationDisplay:OL",
-                                                                "Oulu")));
+                return new NeTExStopsService(new NeTExIdGenerator(), new EmptyPetiStopSource())
+                                .createStopsData(
+                                                List.of(station("HKI", "Helsinki asema", 1,
+                                                                new BigDecimal("60.172133"),
+                                                                new BigDecimal("24.941662")),
+                                                                station("OL", "Oulu", 2,
+                                                                                new BigDecimal("65.011153"),
+                                                                                new BigDecimal("25.470834"))),
+                                                List.of(new NeTExStopsService.StationTrackPair("HKI", null),
+                                                                new NeTExStopsService.StationTrackPair("OL", null)));
+        }
+
+        private static Station station(final String shortCode, final String name, final int uicCode,
+                        final BigDecimal latitude, final BigDecimal longitude) {
+                final Station station = new Station();
+                station.shortCode = shortCode;
+                station.name = name;
+                station.uicCode = uicCode;
+                station.passengerTraffic = true;
+                station.latitude = latitude;
+                station.longitude = longitude;
+                station.countryCode = "FI";
+                return station;
         }
 
         private static NeTExRouteData routeData() {
