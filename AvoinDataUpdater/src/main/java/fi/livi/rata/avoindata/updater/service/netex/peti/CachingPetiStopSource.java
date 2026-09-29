@@ -35,7 +35,6 @@ import reactor.util.retry.Retry;
  * Transient failures (5xx responses, connection errors, per-attempt timeouts) are retried with a
  * short exponential backoff before giving up; 4xx responses and parse errors are not retried,
  * since retrying them cannot succeed.
- *
  * On fetch/parse failure, the last-good snapshot is preserved — generation continues with stale
  * but valid data rather than empty/partial.
  */
@@ -205,9 +204,12 @@ public class CachingPetiStopSource implements PetiStopSource {
             }
             lastFetchResult = PetiFetchResult.error(httpStatus, durationMs, bodySize,
                     unwrapped.getClass().getSimpleName());
+            // The old snapshot (if any) is kept as-is — applySnapshot() is only ever called on success — so log its
+            // age here to make clear how stale the data generation is now running on.
+            final boolean hasFallback = !lastGood.isEmpty();
             log.error("method=refresh event=rail.upstream.peti operation=fetchPeti outcome=error httpStatus={} " +
-                    "tookMs={} errorType={}", httpStatus, durationMs,
-                    unwrapped.getClass().getSimpleName(), e);
+                    "tookMs={} errorType={} keepingOldSnapshot={} oldSnapshotAgeSeconds={}", httpStatus, durationMs,
+                    unwrapped.getClass().getSimpleName(), hasFallback, hasFallback ? getSnapshotAgeSeconds() : -1, e);
         }
     }
 
