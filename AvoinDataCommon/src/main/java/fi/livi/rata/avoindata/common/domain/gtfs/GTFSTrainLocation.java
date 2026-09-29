@@ -3,18 +3,9 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
-/// Projection over the `train_location` table (populated from the PALA API's live GPS/track-circuit
-/// positioning feed), joined with the train's next unresolved commercial stop from `time_table_row`.
-///
-/// This is a *separate* data source from the timetable-based "live trains" data served by
-/// `LiveTrainController#getLiveTrainsByVersion` (which queries `live_time_table_train`/`Train`, i.e.
-/// actual/predicted/scheduled stop times only — no GPS position). `GTFSTrainLocation` is consumed only by
-/// the GTFS-Realtime `VehiclePosition` feed (`GTFSRealtimeService`/`FeedMessageService`) and by SIRI-VM
-/// (`SiriVmGenerationService`/`VmJourneyConverter`); it is not used anywhere in the `Train`/`LiveTimeTableTrain`
-/// timetable pipeline.
-///
-/// See `AvoinDataCommon/.../dao/gtfs/GTFSTrainRepository#getTrainLocations` for the native query producing
-/// these rows.
+/// Projection over the `train_location` table (live GPS/track-circuit positions from the PALA API), joined
+/// with the train's next unresolved commercial stop from `time_table_row`. See
+/// `GTFSTrainRepository#getTrainLocations` for the native query producing these rows.
 public interface GTFSTrainLocation {
     /// Primary key of the source `train_location` row (one row per received GPS/position update).
     long getId();
