@@ -26,7 +26,8 @@ import reactor.util.retry.Retry;
  * PetiNeTExParser, and caches the result as a last-good snapshot.
  *
  * <p>
- * Refreshes on schedule (03:30 UTC), with an hourly safety-net retry ({@link #retryIfLastFailed()})
+ * Refreshes on schedule (02:00 UTC, two hours before the 04:00 UTC NeTEx generation), with an hourly
+ * safety-net retry ({@link #retryIfLastFailed()})
  * so a failed daily refresh doesn't leave the snapshot stale for a full day. {@link #getStops()}
  * also loads on demand if the snapshot is still empty, so generation never depends on the daily
  * fetch having run yet in this JVM (e.g. right after a restart).
@@ -112,7 +113,7 @@ public class CachingPetiStopSource implements PetiStopSource {
      * swaps the snapshot on success. On any failure, keeps the last-good snapshot and records the
      * error, so a caller never has to handle an outage itself.
      */
-    @Scheduled(cron = "${updater.netex.peti.cron:0 30 3 * * *}", zone = "UTC")
+    @Scheduled(cron = "${updater.netex.peti.cron:30 0 2 * * *}", zone = "UTC")
     public void refresh() {
         synchronized (refreshLock) {
             nextInitialLoadAttempt = Instant.now().plus(INITIAL_LOAD_RETRY_DELAY);
