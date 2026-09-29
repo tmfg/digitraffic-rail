@@ -183,7 +183,7 @@ each service gets:
     reaches its destination. `NeTExPublishedJourney.tracks` now has an explicit `@OrderBy("sequenceIndex ASC")`
     so the first/last element reliably matches true journey order — previously relied on unspecified JPA
     collection order, which was safe for existing per-station keyed lookups but not for "first/last" access.
-    `sequenceIndex` is a dedicated, monotonically increasing journey-position field (see
+    `sequenceIndex` is a dedicated, always-increasing journey-position field (see
     `NeTExPublishedJourneyTrack`), distinct from `visitIndex` (a per-station occurrence counter used for
     keyed lookups): ordering by `visitIndex` alone misplaces a repeated station's later visit.
   - `MonitoredCall.VehicleAtStop`/`VehicleLocationAtStop` — see above.

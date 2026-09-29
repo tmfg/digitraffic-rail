@@ -426,10 +426,12 @@ known, deliberately-deferred limitation (unrelated to this fallback) — it is n
 ### Lazy initialization
 
 `getStops()` loads the PETI snapshot on demand if it is still empty (e.g. right after an app restart, before the
-daily 03:30 UTC scheduled `refresh()` has run), so callers (`NeTExService`, `SiriEtGenerationService`,
+daily 02:00:30 UTC scheduled `refresh()` has run), so callers (`NeTExService`, `SiriEtGenerationService`,
 `SiriVmGenerationService`) never need to call a separate "ensure loaded" step themselves — `PetiStopSource` no
 longer exposes one. Concurrent first callers contend on a single lock (`refreshLock`, double-checked) so only one
-HTTP fetch happens even if several generation cycles race on first use.
+HTTP fetch happens even if several generation cycles race on first use. An hourly safety-net (`retry-cron`, on
+the hour) retries `refresh()` if the last attempt failed, giving the 02:00:30 fetch a real chance to recover by
+03:00 — well before the 04:00 UTC NeTEx generation.
 
 ### Retry-delay gate (1 minute)
 
