@@ -49,8 +49,8 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     ///
     /// vehicleAtStop: nexts type alone does not tell whether the train is dwelling, since a stale-estimate
     /// ARRIVAL can be skipped in favor of its DEPARTURE even though the train has not arrived. So a DEPARTURE
-    /// only counts as "at stop" when prev - the nearest ARRIVAL at the same station, resolved by its own
-    /// independent lateral join - has actually happened (or does not exist at all, i.e. an origin station).
+    /// only counts as "at stop" when prev - the nearest ARRIVAL at the same station as next, resolved by its
+    /// own independent lateral join - has actually happened (or does not exist at all, i.e. an origin station).
     ///
     /// Terminus fallback: a terminus has no DEPARTURE row, so once its ARRIVAL happens this query has nothing
     /// left to match and returns stationShortCode = null - SIRI-VM resolves that case separately in Java (see
@@ -101,10 +101,10 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
             ORDER BY tr.scheduled_time, tr.type DESC
             LIMIT 1
         ) next ON TRUE
-        -- prev: the nearest non-cancelled ARRIVAL at nexts own station, scheduled at or before it - used only
-        -- to derive vehicle_at_stop above. Resolved once per train (correlated against the single
-        -- already-resolved next row, not against every candidate row), so this adds one extra lookup per
-        -- train, not one per row.
+        -- prev: the nearest non-cancelled ARRIVAL at the same station as next, scheduled at or before nexts own
+        -- scheduled_time - used only to derive vehicle_at_stop above. Resolved once per train (correlated
+        -- against the single already-resolved next row, not against every candidate row), so this adds one
+        -- extra lookup per train, not one per row.
         -- found is a presence marker: it lets vehicle_at_stop tell "no such ARRIVAL exists at all" (found is
         -- null, e.g. the origin station) apart from "it exists but has not happened yet" (found = 1,
         -- actual_time still null) - both would otherwise look identical if only actual_time were selected.
