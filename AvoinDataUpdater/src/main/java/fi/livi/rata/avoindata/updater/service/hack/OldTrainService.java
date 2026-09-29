@@ -67,6 +67,10 @@ public class OldTrainService {
                 final List<Train> trainResponse = getChangedTrains(departureDate);
 
                 if (!trainResponse.isEmpty()) {
+                    // updateEntities replaces source version with Digitraffic API version, so
+                    // capture the payload version first
+                    trainResponse.forEach(t -> t.sourceVersion = t.version);
+
                     updatedTotal += trainResponse.size();
 
                     trainLockExecutor.executeInLock("oldTrains", () -> {
