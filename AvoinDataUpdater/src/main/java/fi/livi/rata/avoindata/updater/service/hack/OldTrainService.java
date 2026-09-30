@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
@@ -74,9 +73,8 @@ public class OldTrainService {
                     updatedTotal += trainResponse.size();
 
                     trainLockExecutor.executeInLock("oldTrains", () -> {
-                        log.info("method=updateOldTrains date={} updatedCount={} Updating: {}", departureDate,
-                                trainResponse.size(),
-                                Iterables.transform(trainResponse, t -> String.format("%s (%s)", t, t.sourceVersion)));
+                        log.info("method=updateOldTrains date={} updatedCount={} trains={} (departureDate: trainNumber(sourceVersion))",
+                                departureDate, trainResponse.size(), trainResponse);
 
                         trainPersistService.updateEntities(trainResponse);
 
