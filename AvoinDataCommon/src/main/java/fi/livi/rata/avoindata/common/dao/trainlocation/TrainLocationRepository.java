@@ -40,5 +40,5 @@ public interface TrainLocationRepository extends CustomGeneralRepository<TrainLo
             "tl.trainLocationId.trainNumber = ?1 and " +
             "tl.trainLocationId.departureDate = ?2 " +
             "order by tl.trainLocationId.timestamp desc")
-    List<TrainLocation> findTrain(final Long train_number, final LocalDate departure_date);
+    List<TrainLocation> findForTrain(final Long train_number, final LocalDate departure_date);
 }

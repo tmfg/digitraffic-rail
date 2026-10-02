@@ -70,7 +70,7 @@ public class TrainLocationController extends ADataController {
 
         CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_HISTORY);
 
-        final List<TrainLocation> trainLocations = trainLocationRepository.findTrain(train_number, departure_date);
+        final List<TrainLocation> trainLocations = trainLocationRepository.findForTrain(train_number, departure_date);
         return filterByBbox(bbox, response, trainLocations);
     }
 

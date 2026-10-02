@@ -208,4 +208,9 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
 
     @Query("select train from Train train where train.id.departureDate < ?1 and train.runningCurrently = true")
     List<Train> findRunningTrains(final LocalDate maxDepartureDate);
+
+    @Query(value = "select count(*) from train " +
+            "where departure_date = ?1 and train_number = ?2 and " +
+            "(deleted is null or deleted = false) limit 1", nativeQuery = true)
+    Long existsByDepartureDateAndTrainNumber(final LocalDate departureDate, final Long trainNumber);
 }

@@ -71,7 +71,7 @@ public class TrainLocationPalaIntegrationTest extends BaseTest {
         trainLocationRepository.saveAll(nearTrack);
 
         // then — record persisted with correct fields
-        final List<TrainLocation> saved = trainLocationRepository.findTrain(9931L, DEPARTURE_DATE);
+        final List<TrainLocation> saved = trainLocationRepository.findForTrain(9931L, DEPARTURE_DATE);
         Assertions.assertEquals(1, saved.size(), "GPS-based train should be persisted");
 
         final TrainLocation tl = saved.getFirst();
@@ -97,7 +97,7 @@ public class TrainLocationPalaIntegrationTest extends BaseTest {
         trainLocationRepository.saveAll(nearTrack);
 
         // then
-        final List<TrainLocation> saved = trainLocationRepository.findTrain(1L, DEPARTURE_DATE);
+        final List<TrainLocation> saved = trainLocationRepository.findForTrain(1L, DEPARTURE_DATE);
         Assertions.assertEquals(1, saved.size(), "Calculated position should be persisted");
 
         final TrainLocation tl = saved.getFirst();
