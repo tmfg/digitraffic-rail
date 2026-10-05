@@ -252,8 +252,8 @@ public class NeTExService {
             final long durationMs = stopWatch.getDuration().toMillis();
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
             log.error("event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome=error "
-                    + "stage={} durationMs={} failed",
-                    stage.name().toLowerCase(Locale.ROOT), durationMs, e);
+                    + "errorType={} stage={} durationMs={} failed",
+                    e.getClass().getSimpleName(), stage.name().toLowerCase(Locale.ROOT), durationMs, e);
             // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a
             // build failure.
             if (e instanceof final RipaFetchException ripaFetchException) {
