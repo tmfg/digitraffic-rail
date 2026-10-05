@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.common.dao.gtfs;
 
 import java.util.Collection;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -14,12 +15,13 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 
 @Repository
 public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, TrainId> {
+    // return trains that have changed since given version, departing today or yesterday
     @Query("select train from GTFSTrain train" +
-            " where train.sourceVersion > ?1" +
+            " where train.sourceVersion > :version" +
             // category must be Commuter or Long-distance and traintype must not be V, HV or MV
             " and train.trainCategoryId in (1, 2) and train.trainTypeId not in (81, 52, 53)" +
-            " and train.id.departureDate in (current_date, (current_date - 1 day))")
-    List<GTFSTrain> findBySourceVersionGreaterThan(final long version);
+            " and train.id.departureDate in (:today, (:today - 1 day))")
+    List<GTFSTrain> findBySourceVersionGreaterThan(final long version, final LocalDate today);
 
     /// Live trains for the exact (trainNumber, departureDate) set the published NeTEx refers to. SIRI-ET drives
     /// the fetch from the persisted journey refs rather than re-applying the GTFS passenger filter: the

@@ -6,6 +6,7 @@ import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTripRepository;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 import fi.livi.rata.avoindata.updater.service.gtfs.realtime.FeedMessageService;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +62,7 @@ public class GTFSRealtimeService {
         } else {
             TimingUtil.log(log, "getTrainsForTripUpdate", () -> {
                 log.info("method=getTrainsForTripUpdate Getting trains since version {}", maxVersion);
-                final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findBySourceVersionGreaterThan(maxVersion);
+                final List<GTFSTrain> gtfsTrains = gtfsTrainRepository.findBySourceVersionGreaterThan(maxVersion, DateProvider.dateInHelsinki());
                 log.info("method=getTrainsForTripUpdate Found {} GtfsTrains", gtfsTrains.size());
 
                 trains.addAll(gtfsTrains);
