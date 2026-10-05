@@ -36,7 +36,6 @@ jobs:
           ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
           ref: ${{ inputs.config-repo-branch }}
           path: digitraffic-ci
-      # The Dockerfile and the importer scripts live in the CI repo, so its SHA identifies the image.
       - name: Set image tag
         id: image_tag
         run: |
@@ -64,7 +63,6 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
-      # One image serves both schemas; SCHEMA and the Oracle connection come from the ECS task definition.
       - name: Build and push ETJ importer image
         working-directory: digitraffic-ci
         run: |
@@ -80,7 +78,6 @@ jobs:
           docker push ${{ secrets.ECR_URL }}/etjimport-infra:${{ steps.image_tag.outputs.tag }}
           docker push ${{ secrets.ECR_URL }}/etjimport-etj2:${{ steps.image_tag.outputs.tag }}
 
-      # The CDK stack reads these at synth time, so they must be written before the install job runs.
       - name: Put image tags in Parameter Store
         run: |
           aws ssm put-parameter \
@@ -164,7 +161,6 @@ jobs:
         env:
           DEPLOY_ALL_CHANGES: true
           DIFF_ONLY: ${{ github.event.inputs['diff-only'] }}
-          # the value of AWS_PROFILE is only used by the stack code, local AWS profile configurations are not being set up
           AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
         working-directory: digitraffic-ci/aws/cdk/infra/scripts
         run: |
