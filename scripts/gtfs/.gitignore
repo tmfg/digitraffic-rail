@@ -1,0 +1,12 @@
+# Allowlist: ignore everything, then explicitly un-ignore tracked files.
+# Keeps downloaded GTFS archives, decoded JSON output and node_modules out of git.
+*
+
+!.gitignore
+!README.md
+!biome.jsonc
+!gtfs.ts
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.json

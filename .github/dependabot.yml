@@ -1,5 +1,12 @@
 version: 2
 updates:
+  - package-ecosystem: "npm"
+    directory: "/scripts/gtfs"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 7       # Wait 7 days for any update
+
   - package-ecosystem: "docker"
     directory: "/dbrail"
     schedule:
