@@ -9,9 +9,15 @@ import org.springframework.stereotype.Component;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
+/**
+ * Filters out recently seen train locations.  If you're wondering how the threshold
+ * can be so high, note that the key is (train number, departure_date, timestamp)!
+ *
+ * So this is meant to filter out duplicate train locations.
+ */
 @Component
 public class RecentlySeenTrainLocationFilter extends AbstractRecentlySeenEntityFilter<TrainLocation, String> {
-    public static final int TIMESTAMP_RECENT_TRESHOLD_MINUTES = 25;
+    public static final int TIMESTAMP_RECENT_THRESHOLD_MINUTES = 25;
 
     @Override
     public ZonedDateTime getTimestamp(final TrainLocation entity) {
@@ -26,9 +32,8 @@ public class RecentlySeenTrainLocationFilter extends AbstractRecentlySeenEntityF
 
     @Override
     public boolean isTooOld(final ZonedDateTime timestamp) {
-        return timestamp.isBefore(DateProvider.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_TRESHOLD_MINUTES));
+        return timestamp.isBefore(DateProvider.nowInHelsinki().minusMinutes(TIMESTAMP_RECENT_THRESHOLD_MINUTES));
     }
-
 
     @Override
     public Logger getLogger() {

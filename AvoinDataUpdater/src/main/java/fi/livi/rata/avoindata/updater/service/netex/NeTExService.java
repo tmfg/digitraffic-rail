@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.digitraffic.common.util.StringUtil;
+import fi.livi.digitraffic.common.util.TimeUtil;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
@@ -67,9 +70,6 @@ public class NeTExService {
      * yet.
      */
     private static final Pattern VALID_PLATFORM_NUMBER = Pattern.compile("[1-9]|1[0-9]|2[0-2]");
-
-    @Value("${updater.netex.peti.min-match-rate:0.95}")
-    private double minMatchRate = 0.95;
 
     private final NeTExEntityService entityService;
     private final NeTExCalendarService calendarService;
@@ -128,7 +128,7 @@ public class NeTExService {
      * the stop assignments cannot disagree about which track a stop uses.
      */
     private void fillMissingTracks(final List<Schedule> adhocSchedules, final List<Schedule> regularSchedules) {
-        final long upcomingStart = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
         final var byTrainNumber = commercialTrackResolver.byTrainNumber(timeTableRowService.getNextTenDays());
         final List<TrackGap> gaps = new ArrayList<>();
         int fromUpcoming = 0;
@@ -148,17 +148,17 @@ public class NeTExService {
             }
         }
 
-        final long historyStart = System.currentTimeMillis();
+        final long upcomingMs = stopWatch.getDuration().toMillis();
         final int fromHistory = fillFromHistory(gaps);
-        final long identityStart = System.currentTimeMillis();
+        final long historyMs = stopWatch.getDuration().toMillis() - upcomingMs;
         final int fromIdentity = identityTrackSource.fill(List.of(adhocSchedules, regularSchedules));
-        final long doneAt = System.currentTimeMillis();
+        final long identityMs = stopWatch.getDuration().toMillis() - upcomingMs - historyMs;
 
         log.info("event=generateNeTEx method=fillMissingTracks fromUpcoming={} fromHistory={} "
                 + "fromIdentity={} stillMissing={} upcomingMs={} historyMs={} identityMs={}",
                 fromUpcoming, fromHistory, fromIdentity,
                 gaps.size() - fromHistory - fromIdentity,
-                historyStart - upcomingStart, identityStart - historyStart, doneAt - identityStart);
+                upcomingMs, historyMs, identityMs);
     }
 
     /** Asks history only about the stops still without a track. */
@@ -212,18 +212,18 @@ public class NeTExService {
     @Transactional
     public NeTExGenerationResult generateNeTEx() {
         log.info("event=generateNeTEx method=generateNeTEx starting NeTEx generation");
-        final long startTime = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
         Stage stage = Stage.FETCH;
 
         try {
             final LocalDate start = feedStart();
-            final long adhocStart = System.currentTimeMillis();
+            final StopWatch fetchWatch = StopWatch.createStarted();
             final List<Schedule> adhocSchedules;
             final List<Schedule> regularSchedules;
-            final long regularStart;
+            final long adhocMs;
             try {
                 adhocSchedules = scheduleProviderService.getAdhocSchedules(start);
-                regularStart = System.currentTimeMillis();
+                adhocMs = fetchWatch.getDuration().toMillis();
                 regularSchedules = scheduleProviderService.getRegularSchedules(start);
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -231,27 +231,29 @@ public class NeTExService {
             } catch (final Exception e) {
                 throw new RipaFetchException("Failed to fetch schedules from RIPA", e);
             }
-            final long stationsStart = System.currentTimeMillis();
+            final long regularMs = fetchWatch.getDuration().toMillis() - adhocMs;
             final List<Station> stations = stationRepository.findAll();
-            final long tracksStart = System.currentTimeMillis();
+            final long stationsMs = fetchWatch.getDuration().toMillis() - adhocMs - regularMs;
 
             log.info("event=generateNeTEx method=generateNeTEx fetched data adhocSchedules={} "
-                    + "regularSchedules={} stations={} adhocMs={} regularMs={} stationsMs={}",
+                    + "regularSchedules={} stationCount={} adhocMs={} regularMs={} stationsMs={}",
                     adhocSchedules.size(), regularSchedules.size(), stations.size(),
-                    regularStart - adhocStart, stationsStart - regularStart, tracksStart - stationsStart);
+                    adhocMs, regularMs, stationsMs);
 
             fillMissingTracks(adhocSchedules, regularSchedules);
 
             stage = Stage.GENERATE;
             final NeTExGenerationResult result = generateNeTEx(adhocSchedules, regularSchedules, stations);
 
-            final long durationMs = System.currentTimeMillis() - startTime;
-            logGenerationEvent(result != null ? "success" : "no_data", "NULL", Stage.COMPLETE, durationMs, result);
+            logGenerationEvent(result != null ? "success" : "no_data", "NULL", Stage.COMPLETE,
+                    stopWatch.getDuration().toMillis(), result);
             return result;
         } catch (final Exception e) {
-            final long durationMs = System.currentTimeMillis() - startTime;
+            final long durationMs = stopWatch.getDuration().toMillis();
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
-            log.error("event=generateNeTEx method=generateNeTEx failed, durationMs={}", durationMs, e);
+            log.error("event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome=error "
+                    + "errorType={} stage={} durationMs={} failed",
+                    e.getClass().getSimpleName(), stage.name().toLowerCase(Locale.ROOT), durationMs, e);
             // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a
             // build failure.
             if (e instanceof final RipaFetchException ripaFetchException) {
@@ -280,14 +282,13 @@ public class NeTExService {
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final NeTExGenerationResult result) {
         final int petiTotal = result != null ? result.matchedCount() + result.unmatchedCount() : 0;
-        final double matchRate = petiTotal > 0 ? (double) result.matchedCount() / petiTotal : 0.0;
         final String line = StringUtil.format(
                 "event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome={} "
                         + "error.type={} stage={} duration_ms={} "
                         + "rail.netex.scheduled_stop_points={} rail.netex.routes={} rail.netex.lines={} "
                         + "rail.netex.service_journeys={} rail.netex.peti.stop_assignments_total={} "
                         + "rail.netex.peti.stop_assignments_matched={} rail.netex.peti.stop_assignments_unmatched={} "
-                        + "rail.netex.peti.match_rate={} rail.netex.peti.quay_matched_count={} "
+                        + "rail.netex.peti.quay_matched_count={} "
                         + "rail.netex.peti.quay_unmatched_count={} rail.netex.peti.quay_no_track_count={}",
                 outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationMs,
                 result != null ? result.scheduledStopPoints() : 0,
@@ -297,7 +298,6 @@ public class NeTExService {
                 petiTotal,
                 result != null ? result.matchedCount() : 0,
                 result != null ? result.unmatchedCount() : 0,
-                String.format(Locale.ROOT, "%.4f", matchRate),
                 result != null ? result.quayMatchedCount() : 0,
                 result != null ? result.quayUnmatchedCount() : 0,
                 result != null ? result.quayNoTrackCount() : 0);
@@ -363,8 +363,9 @@ public class NeTExService {
         }
 
         log.error("event=generateNeTEx method=checkStopAssignments stopPoints={} withoutAssignment={} "
-                + "stopPointIds={} message=\"stop points published with no PassengerStopAssignment\"",
-                stopsData.getScheduledStopPoints().size(), withoutAssignment.size(), withoutAssignment);
+                + "stopPointIds={}",
+                stopsData.getScheduledStopPoints().size(), withoutAssignment.size(),
+                String.join(",", withoutAssignment));
     }
 
     /**
@@ -414,14 +415,8 @@ public class NeTExService {
                 + "peti_quays={}",
                 petiStops.isEmpty() ? "empty" : "success", petiStops.size(), petiQuays);
 
-        // Without PETI no stop gets a location, so the package would look complete
-        // while carrying nothing
-        // a consumer can place on a map.
         if (petiStops.isEmpty()) {
-            log.error("event=generateNeTEx method=computeDataset outcome=error error.type=EmptyPetiSnapshot "
-                    + "message=\"PETI snapshot empty, refusing to publish a package in which no stop has a "
-                    + "location\"");
-            throw new IllegalStateException(
+            throw new EmptyPetiSnapshotException(
                     "PETI snapshot empty, refusing to publish a package in which no stop has a location");
         }
 
@@ -438,16 +433,6 @@ public class NeTExService {
 
         final List<NeTExStopsService.StationTrackPair> trackPairs = extractStationTrackPairs(allFiltered);
         final NeTExStopsData stopsData = stopsService.createStopsData(stations, trackPairs);
-
-        // Min-match-rate guard: only enforced when PETI source is non-empty
-        final int total = stopsData.matchedCount() + stopsData.unmatchedCount();
-        if (total > 0) {
-            final double rate = (double) stopsData.matchedCount() / total;
-            if (rate < minMatchRate) {
-                throw new IllegalStateException(
-                        "PETI match rate %.2f below threshold %.2f".formatted(rate, minMatchRate));
-            }
-        }
 
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(allFiltered);
 
@@ -739,7 +724,9 @@ public class NeTExService {
             final Map<String, PetiStop> petiByStation) {
         int fromFirstPlatform = 0;
         int replacedUnknownTrack = 0;
-        final Set<String> invalidTracks = new LinkedHashSet<>();
+        // station-track to one schedule that put a train on it; the same track is usually on
+        // dozens of trains and one is enough to find the fault
+        final Map<String, String> invalidTracks = new LinkedHashMap<>();
         final Set<String> missingFromPeti = new LinkedHashSet<>();
 
         for (final Schedule schedule : schedules) {
@@ -767,17 +754,24 @@ public class NeTExService {
                     replacedUnknownTrack++;
                     final boolean platformShaped = VALID_PLATFORM_NUMBER.matcher(track).matches();
                     final String key = row.station.stationShortCode + "-" + track;
-                    final boolean firstSighting = platformShaped
-                            ? missingFromPeti.add(key)
-                            : invalidTracks.add(key);
+                    final boolean firstSighting;
+                    if (platformShaped) {
+                        firstSighting = missingFromPeti.add(key);
+                    } else {
+                        firstSighting = invalidTracks.putIfAbsent(key,
+                                key + "(exampleTrain:" + schedule.trainNumber
+                                        + "/" + firstRunDayInFeed(schedule) + ")") == null;
+                    }
                     if (firstSighting) {
                         log.error("event=generateNeTEx method=fillFromFirstPlatform PETI publishes no platform "
                                 + "for track station={} uic={} track={} likelyCause={} stopPlace={} "
-                                + "stopPlaceName={} petiTracks={} replacedWith={}",
+                                + "petiTracks={} replacedWith={}",
                                 row.station.stationShortCode, peti.uicCode(), track,
                                 platformShaped ? "missing_from_peti" : "invalid_schedule_track",
-                                peti.stopPlaceId(), peti.name(),
-                                peti.quays().stream().map(PetiQuay::publicCode).toList(), firstPlatform);
+                                peti.stopPlaceId(),
+                                peti.quays().stream().map(PetiQuay::publicCode)
+                                        .collect(Collectors.joining(",")),
+                                firstPlatform);
                     }
                 }
                 row.commercialTrack = firstPlatform;
@@ -786,19 +780,37 @@ public class NeTExService {
 
         log.info("event=generateNeTEx method=fillFromFirstPlatform fromFirstPlatform={} "
                 + "replacedUnknownTrack={} missingFromPeti={} invalidScheduleTracks={}",
-                fromFirstPlatform, replacedUnknownTrack, missingFromPeti.size(), invalidTracks.size());
+                fromFirstPlatform, replacedUnknownTrack, missingFromPeti.size(),
+                invalidTracks.size());
 
+        // Every value is one whitespace-free token so the log search parses it into a
+        // field.
         if (!missingFromPeti.isEmpty()) {
-            log.error("event=generateNeTEx method=fillFromFirstPlatform likelyCause=missing_from_peti count={} "
-                    + "tracks={} message=\"platform-shaped tracks PETI does not publish, report to PETI\"",
-                    missingFromPeti.size(), missingFromPeti);
+            log.error("event=generateNeTEx method=fillFromFirstPlatform gap=tracksMissingFromPeti "
+                    + "likelyCause=missing_from_peti loggedAt={} tracksMissingFromPeti={} gapItems={}",
+                    TimeUtil.nowWithoutMillis(), missingFromPeti.size(), String.join(",", missingFromPeti));
         }
         if (!invalidTracks.isEmpty()) {
-            log.error("event=generateNeTEx method=fillFromFirstPlatform likelyCause=invalid_schedule_track "
-                    + "count={} tracks={} message=\"tracks outside the 1-22 platform numbering on a "
-                    + "passenger schedule, report to the schedule source\"",
-                    invalidTracks.size(), invalidTracks);
+            log.error("event=generateNeTEx method=fillFromFirstPlatform gap=invalidScheduleTracks "
+                    + "likelyCause=invalid_schedule_track loggedAt={} invalidScheduleTracks={} gapItems={}",
+                    TimeUtil.nowWithoutMillis(), invalidTracks.size(),
+                    String.join(",", invalidTracks.values()));
         }
+    }
+
+    /**
+     * First day in the feed window the schedule actually runs, so the reported example can be
+     * looked up directly. Weekday flags, cancellations and exceptions all rule days out, so the
+     * start date on its own is not enough.
+     */
+    private static String firstRunDayInFeed(final Schedule schedule) {
+        final LocalDate from = schedule.startDate.isAfter(feedStart()) ? schedule.startDate : feedStart();
+        for (LocalDate day = from; !day.isAfter(feedEnd()); day = day.plusDays(1)) {
+            if (schedule.isRunOnDay(day)) {
+                return day.toString();
+            }
+        }
+        return "none";
     }
 
     /**

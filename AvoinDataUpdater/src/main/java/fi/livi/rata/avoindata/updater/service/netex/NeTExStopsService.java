@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import fi.livi.digitraffic.common.util.TimeUtil;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
@@ -22,9 +23,8 @@ import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 
 /**
- * Maps station metadata to NeTEx ScheduledStopPoints, RoutePoints, and
- * DestinationDisplays. Wires PETI stop data to produce
- * PassengerStopAssignments.
+ * Turns station metadata into NeTEx ScheduledStopPoints, RoutePoints and DestinationDisplays,
+ * and matches them against PETI to produce PassengerStopAssignments.
  */
 @Service
 public class NeTExStopsService {
@@ -40,18 +40,12 @@ public class NeTExStopsService {
     }
 
     /**
-     * Track-aware overload: creates NeTEx stop data with track-qualified SSPs.
-     * Accepts (station, track) pairs derived from schedule data. Each unique pair
-     * produces
-     * a track-qualified ScheduledStopPoint
-     * (DT:ScheduledStopPoint:{shortCode}-{track})
-     * and, when PETI publishes a quay for the track, a PassengerStopAssignment
-     * carrying its
-     * QuayRef.
+     * Builds the stop data for one generation: a ScheduledStopPoint for every station and
+     * track the schedules use, a RoutePoint and a DestinationDisplay for every station, and a
+     * PassengerStopAssignment pointing at the PETI quay whenever one matches the track.
      *
-     * @param stations          station metadata (for coordinates, names)
-     * @param stationTrackPairs list of (stationShortCode, commercialTrack) tuples
-     *                          from schedules
+     * @param stations          station names and UIC codes; locations all come from PETI
+     * @param stationTrackPairs station and track taken from the schedules
      */
     public NeTExStopsData createStopsData(final List<Station> stations,
             final List<StationTrackPair> stationTrackPairs) {
@@ -77,7 +71,6 @@ public class NeTExStopsService {
 
         final var seenStations = new LinkedHashSet<String>();
         final Map<String, String> projectionTargets = new HashMap<>();
-        final List<String> tracksWithoutQuay = new ArrayList<>();
         final Map<String, Station> stationsWithoutStopPlace = new LinkedHashMap<>();
         final Map<String, Station> stationsWithoutQuays = new LinkedHashMap<>();
 
@@ -111,10 +104,13 @@ public class NeTExStopsService {
                         matchedCount++;
                         quayMatchedCount++;
                     }
+                    // Both of these mean the PETI stop place lists no platforms at all: if it
+                    // listed any, the track was already swapped for the first one earlier in
+                    // the run and would resolve here.
                     case MATCHED_NO_QUAY -> {
                         matchedCount++;
                         quayUnmatchedCount++;
-                        tracksWithoutQuay.add(pair.stationShortCode() + "-" + pair.commercialTrack());
+                        stationsWithoutQuays.putIfAbsent(station.shortCode, station);
                     }
                     case MATCHED_NO_TRACK -> {
                         matchedCount++;
@@ -126,8 +122,8 @@ public class NeTExStopsService {
                         unmatchedCount++;
                         if (stationsWithoutStopPlace.putIfAbsent(station.shortCode, station) == null) {
                             log.error("event=generateNeTEx method=createStopsData PETI publishes no stop place "
-                                    + "for station station={} uic={} name={} country={}",
-                                    station.shortCode, station.uicCode, station.name, station.countryCode);
+                                    + "for station station={} uic={} country={}",
+                                    station.shortCode, station.uicCode, station.countryCode);
                         }
                     }
                 }
@@ -139,44 +135,24 @@ public class NeTExStopsService {
                     idGenerator.routePointId(shortCode), shortCode, projectionTargets.get(shortCode)));
         }
 
-        // One line listing every gap, because the per-track errors above are easy to
-        // lose in a long run.
-        // Each needs a human decision: either PETI is missing a passenger platform, or
-        // the schedule put a
-        // passenger train on a track that does not map to a platform (in other words,
-        // wrong track since these are passenger trains).
-        if (!tracksWithoutQuay.isEmpty()) {
-            log.error("event=generateNeTEx method=createStopsData "
-                    + "count={} tracks={} message=\"no PETI quay for these tracks, stops published without a "
-                    + "PassengerStopAssignment\"",
-                    tracksWithoutQuay.size(), tracksWithoutQuay);
-        }
-
-        // The stop place exists but publishes no platform at all, so there is no quay
-        // to assign and the
-        // stop has no location anywhere in the package.
         if (!stationsWithoutQuays.isEmpty()) {
-            log.error("event=generateNeTEx method=createStopsData "
-                    + "count={} stations={} message=\"PETI stop place publishes no quays, stops published "
-                    + "without a PassengerStopAssignment\"",
+            log.error("event=generateNeTEx method=createStopsData gap=stationsWithoutQuays "
+                    + "loggedAt={} stationsWithoutQuays={} gapItems={}",
+                    TimeUtil.nowWithoutMillis(),
                     stationsWithoutQuays.size(),
                     stationsWithoutQuays.values().stream()
-                            .map(s -> s.shortCode + "(" + s.uicCode + ")")
-                            .toList());
+                            .map(s -> s.shortCode + "(uicCode:" + s.uicCode + ")")
+                            .collect(Collectors.joining(",")));
         }
 
-        // Every stop point of these stations goes out with no assignment at all, so it
-        // has no coordinates
-        // anywhere in the package and nothing tying it to the stop registry. PETI has
-        // to publish the stop place.
         if (!stationsWithoutStopPlace.isEmpty()) {
-            log.error("event=generateNeTEx method=createStopsData "
-                    + "count={} stations={} message=\"no PETI stop place for these stations, stops published "
-                    + "without a PassengerStopAssignment\"",
+            log.error("event=generateNeTEx method=createStopsData gap=stationsWithoutStopPlace "
+                    + "loggedAt={} stationsWithoutStopPlace={} gapItems={}",
+                    TimeUtil.nowWithoutMillis(),
                     stationsWithoutStopPlace.size(),
                     stationsWithoutStopPlace.values().stream()
-                            .map(s -> s.shortCode + "(" + s.uicCode + ")")
-                            .toList());
+                            .map(s -> s.shortCode + "(uicCode:" + s.uicCode + ")")
+                            .collect(Collectors.joining(",")));
         }
 
         return new NeTExStopsData(stopPoints, routePoints, destinationDisplays,
@@ -194,7 +170,8 @@ public class NeTExStopsService {
     }
 
     /**
-     * No location: it resolves through the quay its assignment points at.
+     * The stop point carries no coordinates of its own. Its location comes from the quay its
+     * PassengerStopAssignment points at.
      */
     private NeTExStopsData.NeTExScheduledStopPoint buildScheduledStopPoint(final StationTrackPair pair,
             final Station station) {
@@ -204,9 +181,8 @@ public class NeTExStopsService {
     }
 
     /**
-     * A RoutePoint is the station, so it carries the station centroid; the profile
-     * also
-     * requires it to name a ScheduledStopPoint it corresponds to.
+     * Finds the PETI quay for one station and track. Returns the assignment linking the stop
+     * point to that quay, or an empty result saying why none could be made.
      */
     private AssignmentResult buildAssignment(final StationTrackPair pair, final Station station,
             final PetiUicMatcher matcher) {
@@ -238,10 +214,10 @@ public class NeTExStopsService {
 
         // the schedule names a track PETI does not know, so there is no quay to assign
         log.error("event=generateNeTEx method=buildAssignment PETI quay not found for track station={} "
-                + "uic={} track={} stopPlace={} stopPlaceName={} petiTracks={} assignment={}",
+                + "uic={} track={} stopPlace={} petiTracks={} assignment={}",
                 pair.stationShortCode(), station.uicCode, track,
-                matched.stopPlaceId(), matched.name(),
-                matched.quays().stream().map(PetiQuay::publicCode).toList(),
+                matched.stopPlaceId(),
+                matched.quays().stream().map(PetiQuay::publicCode).collect(Collectors.joining(",")),
                 assignmentId);
 
         return new AssignmentResult(Optional.empty(), Optional.empty(), MatchOutcome.MATCHED_NO_QUAY);
@@ -260,9 +236,8 @@ public class NeTExStopsService {
     }
 
     /**
-     * A (station, track) pair extracted from schedule data. A blank track is held
-     * as
-     * null so that two pairs are equal exactly when they name the same stop point.
+     * A station and track taken from the schedules. Blank tracks become null so that "", " "
+     * and null do not end up as three separate copies of the same station-level stop point.
      */
     public record StationTrackPair(String stationShortCode, String commercialTrack) {
         public StationTrackPair {

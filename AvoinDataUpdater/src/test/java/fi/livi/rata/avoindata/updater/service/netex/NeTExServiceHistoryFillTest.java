@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -101,9 +100,6 @@ class NeTExServiceHistoryFillTest {
                 new CommercialTrackResolver(), timeTableRowService,
                 new HistoricalTrackSource(timeTableRowRepository));
 
-        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
-        field.setAccessible(true);
-        field.setDouble(service, 0.0);
         return service;
     }
 

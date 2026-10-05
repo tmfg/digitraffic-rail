@@ -45,76 +45,36 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * Tests for NeTExService match-rate guard logic.
+ * Tests for NeTExService PETI guard logic.
  */
-class NeTExServiceMatchRateGuardTest {
+class NeTExServicePetiGuardTest {
     private static final String PETI_URL = "https://rae.fintraffic.fi/exports/PETI-rail-NeTEx.zip";
 
     @Test
     void givenEmptyPetiSource_whenGenerating_thenGenerationIsRefused() {
         // given — without PETI no stop can be given a location
-        final NeTExService service = createServiceWithPetiSource(new EmptyPetiStopSource(), 0.95);
+        final NeTExService service = createServiceWithPetiSource(new EmptyPetiStopSource());
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
         final List<Station> stations = createStations(List.of("HKI", "TPE"));
 
         // when/then — publishing a package with no stop assignments at all is worse
         // than publishing none
-        assertThrows(IllegalStateException.class,
+        assertThrows(EmptyPetiSnapshotException.class,
                 () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
     }
 
     @Test
-    void givenMatchRateAboveThreshold_whenGenerating_thenGuardDoesNotThrow() {
-        // given — 2 stations, both matched (rate 1.0 > 0.95)
-        final List<PetiStop> petiStops = List.of(
-                new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()),
-                new PetiStop("FSR:StopPlace:2", 1_000_101, "TPE station", true, null, List.of()));
-        final NeTExService service = createServiceWithPetiSource(() -> petiStops, 0.95);
-        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
-        final List<Station> stations = createStations(List.of("HKI", "TPE"));
-
-        // when/then — no exception (rate 1.0 >= 0.95)
-        assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
-    }
-
-    @Test
-    void givenMatchRateExactlyAtThreshold_whenGenerating_thenGuardDoesNotThrow() {
-        // given — create scenario where rate == threshold exactly
-        // 19 matched out of 20 total = 0.95 exactly, threshold 0.95 → passes (rate <
-        // threshold is the fail condition)
-        final List<PetiStop> petiStops = new ArrayList<>();
-        for (int i = 0; i < 19; i++) {
-            petiStops.add(new PetiStop("FSR:StopPlace:" + i, 1_000_100 + i, "Station " + i, true, null, List.of()));
-        }
-        final NeTExService service = createServiceWithPetiSource(() -> petiStops, 0.95);
-
-        final List<String> codes = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            codes.add("S" + String.format("%02d", i));
-        }
-        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", codes);
-        final List<Station> stations = createStationsWithUic(codes, 100); // UIC 100..119, 19 of 20 match
-
-        // when/then — rate = 19/20 = 0.95, not < 0.95 → does not throw
-        assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
-    }
-
-    @Test
-    void givenMatchRateBelowThreshold_whenGenerating_thenGuardThrowsIllegalStateException() {
-        // given — 1 matched, 1 unmatched (rate = 0.5 < 0.95)
+    void givenSomeStationsMissingFromPeti_whenGenerating_thenGenerationStillCompletes() {
+        // given — 1 of 2 stations known to PETI; every miss is logged as an error,
+        // so the package is still published
         final List<PetiStop> petiStops = List.of(
                 new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()));
-        final NeTExService service = createServiceWithPetiSource(() -> petiStops, 0.95);
+        final NeTExService service = createServiceWithPetiSource(() -> petiStops);
         final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE"));
         final List<Station> stations = createStations(List.of("HKI", "TPE"));
 
-        // when/then — rate 0.5 < 0.95 → throws
-        final IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.generateNeTEx(List.of(), List.of(schedule), stations));
-        assertTrue(ex.getMessage().contains("0.50") || ex.getMessage().contains("0,50"),
-                "Message should contain actual rate");
-        assertTrue(ex.getMessage().contains("0.95") || ex.getMessage().contains("0,95"),
-                "Message should contain threshold");
+        // when/then
+        assertDoesNotThrow(() -> service.generateNeTEx(List.of(), List.of(schedule), stations));
     }
 
     @Test
@@ -147,9 +107,6 @@ class NeTExServiceMatchRateGuardTest {
         assertEquals(8, stopsData.matchedCount());
         assertEquals(2, stopsData.unmatchedCount());
         assertEquals(10, stopsData.matchedCount() + stopsData.unmatchedCount());
-        final double matchRate = (double) stopsData.matchedCount() /
-                (stopsData.matchedCount() + stopsData.unmatchedCount());
-        assertEquals(0.8, matchRate, 0.001);
     }
 
     // --- B5: Telemetry field names use stop-assignment unit ---
@@ -160,7 +117,7 @@ class NeTExServiceMatchRateGuardTest {
         final List<PetiStop> petiStops = List.of(
                 new PetiStop("FSR:StopPlace:1", 1_000_100, "HKI station", true, null, List.of()),
                 new PetiStop("FSR:StopPlace:2", 1_000_101, "TPE station", true, null, List.of()));
-        final NeTExService service = createServiceWithMockedRepos(() -> petiStops, 0.0,
+        final NeTExService service = createServiceWithMockedRepos(() -> petiStops,
                 List.of("HKI", "TPE"));
 
         // given — attach Logback ListAppender to capture log output
@@ -203,7 +160,7 @@ class NeTExServiceMatchRateGuardTest {
                 .toList();
     }
 
-    private NeTExService createServiceWithPetiSource(final PetiStopSource petiSource, final double threshold) {
+    private NeTExService createServiceWithPetiSource(final PetiStopSource petiSource) {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
@@ -211,21 +168,10 @@ class NeTExServiceMatchRateGuardTest {
         final NeTExStopsService stopsService = new NeTExStopsService(idGenerator, petiSource);
         final NeTExWritingService writingService = new NeTExWritingService(idGenerator, PETI_URL);
         final TodaysScheduleService todaysScheduleService = new TodaysScheduleService();
-        final NeTExService service = new NeTExService(entityService, new NeTExCalendarService(idGenerator),
+        return new NeTExService(entityService, new NeTExCalendarService(idGenerator),
                 routeService, new IdentityTrackSource(), stopsService,
                 writingService, petiSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null,
                 null);
-
-        // Set minMatchRate via reflection (normally injected by @Value)
-        try {
-            final Field field = NeTExService.class.getDeclaredField("minMatchRate");
-            field.setAccessible(true);
-            field.setDouble(service, threshold);
-        } catch (final Exception e) {
-            throw new RuntimeException("Failed to set minMatchRate", e);
-        }
-
-        return service;
     }
 
     private List<Station> createStations(final List<String> shortCodes) {
@@ -319,7 +265,7 @@ class NeTExServiceMatchRateGuardTest {
      * which emits the wide-event log.
      */
     private NeTExService createServiceWithMockedRepos(final PetiStopSource petiSource,
-            final double threshold, final List<String> stationCodes) throws Exception {
+            final List<String> stationCodes) throws Exception {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         final NeTExEntityService entityService = new NeTExEntityService(idGenerator, timeConverter);
@@ -352,11 +298,6 @@ class NeTExServiceMatchRateGuardTest {
                 routeService, new IdentityTrackSource(), stopsService,
                 writingService, petiSource, scheduleProviderService, todaysScheduleService, stationRepository,
                 new CommercialTrackResolver(), timeTableRowService, historicalTrackSource);
-
-        // Set minMatchRate via reflection
-        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
-        field.setAccessible(true);
-        field.setDouble(service, threshold);
 
         return service;
     }

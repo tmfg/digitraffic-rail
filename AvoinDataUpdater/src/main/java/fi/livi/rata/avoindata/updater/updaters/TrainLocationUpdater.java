@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
@@ -13,10 +15,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import fi.livi.rata.avoindata.common.utils.DateProvider;
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,15 +27,15 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
+import fi.livi.rata.avoindata.updater.service.trainlocation.TrainExistenceCache;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
-
-import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
 
 @Service
 public class TrainLocationUpdater {
@@ -60,6 +61,9 @@ public class TrainLocationUpdater {
 
     @Autowired
     private LastUpdateService lastUpdateService;
+
+    @Autowired
+    private TrainExistenceCache trainExistenceCache;
 
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION =
             new DecimalFormat("#.000000", DecimalFormatSymbols.getInstance(Locale.ROOT));
@@ -214,37 +218,52 @@ public class TrainLocationUpdater {
     }
 
     /**
-     * Runs the three train-location filters (recently-seen dedup, IP-fallback, near-track) and records the per-filter
-     * drop counts into {@code metrics}.
+     * Runs the train-location filters (recently-seen dedup, IP-fallback, train-exists, near-track)
+     * and records the per-filter drop counts into {@code metrics}.
      */
     private List<TrainLocation> filterTrains(final List<TrainLocation> trainLocations, final IngestionMetrics metrics) {
         final List<TrainLocation> recentlySeenFiltered = recentlySeenTrainLocationFilter.filter(trainLocations);
         metrics.droppedRecentlySeen = trainLocations.size() - recentlySeenFiltered.size();
 
-        final List<TrainLocation> afterIpFilter = new ArrayList<>();
-        for (final TrainLocation t : recentlySeenFiltered) {
-            if (isIpFallbackLocation(t.location)) {
-                metrics.droppedIpFallback++;
-                log.info("Found IP location for {} ({} / {})", t, t.location, t.locationEpsg3067);
-            } else {
-                afterIpFilter.add(t);
-            }
-        }
-
         final List<TrainLocation> result = new ArrayList<>();
-        for (final TrainLocation t : afterIpFilter) {
-            if (trainLocationNearTrackFilterService.isTrainLocationNearTrack(t)) {
+        for (final TrainLocation t : recentlySeenFiltered) {
+            if (isValidLocation(t, metrics)) {
                 result.add(t);
-            } else {
-                metrics.droppedOffTrack++;
-                log.debug("operation=filterTrainLocation rail.entity.type=train_location rail.filter.reason=off_track "
-                                + "rail.train.number={} rail.train.departure_date={}",
-                        t.trainLocationId.trainNumber, t.trainLocationId.departureDate);
             }
         }
 
         metrics.recordsProcessed = result.size();
         return result;
+    }
+
+    /**
+     * Evaluates whether a train location passes all validation filters and records drop reasons.
+     * Returns true if the location should be included; false if it should be dropped.
+     */
+    private boolean isValidLocation(final TrainLocation t, final IngestionMetrics metrics) {
+        if (isIpFallbackLocation(t.location)) {
+            metrics.droppedIpFallback++;
+            log.info("Found IP location for {} ({} / {})", t, t.location, t.locationEpsg3067);
+            return false;
+        }
+
+        if (!trainExistenceCache.exists(t.trainLocationId.departureDate, t.trainLocationId.trainNumber)) {
+            metrics.droppedUnknownTrain++;
+            log.debug("operation=filterTrainLocation rail.entity.type=train_location rail.filter.reason=unknown_train "
+                            + "rail.train.number={} rail.train.departure_date={}",
+                    t.trainLocationId.trainNumber, t.trainLocationId.departureDate);
+            return false;
+        }
+
+        if (trainLocationNearTrackFilterService.isTrainLocationNearTrack(t)) {
+            return true;
+        } else {
+            metrics.droppedOffTrack++;
+            log.debug("operation=filterTrainLocation rail.entity.type=train_location rail.filter.reason=off_track "
+                            + "rail.train.number={} rail.train.departure_date={}",
+                    t.trainLocationId.trainNumber, t.trainLocationId.departureDate);
+            return false;
+        }
     }
 
     private void publishToMqtt(final List<TrainLocation> trainLocations, final IngestionMetrics metrics) {
@@ -313,6 +332,7 @@ public class TrainLocationUpdater {
                 + "rail.train_location.records.dropped.no_speed={} "
                 + "rail.train_location.records.dropped.recently_seen={} "
                 + "rail.train_location.records.dropped.ip_fallback={} "
+                + "rail.train_location.records.dropped.unknown_train={} "
                 + "rail.train_location.records.dropped.off_track={} "
                 + "rail.train_location.records.dropped.total={} "
                 + "rail.train_location.positions.gps={} rail.train_location.positions.calculated={} "
@@ -332,6 +352,7 @@ public class TrainLocationUpdater {
                 m.droppedNoSpeed,
                 m.droppedRecentlySeen,
                 m.droppedIpFallback,
+                m.droppedUnknownTrain,
                 m.droppedOffTrack,
                 m.droppedTotal(),
                 m.positionsGps, m.positionsCalculated,
@@ -388,6 +409,7 @@ public class TrainLocationUpdater {
         private int droppedNoSpeed;
         private int droppedRecentlySeen;
         private int droppedIpFallback;
+        private int droppedUnknownTrain;
         private int droppedOffTrack;
 
         private int positionsGps;
@@ -412,7 +434,7 @@ public class TrainLocationUpdater {
         }
 
         private int droppedTotal() {
-            return droppedNoCoordinate + droppedNoSpeed + deserializationErrors + droppedRecentlySeen + droppedIpFallback + droppedOffTrack;
+            return droppedNoCoordinate + droppedNoSpeed + deserializationErrors + droppedRecentlySeen + droppedIpFallback + droppedUnknownTrain + droppedOffTrack;
         }
 
         private double calculatedRatio() {

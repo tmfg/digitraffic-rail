@@ -19,12 +19,18 @@ import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService.NeTExDataset;
 
 /**
- * Persists the resolved winning journey refs (and their planned tracks) for the real-time window from an
- * already-computed {@link NeTExDataset}, so real-time producers can point at journeys that actually exist in
- * the published ServiceJourney set. Consumes the {@link PublishedJourneyDraft}s the dataset already joined — it
- * does not re-fetch schedules, re-run the winning-schedule resolution or re-join ids to ServiceJourneys.
+ * Persists the resolved winning journey refs (and their planned tracks) for the
+ * real-time window from an
+ * already-computed {@link NeTExDataset}, so real-time producers can point at
+ * journeys that actually exist in
+ * the published ServiceJourney set. Consumes the {@link PublishedJourneyDraft}s
+ * the dataset already joined — it
+ * does not re-fetch schedules, re-run the winning-schedule resolution or
+ * re-join ids to ServiceJourneys.
  *
- * <p>Not transactional itself: it is invoked inside {@link NeTExPackageService}'s persist transaction so the
+ * <p>
+ * Not transactional itself: it is invoked inside {@link NeTExPackageService}'s
+ * persist transaction so the
  * package and the refs are stored (or rolled back) together.
  */
 @Service
@@ -49,8 +55,10 @@ public class NeTExPublishedJourneyWriter {
     }
 
     /**
-     * Persists the published journey refs for the real-time window {@code [today-lookback, today+lookahead]}
-     * under a new dataset version. A no-op when disabled. Old versions are pruned separately by
+     * Persists the published journey refs for the real-time window
+     * {@code [today-lookback, today+lookahead]}
+     * under a new dataset version. A no-op when disabled. Old versions are pruned
+     * separately by
      * {@link NeTExPublishedJourneyCleanupService}.
      */
     public void persistWindow(final NeTExDataset dataset) {
@@ -60,7 +68,8 @@ public class NeTExPublishedJourneyWriter {
         final long startTime = System.currentTimeMillis();
 
         final LocalDate today = DateProvider.dateInHelsinki();
-        // Always cover at least the SIRI operating-day window (its single source of truth), so widening it can
+        // Always cover at least the SIRI operating-day window (its single source of
+        // truth), so widening it can
         // never leave SIRI reading a day this writer didn't persist.
         final int effectiveLookback = Math.max(lookbackDays, OperatingDayWindow.LOOKBACK_DAYS);
         final LocalDate windowStart = today.minusDays(effectiveLookback);
@@ -84,8 +93,10 @@ public class NeTExPublishedJourneyWriter {
             journeys.add(journey);
         }
 
-        // Insert the new version (tracks cascade). Versions older than the retention period are dropped by the
-        // separate cleanup job, so recent stale datasets stay queryable for debugging (SIRI only ever reads the
+        // Insert the new version (tracks cascade). Versions older than the retention
+        // period are dropped by the
+        // separate cleanup job, so recent stale datasets stay queryable for debugging
+        // (SIRI only ever reads the
         // newest version).
         journeyRepo.persist(journeys);
 
@@ -93,7 +104,7 @@ public class NeTExPublishedJourneyWriter {
 
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
-                "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} tracks={} "
+                "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} trackCount={} "
                         + "window_start={} window_end={} duration_ms={}",
                 outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd,
                 System.currentTimeMillis() - startTime);

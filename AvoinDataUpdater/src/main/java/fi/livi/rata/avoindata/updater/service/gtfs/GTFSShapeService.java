@@ -1,7 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -12,15 +17,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import tools.jackson.databind.JsonNode;
-import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.observability.LogFields;
-import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
-import fi.livi.rata.avoindata.updater.service.gtfs.observability.ShapeMetricsSink;
+import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Shape;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.StopTime;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Trip;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
+import fi.livi.rata.avoindata.updater.service.gtfs.observability.ShapeMetricsSink;
+import tools.jackson.databind.JsonNode;
 
 @Service
 public class GTFSShapeService {

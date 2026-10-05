@@ -48,8 +48,7 @@ public class NeTExIdGenerator {
     }
 
     /**
-     * Track-qualified SSP ID: DT:ScheduledStopPoint:{shortCode}-{track}.
-     * Falls back to station-level when track is null or blank.
+     * FTR:ScheduledStopPoint:{shortCode}-{track}, or the station-level id when there is no track.
      */
     public String scheduledStopPointId(final String stationShortCode, final String track) {
         if (track == null || track.isBlank()) {

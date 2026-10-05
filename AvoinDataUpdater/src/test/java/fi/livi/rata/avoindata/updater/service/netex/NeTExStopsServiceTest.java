@@ -423,14 +423,14 @@ class NeTExStopsServiceTest {
                         assertTrue(message.contains("uic=160"), message);
                         assertTrue(message.contains("track=3"), message);
                         assertTrue(message.contains("stopPlace=FSR:StopPlace:2"), message);
-                        assertTrue(message.contains("petiTracks=[1, 2]"), message);
+                        assertTrue(message.contains("petiTracks=1,2"), message);
                 } finally {
                         logbackLogger.detachAppender(appender);
                 }
         }
 
         @Test
-        void givenSeveralTracksWithNoMatchingQuay_whenCreatingStops_thenSummaryErrorListsThemAll() {
+        void givenSeveralTracksWithNoMatchingQuay_whenCreatingStops_thenSummaryErrorListsTheStations() {
                 // given — two stations, each asked for a track PETI does not publish
                 final PetiStop tampere = new PetiStop("FSR:StopPlace:2", 1_000_160, "Tampere", true, null,
                                 List.of(quay("FSR:Quay:20", "1"), quay("FSR:Quay:21", "2")));
@@ -459,15 +459,15 @@ class NeTExStopsServiceTest {
                         final String summary = appender.list.stream()
                                         .filter(e -> e.getLevel() == Level.ERROR)
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .filter(m -> m.contains("no PETI quay for these tracks"))
+                                        .filter(m -> m.contains("gap=stationsWithoutQuays"))
                                         .findFirst()
                                         .orElseThrow(() -> new AssertionError(
-                                                        "Expected a summary of tracks without a quay, got: "
+                                                        "Expected a summary of stations without a quay, got: "
                                                                         + appender.list));
 
-                        assertTrue(summary.contains("count=2"), summary);
-                        assertTrue(summary.contains("TPE-3"), summary);
-                        assertTrue(summary.contains("HKI-415"), summary);
+                        assertTrue(summary.contains("stationsWithoutQuays=2"), summary);
+                        assertTrue(summary.contains("TPE(uicCode:160)"), summary);
+                        assertTrue(summary.contains("HKI(uicCode:100)"), summary);
                 } finally {
                         logbackLogger.detachAppender(appender);
                 }
@@ -493,7 +493,7 @@ class NeTExStopsServiceTest {
 
                         assertTrue(appender.list.stream()
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .noneMatch(m -> m.contains("no PETI quay for these tracks")),
+                                        .noneMatch(m -> m.contains("gap=stationsWithoutQuays")),
                                         "Expected no summary when every track resolved: " + appender.list);
                 } finally {
                         logbackLogger.detachAppender(appender);
@@ -569,15 +569,15 @@ class NeTExStopsServiceTest {
                         final String summary = appender.list.stream()
                                         .filter(e -> e.getLevel() == Level.ERROR)
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .filter(m -> m.contains("no PETI stop place for these stations"))
+                                        .filter(m -> m.contains("gap=stationsWithoutStopPlace"))
                                         .findFirst()
                                         .orElseThrow(() -> new AssertionError(
                                                         "Expected a summary of stations without a stop place, got: "
                                                                         + appender.list));
 
-                        assertTrue(summary.contains("count=2"), summary);
-                        assertTrue(summary.contains("TOR(351)"), summary);
-                        assertTrue(summary.contains("HPA(10726)"), summary);
+                        assertTrue(summary.contains("stationsWithoutStopPlace=2"), summary);
+                        assertTrue(summary.contains("TOR(uicCode:351)"), summary);
+                        assertTrue(summary.contains("HPA(uicCode:10726)"), summary);
                 } finally {
                         logbackLogger.detachAppender(appender);
                 }
@@ -608,14 +608,14 @@ class NeTExStopsServiceTest {
                         final String summary = appender.list.stream()
                                         .filter(e -> e.getLevel() == Level.ERROR)
                                         .map(ILoggingEvent::getFormattedMessage)
-                                        .filter(m -> m.contains("publishes no quays"))
+                                        .filter(m -> m.contains("gap=stationsWithoutQuays"))
                                         .findFirst()
                                         .orElseThrow(() -> new AssertionError(
                                                         "Expected a summary of stop places without quays, got: "
                                                                         + appender.list));
 
-                        assertTrue(summary.contains("count=1"), summary);
-                        assertTrue(summary.contains("TPE(160)"), summary);
+                        assertTrue(summary.contains("stationsWithoutQuays=1"), summary);
+                        assertTrue(summary.contains("TPE(uicCode:160)"), summary);
                 } finally {
                         logbackLogger.detachAppender(appender);
                 }
