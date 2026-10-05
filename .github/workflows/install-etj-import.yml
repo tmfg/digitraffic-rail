@@ -1,0 +1,178 @@
+name: Install ETJ importer
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment"
+        required: true
+        type: environment
+        default: "beta"
+      diff-only:
+        description: "Only run diff"
+        required: true
+        type: boolean
+        default: false
+      config-repo-branch:
+        description: "Config repo branch"
+        default: master
+        required: true
+        type: string
+jobs:
+  images:
+    if: github.repository != 'tmfg/digitraffic-rail'
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    environment: ${{ github.event.inputs.env }}
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+    steps:
+      - name: Checkout CI-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
+      - name: Set image tag
+        id: image_tag
+        run: |
+          CI_SHA=$(git -C digitraffic-ci rev-parse --short HEAD)
+          echo "tag=$CI_SHA-${{ github.run_id }}" >> $GITHUB_OUTPUT
+      - name: Log workflow inputs and environment
+        run: |
+          echo "## Workflow Inputs" >> $GITHUB_STEP_SUMMARY
+          echo "| Name | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| actor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| env | ${{ github.event.inputs.env }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| diff-only | ${{ github.event.inputs.diff-only }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| config-repo-branch | ${{ github.event.inputs.config-repo-branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| image tag | ${{ steps.image_tag.outputs.tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-install-image-etj-import-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+
+      - name: Build and push ETJ importer image
+        working-directory: digitraffic-ci
+        run: |
+          docker buildx build \
+            --no-cache \
+            --platform linux/amd64 \
+            --output type=docker \
+            --tag ${{ secrets.ECR_URL }}/etjimport-infra:${{ steps.image_tag.outputs.tag }} \
+            --tag ${{ secrets.ECR_URL }}/etjimport-etj2:${{ steps.image_tag.outputs.tag }} \
+            --pull=true \
+            --file=aws/docker/Dockerfile-rail-etj-import .
+
+          docker push ${{ secrets.ECR_URL }}/etjimport-infra:${{ steps.image_tag.outputs.tag }}
+          docker push ${{ secrets.ECR_URL }}/etjimport-etj2:${{ steps.image_tag.outputs.tag }}
+
+      - name: Put image tags in Parameter Store
+        run: |
+          aws ssm put-parameter \
+            --name "/rail/etj-import-infra/image-tag" \
+            --value "${{ steps.image_tag.outputs.tag }}" \
+            --type "String" \
+            --overwrite
+
+          aws ssm put-parameter \
+            --name "/rail/etj-import-etj2/image-tag" \
+            --value "${{ steps.image_tag.outputs.tag }}" \
+            --type "String" \
+            --overwrite
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Notify Slack
+        if: failure()
+        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
+        with:
+          status: failure
+          text: FAILED Rail ETJ importer image build
+          fields: repo, job, took
+          webhook-url: ${{ secrets.SLACK_ALARMS_WEBHOOK_URL }}
+
+  install:
+    if: github.repository != 'tmfg/digitraffic-rail'
+    needs: images
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    environment: ${{ github.event.inputs.env }}
+    steps:
+      - name: Checkout CI-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ secrets.CONFIG_REPO_NAME }}
+          ssh-key: ${{ secrets.CONFIG_REPO_SSH_KEY }}
+          ref: ${{ inputs.config-repo-branch }}
+          path: digitraffic-ci
+      - name: Get stack to deploy
+        id: get-stack
+        run: |
+          if [ "${{ github.event.inputs.env }}" = "prod" ]; then
+            echo "stack=EtjImportProd" >> $GITHUB_OUTPUT
+          else
+            echo "stack=EtjImportTest" >> $GITHUB_OUTPUT
+          fi
+      - name: Log deployment target
+        run: |
+          echo "## Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "| Name | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| stack | ${{ steps.get-stack.outputs.stack }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| image tag | ${{ needs.images.outputs.image_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| diff-only | ${{ github.event.inputs.diff-only }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          role-session-name: gh-actions-install-etj-import-${{ github.event.inputs.env }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Use Node.js 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10
+      - name: Build CI/CDK Infra project
+        working-directory: digitraffic-ci/aws/cdk/infra
+        run: |
+          pnpm install
+          pnpm build:ci
+
+      - name: Diff and deploy
+        env:
+          DEPLOY_ALL_CHANGES: true
+          DIFF_ONLY: ${{ github.event.inputs['diff-only'] }}
+          AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+        working-directory: digitraffic-ci/aws/cdk/infra/scripts
+        run: |
+          pnpm install
+          pnpm build
+          pnpm run start:diff-and-deploy ${{ steps.get-stack.outputs.stack }}
+
+      - name: Notify Slack
+        if: failure()
+        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
+        with:
+          status: failure
+          text: FAILED Rail ETJ importer deploy/install
+          fields: repo, job, took
+          webhook-url: ${{ secrets.SLACK_ALARMS_WEBHOOK_URL }}
