@@ -1,5 +1,7 @@
 package fi.livi.rata.avoindata.updater.updaters;
 
+import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
@@ -13,10 +15,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import fi.livi.rata.avoindata.common.utils.DateProvider;
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +27,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
@@ -34,8 +36,6 @@ import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.recentlyseen.RecentlySeenTrainLocationFilter;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainExistenceCache;
 import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTrackFilterService;
-
-import static fi.livi.rata.avoindata.updater.updaters.UpdateLogger.logUpdate;
 
 @Service
 public class TrainLocationUpdater {

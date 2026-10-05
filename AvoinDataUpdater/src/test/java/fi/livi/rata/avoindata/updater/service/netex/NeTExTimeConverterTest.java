@@ -1,12 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.time.LocalTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for NeTExTimeConverter — schedule times to NeTEx Nordic time strings.
@@ -24,7 +24,8 @@ class NeTExTimeConverterTest {
 
     @Test
     void givenScheduleTime_whenConverting_thenPublishedUnchanged() {
-        // given: train 8059 departs Helsinki at 08:53 local, as the /trains API publishes it
+        // given: train 8059 departs Helsinki at 08:53 local, as the /trains API
+        // publishes it
         final Duration departure = Duration.ofHours(8).plusMinutes(53);
 
         // when

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -55,10 +54,6 @@ class NeTExServiceTest {
                 routeService, new IdentityTrackSource(), stopsService,
                 writingService,
                 petiStopSource, null, todaysScheduleService, null, new CommercialTrackResolver(), null, null);
-
-        final Field field = NeTExService.class.getDeclaredField("minMatchRate");
-        field.setAccessible(true);
-        field.setDouble(netExService, 0.0);
     }
 
     // --- Filtering tests ---

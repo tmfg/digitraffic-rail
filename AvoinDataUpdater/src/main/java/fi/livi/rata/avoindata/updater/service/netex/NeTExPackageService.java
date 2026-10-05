@@ -85,15 +85,13 @@ public class NeTExPackageService {
         } catch (final BackOffInterruptedException interrupted) {
             // the policy has already restored the interrupt flag
             log.warn("event=generateNeTEx method=generatePackage outcome=retry_abandoned "
-                    + "message=\"interrupted while waiting to retry\"");
+                    + "reason=interrupted_while_waiting_to_retry");
             throw interrupted;
         } catch (final RipaFetchException e) {
             final Throwable root = rootCause(e);
             log.error("event=generateNeTEx method=generatePackage "
-                    + "outcome=error error.type={} error.root.type={} error.root.message=\"{}\" "
-                    + "attempts={} message=\"NeTEx package not published, RIPA fetch failed on every "
-                    + "attempt\"",
-                    e.getClass().getName(), root.getClass().getName(), root.getMessage(), retryAttempts, e);
+                    + "outcome=error error.type={} error.root.type={} attempts={}",
+                    e.getClass().getName(), root.getClass().getName(), retryAttempts, e);
             throw e;
         }
     }
@@ -108,8 +106,7 @@ public class NeTExPackageService {
                 final RetryCallback<T, E> callback, final Throwable throwable) {
             if (throwable instanceof RipaFetchException && context.getRetryCount() < retryAttempts) {
                 log.warn("event=generateNeTEx method=generatePackage outcome=retry_scheduled "
-                        + "error.type={} attempt={} attempts={} retry_delay={} "
-                        + "message=\"RIPA fetch failed, retrying\"",
+                        + "error.type={} attempt={} attempts={} retry_delay={}",
                         throwable.getClass().getName(), context.getRetryCount(), retryAttempts, retryDelay);
             }
         }
@@ -154,10 +151,8 @@ public class NeTExPackageService {
             }
             final Throwable root = rootCause(e);
             log.error("event=generateNeTEx method=generatePackage outcome=error "
-                    + "error.type={} "
-                    + "error.message=\"{}\" error.root.type={} error.root.message=\"{}\" durationMs={} "
-                    + "message=\"NeTEx package not published\"",
-                    e.getClass().getName(), e.getMessage(), root.getClass().getName(), root.getMessage(),
+                    + "error.type={} error.root.type={} durationMs={}",
+                    e.getClass().getName(), root.getClass().getName(),
                     System.currentTimeMillis() - startTime, e);
             throw e;
         }

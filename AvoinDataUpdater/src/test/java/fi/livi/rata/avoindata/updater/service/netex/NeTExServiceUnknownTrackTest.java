@@ -3,7 +3,6 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -84,7 +83,7 @@ class NeTExServiceUnknownTrackTest {
 
             assertTrue(message.contains("station=HKI"), message);
             assertTrue(message.contains("track=415"), message);
-            assertTrue(message.contains("petiTracks=[1, 2]"), message);
+            assertTrue(message.contains("petiTracks=1,2"), message);
             assertTrue(message.contains("replacedWith=1"), message);
         } finally {
             logbackLogger.detachAppender(appender);
@@ -95,16 +94,16 @@ class NeTExServiceUnknownTrackTest {
     void givenTrackOutsidePlatformNumbering_whenGenerating_thenBlamedOnTheSchedule() {
         // 415 is not a platform number at all, so the schedule put a passenger train on
         // a yard track
-        assertCause("415", "invalid_schedule_track", "report to the schedule source");
+        assertCause("415", "invalid_schedule_track", "gap=invalidScheduleTracks");
     }
 
     @Test
     void givenPlatformShapedTrackPetiLacks_whenGenerating_thenBlamedOnPeti() {
         // 3 looks like an ordinary platform, so PETI is the one missing data
-        assertCause("3", "missing_from_peti", "report to PETI");
+        assertCause("3", "missing_from_peti", "gap=tracksMissingFromPeti");
     }
 
-    private void assertCause(final String track, final String expectedCause, final String expectedSummary) {
+    private void assertCause(final String track, final String expectedCause, final String expectedGap) {
         final NeTExService service = serviceWith(helsinkiWithPlatforms("1", "2"));
         final Schedule schedule = scheduleWithTracks(track, "1");
 
@@ -123,7 +122,7 @@ class NeTExServiceUnknownTrackTest {
 
             assertTrue(errors.stream().anyMatch(m -> m.contains("track=" + track)
                     && m.contains("likelyCause=" + expectedCause)), errors.toString());
-            assertTrue(errors.stream().anyMatch(m -> m.contains(expectedSummary)
+            assertTrue(errors.stream().anyMatch(m -> m.contains(expectedGap)
                     && m.contains("HKI-" + track)), errors.toString());
         } finally {
             logbackLogger.detachAppender(appender);
@@ -293,7 +292,7 @@ class NeTExServiceUnknownTrackTest {
 
     private static NeTExService serviceWith(final PetiStopSource petiSource) {
         final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
-        final NeTExService service = new NeTExService(
+        return new NeTExService(
                 new NeTExEntityService(idGenerator, new NeTExTimeConverter()),
                 new NeTExCalendarService(idGenerator),
                 new NeTExRouteService(idGenerator),
@@ -302,13 +301,5 @@ class NeTExServiceUnknownTrackTest {
                 new NeTExWritingService(idGenerator, PETI_URL),
                 petiSource, null, new TodaysScheduleService(), null,
                 new CommercialTrackResolver(), null, null);
-        try {
-            final Field field = NeTExService.class.getDeclaredField("minMatchRate");
-            field.setAccessible(true);
-            field.setDouble(service, 0.0);
-        } catch (final Exception e) {
-            throw new IllegalStateException("Failed to set minMatchRate", e);
-        }
-        return service;
     }
 }
