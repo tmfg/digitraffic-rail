@@ -18,14 +18,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCollection;
+import static org.assertj.core.api.Assertions.within;
 
 @Transactional
 public class GTFSTrainRepositoryTest extends BaseTest {
@@ -527,6 +530,30 @@ public class GTFSTrainRepositoryTest extends BaseTest {
 
         assertThatCollection(result).extracting(gtfsTrain -> gtfsTrain.id)
                 .containsExactlyInAnyOrder(wanted1.id, wanted2.id);
+    }
+
+    /**
+     * The database sets the {@code modified} columns, so only reading them back from a real database shows
+     * that the mapping works.
+     */
+    @Test
+    public void findBySourceVersionAndIdInReadsBackDatabaseMaintainedModifiedTimes() {
+        final LocalDate today = LocalDate.now();
+        final Train train = createSourcedTrain(new TrainId(9101L, today));
+
+        final List<GTFSTrain> result = gtfsTrainRepository.findBySourceVersionAndIdIn(0L, List.of(train.id));
+
+        assertThatCollection(result).hasSize(1);
+        final GTFSTrain gtfsTrain = result.getFirst();
+        assertThat(gtfsTrain.modified)
+                .as("train.modified must be populated by the database")
+                .isNotNull()
+                .isCloseTo(Instant.now(), within(5, ChronoUnit.MINUTES));
+        assertThatCollection(gtfsTrain.timeTableRows).isNotEmpty();
+        assertThat(gtfsTrain.timeTableRows.getFirst().modified)
+                .as("timeTableRow.modified must be populated by the database")
+                .isNotNull()
+                .isCloseTo(Instant.now(), within(5, ChronoUnit.MINUTES));
     }
 
     private Train createSourcedTrain(final TrainId id) {

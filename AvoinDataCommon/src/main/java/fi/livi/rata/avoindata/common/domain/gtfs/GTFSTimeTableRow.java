@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -70,6 +71,9 @@ public class GTFSTimeTableRow implements SortableTimeTableRow {
     @Column
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime commercialTrackChanged;
+
+    @Column(name = "modified", insertable = false, updatable = false)
+    public Instant modified;
 
     @ManyToOne
     @JoinColumns({

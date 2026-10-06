@@ -154,7 +154,7 @@ Field-by-field status against the Entur SIRI-VM wiki spec and the checked-in gol
 | `VehicleMonitoringDelivery` | 1:1 | ✅ Implemented | Root delivery container. |
 | &nbsp;&nbsp;↳ ResponseTimestamp | 1:1 | ✅ Implemented | When the dataset was published. |
 | &nbsp;&nbsp;↳ VehicleActivity | 1:1 | ✅ Implemented | Live vehicle snapshot. |
-| &nbsp;&nbsp;&nbsp;&nbsp;↳ RecordedAtTime | 1:1 | ✅ Implemented | Recorded timestamp. |
+| &nbsp;&nbsp;&nbsp;&nbsp;↳ RecordedAtTime | 1:1 | ✅ Implemented | `train_location.timestamp` — when this position was actually observed, per journey. |
 | &nbsp;&nbsp;&nbsp;&nbsp;↳ ValidUntilTime | 1:1 | ✅ Implemented | +5 min freshness window. |
 | &nbsp;&nbsp;&nbsp;&nbsp;↳ MonitoredVehicleJourney | 1:1 | ✅ Implemented | Real-time journey payload. |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↳ LineRef | 1:1 | ✅ Implemented | |

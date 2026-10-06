@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
@@ -152,7 +154,29 @@ public class EtJourneyInterpreter {
                 train.cancelled, monitored,
                 stops.isEmpty() ? null : stops.getFirst().stopName(),
                 stops.isEmpty() ? null : stops.getLast().stopName(),
+                resolveRecordedAtTime(train, now),
                 calls));
+    }
+
+    /**
+     * The journey's {@code RecordedAtTime}: the newest {@code modified} of the train and its rows, or
+     * {@code now} when none is set.
+     *
+     * @return the time, never later than {@code now}, always in the Helsinki zone
+     */
+    private static ZonedDateTime resolveRecordedAtTime(final GTFSTrain train, final ZonedDateTime now) {
+        final ZonedDateTime nowHki = now.withZoneSameInstant(DateProvider.ZONE_ID_HKI);
+        Instant newest = train.modified;
+        for (final GTFSTimeTableRow row : train.timeTableRows) {
+            if (row.modified != null && (newest == null || row.modified.isAfter(newest))) {
+                newest = row.modified;
+            }
+        }
+        if (newest == null) {
+            return nowHki;
+        }
+        final ZonedDateTime modified = newest.atZone(DateProvider.ZONE_ID_HKI);
+        return modified.isAfter(nowHki) ? nowHki : modified;
     }
 
     private EtCall toCall(final long trainNumber, final LocalDate departureDate, final PairedStop stop,

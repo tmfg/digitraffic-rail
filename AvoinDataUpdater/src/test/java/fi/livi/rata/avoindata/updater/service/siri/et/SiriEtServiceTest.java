@@ -310,6 +310,79 @@ class SiriEtServiceTest {
         assertEquals("0", evj.getDirectionRef().getValue());
     }
 
+    // --- ET-05b: RecordedAtTime comes from the journey's own data ---
+
+    @Test
+    void givenTrainModified_whenBuild_thenRecordedAtTimeIsTrainsModifiedTime() {
+        // given — train last changed 40 minutes before this generation cycle
+        final GTFSTrain train = createStandard4StopTrain();
+        train.modified = NOW.minusMinutes(40).toInstant();
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertEquals(NOW.minusMinutes(40).toInstant(), evj.getRecordedAtTime().toInstant());
+    }
+
+    @Test
+    void givenRowNewerThanTrain_whenBuild_thenRecordedAtTimeIsTheRowsModifiedTime() {
+        // given — a track change or RAMI flag updates one row, leaving the train row untouched
+        final GTFSTrain train = createStandard4StopTrain();
+        train.modified = NOW.minusMinutes(40).toInstant();
+        train.timeTableRows.get(2).modified = NOW.minusMinutes(5).toInstant();
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertEquals(NOW.minusMinutes(5).toInstant(), evj.getRecordedAtTime().toInstant());
+    }
+
+    @Test
+    void givenModifiedInTheFuture_whenBuild_thenRecordedAtTimeIsLimitedToNow() {
+        // given — the database clock is ahead of the updater's clock
+        final GTFSTrain train = createStandard4StopTrain();
+        train.modified = NOW.plusMinutes(2).toInstant();
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
+    }
+
+    @Test
+    void givenNoModifiedTimes_whenBuild_thenRecordedAtTimeFallsBackToNow() {
+        // given
+        final GTFSTrain train = createStandard4StopTrain();
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
+    }
+
+    @Test
+    void givenNonHelsinkiNow_whenBuild_thenRecordedAtTimeIsHelsinkiZoned() {
+        // given — the caller's zone must not leak into the emitted value
+        final GTFSTrain train = createStandard4StopTrain();
+        final ZonedDateTime nowInUtc = NOW.withZoneSameInstant(java.time.ZoneOffset.UTC);
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), nowInUtc);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        assertEquals(ZONE_ID_HKI, evj.getRecordedAtTime().getZone());
+        assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
+    }
+
     // ===== AREA 2 — Recorded/Estimated call split & ordering =====
 
     // --- ET-06: All stops future → all EstimatedCalls, no RecordedCalls ---

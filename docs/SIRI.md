@@ -139,6 +139,11 @@ each service gets:
   wiki page).
 - `DirectionRef` is mandatory in the SIRI-ET schema but unused by the Norwegian profile; per spec guidance we
   emit the fixed value `"0"`.
+- **`RecordedAtTime` per journey.** Each `EstimatedVehicleJourney` reports when its own data last changed, not
+  when the file was generated. The value is the newest `modified` of the train and its timetable rows; a row
+  can be newer than the train, because track changes and RAMI's unknown-delay/track flags update single rows.
+  It is never later than the generation time, and falls back to it when no `modified` is set. The surrounding
+  `EstimatedJourneyVersionFrame` keeps the generation time, since that belongs to the whole file.
 
 ### SIRI-VM (implemented)
 

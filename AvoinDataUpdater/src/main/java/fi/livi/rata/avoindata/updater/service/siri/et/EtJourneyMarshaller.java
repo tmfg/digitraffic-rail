@@ -89,7 +89,7 @@ public class EtJourneyMarshaller {
     private EstimatedVehicleJourney marshalJourney(final EtJourney journey, final ZonedDateTime now) {
         final EstimatedVehicleJourney evj = new EstimatedVehicleJourney();
 
-        evj.setRecordedAtTime(toHelsinki(now));
+        evj.setRecordedAtTime(toHelsinki(journey.recordedAtTime()));
 
         final LineRef lineRef = new LineRef();
         lineRef.setValue(journey.lineId().value());
