@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Schedules the daily generation of the NeTEx Nordic dataset. Runs one hour
- * before the GTFS generation to avoid resource contention.
+ * Schedules the daily generation of the NeTEx Nordic dataset. The time of day is set per
+ * environment in {@code updater.netex.cron}.
  */
 @Component
 @ConditionalOnProperty(name = "updater.netex.enabled", havingValue = "true", matchIfMissing = true)
@@ -33,7 +33,7 @@ public class NeTExScheduler {
     }
 
     /** Runs before the generation so a prune failure cannot hold up publishing. */
-    @Scheduled(cron = "${updater.netex.persist-journeys.cleanup-cron:0 30 3 * * *}", zone = "UTC")
+    @Scheduled(cron = "${updater.netex.persist-journeys.cleanup-cron:0 30 2 * * *}", zone = "UTC")
     public void deleteOldPublishedJourneys() {
         publishedJourneyCleanupService.deleteOldJourneys();
     }
