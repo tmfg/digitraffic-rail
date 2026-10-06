@@ -190,14 +190,8 @@ public class EtJourneyInterpreter {
                         stop.arrival.actualTime,
                         cancelled ? CallStatus.CANCELLED : timeStatus(stop.arrival));
 
-        final CallStatus departureStatus = (cancelled || nextCancelled) ? CallStatus.CANCELLED
-                : (stop.departure == null ? null : timeStatus(stop.departure));
         final CallPoint departure = stop.departure == null ? null
-                : new CallPoint(
-                        stop.departure.scheduledTime,
-                        stop.departure.liveEstimateTime,
-                        stop.departure.actualTime,
-                        departureStatus);
+                : departureCallPoint(stop, cancelled || nextCancelled);
 
         final QuayChange quayChange = computeQuayChange(trainNumber, departureDate, stop, stopRef, visitIndex);
 
@@ -275,6 +269,24 @@ public class EtJourneyInterpreter {
         // ScheduleToTrainConverter.emptyCommercialTrackInTimeTableRows / TimeTableRowDeserializer), not null -
         // treat it the same as null so the planned-track fallback is used instead of an unresolvable "" quay.
         return StringUtils.isBlank(row.commercialTrack) ? null : row.commercialTrack;
+    }
+
+    /**
+     * Builds the departure of a stop. The departure estimate can be older than an arrival that has already
+     * happened, which would publish a departure before its own arrival; such an estimate is moved to the
+     * arrival time.
+     */
+    private static CallPoint departureCallPoint(final PairedStop stop, final boolean cancelled) {
+        final GTFSTimeTableRow row = stop.departure;
+        final ZonedDateTime arrived = stop.arrival == null ? null : stop.arrival.actualTime;
+        final ZonedDateTime estimate =
+                row.liveEstimateTime != null && arrived != null && row.liveEstimateTime.isBefore(arrived)
+                        ? arrived
+                        : row.liveEstimateTime;
+        // A moved estimate always belongs to a stop whose arrival has happened, and such a stop is published as
+        // a RecordedCall, which carries no status at all - so the status is taken from the unmoved row.
+        return new CallPoint(row.scheduledTime, estimate, row.actualTime,
+                cancelled ? CallStatus.CANCELLED : timeStatus(row));
     }
 
     private static CallStatus timeStatus(final GTFSTimeTableRow row) {

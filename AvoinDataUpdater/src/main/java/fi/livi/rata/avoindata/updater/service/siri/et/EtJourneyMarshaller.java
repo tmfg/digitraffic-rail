@@ -70,7 +70,7 @@ public class EtJourneyMarshaller {
             final EstimatedVersionFrameStructure frame = new EstimatedVersionFrameStructure();
             frame.setRecordedAtTime(now.withZoneSameInstant(DateProvider.ZONE_ID_HKI));
             for (final EtJourney journey : journeys) {
-                frame.getEstimatedVehicleJourneies().add(marshalJourney(journey, now));
+                frame.getEstimatedVehicleJourneies().add(marshalJourney(journey));
             }
             delivery.getEstimatedJourneyVersionFrames().add(frame);
         }
@@ -86,7 +86,7 @@ public class EtJourneyMarshaller {
         return siriWritingService.marshalToBytes(siri);
     }
 
-    private EstimatedVehicleJourney marshalJourney(final EtJourney journey, final ZonedDateTime now) {
+    private EstimatedVehicleJourney marshalJourney(final EtJourney journey) {
         final EstimatedVehicleJourney evj = new EstimatedVehicleJourney();
 
         evj.setRecordedAtTime(toHelsinki(journey.recordedAtTime()));

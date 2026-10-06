@@ -144,6 +144,9 @@ each service gets:
   can be newer than the train, because track changes and RAMI's unknown-delay/track flags update single rows.
   It is never later than the generation time, and falls back to it when no `modified` is set. The surrounding
   `EstimatedJourneyVersionFrame` keeps the generation time, since that belongs to the whole file.
+- **Departure estimates never precede a realised arrival.** When a train has arrived but its departure
+  estimate has not been recalculated yet, the source data can briefly hold a departure estimate that is
+  earlier than the actual arrival at the same stop. Such an estimate is published at the arrival time instead.
 
 ### SIRI-VM (implemented)
 

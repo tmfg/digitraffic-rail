@@ -4,11 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonView;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.BooleanUtils;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.TimeZoneStorage;

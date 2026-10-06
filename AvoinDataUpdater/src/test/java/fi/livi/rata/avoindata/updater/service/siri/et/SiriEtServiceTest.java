@@ -82,7 +82,7 @@ class SiriEtServiceTest {
         plannedTracks.clear();
 
         // given — stub JourneyRefResolver always resolves train 59
-        journeyRefResolver = (trainNumber, date) -> {
+        journeyRefResolver = (trainNumber, _) -> {
             if (trainNumber == 59L) {
                 return Optional.of(RESOLVED_59);
             }
@@ -114,7 +114,7 @@ class SiriEtServiceTest {
 
         service = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode, visitIndex) -> Optional.ofNullable(plannedTracks.get(shortCode)));
+                (_, _, shortCode, _) -> Optional.ofNullable(plannedTracks.get(shortCode)));
     }
 
     private SiriEtService newService(final StationNameLookup stationNameLookup,
@@ -195,10 +195,10 @@ class SiriEtServiceTest {
         assertNotNull(deliveries);
         assertFalse(deliveries.isEmpty());
         final List<EstimatedVersionFrameStructure> frames =
-                deliveries.get(0).getEstimatedJourneyVersionFrames();
+                deliveries.getFirst().getEstimatedJourneyVersionFrames();
         assertNotNull(frames);
         assertFalse(frames.isEmpty());
-        return frames.get(0).getEstimatedVehicleJourneies();
+        return frames.getFirst().getEstimatedVehicleJourneies();
     }
 
     /// EVJs tolerating an absent delivery/frame — an empty feed emits a bare delivery with no frame.
@@ -209,11 +209,11 @@ class SiriEtServiceTest {
             return List.of();
         }
         final List<EstimatedVersionFrameStructure> frames =
-                deliveries.get(0).getEstimatedJourneyVersionFrames();
+                deliveries.getFirst().getEstimatedJourneyVersionFrames();
         if (frames == null || frames.isEmpty()) {
             return List.of();
         }
-        return frames.get(0).getEstimatedVehicleJourneies();
+        return frames.getFirst().getEstimatedVehicleJourneies();
     }
 
     // ===== AREA 1 — EVJ structure & journey ref =====
@@ -244,7 +244,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertNotNull(evj.getFramedVehicleJourneyRef());
         assertEquals("2026-07-15", evj.getFramedVehicleJourneyRef().getDataFrameRef().getValue());
         assertEquals("FTR:ServiceJourney:59-12345", evj.getFramedVehicleJourneyRef().getDatedVehicleJourneyRef());
@@ -258,7 +258,7 @@ class SiriEtServiceTest {
 
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertNotNull(evj.getJourneyPatternRef());
         assertEquals("FTR:JourneyPattern:59", evj.getJourneyPatternRef().getValue());
     }
@@ -274,7 +274,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertNotNull(evj.getLineRef());
         assertEquals("FTR:Line:IC", evj.getLineRef().getValue());
     }
@@ -290,7 +290,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals("FSR", evj.getDataSource());
     }
 
@@ -305,7 +305,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertNotNull(evj.getDirectionRef());
         assertEquals("0", evj.getDirectionRef().getValue());
     }
@@ -322,7 +322,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(NOW.minusMinutes(40).toInstant(), evj.getRecordedAtTime().toInstant());
     }
 
@@ -337,7 +337,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(NOW.minusMinutes(5).toInstant(), evj.getRecordedAtTime().toInstant());
     }
 
@@ -351,7 +351,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
     }
 
@@ -364,7 +364,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
     }
 
@@ -378,7 +378,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), nowInUtc);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(ZONE_ID_HKI, evj.getRecordedAtTime().getZone());
         assertEquals(NOW.toInstant(), evj.getRecordedAtTime().toInstant());
     }
@@ -403,7 +403,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var recordedCalls = evj.getRecordedCalls();
         final var estimatedCalls = evj.getEstimatedCalls();
         assertTrue(recordedCalls == null || recordedCalls.getRecordedCalls().isEmpty());
@@ -446,7 +446,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(2, evj.getRecordedCalls().getRecordedCalls().size());
         assertEquals(2, evj.getEstimatedCalls().getEstimatedCalls().size());
     }
@@ -491,7 +491,7 @@ class SiriEtServiceTest {
 
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
         final List<EstimatedCall> estimated = evj.getEstimatedCalls().getEstimatedCalls();
         // HKI, TPE (missed) and TKU are all in the past; only OL is upcoming.
@@ -499,7 +499,7 @@ class SiriEtServiceTest {
         assertEquals(1, estimated.size());
         // The split stays a continuous chronological prefix/suffix.
         assertEquals(2, recorded.get(1).getOrder().intValue());
-        assertEquals(4, estimated.get(0).getOrder().intValue());
+        assertEquals(4, estimated.getFirst().getOrder().intValue());
         // The missed TPE carries the estimate as Expected*Time, with no Actual*Time.
         final RecordedCall tpe = recorded.get(1);
         assertNull(tpe.getActualArrivalTime());
@@ -510,8 +510,90 @@ class SiriEtServiceTest {
         assertNotNull(tpe.getExpectedDepartureTime());
     }
 
-    // --- ET-08: Continuous Order across Recorded and Estimated ---
+    // --- ET-07b: A departure estimate never precedes an arrival that already happened ---
 
+    @Test
+    void givenDepartureEstimateBeforeActualArrival_whenBuild_thenExpectedDepartureIsTheArrivalTime() {
+        // given — the train arrived at 09:33:41, but the departure estimate still says 09:33:38
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 41, 0, ZONE_ID_HKI);
+        arr.commercialTrack = "1";
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 38, 0, ZONE_ID_HKI);
+        dep.commercialTrack = "1";
+        train.timeTableRows.add(dep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
+        final RecordedCall tpe = evj.getRecordedCalls().getRecordedCalls().get(1);
+        assertEquals(arr.actualTime.toInstant(), tpe.getActualArrivalTime().toInstant());
+        assertEquals(arr.actualTime.toInstant(), tpe.getExpectedDepartureTime().toInstant());
+    }
+
+    @Test
+    void givenDepartureEstimateAfterActualArrival_whenBuild_thenExpectedDepartureIsUnchanged() {
+        // given — the usual case, the estimate is later than the arrival and must pass through untouched
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr.actualTime = ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI);
+        arr.commercialTrack = "1";
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI);
+        dep.commercialTrack = "1";
+        train.timeTableRows.add(dep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
+        final RecordedCall tpe = evj.getRecordedCalls().getRecordedCalls().get(1);
+        assertEquals(dep.liveEstimateTime.toInstant(), tpe.getExpectedDepartureTime().toInstant());
+    }
+
+    @Test
+    void givenDepartureEstimateBeforeActualArrival_whenBuild_thenCallTimesAreInOrder() {
+        // given — a large gap: arrival happened 10:00, departure estimate still says 09:34
+        final GTFSTrain train = createTrain(59L, false);
+        addStop(train, "HKI", null, ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI), "7");
+        final GTFSTimeTableRow arr = createRow(train, "TPE", TimeTableRow.TimeTableRowType.ARRIVAL,
+                ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI));
+        arr.actualTime = ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, ZONE_ID_HKI);
+        arr.commercialTrack = "1";
+        train.timeTableRows.add(arr);
+        final GTFSTimeTableRow dep = createRow(train, "TPE", TimeTableRow.TimeTableRowType.DEPARTURE,
+                ZonedDateTime.of(2026, 7, 15, 9, 35, 0, 0, ZONE_ID_HKI));
+        dep.liveEstimateTime = ZonedDateTime.of(2026, 7, 15, 9, 34, 0, 0, ZONE_ID_HKI);
+        dep.commercialTrack = "1";
+        train.timeTableRows.add(dep);
+        addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
+
+        // when
+        final Siri result = service.buildEtDocument(List.of(train), NOW);
+
+        // then — the departure is not published before the arrival it follows
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
+        final RecordedCall tpe = evj.getRecordedCalls().getRecordedCalls().get(1);
+        assertFalse(tpe.getExpectedDepartureTime().toInstant()
+                        .isBefore(tpe.getActualArrivalTime().toInstant()),
+                "departure must not precede the arrival");
+    }
+
+    // --- ET-08: Continuous Order across Recorded and Estimated ---
     @Test
     void givenMixedCalls_whenBuild_thenContinuousOrderNumbers() {
         // given — same 4-stop train from ET-07
@@ -540,12 +622,12 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
         final List<EstimatedCall> estimated = evj.getEstimatedCalls().getEstimatedCalls();
-        assertEquals(1, recorded.get(0).getOrder().intValue());
+        assertEquals(1, recorded.getFirst().getOrder().intValue());
         assertEquals(2, recorded.get(1).getOrder().intValue());
-        assertEquals(3, estimated.get(0).getOrder().intValue());
+        assertEquals(3, estimated.getFirst().getOrder().intValue());
         assertEquals(4, estimated.get(1).getOrder().intValue());
     }
 
@@ -576,13 +658,13 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — calls come out in schedule order HKI(1), TPE(2), OL(3)
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
         assertEquals(3, calls.size());
-        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:HKI-7", calls.getFirst().getStopPointRef().getValue());
         assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
         assertEquals("FSR:Quay:OL-1", calls.get(2).getStopPointRef().getValue());
-        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(1, calls.getFirst().getOrder().intValue());
         assertEquals(2, calls.get(1).getOrder().intValue());
         assertEquals(3, calls.get(2).getOrder().intValue());
     }
@@ -615,13 +697,13 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — exactly 3 stops (HKI, TPE, OL); TPE keeps a single, full arrival+departure pair, not split.
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
         assertEquals(3, calls.size());
-        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:HKI-7", calls.getFirst().getStopPointRef().getValue());
         assertEquals("FSR:Quay:TPE-1", calls.get(1).getStopPointRef().getValue());
         assertEquals("FSR:Quay:OL-1", calls.get(2).getStopPointRef().getValue());
-        assertEquals(1, calls.get(0).getOrder().intValue());
+        assertEquals(1, calls.getFirst().getOrder().intValue());
         assertEquals(2, calls.get(1).getOrder().intValue());
         assertEquals(3, calls.get(2).getOrder().intValue());
     }
@@ -655,7 +737,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
         // Stop 2 is a RecordedCall (has arrival.actualTime)
         assertTrue(recorded.size() >= 2);
@@ -694,7 +776,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — stop 2 is a RecordedCall (departure realised); its arrival keeps the estimate, has no actual
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final List<RecordedCall> recorded = evj.getRecordedCalls().getRecordedCalls();
         assertTrue(recorded.size() >= 2);
         final RecordedCall stop2 = recorded.get(1);
@@ -737,7 +819,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var estimatedCalls = evj.getEstimatedCalls();
         assertTrue(estimatedCalls == null || estimatedCalls.getEstimatedCalls().isEmpty());
         assertNotNull(evj.getRecordedCalls());
@@ -761,9 +843,9 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var calls = evj.getEstimatedCalls().getEstimatedCalls();
-        assertEquals("FSR:Quay:HKI-7", calls.get(0).getStopPointRef().getValue());
+        assertEquals("FSR:Quay:HKI-7", calls.getFirst().getStopPointRef().getValue());
     }
 
     // --- ET-12: Null track → no Quay → whole journey dropped ---
@@ -844,7 +926,7 @@ class SiriEtServiceTest {
                 ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
         // then — the journey is recovered (not dropped) and TKU's StopPointRef resolves via the planned track
         final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(1);
@@ -869,7 +951,7 @@ class SiriEtServiceTest {
         plannedByVisit.put("OL#0", "1");
         final SiriEtService svc = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode, visitIndex) ->
+                (_, _, shortCode, visitIndex) ->
                         Optional.ofNullable(plannedByVisit.get(shortCode + "#" + visitIndex)));
 
         final GTFSTrain train = createTrain(59L, false);
@@ -888,7 +970,7 @@ class SiriEtServiceTest {
         train.timeTableRows.add(dep);
         addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
-        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
 
         assertEquals(4, calls.size());
@@ -924,7 +1006,7 @@ class SiriEtServiceTest {
                 ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
         // when
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
         // then — the journey is recovered (not dropped) and TKU's StopPointRef resolves via the planned track
         final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(1);
@@ -979,7 +1061,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final EstimatedCall call = evj.getEstimatedCalls().getEstimatedCalls().get(1); // TPE
         assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI), call.getAimedArrivalTime());
         assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 33, 0, 0, ZONE_ID_HKI), call.getExpectedArrivalTime());
@@ -1005,7 +1087,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final EstimatedCall call = evj.getEstimatedCalls().getEstimatedCalls().get(1); // TPE
         assertNull(call.getExpectedArrivalTime());
         assertNull(call.getExpectedDepartureTime());
@@ -1039,7 +1121,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final RecordedCall call = evj.getRecordedCalls().getRecordedCalls().get(1); // TPE
         assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI), call.getActualArrivalTime());
         assertEquals(ZonedDateTime.of(2026, 7, 15, 9, 36, 0, 0, ZONE_ID_HKI), call.getActualDepartureTime());
@@ -1097,7 +1179,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(true, evj.isCancellation());
     }
 
@@ -1112,7 +1194,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertTrue(evj.isCancellation() == null || !evj.isCancellation());
     }
 
@@ -1141,12 +1223,12 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var calls = evj.getEstimatedCalls().getEstimatedCalls();
         // TPE is second call (index 1)
         assertEquals(true, calls.get(1).isCancellation());
         // Other calls are not cancelled
-        assertTrue(calls.get(0).isCancellation() == null || !calls.get(0).isCancellation());
+        assertTrue(calls.getFirst().isCancellation() == null || !calls.getFirst().isCancellation());
     }
 
     // ===== AREA 6 — First/last stop edge cases =====
@@ -1166,10 +1248,10 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var calls = evj.getEstimatedCalls().getEstimatedCalls();
-        assertNull(calls.get(0).getAimedArrivalTime()); // origin has no arrival
-        assertNotNull(calls.get(0).getAimedDepartureTime());
+        assertNull(calls.getFirst().getAimedArrivalTime()); // origin has no arrival
+        assertNotNull(calls.getFirst().getAimedDepartureTime());
     }
 
     // --- ET-24: Last stop (ARRIVAL only) → no aimed departure time ---
@@ -1187,7 +1269,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         final var calls = evj.getEstimatedCalls().getEstimatedCalls();
         final int lastIdx = calls.size() - 1;
         assertNotNull(calls.get(lastIdx).getAimedArrivalTime()); // terminus has arrival
@@ -1209,7 +1291,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(2, countAllCalls(evj));
     }
 
@@ -1241,7 +1323,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — should be 2 calls (HKI + OL), TPE excluded
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(2, countAllCalls(evj));
     }
 
@@ -1270,7 +1352,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then — should be 2 calls (HKI + OL), TPE excluded
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(2, countAllCalls(evj));
     }
 
@@ -1293,9 +1375,9 @@ class SiriEtServiceTest {
                 result.getServiceDelivery().getEstimatedTimetableDeliveries();
         if (deliveries != null && !deliveries.isEmpty()) {
             final List<EstimatedVersionFrameStructure> frames =
-                    deliveries.get(0).getEstimatedJourneyVersionFrames();
+                    deliveries.getFirst().getEstimatedJourneyVersionFrames();
             if (frames != null && !frames.isEmpty()) {
-                assertTrue(frames.get(0).getEstimatedVehicleJourneies().isEmpty());
+                assertTrue(frames.getFirst().getEstimatedVehicleJourneies().isEmpty());
             }
         }
         // alternatively: the entire delivery structure may be absent — also acceptable
@@ -1360,7 +1442,7 @@ class SiriEtServiceTest {
         // given
         final GTFSTrain train = createStandard4StopTrain();
         // Add some actuals to get mixed Recorded/Estimated
-        train.timeTableRows.get(0).actualTime =
+        train.timeTableRows.getFirst().actualTime =
                 ZonedDateTime.of(2026, 7, 15, 8, 1, 0, 0, ZONE_ID_HKI);
         train.timeTableRows.get(1).actualTime =
                 ZonedDateTime.of(2026, 7, 15, 9, 32, 0, 0, ZONE_ID_HKI);
@@ -1402,7 +1484,7 @@ class SiriEtServiceTest {
         final Siri result = service.buildEtDocument(List.of(train), NOW);
 
         // then
-        final EstimatedVehicleJourney evj = getEvjs(result).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(result).getFirst();
         assertEquals(true, evj.isIsCompleteStopSequence());
     }
 
@@ -1430,9 +1512,9 @@ class SiriEtServiceTest {
     @Test
     void givenScheduledTrain_whenBuild_thenVehicleModeOperatorRefAndNotMonitored() {
         final GTFSTrain train = createStandard4StopTrain();
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         assertEquals(1, evj.getVehicleModes().size());
-        assertEquals(VehicleModesEnumeration.RAIL, evj.getVehicleModes().get(0));
+        assertEquals(VehicleModesEnumeration.RAIL, evj.getVehicleModes().getFirst());
         assertEquals("FTR:Operator:vr", evj.getOperatorRef().getValue());
         assertFalse(evj.isMonitored());
     }
@@ -1443,7 +1525,7 @@ class SiriEtServiceTest {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(5).liveEstimateTime =
                 ZonedDateTime.of(2026, 7, 15, 14, 6, 0, 0, ZONE_ID_HKI);
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         assertTrue(evj.isMonitored());
     }
 
@@ -1451,9 +1533,9 @@ class SiriEtServiceTest {
     @Test
     void givenOnTimeTrain_whenBuild_thenStatusesOnTimeAndBoardingSet() {
         final GTFSTrain train = createStandard4StopTrain();
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
-        final EstimatedCall origin = calls.get(0);
+        final EstimatedCall origin = calls.getFirst();
         assertEquals(CallStatusEnumeration.ON_TIME, origin.getDepartureStatus());
         assertEquals(DepartureBoardingActivityEnumeration.BOARDING, origin.getDepartureBoardingActivity());
         assertEquals(Boolean.FALSE, origin.isRequestStop());
@@ -1468,7 +1550,7 @@ class SiriEtServiceTest {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(2).liveEstimateTime = // TPE departure, 5 min late
                 ZonedDateTime.of(2026, 7, 15, 9, 40, 0, 0, ZONE_ID_HKI);
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(CallStatusEnumeration.DELAYED, tpe.getDepartureStatus());
     }
@@ -1479,7 +1561,7 @@ class SiriEtServiceTest {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(3).liveEstimateTime = // TKU arrival, 2 min early
                 ZonedDateTime.of(2026, 7, 15, 10, 58, 0, 0, ZONE_ID_HKI);
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         final EstimatedCall tku = evj.getEstimatedCalls().getEstimatedCalls().get(2);
         assertEquals(CallStatusEnumeration.EARLY, tku.getArrivalStatus());
     }
@@ -1489,7 +1571,7 @@ class SiriEtServiceTest {
     void givenTrailingStopCancelled_whenBuild_thenBoundaryAndCancelledStatuses() {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(5).cancelled = true; // cancel the terminus (OL arrival)
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
         final EstimatedCall tku = calls.get(2); // last served stop before the cancelled terminus
         assertEquals(CallStatusEnumeration.CANCELLED, tku.getDepartureStatus());
@@ -1505,7 +1587,7 @@ class SiriEtServiceTest {
     void givenUnknownDelay_whenBuild_thenCallPredictionInaccurate() {
         final GTFSTrain train = createStandard4StopTrain();
         train.timeTableRows.get(2).unknownDelay = true; // TPE departure
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(Boolean.TRUE, tpe.isPredictionInaccurate());
     }
@@ -1515,25 +1597,25 @@ class SiriEtServiceTest {
     @Test
     void givenNamedStations_whenBuild_thenOriginDestinationAndStopNamesEmitted() {
         final GTFSTrain train = createStandard4StopTrain(); // HKI, TPE, TKU, OL — all future → estimated calls
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
-        assertEquals("Helsinki", evj.getOriginNames().get(0).getValue());
-        assertEquals("Oulu", evj.getDestinationNames().get(0).getValue());
+        assertEquals("Helsinki", evj.getOriginNames().getFirst().getValue());
+        assertEquals("Oulu", evj.getDestinationNames().getFirst().getValue());
 
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
-        assertEquals("Helsinki", calls.get(0).getStopPointNames().get(0).getValue());
-        assertEquals("Tampere", calls.get(1).getStopPointNames().get(0).getValue());
-        assertEquals("Turku", calls.get(2).getStopPointNames().get(0).getValue());
-        assertEquals("Oulu", calls.get(3).getStopPointNames().get(0).getValue());
+        assertEquals("Helsinki", calls.getFirst().getStopPointNames().getFirst().getValue());
+        assertEquals("Tampere", calls.get(1).getStopPointNames().getFirst().getValue());
+        assertEquals("Turku", calls.get(2).getStopPointNames().getFirst().getValue());
+        assertEquals("Oulu", calls.get(3).getStopPointNames().getFirst().getValue());
     }
 
     @Test
     void givenNameLookupMiss_whenBuild_thenNoNamesEmitted() {
         final SiriEtService noNames = newService(
-                shortCode -> Optional.empty(),
-                (trainNumber, date, shortCode, visitIndex) -> Optional.empty());
+                _ -> Optional.empty(),
+                (_, _, _, _) -> Optional.empty());
         final GTFSTrain train = createStandard4StopTrain();
-        final EstimatedVehicleJourney evj = getEvjs(noNames.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(noNames.buildEtDocument(List.of(train), NOW)).getFirst();
 
         assertTrue(evj.getOriginNames().isEmpty());
         assertTrue(evj.getDestinationNames().isEmpty());
@@ -1550,12 +1632,12 @@ class SiriEtServiceTest {
     void givenPlannedTrackDiffersFromActual_whenBuild_thenArrivalStopAssignmentEmitted() {
         plannedTracks.put("TPE", "2"); // planned quay TPE-2; the train's actual TPE track is "1"
         final GTFSTrain train = createStandard4StopTrain();
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertEquals(1, tpe.getArrivalStopAssignments().size());
         assertTrue(tpe.getDepartureStopAssignments().isEmpty());
-        final StopAssignmentStructure assignment = tpe.getArrivalStopAssignments().get(0);
+        final StopAssignmentStructure assignment = tpe.getArrivalStopAssignments().getFirst();
         assertEquals("FSR:Quay:TPE-2", assignment.getAimedQuayRef().getValue()); // planned
         assertEquals("FSR:Quay:TPE-1", assignment.getExpectedQuayRef().getValue()); // actual
         // StopPointRef stays the actual (current) quay.
@@ -1566,7 +1648,7 @@ class SiriEtServiceTest {
     void givenPlannedTrackEqualsActual_whenBuild_thenNoStopAssignment() {
         plannedTracks.put("TPE", "1"); // same as the actual TPE track → no change
         final GTFSTrain train = createStandard4StopTrain();
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
         final EstimatedCall tpe = evj.getEstimatedCalls().getEstimatedCalls().get(1);
         assertTrue(tpe.getArrivalStopAssignments().isEmpty());
@@ -1576,7 +1658,7 @@ class SiriEtServiceTest {
     @Test
     void givenNoPlannedTrack_whenBuild_thenNoStopAssignment() {
         final GTFSTrain train = createStandard4StopTrain(); // plannedTracks empty by default
-        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(service.buildEtDocument(List.of(train), NOW)).getFirst();
 
         for (final EstimatedCall call : evj.getEstimatedCalls().getEstimatedCalls()) {
             assertTrue(call.getArrivalStopAssignments().isEmpty());
@@ -1596,7 +1678,7 @@ class SiriEtServiceTest {
         plannedByVisit.put("OL#0", "1");
         final SiriEtService svc = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode, visitIndex) ->
+                (_, _, shortCode, visitIndex) ->
                         Optional.ofNullable(plannedByVisit.get(shortCode + "#" + visitIndex)));
 
         final GTFSTrain train = createTrain(59L, false);
@@ -1607,7 +1689,7 @@ class SiriEtServiceTest {
                 ZonedDateTime.of(2026, 7, 15, 11, 5, 0, 0, ZONE_ID_HKI), "2"); // visit 1, actual track 2
         addStop(train, "OL", ZonedDateTime.of(2026, 7, 15, 14, 0, 0, 0, ZONE_ID_HKI), null, "1");
 
-        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).getFirst();
         final List<EstimatedCall> calls = evj.getEstimatedCalls().getEstimatedCalls();
 
         assertEquals(4, calls.size());
@@ -1639,7 +1721,7 @@ class SiriEtServiceTest {
     @Test
     void givenMixedActuals_whenBuildWithStats_thenRecordedEstimatedSplit() {
         final GTFSTrain train = createStandard4StopTrain();
-        train.timeTableRows.get(0).actualTime = ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI); // HKI dep
+        train.timeTableRows.getFirst().actualTime = ZonedDateTime.of(2026, 7, 15, 8, 0, 0, 0, ZONE_ID_HKI); // HKI dep
         train.timeTableRows.get(1).actualTime = ZonedDateTime.of(2026, 7, 15, 9, 30, 0, 0, ZONE_ID_HKI); // TPE arr
         final SiriEtStats stats = service.buildEtDocumentWithStats(List.of(train), NOW).stats();
 
@@ -1790,19 +1872,19 @@ class SiriEtServiceTest {
     void givenOvernightTrain_whenBuild_thenFramedRefUsesTrainsOwnDate() {
         final LocalDate yesterday = DEPARTURE_DATE.minusDays(1);
         // Production PublishedJourneyRefResolver keys by (trainNumber, date); echo the date so we can assert it flows through.
-        journeyRefResolver = (trainNumber, date) -> Optional.of(new ResolvedJourney(
+        journeyRefResolver = (_, date) -> Optional.of(new ResolvedJourney(
                 new ServiceJourneyId("FTR:ServiceJourney:59-" + date),
                 new DataFrameRef(date.toString()),
                 new LineId("FTR:Line:IC"), new OperatorRef("FTR:Operator:vr"),
                 new JourneyPatternRef("FTR:JourneyPattern:59")));
         final SiriEtService svc = newService(
                 shortCode -> Optional.ofNullable(NAME_MAP.get(shortCode)),
-                (trainNumber, date, shortCode, visitIndex) -> Optional.empty());
+                (_, _, _, _) -> Optional.empty());
         // Dated yesterday, still running (arrives today 13:00, NOW is today 12:00).
         final GTFSTrain train = overnightTrain(59L, yesterday,
                 ZonedDateTime.of(2026, 7, 15, 13, 0, 0, 0, ZONE_ID_HKI), null, null);
 
-        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).get(0);
+        final EstimatedVehicleJourney evj = getEvjs(svc.buildEtDocument(List.of(train), NOW)).getFirst();
 
         assertEquals(yesterday.toString(),
                 evj.getFramedVehicleJourneyRef().getDataFrameRef().getValue());
