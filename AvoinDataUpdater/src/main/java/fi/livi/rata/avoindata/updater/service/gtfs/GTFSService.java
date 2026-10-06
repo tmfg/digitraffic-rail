@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.FeedMetricsSink;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
@@ -93,7 +93,7 @@ public class GTFSService {
     /** Emitted with an identical field set on every path; only the level differs. */
     private void logRunEvent(final GtfsRunMetrics metrics) {
         try {
-            final String event = LogFields.of(metrics.finalEvent());
+            final String event = of(metrics.finalEvent());
             // Some fallback geometry occurs on almost every run, so degraded cannot be an error
             // level without making every run look like an outage. The outcome field carries severity.
             switch (metrics.outcome()) {

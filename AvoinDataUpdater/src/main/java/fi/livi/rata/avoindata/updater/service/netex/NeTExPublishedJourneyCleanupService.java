@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 
 /**
  * Prunes published journey refs older than the retention period.
@@ -47,6 +47,6 @@ public class NeTExPublishedJourneyCleanupService {
                 "event=rail.netex.prune_journeys outcome=success cutoff={} pruned_rows={} retention_days={} "
                         + "duration={}",
                 cutoff, prunedRows, retentionDays,
-                LogFields.durationSeconds(System.currentTimeMillis() - startTime)));
+                durationSeconds(System.currentTimeMillis() - startTime)));
     }
 }

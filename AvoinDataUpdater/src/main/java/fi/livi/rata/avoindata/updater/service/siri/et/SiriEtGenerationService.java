@@ -29,7 +29,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -265,7 +265,7 @@ public class SiriEtGenerationService {
                 : "NULL";
         final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
         final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Double.toString(LogFields.durationSeconds(
+                ? Double.toString(durationSeconds(
                         Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
                 : "NULL";
         final String line = StringUtil.format(
@@ -282,7 +282,7 @@ public class SiriEtGenerationService {
                         + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
                         + "rail.siri.journey_source.unavailable_reason={} "
                         + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), LogFields.durationSeconds(durationMs), trainsReceived,
+                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs), trainsReceived,
                 stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
                 stats.skippedUnresolvedStopNoStop(), stats.skippedUnresolvedStopNoQuay(),
                 stats.skippedCompletedCarryover(), stats.callsTotal(),

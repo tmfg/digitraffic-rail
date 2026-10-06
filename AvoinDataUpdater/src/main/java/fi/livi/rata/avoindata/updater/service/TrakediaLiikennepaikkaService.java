@@ -30,7 +30,7 @@ import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiSource;
@@ -217,12 +217,12 @@ public class TrakediaLiikennepaikkaService {
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
             event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
         }
-        event.put("duration", LogFields.durationSeconds(stopWatch.getDuration().toMillis()));
+        event.put("duration", durationSeconds(stopWatch.getDuration().toMillis()));
 
         if (result.complete()) {
-            logger.info("{}", LogFields.of(event));
+            logger.info("{}", of(event));
         } else {
-            logger.error("{}", LogFields.of(event));
+            logger.error("{}", of(event));
         }
     }
 

@@ -30,7 +30,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -86,7 +86,7 @@ public class TrainLocationUpdater {
     public synchronized void trainLocation() {
         if (isInUpstreamBackoff()) {
             log.debug("operation=ingestTrainLocations outcome=skipped_backoff rail.upstream.pala.backoff.remaining={}",
-                    LogFields.durationSeconds(backoffUntilMs - System.currentTimeMillis()));
+                    durationSeconds(backoffUntilMs - System.currentTimeMillis()));
             return;
         }
 
@@ -345,7 +345,7 @@ public class TrainLocationUpdater {
                 + "rail.mqtt.publish.success={} rail.mqtt.publish.latency={} "
                 + "rail.upstream.pala.backoff.active={} rail.upstream.pala.backoff.duration={}";
         final Object[] args = {
-                m.outcome, LogFields.durationSeconds(m.durationMs),
+                m.outcome, durationSeconds(m.durationMs),
                 nullSafe(m.errorType), nullSafe(m.errorTrainNumber),
                 m.recordsReceived, m.recordsProcessed,
                 m.recordsPersisted, m.deserializationErrors,
@@ -360,11 +360,11 @@ public class TrainLocationUpdater {
                 String.format(Locale.ROOT, "%.2f", m.calculatedRatio()),
                 m.sourceTime != null ? m.sourceTime.toInstant() : "NULL",
                 m.ingestionTime != null ? m.ingestionTime.toInstant() : "NULL",
-                LogFields.durationSeconds(m.stalenessMs),
+                durationSeconds(m.stalenessMs),
                 m.httpStatus, m.responseSizeBytes,
-                LogFields.durationSeconds(m.httpLatencyMs),
-                m.mqttSuccess, LogFields.durationSeconds(m.mqttLatencyMs),
-                m.backoffActive, LogFields.durationSeconds(m.backoffMs)
+                durationSeconds(m.httpLatencyMs),
+                m.mqttSuccess, durationSeconds(m.mqttLatencyMs),
+                m.backoffActive, durationSeconds(m.backoffMs)
         };
         if (m.isSuccess()) {
             log.info(message, args);

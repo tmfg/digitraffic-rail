@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Shape;
 import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
@@ -61,7 +61,7 @@ public class GTFSShapeService {
                     realShapes += group.shapes().size();
                 }
                 metrics.recordShapeProcessed(++processedShapes, distinctShapes)
-                        .ifPresent(heartbeat -> log.info("{}", LogFields.of(heartbeat)));
+                        .ifPresent(heartbeat -> log.info("{}", of(heartbeat)));
             }
 
             trip.shapeId = stops;
@@ -174,7 +174,7 @@ public class GTFSShapeService {
             GtfsRunScope.shapeMetrics().recordRouteFailure(segment,
                             e.getRequest() == null ? "" : e.getRequest().getURI().getPath(),
                             e.getStatusCode().value(), e.getClass().getSimpleName())
-                    .ifPresent(sample -> log.warn("{}", LogFields.of(sample)));
+                    .ifPresent(sample -> log.warn("{}", of(sample)));
             return fallback(startStop, endStop, NoGeometryReason.ROUTE_HTTP_ERROR);
         } catch (final Exception e) {
             failedSegments.record(segment);

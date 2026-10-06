@@ -30,7 +30,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
@@ -255,7 +255,7 @@ public class NeTExService {
             log.error("event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome=error "
                     + "error.type={} stage={} duration={} failed",
                     e.getClass().getSimpleName(), stage.name().toLowerCase(Locale.ROOT),
-                    LogFields.durationSeconds(durationMs), e);
+                    durationSeconds(durationMs), e);
             // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a
             // build failure.
             if (e instanceof final RipaFetchException ripaFetchException) {
@@ -292,7 +292,7 @@ public class NeTExService {
                         + "rail.netex.peti.stop_assignments_matched={} rail.netex.peti.stop_assignments_unmatched={} "
                         + "rail.netex.peti.quay_matched_count={} "
                         + "rail.netex.peti.quay_unmatched_count={} rail.netex.peti.quay_no_track_count={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), LogFields.durationSeconds(durationMs),
+                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs),
                 result != null ? result.scheduledStopPoints() : 0,
                 result != null ? result.routes() : 0,
                 result != null ? result.lines() : 0,

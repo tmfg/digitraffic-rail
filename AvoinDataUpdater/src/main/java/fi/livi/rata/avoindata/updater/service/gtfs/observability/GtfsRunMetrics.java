@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
 
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
@@ -193,7 +193,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
                 NoGeometryReason.ROUTE_HTTP_ERROR)) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
-        event.put("duration", LogFields.durationSeconds(feedTimer.getDuration().toMillis()));
+        event.put("duration", durationSeconds(feedTimer.getDuration().toMillis()));
         return Optional.of(event);
     }
 
@@ -220,7 +220,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("operation", "generateGtfs");
         event.put("rail.entity.type", "gtfs_feed");
         event.put("outcome", outcome().attribute());
-        event.put("duration", LogFields.durationSeconds(runTimer.getDuration().toMillis()));
+        event.put("duration", durationSeconds(runTimer.getDuration().toMillis()));
         event.put("error.type", errorType == null ? "" : errorType);
         InfraApiSource.addTo(event);
         event.put("rail.gtfs.feeds.attempted", attemptedFeedNames.size());
@@ -230,7 +230,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.nodes.rautatieliikennepaikat.count", stationCount);
         event.put("rail.gtfs.nodes.liikennepaikanosat.count", stationPartCount);
         event.put("rail.gtfs.nodes.cache.state", nodeCacheState);
-        event.put("rail.gtfs.nodes.cache.age", LogFields.durationSeconds(nodeCacheAgeMs));
+        event.put("rail.gtfs.nodes.cache.age", durationSeconds(nodeCacheAgeMs));
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
         // Leaf keys must not also be branches: OpenSearch reads a dot as object nesting, so a scalar
@@ -333,9 +333,9 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
             event.put(prefix + "status.4xx", status4xx);
             event.put(prefix + "status.5xx", status5xx);
             event.put(prefix + "status.transport_error", transportErrors);
-            event.put(prefix + "latency.p50", LogFields.durationSeconds(percentile(sorted, 0.50)));
-            event.put(prefix + "latency.p95", LogFields.durationSeconds(percentile(sorted, 0.95)));
-            event.put(prefix + "latency.max", LogFields.durationSeconds(sorted.isEmpty() ? 0L : sorted.getLast()));
+            event.put(prefix + "latency.p50", durationSeconds(percentile(sorted, 0.50)));
+            event.put(prefix + "latency.p95", durationSeconds(percentile(sorted, 0.95)));
+            event.put(prefix + "latency.max", durationSeconds(sorted.isEmpty() ? 0L : sorted.getLast()));
             event.put(prefix + "response.size.total", responseSize);
             event.put(prefix + "retries.total", retries);
         }
