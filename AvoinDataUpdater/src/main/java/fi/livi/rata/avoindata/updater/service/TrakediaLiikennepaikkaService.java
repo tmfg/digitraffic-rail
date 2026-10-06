@@ -120,7 +120,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchRaideosuusMap Fetching Trakedia data from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -129,7 +129,7 @@ public class TrakediaLiikennepaikkaService {
         for (final JsonNode node : jsonNode) {
             final JsonNode geometria = node.get(0).get("geometria");
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            raideosuusMap.put(lyhenne.asText().toUpperCase(), calculateCenterPoint(geometria));
+            raideosuusMap.put(lyhenne.asString().toUpperCase(), calculateCenterPoint(geometria));
         }
 
         return raideosuusMap;
@@ -144,7 +144,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchLiikennepaikkaMap Fetching Trakedia data from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -153,7 +153,7 @@ public class TrakediaLiikennepaikkaService {
         for (final JsonNode node : jsonNode) {
             final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
+            liikennepaikkaMap.put(lyhenne.asString().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
                     .get(1).asDouble()});
         }
 
@@ -235,7 +235,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchNodeMap Fetching Trakedia nodes from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -243,7 +243,7 @@ public class TrakediaLiikennepaikkaService {
 
         for (final JsonNode node : jsonNode) {
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
+            liikennepaikkaMap.put(lyhenne.asString().toUpperCase(), node);
         }
 
         return liikennepaikkaMap;

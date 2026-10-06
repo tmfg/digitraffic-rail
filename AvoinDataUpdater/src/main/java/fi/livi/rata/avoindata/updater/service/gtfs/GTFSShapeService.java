@@ -142,18 +142,18 @@ public class GTFSShapeService {
             final JsonNode startTrakediaNode = trakediaNodes.get(startStop.stopId);
             final JsonNode endTrakediaNode = trakediaNodes.get(endStop.stopId);
 
-            if (startTrakediaNode == null || startTrakediaNode.size() == 0) {
+            if (startTrakediaNode == null || startTrakediaNode.isEmpty()) {
                 return fallback(startStop, endStop, NoGeometryReason.NO_START_NODE);
             }
-            if (endTrakediaNode == null || endTrakediaNode.size() == 0) {
+            if (endTrakediaNode == null || endTrakediaNode.isEmpty()) {
                 return fallback(startStop, endStop, NoGeometryReason.NO_END_NODE);
             }
             if (failedSegments.contains(segment)) {
                 return fallback(startStop, endStop, NoGeometryReason.PREVIOUSLY_FAILED);
             }
 
-            final String startTunniste = startTrakediaNode.get(0).get("tunniste").textValue();
-            final String endTunniste = endTrakediaNode.get(0).get("tunniste").textValue();
+            final String startTunniste = startTrakediaNode.get(0).get("tunniste").stringValue();
+            final String endTunniste = endTrakediaNode.get(0).get("tunniste").stringValue();
 
             // Counted before the call so a throwing cache miss stays in the hit/miss denominator.
             GtfsRunScope.shapeMetrics().recordRouteLookup();
@@ -198,8 +198,7 @@ public class GTFSShapeService {
     private List<Coordinate> createDummyRoute(final Stop startStop, final Stop endStop) {
         final ProjCoordinate start = wgs84ConversionService.wgs84Tolivi(startStop.longitude, startStop.latitude);
         final ProjCoordinate end = wgs84ConversionService.wgs84Tolivi(endStop.longitude, endStop.latitude);
-        final List<Coordinate> dummyRoute = List.of(new Coordinate(start.x, start.y), new Coordinate(end.x, end.y));
-        return dummyRoute;
+        return List.of(new Coordinate(start.x, start.y), new Coordinate(end.x, end.y));
     }
 
 
