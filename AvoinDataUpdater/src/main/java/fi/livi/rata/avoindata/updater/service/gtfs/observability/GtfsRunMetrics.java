@@ -230,7 +230,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("rail.gtfs.nodes.rautatieliikennepaikat.count", stationCount);
         event.put("rail.gtfs.nodes.liikennepaikanosat.count", stationPartCount);
         event.put("rail.gtfs.nodes.cache.state", nodeCacheState);
-        event.put("rail.gtfs.nodes.cache.age_ms", nodeCacheAgeMs);
+        event.put("rail.gtfs.nodes.cache.age", LogFields.durationSeconds(nodeCacheAgeMs));
         event.put("rail.gtfs.segments.total", segmentsTotal);
         event.put("rail.gtfs.segments.real", realSegments);
         // Leaf keys must not also be branches: OpenSearch reads a dot as object nesting, so a scalar
@@ -333,10 +333,10 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
             event.put(prefix + "status.4xx", status4xx);
             event.put(prefix + "status.5xx", status5xx);
             event.put(prefix + "status.transport_error", transportErrors);
-            event.put(prefix + "latency_p50_ms", percentile(sorted, 0.50));
-            event.put(prefix + "latency_p95_ms", percentile(sorted, 0.95));
-            event.put(prefix + "latency_max_ms", sorted.isEmpty() ? 0L : sorted.getLast());
-            event.put(prefix + "response_size_bytes.total", responseSize);
+            event.put(prefix + "latency.p50", LogFields.durationSeconds(percentile(sorted, 0.50)));
+            event.put(prefix + "latency.p95", LogFields.durationSeconds(percentile(sorted, 0.95)));
+            event.put(prefix + "latency.max", LogFields.durationSeconds(sorted.isEmpty() ? 0L : sorted.getLast()));
+            event.put(prefix + "response.size.total", responseSize);
             event.put(prefix + "retries.total", retries);
         }
 

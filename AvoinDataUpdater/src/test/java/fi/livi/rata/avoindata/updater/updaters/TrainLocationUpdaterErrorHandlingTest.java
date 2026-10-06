@@ -39,7 +39,7 @@ import fi.livi.rata.avoindata.updater.service.trainlocation.TrainLocationNearTra
 
 /**
  * Verifies how {@link TrainLocationUpdater} maps a PALA fetch outcome onto the wide-event log's
- * {@code rail.upstream.pala.http_status} field — the signal the PALA availability SLI relies on.
+ * {@code rail.upstream.pala.response.status_code} field — the signal the PALA availability SLI relies on.
  *
  * <p>Guards the {@code fetchFromPala} catch logic (paired with {@code RipaServiceTest}, which pins the WebClient
  * behavior that produces the exception): an HTTP error must record the real status code, a transport/network failure
@@ -94,19 +94,19 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=error", "rail.upstream.pala.http_status=503");
+        assertWideLogContains("outcome=error", "rail.upstream.pala.response.status_code=503");
     }
 
     @Test
     public void networkFailureShouldRecordStatusZero() {
         // A non-WebClientResponseException (e.g. connection refused / DNS / timeout) must NOT be mistaken for an
-        // HTTP status — fetchFromPala leaves rail.upstream.pala.http_status=0 for these.
+        // HTTP status — fetchFromPala leaves rail.upstream.pala.response.status_code=0 for these.
         when(ripaService.getFromPalaAsString(anyString()))
                 .thenThrow(new RuntimeException("connection refused"));
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=error", "rail.upstream.pala.http_status=0");
+        assertWideLogContains("outcome=error", "rail.upstream.pala.response.status_code=0");
     }
 
     @Test
@@ -118,7 +118,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=success", "rail.upstream.pala.http_status=200");
+        assertWideLogContains("outcome=success", "rail.upstream.pala.response.status_code=200");
     }
 
     @Test
@@ -130,7 +130,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=true");
+        assertWideLogContains("outcome=success", "rail.mqtt.publish.success=true");
     }
 
     @Test
@@ -143,7 +143,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=false");
+        assertWideLogContains("outcome=success", "rail.mqtt.publish.success=false");
     }
 
     @Test
@@ -153,7 +153,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=success", "rail.mqtt.publish_success=false");
+        assertWideLogContains("outcome=success", "rail.mqtt.publish.success=false");
     }
 
     private void stubEmptySuccessfulPoll() {
@@ -170,7 +170,7 @@ public class TrainLocationUpdaterErrorHandlingTest {
 
         updater.trainLocation();
 
-        assertWideLogContains("outcome=error", "rail.upstream.pala.backoff_active=true");
+        assertWideLogContains("outcome=error", "rail.upstream.pala.backoff.active=true");
     }
 
     @Test

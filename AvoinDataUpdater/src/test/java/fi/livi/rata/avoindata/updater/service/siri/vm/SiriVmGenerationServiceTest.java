@@ -136,7 +136,7 @@ class SiriVmGenerationServiceTest {
                 new PetiStop("FSR:StopPlace:OL", 1000280, "Oulu", true, null,
                         List.of(new PetiQuay("FSR:Quay:OL-1", "1", null, null, null)))));
         when(petiStopSource.getMatcher()).thenReturn(matcher);
-        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(300L);
+        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(300.0);
     }
 
     /**
@@ -523,7 +523,7 @@ class SiriVmGenerationServiceTest {
         when(stationRepository.findAll()).thenReturn(List.of(
                 createStation("HKI", 1), createStation("TPE", 160), createStation("OL", 280)));
         when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(List.of())); // empty PETI snapshot
-        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(0L);
+        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(0.0);
         setupLiveLocation(location59());
 
         final Logger logger = (Logger) LoggerFactory.getLogger(SiriVmGenerationService.class);

@@ -265,7 +265,8 @@ public class SiriEtGenerationService {
                 : "NULL";
         final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
         final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Long.toString(Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).getSeconds())
+                ? Double.toString(LogFields.durationSeconds(
+                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
                 : "NULL";
         final String line = StringUtil.format(
                 "event=rail.siri.generation operation=generateSiriEt outcome={} error.type={} stage={} duration={} "
@@ -278,9 +279,9 @@ public class SiriEtGenerationService {
                         + "rail.siri.calls.recorded={} rail.siri.calls.estimated={} "
                         + "rail.siri.stop_refs.resolved.quay={} rail.siri.stop_refs.resolved.stop_place={} "
                         + "rail.siri.stop_refs.unresolved={} rail.siri.peti.match_rate={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age_s={} "
+                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
                         + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age_s={} rail.siri.output.size_bytes={}",
+                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
                 outcome, errorType, stage.name().toLowerCase(Locale.ROOT), LogFields.durationSeconds(durationMs), trainsReceived,
                 stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
                 stats.skippedUnresolvedStopNoStop(), stats.skippedUnresolvedStopNoQuay(),

@@ -85,8 +85,8 @@ public class TrainLocationUpdater {
     @Transactional
     public synchronized void trainLocation() {
         if (isInUpstreamBackoff()) {
-            log.debug("operation=ingestTrainLocations outcome=skipped_backoff rail.upstream.pala.backoff_remaining_ms={}",
-                    backoffUntilMs - System.currentTimeMillis());
+            log.debug("operation=ingestTrainLocations outcome=skipped_backoff rail.upstream.pala.backoff.remaining={}",
+                    LogFields.durationSeconds(backoffUntilMs - System.currentTimeMillis()));
             return;
         }
 
@@ -339,11 +339,11 @@ public class TrainLocationUpdater {
                 + "rail.train_location.positions.gps={} rail.train_location.positions.calculated={} "
                 + "rail.train_location.positions.calculated_ratio={} "
                 + "rail.train_location.source_time={} rail.train_location.ingestion_time={} "
-                + "rail.train_location.staleness_ms={} "
-                + "rail.upstream.pala.http_status={} rail.upstream.pala.response_size_bytes={} "
-                + "rail.upstream.pala.latency_ms={} "
-                + "rail.mqtt.publish_success={} rail.mqtt.publish_latency_ms={} "
-                + "rail.upstream.pala.backoff_active={} rail.upstream.pala.backoff_ms={}";
+                + "rail.train_location.staleness={} "
+                + "rail.upstream.pala.response.status_code={} rail.upstream.pala.response.size={} "
+                + "rail.upstream.pala.latency={} "
+                + "rail.mqtt.publish.success={} rail.mqtt.publish.latency={} "
+                + "rail.upstream.pala.backoff.active={} rail.upstream.pala.backoff.duration={}";
         final Object[] args = {
                 m.outcome, LogFields.durationSeconds(m.durationMs),
                 nullSafe(m.errorType), nullSafe(m.errorTrainNumber),
@@ -360,11 +360,11 @@ public class TrainLocationUpdater {
                 String.format(Locale.ROOT, "%.2f", m.calculatedRatio()),
                 m.sourceTime != null ? m.sourceTime.toInstant() : "NULL",
                 m.ingestionTime != null ? m.ingestionTime.toInstant() : "NULL",
-                m.stalenessMs,
+                LogFields.durationSeconds(m.stalenessMs),
                 m.httpStatus, m.responseSizeBytes,
-                m.httpLatencyMs,
-                m.mqttSuccess, m.mqttLatencyMs,
-                m.backoffActive, m.backoffMs
+                LogFields.durationSeconds(m.httpLatencyMs),
+                m.mqttSuccess, LogFields.durationSeconds(m.mqttLatencyMs),
+                m.backoffActive, LogFields.durationSeconds(m.backoffMs)
         };
         if (m.isSuccess()) {
             log.info(message, args);

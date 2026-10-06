@@ -229,10 +229,10 @@ class CachingPetiStopSourceTest {
         // given — freshly constructed, no refresh
 
         // when
-        final long age = source.getSnapshotAgeSeconds();
+        final double age = source.getSnapshotAgeSeconds();
 
         // then
-        assertEquals(-1L, age);
+        assertEquals(-1.0, age);
     }
 
     // --- A14: Snapshot-age — after successful fetch → positive seconds ---
@@ -243,7 +243,7 @@ class CachingPetiStopSourceTest {
         source.applySnapshot(source.parseXmlBytes(fixtureXmlBytes));
 
         // when
-        final long age = source.getSnapshotAgeSeconds();
+        final double age = source.getSnapshotAgeSeconds();
 
         // then — after a successful refresh, age should be >= 0
         assertTrue(age >= 0);
@@ -255,7 +255,7 @@ class CachingPetiStopSourceTest {
     void givenSuccessAtT1ThenFailureAtT2_whenGetSnapshotAgeSeconds_thenAgeReflectsT1() {
         // given — successful refresh at T1 sets lastSuccessfulFetch
         source.applySnapshot(source.parseXmlBytes(fixtureXmlBytes));
-        final long ageAfterSuccess = source.getSnapshotAgeSeconds();
+        final double ageAfterSuccess = source.getSnapshotAgeSeconds();
         assertTrue(ageAfterSuccess >= 0);
 
         // when — failed refresh (bad XML) at T2 should NOT update timestamp
@@ -263,7 +263,7 @@ class CachingPetiStopSourceTest {
             source.parseXmlBytes("<<<NOT XML>>>".getBytes(StandardCharsets.UTF_8));
         } catch (final PetiParseException ignored) {
         }
-        final long ageAfterFailure = source.getSnapshotAgeSeconds();
+        final double ageAfterFailure = source.getSnapshotAgeSeconds();
 
         // then — age should still reflect T1 (>= 0, not reset)
         assertTrue(ageAfterFailure >= 0);

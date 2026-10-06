@@ -111,7 +111,7 @@ class SiriEtDbIntegrationTest extends BaseTest {
         when(petiStopSource.getStops()).thenReturn(petiStops);
         when(petiStopSource.getMatcher()).thenReturn(new PetiUicMatcher(petiStops));
         when(petiStopSource.getMatcher(any())).thenReturn(new PetiUicMatcher(petiStops));
-        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(0L);
+        when(petiStopSource.getSnapshotAgeSeconds()).thenReturn(0.0);
         when(gtfsTrainRepository.findBySourceVersionAndIdIn(anyLong(), any()))
                 .thenReturn(List.of(liveTrain100()));
 

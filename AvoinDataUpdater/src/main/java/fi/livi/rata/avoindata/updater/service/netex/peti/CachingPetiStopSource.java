@@ -210,7 +210,7 @@ public class CachingPetiStopSource implements PetiStopSource {
             final boolean hasFallback = !lastGood.isEmpty();
             log.error("method=refresh event=rail.upstream.peti operation=fetchPeti outcome=error httpStatus={} " +
                     "tookMs={} errorType={} keepingOldSnapshot={} oldSnapshotAgeSeconds={}", httpStatus, durationMs,
-                    unwrapped.getClass().getSimpleName(), hasFallback, hasFallback ? getSnapshotAgeSeconds() : -1, e);
+                    unwrapped.getClass().getSimpleName(), hasFallback, hasFallback ? getSnapshotAgeSeconds() : -1.0, e);
         }
     }
 
@@ -268,12 +268,12 @@ public class CachingPetiStopSource implements PetiStopSource {
     /**
      * Returns the age of the current snapshot in seconds, or -1 if never loaded.
      */
-    public long getSnapshotAgeSeconds() {
+    public double getSnapshotAgeSeconds() {
         final Instant snapshot = lastSuccessfulFetch;
         if (snapshot == null) {
-            return -1L;
+            return -1.0;
         }
-        return Duration.between(snapshot, Instant.now()).toSeconds();
+        return Duration.between(snapshot, Instant.now()).toMillis() / 1000.0;
     }
 
     /**
