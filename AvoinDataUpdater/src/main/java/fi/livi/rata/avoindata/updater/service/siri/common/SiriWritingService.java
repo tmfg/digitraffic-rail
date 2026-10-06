@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -75,7 +76,10 @@ public class SiriWritingService {
                             if (v == null) {
                                 return null;
                             }
-                            return v.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                            return v.withZoneSameInstant(DateProvider.ZONE_ID_HKI)
+                                    .toLocalDateTime()
+                                    .truncatedTo(ChronoUnit.SECONDS)
+                                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                         }
                     });
             final StringWriter writer = new StringWriter();

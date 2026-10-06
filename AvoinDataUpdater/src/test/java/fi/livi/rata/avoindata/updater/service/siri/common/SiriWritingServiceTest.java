@@ -69,6 +69,21 @@ class SiriWritingServiceTest {
         assertTrue(xml.contains("<ResponseTimestamp>2026-07-10T21:00:00</ResponseTimestamp>"));
     }
 
+    // --- WRITE-03b: Sub-second precision is truncated away ---
+
+    @Test
+    void givenTimestampWithNanos_whenMarshalToXml_thenRendersWholeSeconds() {
+        // given — 18:00:07.583390331 UTC = 21:00:07.583390331 Helsinki summer
+        final ZonedDateTime timestamp = ZonedDateTime.of(2026, 7, 10, 18, 0, 7, 583390331, ZoneOffset.UTC);
+        final Siri envelope = writingService.buildEnvelope(timestamp, "XXX");
+
+        // when
+        final String xml = writingService.marshalToXml(envelope);
+
+        // then
+        assertTrue(xml.contains("<ResponseTimestamp>2026-07-10T21:00:07</ResponseTimestamp>"));
+    }
+
     // --- WRITE-04: ProducerRef rendered from argument, never hardcoded ---
 
     @Test
@@ -90,7 +105,13 @@ class SiriWritingServiceTest {
     @Test
     void givenValidSiriEtDocument_whenValidateSchema_thenReturnsTrue() throws IOException {
         // given — a complete, schema-valid SIRI-ET document
-        final byte[] bytes = getClass().getResourceAsStream("/siri/expected-siri-et-mixed.xml").readAllBytes();
+        final byte[] bytes;
+        try (final var inputStream = getClass().getResourceAsStream("/siri/expected-siri-et-mixed.xml")) {
+            if (inputStream == null) {
+                fail("Could not read test file");
+            }
+            bytes = inputStream.readAllBytes();
+        }
 
         // when
         final boolean valid = writingService.isSchemaValid(bytes);

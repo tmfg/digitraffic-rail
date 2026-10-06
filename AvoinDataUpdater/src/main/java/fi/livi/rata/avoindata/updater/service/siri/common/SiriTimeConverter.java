@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
@@ -17,6 +18,7 @@ public class SiriTimeConverter {
         }
         return instant.withZoneSameInstant(DateProvider.ZONE_ID_HKI)
                 .toLocalDateTime()
+                .truncatedTo(ChronoUnit.SECONDS)
                 .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
