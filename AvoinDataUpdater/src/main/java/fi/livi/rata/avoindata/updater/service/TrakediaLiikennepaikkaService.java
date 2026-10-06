@@ -217,7 +217,7 @@ public class TrakediaLiikennepaikkaService {
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
             event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
         }
-        event.put("duration_ms", stopWatch.getDuration().toMillis());
+        event.put("duration", LogFields.durationSeconds(stopWatch.getDuration().toMillis()));
 
         if (result.complete()) {
             logger.info("{}", LogFields.of(event));

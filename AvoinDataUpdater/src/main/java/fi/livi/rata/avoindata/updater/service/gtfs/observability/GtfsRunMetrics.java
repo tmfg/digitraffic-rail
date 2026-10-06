@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
 
+import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.gtfs.NoGeometryReason;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
@@ -192,7 +193,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
                 NoGeometryReason.ROUTE_HTTP_ERROR)) {
             event.put("rail.gtfs.segments.dummy.reason." + reason.attribute(), dummyReasons.getOrDefault(reason, 0));
         }
-        event.put("duration_ms", feedTimer.getDuration().toMillis());
+        event.put("duration", LogFields.durationSeconds(feedTimer.getDuration().toMillis()));
         return Optional.of(event);
     }
 
@@ -219,7 +220,7 @@ public class GtfsRunMetrics implements InfraApiMetricsSink, RouteMetricsSink, Sh
         event.put("operation", "generateGtfs");
         event.put("rail.entity.type", "gtfs_feed");
         event.put("outcome", outcome().attribute());
-        event.put("duration_ms", runTimer.getDuration().toMillis());
+        event.put("duration", LogFields.durationSeconds(runTimer.getDuration().toMillis()));
         event.put("error.type", errorType == null ? "" : errorType);
         InfraApiSource.addTo(event);
         event.put("rail.gtfs.feeds.attempted", attemptedFeedNames.size());

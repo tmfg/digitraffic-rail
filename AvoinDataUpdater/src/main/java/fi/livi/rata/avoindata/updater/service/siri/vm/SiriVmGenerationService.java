@@ -31,6 +31,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -140,7 +141,7 @@ public class SiriVmGenerationService {
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(locationsReceived, stats), "NULL", stage,
                     stopWatch.getDuration().toMillis(), stats, outputSize,
-                    journeySourceVersion, journeySourceGeneratedAt, unavailableReason);
+                    journeySourceVersion, journeySourceGeneratedAt, unavailableReason, null);
         } catch (final Exception e) {
             if (e instanceof final PublishedJourneysUnavailableException pjue) {
                 unavailableReason = pjue.reason().name();
@@ -148,8 +149,7 @@ public class SiriVmGenerationService {
                 unavailableReason = PetiUnavailableException.REASON;
             }
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, stopWatch.getDuration().toMillis(),
-                    stats, outputSize, journeySourceVersion, journeySourceGeneratedAt, unavailableReason);
-            log.error("event=rail.siri.generation operation=generateSiriVm outcome=error", e);
+                    stats, outputSize, journeySourceVersion, journeySourceGeneratedAt, unavailableReason, e);
         }
     }
 
@@ -344,31 +344,32 @@ public class SiriVmGenerationService {
 
     /**
      * Emits the one-line {@code rail.siri.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error).
+     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
+     * error the throwable rides along on this same line, so the event is never logged twice.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final SiriVmStats stats, final int outputSize,
             final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
-            final String unavailableReason) {
+            final String unavailableReason, final Throwable thrown) {
         final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
         final String journeySourceAge = journeySourceGeneratedAt != null
                 ? Long.toString(java.time.Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).getSeconds())
                 : "NULL";
         final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriVm outcome={} error.type={} stage={} duration_ms={} "
+                "event=rail.siri.generation operation=generateSiriVm outcome={} error.type={} stage={} duration={} "
                         + "rail.siri.service=vm "
                         + "rail.siri.locations.received={} rail.siri.activities.emitted={} "
                         + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age_s={} "
                         + "rail.siri.journey_source.unavailable_reason={} "
                         + "rail.netex.peti.snapshot.age_s={} rail.siri.output.size_bytes={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationMs,
+                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), LogFields.durationSeconds(durationMs),
                 stats.locationsReceived(), stats.activitiesEmitted(),
                 datasetVersion, journeySourceAge, unavailableReason,
                 petiStopSource.getSnapshotAgeSeconds(), outputSize);
         switch (outcome) {
             case "success" -> log.info(line);
             case "partial" -> log.warn(line);
-            default -> log.error(line);
+            default -> log.error(line, thrown);
         }
     }
 }

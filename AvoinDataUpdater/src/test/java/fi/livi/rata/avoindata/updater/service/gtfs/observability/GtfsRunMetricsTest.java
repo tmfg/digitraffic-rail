@@ -156,7 +156,7 @@ class GtfsRunMetricsTest {
                 .containsEntry("rail.entity.type", "gtfs_feed")
                 .containsEntry("outcome", GtfsOutcome.SUCCESS.attribute())
                 .containsEntry("error.type", "")
-                .containsKeys("duration_ms", "rail.gtfs.feeds.attempted",
+                .containsKeys("duration", "rail.gtfs.feeds.attempted",
                         "rail.gtfs.feeds.published", "rail.gtfs.feeds.failed", "rail.gtfs.feeds.degraded");
         assertThat(error)
                 .containsEntry("outcome", GtfsOutcome.ERROR.attribute())

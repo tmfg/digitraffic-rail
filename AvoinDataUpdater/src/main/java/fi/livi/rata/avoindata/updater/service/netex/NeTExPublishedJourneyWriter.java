@@ -16,6 +16,7 @@ import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService.NeTExDataset;
 
 /**
@@ -105,9 +106,9 @@ public class NeTExPublishedJourneyWriter {
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
                 "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} trackCount={} "
-                        + "window_start={} window_end={} duration_ms={}",
+                        + "window_start={} window_end={} duration={}",
                 outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd,
-                System.currentTimeMillis() - startTime);
+                LogFields.durationSeconds(System.currentTimeMillis() - startTime));
         if (journeys.isEmpty()) {
             log.warn(line);
         } else {

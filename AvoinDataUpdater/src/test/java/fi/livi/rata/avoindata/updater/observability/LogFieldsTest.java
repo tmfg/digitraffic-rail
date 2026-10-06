@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The log provider splits the message on spaces and keeps only the first {@code =}, so these rules
- * decide whether the {@code rail.*} fields end up indexed.
+ * The log provider reads {@code key=value} pairs out of the message, so these rules decide whether the
+ * {@code rail.*} fields end up indexed.
  */
 class LogFieldsTest {
 
@@ -39,7 +39,7 @@ class LogFieldsTest {
 
     @Test
     void givenValuesWithSeparatorsWhenRenderedThenTheyArePassedThroughVerbatim() {
-        // Given the provider offers no escaping: quoting preserves type, not spaces
+        // Given a value with spaces, which the provider keeps only up to the next space
         final Map<String, Object> event = new LinkedHashMap<>();
         event.put("error.message", "too many concurrent operations");
         event.put("url.full", "https://example.invalid/reitit?time=now");
@@ -47,5 +47,20 @@ class LogFieldsTest {
         // When / Then the field may extract partially, but the text stays intact and searchable
         assertThat(LogFields.of(event))
                 .isEqualTo("error.message=too many concurrent operations url.full=https://example.invalid/reitit?time=now");
+    }
+
+    @Test
+    void givenMillisecondsWhenRenderedAsDurationThenTheValueIsInSeconds() {
+        // Given OpenTelemetry expects a duration in seconds
+        assertThat(LogFields.durationSeconds(1234)).isEqualTo(1.234);
+        assertThat(LogFields.durationSeconds(0)).isEqualTo(0.0);
+        assertThat(LogFields.durationSeconds(1)).isEqualTo(0.001);
+        assertThat(LogFields.durationSeconds(60_000)).isEqualTo(60.0);
+    }
+
+    @Test
+    void givenADurationWhenRenderedThenItKeepsADecimalPointInEveryLocale() {
+        // Given a comma would be read as a grouping separator and turn 1,4 into 14
+        assertThat(String.valueOf(LogFields.durationSeconds(1400))).isEqualTo("1.4");
     }
 }

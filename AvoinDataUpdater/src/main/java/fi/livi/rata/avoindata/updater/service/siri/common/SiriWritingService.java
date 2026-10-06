@@ -4,12 +4,14 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Pattern;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.ValidationEvent;
 
+import org.apache.commons.lang3.StringUtils;
 import org.entur.siri.validator.SiriValidationEventHandler;
 import org.entur.siri.validator.SiriValidator;
 import org.slf4j.Logger;
@@ -32,6 +34,11 @@ import uk.org.siri.siri21.Siri;
 public class SiriWritingService {
 
     private static final Logger log = LoggerFactory.getLogger(SiriWritingService.class);
+
+    // A quote or a backslash in the value must be escaped so the value is not cut short
+    private static final Pattern NEEDS_ESCAPE_IN_LOG_VALUE = Pattern.compile("([\\\\\"])");
+    // Newlines would split the log line, so they are turned into spaces
+    private static final Pattern NEWLINE = Pattern.compile("\\R+");
 
     private final JAXBContext jaxbContext;
 
@@ -100,15 +107,34 @@ public class SiriWritingService {
                     SiriValidator.validateAndGetHandler(xmlString, SiriValidator.Version.VERSION_2_0);
             if (!handler.isValid()) {
                 for (final ValidationEvent event : handler.events) {
-                    log.warn("event=rail.siri.validation outcome=invalid severity={} message=\"{}\"",
-                            event.getSeverity(), event.getMessage());
+                    log.warn("event=rail.siri.validation outcome=invalid rail.siri.validation.severity={} "
+                                    + "rail.siri.validation.detail={}",
+                            event.getSeverity(), validationMessageLogValue(event.getMessage()));
                 }
                 return false;
             }
             return true;
         } catch (final JAXBException | SAXException e) {
-            log.error("event=rail.siri.validation outcome=error — SIRI 2.0 schema validation could not run", e);
+            log.error("event=rail.siri.validation outcome=error error.type={}", e.getClass().getSimpleName(), e);
             return false;
         }
+    }
+
+    /**
+     * Renders a schema validation message as a single quoted {@code key=value} token, so the structured log
+     * line stays parseable. These messages quote the offending XML element, as in
+     * {@code Element <VehicleActivity> not allowed here}.
+     * {@code LoggerMessageKeyValuePairJsonProvider} keeps a quoted value whole, including element names, as
+     * long as quotes and backslashes inside it are escaped. Blank text becomes {@code NULL}, which the
+     * provider maps to a JSON null.
+     */
+    private static String validationMessageLogValue(final String text) {
+        if (StringUtils.isBlank(text)) {
+            return "NULL";
+        }
+        final String singleLine = NEWLINE.matcher(text).replaceAll(" ").trim();
+        // "\\\\$1" is a backslash and the matched character: the compiler reads it as \\$1 and replaceAll
+        // reads \\ as one backslash
+        return "\"" + NEEDS_ESCAPE_IN_LOG_VALUE.matcher(singleLine).replaceAll("\\\\$1") + "\"";
     }
 }

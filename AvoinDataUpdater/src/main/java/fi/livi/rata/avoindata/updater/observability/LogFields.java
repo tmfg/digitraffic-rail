@@ -19,6 +19,14 @@ public final class LogFields {
                 .collect(Collectors.joining(" "));
     }
 
+    /**
+     * Converts a millisecond duration to the seconds that OpenTelemetry expects of a {@code duration} field.
+     * A double is rendered with a decimal point in every locale, so the log provider reads it back as a number.
+     */
+    public static double durationSeconds(final long millis) {
+        return millis / 1000.0;
+    }
+
     /** The provider drops blank values, so absent ones are spelled out to keep the field set stable. */
     private static String value(final Object value) {
         final String text = value == null ? "" : String.valueOf(value);

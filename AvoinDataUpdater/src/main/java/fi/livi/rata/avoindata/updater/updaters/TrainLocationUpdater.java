@@ -30,6 +30,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
+import fi.livi.rata.avoindata.updater.observability.LogFields;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -322,7 +323,7 @@ public class TrainLocationUpdater {
      * in {@link #trainLocation()}.
      */
     private void logIngestionCycle(final IngestionMetrics m) {
-        final String message = "operation=ingestTrainLocations outcome={} duration_ms={} "
+        final String message = "operation=ingestTrainLocations outcome={} duration={} "
                 + "rail.source.system=RIPA rail.source.api=pala-api rail.source.endpoint=/0.2/yksikot.json "
                 + "rail.entity.type=train_location "
                 + "error.type={} rail.error.train_number={} "
@@ -344,7 +345,7 @@ public class TrainLocationUpdater {
                 + "rail.mqtt.publish_success={} rail.mqtt.publish_latency_ms={} "
                 + "rail.upstream.pala.backoff_active={} rail.upstream.pala.backoff_ms={}";
         final Object[] args = {
-                m.outcome, m.durationMs,
+                m.outcome, LogFields.durationSeconds(m.durationMs),
                 nullSafe(m.errorType), nullSafe(m.errorTrainNumber),
                 m.recordsReceived, m.recordsProcessed,
                 m.recordsPersisted, m.deserializationErrors,
