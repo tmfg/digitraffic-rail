@@ -99,7 +99,7 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 - [x] Create controller integration test (`SiriVmControllerIntegrationTest`, mirrors `SiriEtControllerIntegrationTest`)
 - [x] Create service-level unit tests (`SiriVmServiceTest`: schema validity, unresolved-journey skip, optional
       MonitoredCall)
-- [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`)
+- [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`, `at-stop`)
 - [ ] End-to-end DB integration test (like `SiriEtDbIntegrationTest`) — not yet added; the unit-level tests above
       cover the mapping logic. Consider adding if/when this is exercised against real data.
 - [ ] Verify periodic generation and updates against a real/staging environment
@@ -133,13 +133,13 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 ### Modified Files
 
 - `AvoinDataServer/src/main/resources/application.properties` — added `avoindataserver.siri.vm.enabled=true`.
-- `AvoinDataUpdater/src/main/resources/application.properties` — added `updater.siri.vm.enabled=true` and
-  `updater.siri.vm.fixed-rate-ms`.
+- `AvoinDataUpdater/src/main/resources/application.properties` — added `updater.siri.vm.enabled=true`.
+  (`updater.siri.vm.fixed-rate-ms` is not set there; it only exists as the default in `SiriVmUpdatingService`.)
 - `AvoinDataCommon/.../dao/gtfs/GTFSTrainRepository.java` — added `getTrainLocations(...)` (the native query VM's
   live position/delay/vehicle-at-stop data comes from) and the `unknown_delay` column.
 - `AvoinDataCommon/.../domain/gtfs/GTFSTrainLocation.java` — added fields surfaced by the query above.
-- `NeTExPublishedJourneyTrack` — added an explicit `@OrderBy("sequenceIndex ASC")` (needed for VM's
-  `OriginRef`/`DestinationRef` first/last-stop resolution; see `SIRI.md` for why).
+- `NeTExPublishedJourney` — added an explicit `@OrderBy("sequenceIndex ASC")` on the `tracks` collection
+  (needed for VM's `OriginRef`/`DestinationRef` first/last-stop resolution; see `SIRI.md` for why).
 
 ### Test Resources
 
@@ -213,6 +213,7 @@ Everything marked ❌ was checked against the live `train_location`/NeTEx data a
 # Enable/disable SIRI-VM endpoint (server) / generation (updater)
 avoindataserver.siri.vm.enabled=true
 updater.siri.vm.enabled=true
+# Not set in application.properties; 60000 is the built-in default in SiriVmUpdatingService.
 updater.siri.vm.fixed-rate-ms=60000
 
 # HTTP cache-control: max-age=30, public (CACHE_SECONDS constant in SiriVmController, matching SiriEtController -
@@ -229,7 +230,8 @@ updater.siri.vm.fixed-rate-ms=60000
 5. **Error Handling**: `PetiUnavailableException`/`PublishedJourneysUnavailableException` fail the generation
    cycle fast (logged, previous `GeneratedExport` left in place) rather than publishing partial/stale data.
 6. **Testing Strategy**: golden XML files (`SiriVmGoldenXmlTest`) plus unit tests for the converter/marshaller/
-   service layers and an integration test against a real database (`SiriVmServiceTest` and friends).
+   service layers (`SiriVmServiceTest`, `VmJourneyConverterTest`) and a controller integration test
+   (`SiriVmControllerIntegrationTest`). There is no database-level test for VM yet — see Phase 4.
 
 ## Dependencies & Tools
 

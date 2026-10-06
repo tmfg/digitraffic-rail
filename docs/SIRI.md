@@ -58,6 +58,7 @@ real-time consumers, which is also what Håndbok N801 §5.1 requires of any Norw
 
 - **One file per delivery.** A complete `ServiceDelivery` dataset is delivered as a single XML document.
 - **Local time, ISO 8601, ≥ second precision.** All timestamps are local (Helsinki) time, e.g. `2026-07-10T21:22:23`.
+  We always emit whole seconds, so the feed looks the same whether a time came from the database or from a clock.
 - **National stop IDs.** Every stop reference must be the official ID from the national stop place registry —
   for rail, this is the PETI `FSR:Quay` ID (a specific platform), the same IDs our NeTEx timetable uses.
 - **Tied to the plan.** Every real-time item references IDs already published in NeTEx (or SIRI-PT). An item
