@@ -55,16 +55,13 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
 /**
- * End-to-end DB round-trip for SIRI-VM, the VM counterpart of {@code SiriEtDbIntegrationTest}: NeTEx
- * generation persists the resolved journey refs to the real database (dbrail docker compose), a live
- * {@code train_location} row plus its {@code time_table_row}s are stored alongside them, and SIRI-VM
- * generation then reads all of it back and publishes a doc that references the same published
- * ServiceJourney id.
+ * End-to-end DB round-trip for SIRI-VM, the VM counterpart of {@code SiriEtDbIntegrationTest}: NeTEx refs, a
+ * live {@code train_location} row and its {@code time_table_row}s go into the real database, and SIRI-VM
+ * reads them back and publishes a doc referencing the same ServiceJourney id.
  *
- * <p>Unlike the ET test this deliberately does <em>not</em> mock {@code GTFSTrainRepository}: the position
- * feed's whole input comes from that repository's native "next commercial stop" query, so mocking it would
- * cut out exactly the part only a real database can exercise. Schedules, PETI stops and station metadata stay
- * mocked — they are genuinely external systems.
+ * <p>Unlike the ET test this does <em>not</em> mock {@code GTFSTrainRepository} — the feed's whole input comes
+ * from its native "next commercial stop" query, the part only a real database can exercise. Schedules, PETI
+ * stops and station metadata stay mocked.
  *
  * <p>Requires the dbrail/ MySQL to be running (see dbrail/docker-compose.yml).
  */
@@ -154,14 +151,14 @@ class SiriVmDbIntegrationTest extends BaseTest {
                 "SIRI-VM must reference the DB-published ServiceJourney id " + serviceJourneyId);
         assertTrue(siriXml.contains("<VehicleRef>" + TRAIN_NUMBER + "</VehicleRef>"),
                 "SIRI-VM must identify the vehicle by its train number");
-        // The coordinates come back out of the geometry column through st_x/st_y, so a wrong axis order or a
-        // lost projection would only show here, at the end of the real round-trip.
+        // The coordinates come out of the geometry column through st_x/st_y, so a wrong axis order would
+        // only show here, at the end of the real round-trip.
         assertTrue(siriXml.contains("<Longitude>24.940000</Longitude>"),
                 "SIRI-VM must carry the stored longitude, was: " + siriXml);
         assertTrue(siriXml.contains("<Latitude>60.170000</Latitude>"),
                 "SIRI-VM must carry the stored latitude, was: " + siriXml);
-        // MonitoredCall is what the native "next commercial stop" query resolves: HKI is the train's first
-        // commercial stop and it has not departed, so the quay published for HKI track 1 must be reported.
+        // MonitoredCall is what the native "next commercial stop" query resolves: HKI is the first commercial
+        // stop and the train has not departed, so HKI track 1's quay must be reported.
         assertTrue(siriXml.contains("<StopPointRef>FSR:Quay:HKI-1</StopPointRef>"),
                 "SIRI-VM must report the upcoming stop resolved from the live timetable rows, was: " + siriXml);
     }
@@ -183,9 +180,8 @@ class SiriVmDbIntegrationTest extends BaseTest {
     // ===== builders =====
 
     /**
-     * Train 100 dated today, stopped at its origin HKI (track 1) and bound for TPE (track 2). Both rows are
-     * still pending with a future live estimate, which is what the native "next commercial stop" query
-     * requires before it will report a stop at all.
+     * Train 100 dated today, at its origin HKI (track 1) and bound for TPE (track 2). Both rows are pending
+     * with a future live estimate — what the native "next commercial stop" query needs to report a stop.
      */
     private Train saveLiveTrain100() {
         final ZonedDateTime now = DateProvider.nowInHelsinki();

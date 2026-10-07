@@ -100,15 +100,16 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 - [x] Create service-level unit tests (`SiriVmServiceTest`: schema validity, unresolved-journey skip, optional
       MonitoredCall)
 - [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`, `at-stop`)
-- [x] End-to-end DB integration test (`SiriVmDbIntegrationTest`, the VM counterpart of
-      `SiriEtDbIntegrationTest`): NeTEx generation persists the journey refs to the real database, a live
-      `train_location` row and its `time_table_row`s are stored alongside them, and SIRI-VM generation reads
-      all of it back. Unlike the ET test it does not mock `GTFSTrainRepository`, so the native "next
-      commercial stop" query runs for real as part of the round-trip.
-- [x] Verify periodic generation and updates against a real/staging environment — verified against
-      `rata-beta.digitraffic.fi/api/v1/siri/vm`: the feed regenerates on schedule, passes SIRI 2.0 schema
-      validation (`SiriValidator`, `VERSION_2_0`, 0 events), and the activities carry a single consistent
-      `RecordedAtTime` with references in the expected `FTR:`/`FSR:` formats.
+- [x] End-to-end DB integration test (`SiriVmDbIntegrationTest`): NeTEx refs, a live `train_location` row and
+      its `time_table_row`s go into the real database, SIRI-VM reads them back. Does not mock
+      `GTFSTrainRepository`, so the native "next commercial stop" query runs for real.
+- [x] Verify periodic generation and updates against a real/staging environment — `rata-beta` regenerates on
+      schedule and passes SIRI 2.0 schema validation
+
+### Phase 5: Documentation
+- [x] Update API documentation (Swagger/OpenAPI) — `SiriVmController` matches `SiriEtController`
+- [ ] Document SIRI-VM response format — on digitraffic.fi
+- [ ] Update configuration documentation — internal documentation
 
 ### Phase 5: Documentation
 - [x] Update API documentation (Swagger/OpenAPI) — `SiriVmController` carries `@Tag` + `@Operation` at the same
@@ -311,26 +312,20 @@ Currently, `GTFSTrainLocation` uses `Boolean` (nullable) for two fields:
 
 This is low-priority housekeeping; current `Boolean` usage works correctly but is more verbose than necessary.
 
-### Origin/Destination endpoint derivation on published journeys (Follow-up)
+### Origin/Destination endpoint derivation on published journeys
 
-The current VM journey-endpoint derivation still assumes the first and last stored published track represent the
-journey's true origin/destination. That is only safe when the endpoint stops themselves have known tracks.
+VM derives the journey endpoints from the first and last stored published track. `planned_track` is `NOT NULL`
+(`V49__netex_published_journey.sql`) and `NeTExService.buildPublishedJourneyDrafts()` skips stops with an
+unknown track, so an endpoint without a track would shift `OriginRef` / `DestinationRef` to the next known stop.
 
-If a real endpoint stop has an unknown track, the published track list can skip it and the VM `OriginRef` /
-`DestinationRef` derivation may point to the next/previous known stop instead.
+**Resolved on the NeTEx side (already on master).** Tracks are filled in three tiers before the drafts are
+built — realised/upcoming track, then history, then the station's first PETI platform
+(`NeTExService#fillFromFirstPlatform`, run before `buildPublishedJourneyDrafts`). Every commercial stop
+therefore carries a track and nothing is dropped.
 
-**Root cause and why this isn't fixed at the DB level right now:** the `netex_published_journey_track` table's
-`planned_track` column is `NOT NULL` (see `V49__netex_published_journey.sql`), and
-`NeTExService.buildPublishedJourneyDrafts()` accordingly filters out any commercial stop whose track is unknown
-before persisting — there is no other DB table (no separate journey-pattern/route table) that carries the true
-origin/destination independently of this filtered track list. Fixing this properly would require a schema
-migration (`planned_track` nullable) plus removing that filter, which is a bigger change than its current impact
-warrants.
-
-**Decision:** deferred. A NeTEx-side change already in progress (separate branch) will guarantee every published
-stop always carries a planned track, which removes the underlying condition (unknown track at an endpoint)
-entirely — at that point this can never happen in practice and no DB/schema change is needed here. Revisit only if
-that guarantee doesn't materialize or turns out to have exceptions.
+Only stations PETI doesn't know, or publishes no platforms for, still fall through. Those are published without
+a quay ref and reported to the PETI maintainers — a data-quality incident, not a standing condition. No schema
+change needed here.
 
 ## Unknown live-track fallback to the planned track (ET and VM)
 
