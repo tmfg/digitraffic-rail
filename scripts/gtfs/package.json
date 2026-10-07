@@ -1,0 +1,24 @@
+{
+  "name": "digitraffic-rail-gtfs-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Helper scripts for reading the Digitraffic Rail GTFS and GTFS Realtime APIs",
+  "type": "module",
+  "scripts": {
+    "audit": "pnpm audit --audit-level=moderate",
+    "check": "pnpm run format:check && pnpm run typecheck && pnpm run audit",
+    "format:check": "biome check --error-on-warnings",
+    "format:fix": "biome check --write --error-on-warnings",
+    "gtfs": "tsx gtfs.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "gtfs-realtime-bindings": "2.2.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "26.6.3",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

@@ -30,7 +30,7 @@ import tools.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 
 import fi.livi.digitraffic.common.cache.ExpiringCache;
-import fi.livi.rata.avoindata.updater.observability.LogFields;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiDataset;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
 import fi.livi.rata.avoindata.updater.service.infraapi.observability.InfraApiSource;
@@ -120,7 +120,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchRaideosuusMap Fetching Trakedia data from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -129,7 +129,7 @@ public class TrakediaLiikennepaikkaService {
         for (final JsonNode node : jsonNode) {
             final JsonNode geometria = node.get(0).get("geometria");
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            raideosuusMap.put(lyhenne.asText().toUpperCase(), calculateCenterPoint(geometria));
+            raideosuusMap.put(lyhenne.asString().toUpperCase(), calculateCenterPoint(geometria));
         }
 
         return raideosuusMap;
@@ -144,7 +144,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchLiikennepaikkaMap Fetching Trakedia data from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -153,7 +153,7 @@ public class TrakediaLiikennepaikkaService {
         for (final JsonNode node : jsonNode) {
             final JsonNode virallinenSijainti = node.get(0).get("virallinenSijainti");
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
+            liikennepaikkaMap.put(lyhenne.asString().toUpperCase(), new Double[]{virallinenSijainti.get(0).asDouble(), virallinenSijainti
                     .get(1).asDouble()});
         }
 
@@ -217,12 +217,12 @@ public class TrakediaLiikennepaikkaService {
         for (final Map.Entry<InfraApiDataset, Integer> source : result.sourceCounts().entrySet()) {
             event.put(kind.metricPrefix() + source.getKey().metricKey() + ".count", source.getValue());
         }
-        event.put("duration_ms", stopWatch.getDuration().toMillis());
+        event.put("duration", durationSeconds(stopWatch.getDuration().toMillis()));
 
         if (result.complete()) {
-            logger.info("{}", LogFields.of(event));
+            logger.info("{}", of(event));
         } else {
-            logger.error("{}", LogFields.of(event));
+            logger.error("{}", of(event));
         }
     }
 
@@ -235,7 +235,7 @@ public class TrakediaLiikennepaikkaService {
 
         logger.info("method=fetchNodeMap Fetching Trakedia nodes from {}", url);
 
-        final JsonNode jsonNode = retryTemplate.execute(context -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
+        final JsonNode jsonNode = retryTemplate.execute(_ -> webClient.get().uri(url).retrieve().bodyToMono(JsonNode.class).block());
 
         if (jsonNode == null) {
             throw new IllegalStateException("Infra-API returned null for " + url);
@@ -243,7 +243,7 @@ public class TrakediaLiikennepaikkaService {
 
         for (final JsonNode node : jsonNode) {
             final JsonNode lyhenne = node.get(0).get("lyhenne");
-            liikennepaikkaMap.put(lyhenne.asText().toUpperCase(), node);
+            liikennepaikkaMap.put(lyhenne.asString().toUpperCase(), node);
         }
 
         return liikennepaikkaMap;

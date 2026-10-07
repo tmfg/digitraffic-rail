@@ -1,20 +1,18 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonView;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.BooleanUtils;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.TimeZoneStorage;
 import org.hibernate.annotations.TimeZoneStorageType;
 
+import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import javax.annotation.Nonnull;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -28,12 +26,7 @@ import static fi.livi.rata.avoindata.common.domain.gtfs.StopIdGenerator.createSt
 @Entity
 @Immutable
 @Table(name = "time_table_row")
-public class GTFSTimeTableRow {
-    public enum TimeTableRowType {
-        ARRIVAL,
-        DEPARTURE
-    }
-
+public class GTFSTimeTableRow implements SortableTimeTableRow {
     @EmbeddedId
     public TimeTableRowId id;
 
@@ -74,11 +67,26 @@ public class GTFSTimeTableRow {
     @TimeZoneStorage(TimeZoneStorageType.NATIVE)
     public ZonedDateTime commercialTrackChanged;
 
+    @Column(name = "modified", insertable = false, updatable = false)
+    public Instant modified;
+
     @ManyToOne
     @JoinColumns({
             @JoinColumn(name = "departureDate", referencedColumnName = "departureDate", nullable = false, insertable = false, updatable = false),
             @JoinColumn(name = "trainNumber", referencedColumnName = "trainNumber", nullable = false, insertable = false, updatable = false)})
     public GTFSTrain train;
+
+    @Override
+    @Nonnull
+    public ZonedDateTime getScheduledTime() {
+        return scheduledTime;
+    }
+
+    @Override
+    @Nonnull
+    public TimeTableRow.TimeTableRowType getType() {
+        return type;
+    }
 
     public int delayInSeconds() {
         return (int) Duration.between(scheduledTime, getActualOrEstimate()).getSeconds();

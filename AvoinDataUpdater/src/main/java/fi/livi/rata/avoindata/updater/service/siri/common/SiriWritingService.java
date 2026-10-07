@@ -1,9 +1,12 @@
 package fi.livi.rata.avoindata.updater.service.siri.common;
 
+import static fi.livi.digitraffic.common.logging.LogFields.quoted;
+
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
@@ -73,7 +76,10 @@ public class SiriWritingService {
                             if (v == null) {
                                 return null;
                             }
-                            return v.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                            return v.withZoneSameInstant(DateProvider.ZONE_ID_HKI)
+                                    .toLocalDateTime()
+                                    .truncatedTo(ChronoUnit.SECONDS)
+                                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                         }
                     });
             final StringWriter writer = new StringWriter();
@@ -100,14 +106,15 @@ public class SiriWritingService {
                     SiriValidator.validateAndGetHandler(xmlString, SiriValidator.Version.VERSION_2_0);
             if (!handler.isValid()) {
                 for (final ValidationEvent event : handler.events) {
-                    log.warn("event=rail.siri.validation outcome=invalid severity={} message=\"{}\"",
-                            event.getSeverity(), event.getMessage());
+                    log.warn("event=rail.siri.validation outcome=invalid rail.siri.validation.severity={} "
+                                    + "rail.siri.validation.detail={}",
+                            event.getSeverity(), quoted(event.getMessage()));
                 }
                 return false;
             }
             return true;
         } catch (final JAXBException | SAXException e) {
-            log.error("event=rail.siri.validation outcome=error — SIRI 2.0 schema validation could not run", e);
+            log.error("event=rail.siri.validation outcome=error error.type={}", e.getClass().getSimpleName(), e);
             return false;
         }
     }

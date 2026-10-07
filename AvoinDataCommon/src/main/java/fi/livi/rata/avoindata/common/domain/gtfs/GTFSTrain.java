@@ -4,6 +4,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import org.hibernate.annotations.Immutable;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,9 @@ public class GTFSTrain {
 
     @Column(name = "source_version")
     public Long sourceVersion;
+
+    @Column(name = "modified", insertable = false, updatable = false)
+    public Instant modified;
 
     @Column
     public long trainCategoryId;

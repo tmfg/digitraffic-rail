@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 
@@ -29,6 +30,12 @@ public class NeTExPublishedJourney {
     public ZonedDateTime generatedAt;
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Order by sequenceIndex (the track's own journey-visitation position), not visitIndex (a per-station
+    // occurrence counter - most stops are 0, so ordering by it would not reflect journey order at all once a
+    // station is served more than once). This ensures the first/last element is reliably the journey's
+    // origin/destination stop (SIRI-VM OriginRef/DestinationRef derivation), regardless of database row
+    // insertion order or id generation.
+    @OrderBy("sequenceIndex ASC")
     public List<NeTExPublishedJourneyTrack> tracks = new ArrayList<>();
 
     public NeTExPublishedJourney() {

@@ -16,6 +16,7 @@ import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService.NeTExDataset;
 
 /**
@@ -88,7 +89,7 @@ public class NeTExPublishedJourneyWriter {
                     draft.lineRef(), draft.operatorRef(), draft.journeyPatternRef(), newVersion, now);
             for (final PublishedJourneyDraft.PublishedTrack track : draft.tracks()) {
                 journey.addTrack(new NeTExPublishedJourneyTrack(track.stationShortCode(), track.plannedTrack(),
-                        track.visitIndex()));
+                        track.visitIndex(), track.sequenceIndex()));
             }
             journeys.add(journey);
         }
@@ -105,9 +106,9 @@ public class NeTExPublishedJourneyWriter {
         final String outcome = journeys.isEmpty() ? "empty" : "success";
         final String line = StringUtil.format(
                 "event=rail.netex.publish_journeys outcome={} dataset_version={} journeys={} trackCount={} "
-                        + "window_start={} window_end={} duration_ms={}",
+                        + "window_start={} window_end={} duration={}",
                 outcome, newVersion, journeys.size(), trackCount, windowStart, windowEnd,
-                System.currentTimeMillis() - startTime);
+                durationSeconds(System.currentTimeMillis() - startTime));
         if (journeys.isEmpty()) {
             log.warn(line);
         } else {

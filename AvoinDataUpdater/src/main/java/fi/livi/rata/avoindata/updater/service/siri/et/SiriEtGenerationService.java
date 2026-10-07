@@ -29,6 +29,7 @@ import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -38,10 +39,14 @@ import fi.livi.rata.avoindata.updater.service.siri.common.InvalidSiriOutputExcep
 import fi.livi.rata.avoindata.updater.service.siri.common.JourneyPatternRef;
 import fi.livi.rata.avoindata.updater.service.siri.common.LineId;
 import fi.livi.rata.avoindata.updater.service.siri.common.OperatorRef;
+import fi.livi.rata.avoindata.updater.service.siri.common.PetiUnavailableException;
+import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnavailableException;
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
+
+import static fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository.*;
 
 @Service
 public class SiriEtGenerationService {
@@ -112,18 +117,16 @@ public class SiriEtGenerationService {
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(trainsReceived, stats), "NULL", stage,
                     stopWatch.getDuration().toMillis(), trainsReceived, stats, outputSize,
-                    journeySourceVersion, journeySourceGeneratedAt, unavailableReason);
+                    journeySourceVersion, journeySourceGeneratedAt, unavailableReason, null);
         } catch (final Exception e) {
-            if (e instanceof PublishedJourneysUnavailableException pjue) {
+            if (e instanceof final PublishedJourneysUnavailableException pjue) {
                 unavailableReason = pjue.reason().name();
             } else if (e instanceof PetiUnavailableException) {
                 unavailableReason = PetiUnavailableException.REASON;
             }
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, stopWatch.getDuration().toMillis(),
                     trainsReceived, stats, outputSize, journeySourceVersion, journeySourceGeneratedAt,
-                    unavailableReason);
-            // Companion line carries the message + stack trace; the wide line above stays scalar-only.
-            log.error("event=rail.siri.generation operation=generateSiriEt outcome=error", e);
+                    unavailableReason, e);
         }
     }
 
@@ -151,16 +154,14 @@ public class SiriEtGenerationService {
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
 
-        // Warm the PETI snapshot on demand (mirrors NeTEx generation) so a restart before the daily refresh does
-        // not leave the feed stale.
-        petiStopSource.ensureLoaded();
         final PetiUicMatcher matcher = petiStopSource.getMatcher();
         if (matcher.matchedCount() == 0) {
             throw new PetiUnavailableException("PETI stop snapshot is empty after warm-up");
         }
         final SiriStopResolver siriStopResolver = new SiriStopResolver(matcher);
 
-        final List<GTFSTrain> trains = gtfsTrainRepository.findBySourceVersionAndIdIn(0L, dbSources.trainIds());
+        final List<GTFSTrain> trains = gtfsTrainRepository
+                .findBySourceVersionAndIdIn(ANY_SOURCE_VERSION, dbSources.trainIds());
         final ZonedDateTime now = DateProvider.nowInHelsinki();
 
         final SiriEtService etService = new SiriEtService(
@@ -217,8 +218,8 @@ public class SiriEtGenerationService {
                     j.journeyPatternRef != null ? new JourneyPatternRef(j.journeyPatternRef) : null));
             for (final NeTExPublishedJourneyTrack t : j.tracks) {
                 if (t.plannedTrack != null && t.stationShortCode != null) {
-                    tracksByTrainId.computeIfAbsent(j.trainId, k -> new HashMap<>())
-                            .computeIfAbsent(t.stationShortCode, k -> new HashMap<>())
+                    tracksByTrainId.computeIfAbsent(j.trainId, _ -> new HashMap<>())
+                            .computeIfAbsent(t.stationShortCode, _ -> new HashMap<>())
                             .put(t.visitIndex, t.plannedTrack);
                 }
             }
@@ -252,21 +253,23 @@ public class SiriEtGenerationService {
 
     /**
      * Emits the one-line {@code rail.siri.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error).
+     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
+     * error the throwable rides along on this same line, so the event is never logged twice.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final long trainsReceived, final SiriEtStats stats, final int outputSize,
             final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
-            final String unavailableReason) {
+            final String unavailableReason, final Throwable thrown) {
         final String matchRate = stats.matchRate().isPresent()
                 ? String.format(Locale.ROOT, "%.4f", stats.matchRate().getAsDouble())
                 : "NULL";
         final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
         final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Long.toString(Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).getSeconds())
+                ? Double.toString(durationSeconds(
+                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
                 : "NULL";
         final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriEt outcome={} error.type={} stage={} duration_ms={} "
+                "event=rail.siri.generation operation=generateSiriEt outcome={} error.type={} stage={} duration={} "
                         + "rail.siri.service=et "
                         + "rail.siri.trains.received={} rail.siri.journeys.emitted={} "
                         + "rail.siri.journeys.cancelled={} rail.siri.journeys.skipped.unresolved_journey={} "
@@ -276,10 +279,10 @@ public class SiriEtGenerationService {
                         + "rail.siri.calls.recorded={} rail.siri.calls.estimated={} "
                         + "rail.siri.stop_refs.resolved.quay={} rail.siri.stop_refs.resolved.stop_place={} "
                         + "rail.siri.stop_refs.unresolved={} rail.siri.peti.match_rate={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age_s={} "
+                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
                         + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age_s={} rail.siri.output.size_bytes={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationMs, trainsReceived,
+                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
+                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs), trainsReceived,
                 stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
                 stats.skippedUnresolvedStopNoStop(), stats.skippedUnresolvedStopNoQuay(),
                 stats.skippedCompletedCarryover(), stats.callsTotal(),
@@ -290,7 +293,7 @@ public class SiriEtGenerationService {
         switch (outcome) {
             case "success" -> log.info(line);
             case "partial" -> log.warn(line);
-            default -> log.error(line);
+            default -> log.error(line, thrown);
         }
     }
 }

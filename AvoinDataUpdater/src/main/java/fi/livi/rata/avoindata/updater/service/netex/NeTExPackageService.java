@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 
 /**
  * Persists the NeTEx Nordic dataset: the ZIP package plus the resolved journey
@@ -141,8 +142,9 @@ public class NeTExPackageService {
 
             final long durationMs = System.currentTimeMillis() - startTime;
             log.info("event=generateNeTEx method=generatePackage persisted {} size={} bytes files={} "
-                    + "durationMs={}",
-                    PACKAGE_FILENAME, timetable.zip().length, timetable.files().size(), durationMs);
+                    + "duration={}",
+                    PACKAGE_FILENAME, timetable.zip().length, timetable.files().size(),
+                    durationSeconds(durationMs));
         } catch (final RuntimeException e) {
             // A RIPA outage may still be retried, so the terminal error event is left to
             // the retry loop.
@@ -151,9 +153,9 @@ public class NeTExPackageService {
             }
             final Throwable root = rootCause(e);
             log.error("event=generateNeTEx method=generatePackage outcome=error "
-                    + "error.type={} error.root.type={} durationMs={}",
+                    + "error.type={} error.root.type={} duration={}",
                     e.getClass().getName(), root.getClass().getName(),
-                    System.currentTimeMillis() - startTime, e);
+                    durationSeconds(System.currentTimeMillis() - startTime), e);
             throw e;
         }
     }

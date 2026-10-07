@@ -16,8 +16,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.annotation.JsonView;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import fi.livi.rata.avoindata.common.domain.cause.Cause;
+import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TimeTableRowId;
 import fi.livi.rata.avoindata.common.domain.jsonview.TrainJsonView.LiveTrains;
@@ -41,10 +43,8 @@ import jakarta.persistence.Transient;
         @Index(name = "timetablerow_stationShortCode", columnList = "stationShortCode")
 })
 @Schema(name = "TimeTableRow", title = "TimeTableRow", description = "A part of train's schedule")
-/**
- * Please check the note in Train
- */
-public class TimeTableRow {
+/// Please check the note in Train
+public class TimeTableRow implements SortableTimeTableRow {
     public enum TimeTableRowType {
         ARRIVAL,
         DEPARTURE
@@ -217,6 +217,18 @@ public class TimeTableRow {
     @Override
     public String toString() {
         return String.format("%s: %s (%s)", scheduledTime, station.stationShortCode, type);
+    }
+
+    @Override
+    @Nonnull
+    public ZonedDateTime getScheduledTime() {
+        return scheduledTime;
+    }
+
+    @Override
+    @Nonnull
+    public TimeTableRowType getType() {
+        return type;
     }
 
     public static TimeTableRowId getIdDirect(final TimeTableRow timeTableRow) {

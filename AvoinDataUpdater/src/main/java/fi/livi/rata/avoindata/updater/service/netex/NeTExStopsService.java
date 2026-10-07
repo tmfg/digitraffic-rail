@@ -60,8 +60,9 @@ public class NeTExStopsService {
         final List<NeTExStopsData.NeTExDestinationDisplay> destinationDisplays = new ArrayList<>();
         final List<NeTExStopsData.NeTExStopAssignment> stopAssignments = new ArrayList<>();
 
-        final boolean petiSourceEmpty = petiStopSource.getStops().isEmpty();
-        final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        final List<PetiStop> petiStops = petiStopSource.getStops();
+        final boolean petiSourceEmpty = petiStops.isEmpty();
+        final PetiUicMatcher matcher = petiStopSource.getMatcher(petiStops);
         int matchedCount = 0;
         int unmatchedCount = 0;
         int quayMatchedCount = 0;

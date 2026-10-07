@@ -30,6 +30,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.gtfs.TimeTableRowService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
@@ -252,8 +253,9 @@ public class NeTExService {
             final long durationMs = stopWatch.getDuration().toMillis();
             logGenerationEvent("error", e.getClass().getSimpleName(), stage, durationMs, null);
             log.error("event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome=error "
-                    + "errorType={} stage={} durationMs={} failed",
-                    e.getClass().getSimpleName(), stage.name().toLowerCase(Locale.ROOT), durationMs, e);
+                    + "error.type={} stage={} duration={} failed",
+                    e.getClass().getSimpleName(), stage.name().toLowerCase(Locale.ROOT),
+                    durationSeconds(durationMs), e);
             // Surfaced unwrapped so the caller can tell a retryable RIPA outage from a
             // build failure.
             if (e instanceof final RipaFetchException ripaFetchException) {
@@ -284,13 +286,13 @@ public class NeTExService {
         final int petiTotal = result != null ? result.matchedCount() + result.unmatchedCount() : 0;
         final String line = StringUtil.format(
                 "event=generateNeTEx method=generateNeTEx wide_event=rail.netex.generation outcome={} "
-                        + "error.type={} stage={} duration_ms={} "
+                        + "error.type={} stage={} duration={} "
                         + "rail.netex.scheduled_stop_points={} rail.netex.routes={} rail.netex.lines={} "
                         + "rail.netex.service_journeys={} rail.netex.peti.stop_assignments_total={} "
                         + "rail.netex.peti.stop_assignments_matched={} rail.netex.peti.stop_assignments_unmatched={} "
                         + "rail.netex.peti.quay_matched_count={} "
                         + "rail.netex.peti.quay_unmatched_count={} rail.netex.peti.quay_no_track_count={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationMs,
+                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs),
                 result != null ? result.scheduledStopPoints() : 0,
                 result != null ? result.routes() : 0,
                 result != null ? result.lines() : 0,
@@ -406,11 +408,9 @@ public class NeTExService {
             return null;
         }
 
-        // Fetched here rather than on a schedule of its own, so the package is always
-        // built on the
-        // platforms PETI publishes at generation time. An outage degrades to the
-        // last-good snapshot.
-        petiStopSource.refresh();
+        // Loaded on its own schedule (see CachingPetiStopSource): a daily fetch plus an hourly retry if that
+        // fetch failed. Station platform data changes rarely, so generation just reads whatever is already
+        // cached instead of forcing a fresh fetch here.
         final List<PetiStop> petiStops = petiStopSource.getStops();
         final int petiQuays = petiStops.stream().mapToInt(s -> s.quays().size()).sum();
         log.info("event=generateNeTEx method=computeDataset peti_fetch_outcome={} peti_stop_places={} "
@@ -426,7 +426,7 @@ public class NeTExService {
         // route is
         // derived, so stop point ids and stop assignments cannot disagree about the
         // track.
-        final PetiUicMatcher matcher = petiStopSource.getMatcher();
+        final PetiUicMatcher matcher = petiStopSource.getMatcher(petiStops);
         final Map<String, PetiStop> petiByStation = new HashMap<>();
         for (final Station station : stations) {
             matcher.match(station.uicCode).ifPresent(stop -> petiByStation.put(station.shortCode, stop));
@@ -501,12 +501,14 @@ public class NeTExService {
             if (serviceJourney == null) {
                 return;
             }
-            // Count each station's occurrences over the (commercial) passing times so a
-            // station served more than
-            // once keeps a planned track per visit; only stops with a known track are
-            // stored.
+            // Count each station's occurrences over the (commercial) passing times so a station served more than
+            // once keeps a planned track per visit; only stops with a known track are stored. sequenceIndex is a
+            // separate counter that only ever increases, counting over the *stored* tracks only, so it reflects
+            // their true journey order (unlike visitIndex, which resets per station and is meant only to
+            // disambiguate repeated stops for lookup, not for ordering — see NeTExPublishedJourney#tracks).
             final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
             final Map<String, Integer> visitCounts = new HashMap<>();
+            int sequenceIndex = 0;
             for (final var pt : serviceJourney.passingTimes()) {
                 if (pt.stationShortCode() == null) {
                     continue;
@@ -514,7 +516,7 @@ public class NeTExService {
                 final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
                 if (pt.commercialTrack() != null) {
                     tracks.add(new PublishedJourneyDraft.PublishedTrack(
-                            pt.stationShortCode(), pt.commercialTrack(), visitIndex));
+                            pt.stationShortCode(), pt.commercialTrack(), visitIndex, sequenceIndex++));
                 }
             }
             drafts.add(new PublishedJourneyDraft(trainId, serviceJourneyId, serviceJourney.lineRef(),

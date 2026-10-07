@@ -1,6 +1,7 @@
 services:
   db:
     image: mysql:8.0.46
+    platform: linux/amd64
     restart: always
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"

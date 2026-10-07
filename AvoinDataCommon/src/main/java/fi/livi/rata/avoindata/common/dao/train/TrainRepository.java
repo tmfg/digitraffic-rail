@@ -28,7 +28,8 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             left join fetch c.categoryCode categoryCode
             left join fetch c.detailedCategoryCode detailedCategoryCode
             left join fetch c.thirdCategoryCode thirdCategoryCode
-            left join fetch timeTableRow.trainReadies tr """;
+            left join fetch timeTableRow.trainReadies tr
+            """;
 
     String BASE_TRAIN_ORDER = " order by train.id.departureDate, train.id.trainNumber, timeTableRow.scheduledTime, timeTableRow.type";
     String IS_NOT_DELETED = "(train.deleted is null or train.deleted = false)";
@@ -56,7 +57,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
-            " ORDER BY t.predict_time ASC" +
+            " ORDER BY t.predict_time" +
             " LIMIT ?3) UNION ALL (SELECT " +
             "    '3', t.departure_date, t.train_number, t.version" +
             " FROM" +
@@ -80,12 +81,16 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "   AND (t.train_category_id in ?7)" +
             "   AND t.actual_time IS NULL" +
             "   AND (t.deleted IS NULL OR t.deleted = 0)" +
-            " ORDER BY t.predict_time ASC" +
+            " ORDER BY t.predict_time" +
             " LIMIT ?5)) unionedTable", nativeQuery = true)
     List<Object[]> findLiveTrainsIds(String station, Integer departedTrains, Integer departingTrains, Integer arrivedTrains,
                                      Integer arrivingTrains, Boolean excludeNonstopping, List<Long> trainCategoryIds);
 
 
+    // t.type is TimeTableRow.TimeTableRowType, stored by JPA ordinal: ARRIVAL=0, DEPARTURE=1 (enum declaration
+    // order - see TimeTableRow.TimeTableRowType). So "t.type = 1" below matches DEPARTURE rows (checked against
+    // the departure time window, ?2/?3) and "t.type = 0" matches ARRIVAL rows (checked against the arrival time
+    // window, ?6/?7).
     @Query("select t from LiveTimeTableTrain t where " +
             " t.stationShortCode = ?1 and" +
             " t.trainCategoryId in ?8 and" +
@@ -121,7 +126,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "            AND ((t.actual_time BETWEEN (UTC_TIMESTAMP() - INTERVAL ?2 MINUTE) AND (UTC_TIMESTAMP() + INTERVAL ?2 MINUTE) " +
             "            OR t.predict_time BETWEEN (UTC_TIMESTAMP() - INTERVAL ?2 MINUTE) AND (UTC_TIMESTAMP() + INTERVAL ?2 MINUTE) " +
             "            OR t.scheduled_time BETWEEN (UTC_TIMESTAMP() - INTERVAL ?2 MINUTE) AND (UTC_TIMESTAMP() + INTERVAL ?2 MINUTE))) " +
-            "    ORDER BY t.actual_time DESC , t.predict_time ASC) inner_table " +
+            "    ORDER BY t.actual_time DESC , t.predict_time) inner_table " +
             "GROUP BY departure_date , train_number " +
             " ", nativeQuery = true)
     List<Object[]> findLiveTrains(final long version, final int minutes);
@@ -179,7 +184,7 @@ public interface TrainRepository extends CustomGeneralRepository<Train, TrainId>
             "    AND ttr.train_number = ?1 " +
             "    AND ttr.departure_date BETWEEN DATE_ADD(current_date(), INTERVAL -1 DAY) AND DATE_ADD(current_date(), INTERVAL 1 DAY) " +
             "    AND ttr.scheduled_time BETWEEN (UTC_TIMESTAMP() - INTERVAL 4 HOUR) AND (UTC_TIMESTAMP() + INTERVAL 16 HOUR) " +
-            "ORDER BY ABS(timediff(scheduled_time,UTC_TIMESTAMP())) ASC " +
+            "ORDER BY ABS(timediff(scheduled_time,UTC_TIMESTAMP())) " +
             "LIMIT 1", nativeQuery = true)
     List<Object[]> findLiveTrainByTrainNumber(final long trainNumber);
 

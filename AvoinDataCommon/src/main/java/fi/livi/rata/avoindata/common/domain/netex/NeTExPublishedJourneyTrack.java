@@ -18,15 +18,24 @@ public class NeTExPublishedJourneyTrack {
     public NeTExPublishedJourney journey;
     public String stationShortCode;
     public String plannedTrack;
-    /** 0-based occurrence of this station within the journey, so a station served twice keeps a track per visit. */
+    /** 0-based count of how many times this station has been visited so far in the journey (a station served
+     * twice gets a track for each visit). Not the track's position in the journey — use {@link #sequenceIndex}
+     * for ordering {@link NeTExPublishedJourney#tracks}. SIRI-ET/VM generation ({@code PlannedTrackLookup})
+     * computes this same count independently from the live train's stop list, to look up this track. */
     public int visitIndex;
+    /** 0-based position of this track in the journey's visit order, always increasing even when a station
+     * repeats. Unlike {@link #visitIndex}, this makes the first/last entry in {@link NeTExPublishedJourney#tracks}
+     * reliably the journey's origin/destination. */
+    public int sequenceIndex;
 
     public NeTExPublishedJourneyTrack() {
     }
 
-    public NeTExPublishedJourneyTrack(final String stationShortCode, final String plannedTrack, final int visitIndex) {
+    public NeTExPublishedJourneyTrack(final String stationShortCode, final String plannedTrack, final int visitIndex,
+            final int sequenceIndex) {
         this.stationShortCode = stationShortCode;
         this.plannedTrack = plannedTrack;
         this.visitIndex = visitIndex;
+        this.sequenceIndex = sequenceIndex;
     }
 }

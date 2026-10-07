@@ -1,0 +1,7 @@
+# 7 days in minutes
+minimumReleaseAge: 10080
+
+ignoreScripts: true
+# esbuild (via tsx) needs its postinstall to fetch its native binary
+onlyBuiltDependencies:
+  - esbuild

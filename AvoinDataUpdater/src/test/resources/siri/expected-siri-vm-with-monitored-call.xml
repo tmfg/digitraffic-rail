@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Siri version="2.0" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+    <ServiceDelivery>
+        <ResponseTimestamp>2026-07-15T12:00:00</ResponseTimestamp>
+        <ProducerRef>TEST</ProducerRef>
+        <VehicleMonitoringDelivery version="2.0">
+            <ResponseTimestamp>2026-07-15T12:00:00</ResponseTimestamp>
+            <VehicleActivity>
+                <RecordedAtTime>2026-07-15T11:59:30</RecordedAtTime>
+                <ValidUntilTime>2026-07-15T12:04:30</ValidUntilTime>
+                <MonitoredVehicleJourney>
+                    <LineRef>FTR:Line:IC</LineRef>
+                    <FramedVehicleJourneyRef>
+                        <DataFrameRef>2026-07-15</DataFrameRef>
+                        <DatedVehicleJourneyRef>FTR:ServiceJourney:59-12345</DatedVehicleJourneyRef>
+                    </FramedVehicleJourneyRef>
+                    <VehicleMode>rail</VehicleMode>
+                    <OperatorRef>FTR:Operator:vr</OperatorRef>
+                    <OriginRef>FSR:Quay:HKI-1</OriginRef>
+                    <OriginName>Helsinki</OriginName>
+                    <DestinationRef>FSR:Quay:OL-3</DestinationRef>
+                    <DestinationName>Oulu</DestinationName>
+                    <Monitored>true</Monitored>
+                    <DataSource>FSR</DataSource>
+                    <VehicleLocation>
+                        <Longitude>23.761000</Longitude>
+                        <Latitude>61.498100</Latitude>
+                    </VehicleLocation>
+                    <Velocity>30</Velocity>
+                    <Delay>PT1M30S</Delay>
+                    <VehicleRef>59</VehicleRef>
+                    <MonitoredCall>
+                        <StopPointRef>FSR:Quay:TPE-1</StopPointRef>
+                        <StopPointName>Tampere</StopPointName>
+                        <VehicleAtStop>false</VehicleAtStop>
+                        <DestinationDisplay>Oulu</DestinationDisplay>
+                    </MonitoredCall>
+                    <IsCompleteStopSequence>false</IsCompleteStopSequence>
+                </MonitoredVehicleJourney>
+            </VehicleActivity>
+        </VehicleMonitoringDelivery>
+    </ServiceDelivery>
+</Siri>

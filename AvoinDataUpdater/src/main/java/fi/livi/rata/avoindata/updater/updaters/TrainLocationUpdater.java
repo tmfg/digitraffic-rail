@@ -30,6 +30,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.deserializers.PalaDeserializationResult;
 import fi.livi.rata.avoindata.updater.deserializers.PalaYksikkoDeserializer;
+import static fi.livi.digitraffic.common.logging.LogFields.*;
 import fi.livi.rata.avoindata.updater.service.MQTTPublishService;
 import fi.livi.rata.avoindata.updater.service.RipaService;
 import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
@@ -84,8 +85,8 @@ public class TrainLocationUpdater {
     @Transactional
     public synchronized void trainLocation() {
         if (isInUpstreamBackoff()) {
-            log.debug("operation=ingestTrainLocations outcome=skipped_backoff rail.upstream.pala.backoff_remaining_ms={}",
-                    backoffUntilMs - System.currentTimeMillis());
+            log.debug("operation=ingestTrainLocations outcome=skipped_backoff rail.upstream.pala.backoff.remaining={}",
+                    durationSeconds(backoffUntilMs - System.currentTimeMillis()));
             return;
         }
 
@@ -322,7 +323,7 @@ public class TrainLocationUpdater {
      * in {@link #trainLocation()}.
      */
     private void logIngestionCycle(final IngestionMetrics m) {
-        final String message = "operation=ingestTrainLocations outcome={} duration_ms={} "
+        final String message = "operation=ingestTrainLocations outcome={} duration={} "
                 + "rail.source.system=RIPA rail.source.api=pala-api rail.source.endpoint=/0.2/yksikot.json "
                 + "rail.entity.type=train_location "
                 + "error.type={} rail.error.train_number={} "
@@ -338,13 +339,13 @@ public class TrainLocationUpdater {
                 + "rail.train_location.positions.gps={} rail.train_location.positions.calculated={} "
                 + "rail.train_location.positions.calculated_ratio={} "
                 + "rail.train_location.source_time={} rail.train_location.ingestion_time={} "
-                + "rail.train_location.staleness_ms={} "
-                + "rail.upstream.pala.http_status={} rail.upstream.pala.response_size_bytes={} "
-                + "rail.upstream.pala.latency_ms={} "
-                + "rail.mqtt.publish_success={} rail.mqtt.publish_latency_ms={} "
-                + "rail.upstream.pala.backoff_active={} rail.upstream.pala.backoff_ms={}";
+                + "rail.train_location.staleness={} "
+                + "rail.upstream.pala.response.status_code={} rail.upstream.pala.response.size={} "
+                + "rail.upstream.pala.latency={} "
+                + "rail.mqtt.publish.success={} rail.mqtt.publish.latency={} "
+                + "rail.upstream.pala.backoff.active={} rail.upstream.pala.backoff.duration={}";
         final Object[] args = {
-                m.outcome, m.durationMs,
+                m.outcome, durationSeconds(m.durationMs),
                 nullSafe(m.errorType), nullSafe(m.errorTrainNumber),
                 m.recordsReceived, m.recordsProcessed,
                 m.recordsPersisted, m.deserializationErrors,
@@ -359,11 +360,11 @@ public class TrainLocationUpdater {
                 String.format(Locale.ROOT, "%.2f", m.calculatedRatio()),
                 m.sourceTime != null ? m.sourceTime.toInstant() : "NULL",
                 m.ingestionTime != null ? m.ingestionTime.toInstant() : "NULL",
-                m.stalenessMs,
+                durationSeconds(m.stalenessMs),
                 m.httpStatus, m.responseSizeBytes,
-                m.httpLatencyMs,
-                m.mqttSuccess, m.mqttLatencyMs,
-                m.backoffActive, m.backoffMs
+                durationSeconds(m.httpLatencyMs),
+                m.mqttSuccess, durationSeconds(m.mqttLatencyMs),
+                m.backoffActive, durationSeconds(m.backoffMs)
         };
         if (m.isSuccess()) {
             log.info(message, args);

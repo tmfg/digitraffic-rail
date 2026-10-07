@@ -1,13 +1,10 @@
 package fi.livi.rata.avoindata.server.config;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.util.UrlPathHelper;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -44,13 +41,5 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(final ViewControllerRegistry registry) {
         registry.addRedirectViewController("/configuration/ui", "/swagger-resources/configuration/ui");
         registry.addRedirectViewController("/configuration/security", "/swagger-resources/configuration/security");
-    }
-
-    @Override
-    public void configurePathMatch(final PathMatchConfigurer configurer) {
-        final UrlPathHelper urlPathHelper = new UrlPathHelper();
-        urlPathHelper.setUrlDecode(false);
-
-        configurer.setUrlPathHelper(urlPathHelper);
     }
 }

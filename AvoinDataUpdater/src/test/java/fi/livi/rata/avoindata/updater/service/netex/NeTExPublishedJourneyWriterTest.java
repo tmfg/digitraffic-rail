@@ -44,7 +44,7 @@ class NeTExPublishedJourneyWriterTest {
     void givenDataset_whenPersistWindow_thenPersistsJourneyWithTracksFromDraft() {
         final PublishedJourneyDraft draft = new PublishedJourneyDraft(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:1", List.of(new PublishedTrack("HKI", "5", 0)));
+                "FTR:JourneyPattern:1", List.of(new PublishedTrack("HKI", "5", 0, 0)));
         final NeTExDataset dataset = dataset(List.of(draft));
 
         when(journeyRepo.getMaxDatasetVersion()).thenReturn(4L);
@@ -79,7 +79,7 @@ class NeTExPublishedJourneyWriterTest {
         final PublishedJourneyDraft draft = new PublishedJourneyDraft(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:1",
-                List.of(new PublishedTrack("TPE", "1", 0), new PublishedTrack("TPE", "2", 1)));
+                List.of(new PublishedTrack("TPE", "1", 0, 0), new PublishedTrack("TPE", "2", 1, 1)));
         when(journeyRepo.getMaxDatasetVersion()).thenReturn(0L);
 
         writer.persistWindow(dataset(List.of(draft)));

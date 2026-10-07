@@ -12,6 +12,9 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 public record PublishedJourneyDraft(TrainId trainId, String serviceJourneyId, String lineRef, String operatorRef,
         String journeyPatternRef, List<PublishedTrack> tracks) {
 
-    /** A planned commercial track for one station on the journey, tagged with the station's 0-based visit index. */
-    public record PublishedTrack(String stationShortCode, String plannedTrack, int visitIndex) {}
+    /** A planned commercial track for one station on the journey, tagged with the station's 0-based visit index
+     * (occurrence count per station) and its 0-based sequenceIndex (position within the journey's own
+     * visitation order, used for origin/destination derivation — see
+     * {@link fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney#tracks}). */
+    public record PublishedTrack(String stationShortCode, String plannedTrack, int visitIndex, int sequenceIndex) {}
 }

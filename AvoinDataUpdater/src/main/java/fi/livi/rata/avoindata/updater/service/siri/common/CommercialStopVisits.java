@@ -1,0 +1,240 @@
+package fi.livi.rata.avoindata.updater.service.siri.common;
+
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
+
+import org.apache.commons.lang3.BooleanUtils;
+
+import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
+import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule;
+import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
+
+/// Pairs a train's raw [GTFSTimeTableRow] rows into its ordered commercial-stop sequence and locates a
+/// specific station's *current* (first not-yet-completed) visit within it. This 0-based visitIndex is the
+/// same key used by the persisted `NeTExPublishedJourneyTrack` /
+/// `fi.livi.rata.avoindata.updater.service.siri.et.PlannedTrackLookup`, so a live stop resolved from a single row
+/// (which carries no visitIndex of its own, e.g. SIRI-VM's `GTFSTrainLocation`) can be matched back to the
+/// right planned track when a station is served more than once.
+///
+/// Mirrors the pairing/commercial-filter rules SIRI-ET's `EtJourneyInterpreter` applies to a train's full
+/// row list. Kept as a separate, narrower utility (rather than shared directly with that class) since SIRI-VM only
+/// needs this one lookup — an on-demand fallback for the rare "live track unknown" case (see
+/// `VmJourneyConverter`), not the full call-by-call conversion ET performs on every row.
+public final class CommercialStopVisits {
+
+    private CommercialStopVisits() {
+    }
+
+    /// One commercial stop: an origin has `arrival == null`, a terminus has `departure == null`.
+    public record Stop(GTFSTimeTableRow arrival, GTFSTimeTableRow departure) {
+
+        private GTFSTimeTableRow representative() {
+            return arrival != null ? arrival : departure;
+        }
+
+        /// Mirrors the live-location query's own eligibility test for its `next` row (see
+        /// `GTFSTrainRepository.getTrainLocations`: `commercial_stop is true and cancelled is false
+        /// and actual_time is null and live_estimate_time > CURRENT_TIMESTAMP()`), applied independently to
+        /// *either* leg of this stop. The SQL query selects the single earliest not-yet-happened row
+        /// train-wide regardless of whether it is an ARRIVAL or a DEPARTURE: while a train is still
+        /// *approaching* a stop, only its ARRIVAL row typically carries a live estimate yet (the
+        /// DEPARTURE hasn't been reached, let alone estimated) - checking only the departure (the usual
+        /// "completing" row for a non-terminus stop) would then find no estimate and wrongly report this stop as
+        /// not current/not eligible, even though the SQL query has already resolved it via that very ARRIVAL
+        /// row. The *dwelling* case (ARRIVAL already actual, DEPARTURE pending) is still covered by checking
+        /// either leg, since the ARRIVAL is then no longer eligible (actual_time set) and only the DEPARTURE can
+        /// be. A row with no actual time yet but a *stale* estimate (no longer in the future - e.g. delay
+        /// data hasn't refreshed) is not eligible either: the SQL query skips straight past such a row to the
+        /// next one that qualifies, so a repeated-station visit stuck in that state must not be reported as
+        /// current here, or [#currentVisitIndex] would return the wrong (earlier, already-superseded)
+        /// occurrence.
+        ///
+        /// Crucially, the `cancelled`/`commercial_stop` filters are per-row in the SQL, exactly
+        /// like the other filters above - not applied to the paired stop as a whole. A cancelled or
+        /// non-commercial ARRIVAL simply drops out of the SQL's candidate window; it does not disqualify a
+        /// perfectly eligible DEPARTURE at the very same stop (see
+        /// `GTFSTrainRepositoryTest#getTrainLocationsCancelledArrivalTreatedAsNoPairedArrival`, where the SQL
+        /// selects PSL's active DEPARTURE even though PSL's own ARRIVAL was cancelled). So [#isRowEligible]
+        /// checks cancellation/commercial-stop on each row independently, and this stop is
+        /// eligible as soon as either row - on its own - passes every filter.
+        private boolean isEligible(final ZonedDateTime now) {
+            return isRowEligible(arrival, now) || isRowEligible(departure, now);
+        }
+
+        private static boolean isRowEligible(final GTFSTimeTableRow row, final ZonedDateTime now) {
+            return row != null && !row.cancelled && BooleanUtils.isTrue(row.commercialStop) && row.actualTime == null
+                    && row.liveEstimateTime != null && row.liveEstimateTime.isAfter(now);
+        }
+
+        /// The chronologically last commercial, non-cancelled row of this stop - mirrors the SQL terminus
+        /// fallback's own row selection (`term`'s `where tr.commercial_stop is true and tr.cancelled is false`,
+        /// picking the latest row overall), which filters per row, not per stop. A partially cancelled stop -
+        /// e.g. a non-cancelled ARRIVAL (already actual) paired with a *cancelled* DEPARTURE - must still expose
+        /// its still-valid ARRIVAL here rather than being treated as wholly cancelled, or the terminus fallback
+        /// in [currentVisitIndex] would wrongly lose a `MonitoredCall` the SQL itself still resolves. `null`
+        /// when neither leg qualifies (both cancelled or non-commercial), in which case the terminus fallback
+        /// must keep looking at the previous stop, exactly as the SQL's row-wide scan would.
+        private GTFSTimeTableRow lastNonCancelledCommercialRow() {
+            if (isUsable(departure)) {
+                return departure;
+            }
+            if (isUsable(arrival)) {
+                return arrival;
+            }
+            return null;
+        }
+
+        private static boolean isUsable(final GTFSTimeTableRow row) {
+            return row != null && !row.cancelled && BooleanUtils.isTrue(row.commercialStop);
+        }
+    }
+
+    /// Pairs `rows` into stops (see [Stop]) and keeps only the commercial ones, in schedule order.
+    public static List<Stop> of(final List<GTFSTimeTableRow> rows) {
+        final List<Stop> stops = new ArrayList<>();
+        if (rows.isEmpty()) {
+            return stops;
+        }
+
+        final List<GTFSTimeTableRow> ordered = SortableTimeTableRow.orderRows(rows);
+
+        int i = 0;
+        if (ordered.getFirst().type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+            addIfCommercial(stops, null, ordered.getFirst());
+            i = 1;
+        }
+
+        while (i < ordered.size()) {
+            final GTFSTimeTableRow arrival = ordered.get(i);
+            i++;
+            if (i < ordered.size() && ordered.get(i).type == TimeTableRow.TimeTableRowType.DEPARTURE) {
+                addIfCommercial(stops, arrival, ordered.get(i));
+                i++;
+            } else {
+                addIfCommercial(stops, arrival, null);
+            }
+        }
+
+        return stops;
+    }
+
+    private static void addIfCommercial(final List<Stop> stops, final GTFSTimeTableRow arrival,
+                                        final GTFSTimeTableRow departure) {
+        // Must select the same stops as the NeTEx timetable / SIRI-ET — see CommercialStopRule.
+        if (CommercialStopRule.isCommercialStop(leg(arrival), leg(departure))) {
+            stops.add(new Stop(arrival, departure));
+        }
+    }
+
+    private static Leg leg(final GTFSTimeTableRow row) {
+        if (row == null) {
+            return Leg.ABSENT;
+        }
+        return BooleanUtils.isTrue(row.commercialStop) ? Leg.COMMERCIAL : Leg.NON_COMMERCIAL;
+    }
+
+    /// The 0-based occurrence of the first not-yet-completed commercial stop at `stationShortCode` within
+    /// `stops` (schedule order) — the same stop a live "next station" query resolves (see
+    /// `GTFSTrainRepository.getTrainLocations`), found here by scanning the full planned order instead of
+    /// that query's `commercial_stop is true and cancelled is false and actual_time is null and
+    /// live_estimate_time > CURRENT_TIMESTAMP()` SQL filter (see `now`, and [Stop#isEligible], for
+    /// how that filter is mirrored here - checking either leg of the stop independently, since the SQL query
+    /// resolves whichever single row, ARRIVAL or DEPARTURE, is earliest, and applies every filter, cancellation
+    /// and commercial-stop included, per row rather than to the paired stop as a whole). When a station is
+    /// served more than once, an earlier visit is only skipped once neither of its rows (see
+    /// [Stop#isEligible]) is eligible anymore — each already has an actual time, is cancelled or non-commercial,
+    /// or its estimate has gone stale (no longer in the future) — so the first still-eligible match is
+    /// unambiguous and never an occurrence the live query has itself already moved past. Empty when the station
+    /// never occurs, or every occurrence is already completed/stale/cancelled (should not normally happen for a
+    /// station a live location still reports) — except the arrived-terminus case below.
+    ///
+    /// Terminus fallback: shares [#findArrivedTerminus] with [#resolveTerminusFallback] (see its
+    /// javadoc for the full rationale - this is the same fallback, just additionally matched against
+    /// `stationShortCode`). A terminus has only an ARRIVAL row (no departure), so once that arrival's actual
+    /// time is set (train has arrived), there is no later not-yet-completed row left to match for it — the loop
+    /// above would find nothing and this stop's live location would silently lose its
+    /// `MonitoredCall`/`VehicleAtStop` when its live track is unknown. Since the arrived terminus is by
+    /// definition the last (non-cancelled) stop in the journey, it is still reported as current here. Like
+    /// [Stop#lastNonCancelledCommercialRow], this looks at the *last commercial, non-cancelled row overall* -
+    /// not "the last wholly non-cancelled stop" - so a partially cancelled stop (e.g. a non-cancelled, already
+    /// arrived ARRIVAL paired with a cancelled DEPARTURE) still surfaces its still-valid ARRIVAL leg here.
+    ///
+    /// @param now the time to evaluate estimate staleness against - callers should pass the same instant used to
+    ///            build the live locations being resolved (see `SiriVmGenerationService`), matching the
+    ///            SQL's own `CURRENT_TIMESTAMP()`.
+    public static OptionalInt currentVisitIndex(final List<Stop> stops, final String stationShortCode,
+                                                final ZonedDateTime now) {
+        final Map<String, Integer> visitCounts = new HashMap<>();
+        // Records each stop's own occurrence index (position within its station's visits), parallel to
+        // `stops`, so the terminus fallback below can report the exact matched stop's index - not the
+        // station's *final* aggregate count, which would be wrong whenever a later, cancelled/non-commercial
+        // occurrence of the same station follows the terminus fallback's match (see the review finding this
+        // fixes: the reverse scan can match an earlier occurrence while later, skipped ones still bumped the
+        // aggregate count).
+        final int[] visitIndexPerStop = new int[stops.size()];
+        for (int i = 0; i < stops.size(); i++) {
+            final Stop stop = stops.get(i);
+            final String station = stop.representative().stationShortCode;
+            // 0-based occurrence of this station within the journey so far, incremented on every visit
+            // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
+            // counting pattern).
+            final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
+            visitIndexPerStop[i] = visitIndex;
+            if (station.equals(stationShortCode) && stop.isEligible(now)) {
+                return OptionalInt.of(visitIndex);
+            }
+        }
+        final Optional<TerminusMatch> terminusMatch = findArrivedTerminus(stops);
+        if (terminusMatch.isPresent() && terminusMatch.get().row().stationShortCode.equals(stationShortCode)) {
+            return OptionalInt.of(visitIndexPerStop[terminusMatch.get().stopIndex()]);
+        }
+        return OptionalInt.empty();
+    }
+
+    /// The train's arrived terminus (see class-level and [#currentVisitIndex] javadoc for why this fallback
+    /// exists), for callers that don't have - or want to match against - a specific `stationShortCode`. Used by
+    /// `SiriVmGenerationService`/`VmJourneyConverter` when `GTFSTrainRepository.getTrainLocations`'s own "next
+    /// stop" query resolved nothing at all for a train (a `null` `stationShortCode` - see that query's own
+    /// javadoc for why it deliberately leaves the terminus case unresolved), to fill in the location's stop
+    /// fields from the train's full row list instead. `Optional.empty()` when no stop qualifies (e.g. every
+    /// commercial stop is cancelled, or the last usable row isn't an arrived ARRIVAL) - the location then stays
+    /// as the query left it (no stop resolved).
+    public static Optional<GTFSTimeTableRow> resolveTerminusFallback(final List<Stop> stops) {
+        return findArrivedTerminus(stops).map(TerminusMatch::row);
+    }
+
+    /// Pairs a matched terminus fallback's own stop index within `stops` with the already-resolved row itself -
+    /// so callers never need to re-derive the row from the index (which [Stop#lastNonCancelledCommercialRow]
+    /// can, in general, return `null` for - re-invoking it after the fact would force every caller to redundantly
+    /// re-handle that, even though [#findArrivedTerminus] itself already ruled it out for the matched index).
+    private record TerminusMatch(int stopIndex, GTFSTimeTableRow row) {
+    }
+
+    /// Scans `stops` backward for the train's arrived terminus - the chronologically last commercial,
+    /// non-cancelled row overall (see [Stop#lastNonCancelledCommercialRow]), only when that row is an ARRIVAL
+    /// whose actual time is set (the train has genuinely arrived there and has nothing further planned).
+    /// Shared by [#currentVisitIndex] (which additionally matches the result against a specific station) and
+    /// [#resolveTerminusFallback] (which does not). Returns the matched stop's own index and row together (see
+    /// [TerminusMatch]) so [#currentVisitIndex] can still report the matched occurrence's own visitIndex without
+    /// re-deriving the row.
+    private static Optional<TerminusMatch> findArrivedTerminus(final List<Stop> stops) {
+        for (int i = stops.size() - 1; i >= 0; i--) {
+            final GTFSTimeTableRow lastRow = stops.get(i).lastNonCancelledCommercialRow();
+            if (lastRow == null) {
+                continue;
+            }
+            if (lastRow.type == TimeTableRow.TimeTableRowType.ARRIVAL && lastRow.actualTime != null) {
+                return Optional.of(new TerminusMatch(i, lastRow));
+            }
+            break;
+        }
+        return Optional.empty();
+    }
+}

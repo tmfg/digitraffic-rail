@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import fi.livi.rata.avoindata.common.domain.common.SortableTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.DateUtils;
@@ -71,24 +71,13 @@ public class ScheduleToTrainConverter {
             timeTableRow.train = train;
         }
 
-        train.timeTableRows = sortTimeTableRows(train.timeTableRows);
+        train.timeTableRows = SortableTimeTableRow.orderRows(train.timeTableRows);
 
         emptyCommercialTrackInTimeTableRows(train.timeTableRows);
 
         initializeIsTrainStoppingInformation(train.timeTableRows);
 
         return train;
-    }
-
-    private List<TimeTableRow> sortTimeTableRows(final List<TimeTableRow> timeTableRows) {
-        return timeTableRows.stream().sorted((o1, o2) -> {
-            final int i = o1.scheduledTime.compareTo(o2.scheduledTime);
-            if (i == 0) {
-                return o1.type.compareTo(o2.type);
-            } else {
-                return i;
-            }
-        }).collect(Collectors.toList());
     }
 
     private boolean isScheduleCancelled(final Schedule schedule, final LocalDate extractDate) {

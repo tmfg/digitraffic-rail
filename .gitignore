@@ -22,3 +22,5 @@ AvoinDataUpdater/src/main/resources/application-localhost.properties
 /AvoinDataUpdater/trips.txt
 /AvoinDataUpdater/translations.txt
 /**/application-localhost*.properties
+**/docker-compose.override.yml
+/tmp/
