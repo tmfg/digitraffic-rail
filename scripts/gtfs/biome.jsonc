@@ -3,7 +3,7 @@
   "files": {
     "includes": [
       // In a folder with a biome.jsonc that extends this one, that path seen is one
-      // starting from that folder. Therefore, these need ot be fairly generic.
+      // starting from that folder. Therefore, these need to be fairly generic.
       "**/*.ts",
       "**/*.tsx",
       "**/*.json",
