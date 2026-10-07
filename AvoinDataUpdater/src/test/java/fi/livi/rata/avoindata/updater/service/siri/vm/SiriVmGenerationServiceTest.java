@@ -30,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -785,8 +786,8 @@ class SiriVmGenerationServiceTest {
         }
 
         @Override
-        public ZonedDateTime getTimestamp() {
-            return delegate.getTimestamp();
+        public LocalDateTime getTimestampUtc() {
+            return delegate.getTimestampUtc();
         }
 
         @Override
@@ -805,7 +806,7 @@ class SiriVmGenerationServiceTest {
         }
 
         @Override
-        public int getAccuracy() {
+        public Integer getAccuracy() {
             return delegate.getAccuracy();
         }
 

@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.common.domain.gtfs;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 /// Projection over the `train_location` table (live GPS/track-circuit positions from the PALA API), joined
@@ -16,7 +18,15 @@ public interface GTFSTrainLocation {
     long getTrainNumber();
 
     /// Timestamp when this position was recorded (as reported by the upstream PALA feed).
-    ZonedDateTime getTimestamp();
+    ///
+    /// Read through {@link #getTimestampUtc()} because the database column has no time zone in it, so Spring
+    /// cannot turn it into a {@link ZonedDateTime} on its own. The value is written as UTC.
+    default ZonedDateTime getTimestamp() {
+        return getTimestampUtc().atZone(ZoneOffset.UTC);
+    }
+
+    /// Raw value behind {@link #getTimestamp()}. Use that one instead.
+    LocalDateTime getTimestampUtc();
 
     /// Longitude (EPSG:4326 / WGS84), extracted from the stored `location` point (`st_x`).
     double getX();
@@ -27,8 +37,8 @@ public interface GTFSTrainLocation {
     ///  this is km/h
     int getSpeed();
 
-    /// Estimated positional accuracy in meters, as reported by the upstream source.
-    int getAccuracy();
+    /// Estimated positional accuracy in meters, as reported by the upstream source. `null` when not reported.
+    Integer getAccuracy();
 
     /// Station short code of the upcoming (not yet reached) commercial stop, resolved via
     /// `time_table_row` — the same stop used for {@link #getDelaySeconds()}. `null` when no upcoming stop

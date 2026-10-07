@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.dao;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
 import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
+import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
@@ -48,6 +49,9 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     private TimeTableRowRepository timeTableRowRepository;
 
     @Autowired
+    private TrainLocationRepository trainLocationRepository;
+
+    @Autowired
     private TimeTableRowFactory ttrf;
 
     private Train createTrainWithoutActualTimes() {
@@ -76,6 +80,55 @@ public class GTFSTrainRepositoryTest extends BaseTest {
             index++;
         }
     }
+    /// Reads every getter, because a getter that nothing reads can still be broken. The query returns raw
+    /// database types, and a getter whose type Spring cannot build from one of them only fails when something
+    /// actually calls it. Two getters have been broken this way already. Add a call here for every new getter.
+    @Test
+    public void getTrainLocationsExposesEveryProjectedColumn() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+        tl.accuracy = 42;
+        trainLocationRepository.save(tl);
+
+        t.timeTableRows.getFirst().liveEstimateTime = t.timeTableRows.getFirst().scheduledTime.plusMinutes(2);
+        trainRepository.save(t);
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThatCollection(locations).hasSize(1);
+        final GTFSTrainLocation location = locations.getFirst();
+
+        assertThat(location.getId()).isEqualTo(tl.id);
+        assertThat(location.getDepartureDate()).isEqualTo(t.id.departureDate);
+        assertThat(location.getTrainNumber()).isEqualTo(t.id.trainNumber);
+        assertThat(location.getTimestamp()).isCloseTo(tl.trainLocationId.timestamp, within(1, ChronoUnit.SECONDS));
+        assertThat(location.getX()).isEqualTo(tl.location.getX());
+        assertThat(location.getY()).isEqualTo(tl.location.getY());
+        assertThat(location.getSpeed()).isEqualTo(tl.speed);
+        assertThat(location.getAccuracy()).isEqualTo(42);
+        assertThat(location.getStationShortCode()).isEqualTo(t.timeTableRows.getFirst().station.stationShortCode);
+        assertThat(location.getCommercialTrack()).isEqualTo(t.timeTableRows.getFirst().commercialTrack);
+        assertThat(location.getUnknownTrack()).isNull();
+        assertThat(location.getUnknownDelay()).isNull();
+        assertThat(location.getDelaySeconds()).isEqualTo(120);
+        assertThat(location.getVehicleAtStop()).isTrue();
+    }
+
+    /// Accuracy is the one projected column the database allows to be empty, and production rows often are.
+    /// A getter declared as a primitive type would fail on them, so this keeps it declared as `Integer`.
+    @Test
+    public void getTrainLocationsAllowsMissingAccuracy() {
+        final Train t = createTrainWithoutActualTimes();
+        final TrainLocation tl = trainLocationFactory.create(t);
+
+        assertThat(tl.accuracy).isNull();
+
+        final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(List.of(tl.id));
+
+        assertThatCollection(locations).hasSize(1);
+        assertThat(locations.getFirst().getAccuracy()).isNull();
+    }
+
     @Test
     public void getTrainLocationsNoTrains() {
         final List<GTFSTrainLocation> locations = gtfsTrainRepository.getTrainLocations(Collections.emptyList());

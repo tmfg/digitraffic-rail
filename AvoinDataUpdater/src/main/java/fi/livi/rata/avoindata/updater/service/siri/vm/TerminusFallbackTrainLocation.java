@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
@@ -39,8 +39,8 @@ final class TerminusFallbackTrainLocation implements GTFSTrainLocation {
     }
 
     @Override
-    public ZonedDateTime getTimestamp() {
-        return delegate.getTimestamp();
+    public LocalDateTime getTimestampUtc() {
+        return delegate.getTimestampUtc();
     }
 
     @Override
@@ -59,7 +59,7 @@ final class TerminusFallbackTrainLocation implements GTFSTrainLocation {
     }
 
     @Override
-    public int getAccuracy() {
+    public Integer getAccuracy() {
         return delegate.getAccuracy();
     }
 

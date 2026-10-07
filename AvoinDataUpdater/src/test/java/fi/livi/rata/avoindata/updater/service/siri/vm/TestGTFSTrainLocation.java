@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
@@ -27,9 +29,10 @@ record TestGTFSTrainLocation(long id, LocalDate departureDate, long trainNumber,
         return trainNumber;
     }
 
+    /// Supplies the raw value like the database does, so tests go through the same conversion as production.
     @Override
-    public ZonedDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getTimestampUtc() {
+        return timestamp.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
     }
 
     @Override
@@ -48,7 +51,7 @@ record TestGTFSTrainLocation(long id, LocalDate departureDate, long trainNumber,
     }
 
     @Override
-    public int getAccuracy() {
+    public Integer getAccuracy() {
         return accuracy;
     }
 
