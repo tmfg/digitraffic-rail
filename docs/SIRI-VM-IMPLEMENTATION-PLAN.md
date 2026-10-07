@@ -100,8 +100,11 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 - [x] Create service-level unit tests (`SiriVmServiceTest`: schema validity, unresolved-journey skip, optional
       MonitoredCall)
 - [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`, `at-stop`)
-- [ ] End-to-end DB integration test (like `SiriEtDbIntegrationTest`) — not yet added; the unit-level tests above
-      cover the mapping logic. Consider adding if/when this is exercised against real data.
+- [x] End-to-end DB integration test (`SiriVmDbIntegrationTest`, the VM counterpart of
+      `SiriEtDbIntegrationTest`): NeTEx generation persists the journey refs to the real database, a live
+      `train_location` row and its `time_table_row`s are stored alongside them, and SIRI-VM generation reads
+      all of it back. Unlike the ET test it does not mock `GTFSTrainRepository`, so the native "next
+      commercial stop" query runs for real as part of the round-trip.
 - [x] Verify periodic generation and updates against a real/staging environment — verified against
       `rata-beta.digitraffic.fi/api/v1/siri/vm`: the feed regenerates on schedule, passes SIRI 2.0 schema
       validation (`SiriValidator`, `VERSION_2_0`, 0 events), and the activities carry a single consistent
