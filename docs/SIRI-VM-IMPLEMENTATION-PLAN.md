@@ -102,12 +102,16 @@ This is documented in the `VmActivity` Javadoc; see also `VmJourneyConverter`/`V
 - [x] Create golden XML test (`SiriVmGoldenXmlTest`, scenarios: `minimum`, `with-monitored-call`, `at-stop`)
 - [ ] End-to-end DB integration test (like `SiriEtDbIntegrationTest`) — not yet added; the unit-level tests above
       cover the mapping logic. Consider adding if/when this is exercised against real data.
-- [ ] Verify periodic generation and updates against a real/staging environment
+- [x] Verify periodic generation and updates against a real/staging environment — verified against
+      `rata-beta.digitraffic.fi/api/v1/siri/vm`: the feed regenerates on schedule, passes SIRI 2.0 schema
+      validation (`SiriValidator`, `VERSION_2_0`, 0 events), and the activities carry a single consistent
+      `RecordedAtTime` with references in the expected `FTR:`/`FSR:` formats.
 
 ### Phase 5: Documentation
-- [ ] Update API documentation (Swagger/OpenAPI)
-- [ ] Document SIRI-VM response format
-- [ ] Update configuration documentation
+- [x] Update API documentation (Swagger/OpenAPI) — `SiriVmController` carries `@Tag` + `@Operation` at the same
+      level as `SiriEtController`
+- [ ] Document SIRI-VM response format — on digitraffic.fi
+- [ ] Update configuration documentation — internal documentation
 
 ## Key Files (as actually implemented)
 
