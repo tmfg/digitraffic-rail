@@ -33,7 +33,15 @@ public class SiriEtController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(summary = "Returns SIRI Nordic Estimated Timetable (ET) real-time XML")
+    @Operation(
+            summary = "Returns SIRI Nordic Estimated Timetable (ET) real-time XML",
+            description = """
+                    Stop references use identifiers from Fintraffic's national stop registry (PETI).
+
+                    For example, `FSR:Quay:415` in `StopPointRef` identifies the corresponding PETI `Quay`.
+
+                    [Browse rail stops and their quays in PETI](https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail).
+                    """)
     @RequestMapping(method = RequestMethod.GET, path = "et", produces = MediaType.APPLICATION_XML_VALUE)
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> getSiriEt() {

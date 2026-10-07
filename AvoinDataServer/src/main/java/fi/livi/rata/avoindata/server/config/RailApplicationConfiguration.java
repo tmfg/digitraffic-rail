@@ -3,14 +3,17 @@ package fi.livi.rata.avoindata.server.config;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
+import org.springframework.jmx.export.MBeanExporter;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -18,6 +21,20 @@ import com.zaxxer.hikari.HikariDataSource;
 @Configuration
 public class RailApplicationConfiguration {
     private static final Logger log = LoggerFactory.getLogger(RailApplicationConfiguration.class);
+
+    @Bean
+    static BeanPostProcessor excludeDataSourceFromSpringJmx() {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessBeforeInitialization(final @NonNull Object bean, final @NonNull String beanName) {
+                if (bean instanceof final MBeanExporter exporter) {
+                    // Hikari registers this instance itself when registerMbeans is enabled.
+                    exporter.addExcludedBean("dataSource");
+                }
+                return bean;
+            }
+        };
+    }
 
     @Autowired
     private Environment env;
