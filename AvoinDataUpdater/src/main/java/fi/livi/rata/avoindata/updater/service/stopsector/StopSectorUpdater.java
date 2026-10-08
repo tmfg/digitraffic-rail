@@ -2,25 +2,19 @@ package fi.livi.rata.avoindata.updater.service.stopsector;
 
 import fi.livi.rata.avoindata.common.dao.localization.TrainTypeRepository;
 import fi.livi.rata.avoindata.common.dao.train.TimeTableRowRepository;
-import fi.livi.rata.avoindata.common.dao.train.TrainRepository;
 import fi.livi.rata.avoindata.common.domain.composition.Composition;
 import fi.livi.rata.avoindata.common.domain.composition.JourneySection;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.ZonedDateTime;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Service
 public class StopSectorUpdater {
@@ -147,11 +141,12 @@ public class StopSectorUpdater {
 
         if(stopSector == null) {
             if (sectorMap.hasStation(row.station.stationShortCode)) {
-                log.info("No stop sector for {} missingSector={}", row.id, createStopSectorString(row, type, south, elementCount));
+                log.info("method=updateStopSector No stop sector for attapId={} trainNumber={} departureDate={} missingSector={}",
+                        row.id.attapId, row.id.trainNumber, row.id.departureDate, createStopSectorString(row, type, south, elementCount));
             }
         }
 
-        if(!StringUtils.equals(row.stopSector, stopSector)) {
+        if(!Objects.equals(row.stopSector, stopSector)) {
             row.stopSector = stopSector;
 
             return true;
