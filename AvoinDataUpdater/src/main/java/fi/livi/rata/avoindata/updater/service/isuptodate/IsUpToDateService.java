@@ -21,30 +21,28 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 
 @Service
 public class IsUpToDateService {
-
-    @Autowired
-    private LastUpdateService lastUpdateService;
+    private final LastUpdateService lastUpdateService;
 
     private final Map<LastUpdateService.LastUpdatedType, Duration> alarmLimits = new HashMap<>();
 
-    public static class IsToUpToDateDto {
-        public Instant lastUpdated;
-        public Duration alarmLimit;
-        public Duration durationSinceLastUpdate;
-        public boolean isUpToDate;
+    public IsUpToDateService(final LastUpdateService lastUpdateService) {
+        this.lastUpdateService = lastUpdateService;
+    }
 
-        public IsToUpToDateDto(final Instant lastUpdated, final Duration alarmLimit, final Duration durationSinceLastUpdate) {
-            this.lastUpdated = lastUpdated;
-            this.alarmLimit = alarmLimit;
-            this.durationSinceLastUpdate = durationSinceLastUpdate;
-            this.isUpToDate = !alarmLimit.minus(durationSinceLastUpdate).isNegative();
+    public record UpToDateInformation(
+            Instant lastUpdated,
+            Duration alarmLimit,
+            Duration durationSinceLastUpdate) {
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isUpToDate")
+        public boolean isUpToDate() {
+            return !alarmLimit.minus(durationSinceLastUpdate).isNegative();
         }
     }
 
@@ -70,12 +68,10 @@ public class IsUpToDateService {
         alarmLimits.put(TRAIN_LOCATIONS_DUMP, Duration.ofHours(24 * 2));
     }
 
-
-
-    public Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> getIsUpToDates() {
+    public Map<LastUpdateService.LastUpdatedType, UpToDateInformation> getIsUpToDates() {
         final Map<LastUpdateService.LastUpdatedType, Instant> lastUpdateTimes = lastUpdateService.getLastUpdateTimes();
 
-        final Map<LastUpdateService.LastUpdatedType, IsToUpToDateDto> result = new HashMap<>();
+        final Map<LastUpdateService.LastUpdatedType, UpToDateInformation> result = new HashMap<>();
 
         final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
 
@@ -84,7 +80,7 @@ public class IsUpToDateService {
             final Duration alarmLimit = alarmLimits.get(value);
             if (lastUpdated != null && alarmLimit != null) {
                 final Duration between = Duration.between(lastUpdated, now);
-                final IsToUpToDateDto upToDate = new IsToUpToDateDto(lastUpdated, alarmLimit, between);
+                final UpToDateInformation upToDate = new UpToDateInformation(lastUpdated, alarmLimit, between);
                 result.put(value, upToDate);
             }
         }

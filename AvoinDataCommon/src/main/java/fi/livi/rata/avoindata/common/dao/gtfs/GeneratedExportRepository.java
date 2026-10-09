@@ -1,8 +1,10 @@
 package fi.livi.rata.avoindata.common.dao.gtfs;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +15,10 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 
 @Repository
 public interface GeneratedExportRepository extends CustomGeneralRepository<GeneratedExport, Long> {
-    GeneratedExport findFirstByFileNameOrderByIdDesc(String s);
+    GeneratedExport findFirstByFileNameOrderByIdDesc(final String s);
+
+    @Query("select gtfs.created from GeneratedExport gtfs where gtfs.fileName = ?1 order by gtfs.id desc limit 1")
+    Optional<Instant> findLatestCreatedByFileName(final String fileName);
 
     /**
      * The latest export generated on a given day, for requesting an older package.

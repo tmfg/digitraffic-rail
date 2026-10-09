@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.updater.service.SimpleTransactionManager;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,15 @@ import jakarta.annotation.PostConstruct;
 public class LastUpdateService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private WebClient webClient;
+    private final WebClient webClient;
+    private final SimpleTransactionManager simpleTransactionManager;
+    private final GeneratedExportRepository generatedExportRepository;
+
+    public LastUpdateService(final WebClient webClient, SimpleTransactionManager simpleTransactionManager, GeneratedExportRepository generatedExportRepository) {
+        this.webClient = webClient;
+        this.simpleTransactionManager = simpleTransactionManager;
+        this.generatedExportRepository = generatedExportRepository;
+    }
 
     public enum LastUpdatedType {
         TRAINS,
@@ -69,6 +77,8 @@ public class LastUpdateService {
         prefixToEnumMap.put("tracksections", LastUpdatedType.TRACKSECTIONS);
         prefixToEnumMap.put("stations", LastUpdatedType.STATIONS);
         prefixToEnumMap.put("categorycodes", LastUpdatedType.CATEGORY_CODES);
+
+        updateGtfsLastUpdated();
     }
 
     /**
@@ -79,11 +89,8 @@ public class LastUpdateService {
     public void updateLastUpdateTimesScheduled() {
         final StopWatch stopWatch = StopWatch.createStarted();
 
-        final Instant trainLocationsDumpLastUpdated = getLastUpdatedForUrl(String.format("https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip",
-                DateProvider.dateInHelsinki().minusDays(3)));
-        if (trainLocationsDumpLastUpdated != null) {
-            lastUpdateTimes.put(LastUpdatedType.TRAIN_LOCATIONS_DUMP, trainLocationsDumpLastUpdated);
-        }
+        updateTrainLocationsDumpLastUpdated();
+
         stopWatch.stop();
 
         log.info("method=updateLastUpdateTimesScheduled tookMs={} ", stopWatch.getTime());
@@ -100,6 +107,31 @@ public class LastUpdateService {
 
     public void update(final LastUpdatedType lastUpdatedType) {
         lastUpdateTimes.put(lastUpdatedType, Instant.now());
+    }
+
+    /**
+     * Update GTFS last updated from database.  When starting the updater,
+     * it takes hours before next GTFS export is generated, so we need to get the last updated time from database.
+     */
+    private void updateGtfsLastUpdated() {
+        simpleTransactionManager.executeInTransaction(() -> {
+            final var createdOpt = generatedExportRepository.findLatestCreatedByFileName("gtfs-passenger-stops.zip");
+
+            if (createdOpt.isPresent()) {
+                lastUpdateTimes.put(LastUpdatedType.GTFS, createdOpt.get());
+            } else {
+                log.warn("No GTFS export found in database");
+            }
+        });
+    }
+
+    private void updateTrainLocationsDumpLastUpdated() {
+        final Instant lastUpdated = getLastUpdatedForUrl(String.format(
+                "https://rata.digitraffic.fi/api/v1/train-locations/dumps/digitraffic-rata-train-locations-%s.zip",
+                DateProvider.dateInHelsinki().minusDays(3)));
+        if (lastUpdated != null) {
+            lastUpdateTimes.put(LastUpdatedType.TRAIN_LOCATIONS_DUMP, lastUpdated);
+        }
     }
 
     private Instant getLastUpdatedForUrl(final String url) {
