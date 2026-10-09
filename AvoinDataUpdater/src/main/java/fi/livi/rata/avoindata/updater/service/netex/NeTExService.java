@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.digitraffic.common.util.StringUtil;
-import fi.livi.digitraffic.common.util.TimeUtil;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
@@ -789,13 +788,13 @@ public class NeTExService {
         // field.
         if (!missingFromPeti.isEmpty()) {
             log.error("event=generateNeTEx method=fillFromFirstPlatform gap=tracksMissingFromPeti "
-                    + "likelyCause=missing_from_peti loggedAt={} tracksMissingFromPeti={} gapItems={}",
-                    TimeUtil.nowWithoutMillis(), missingFromPeti.size(), String.join(",", missingFromPeti));
+                    + "likelyCause=missing_from_peti tracksMissingFromPeti={} gapItems={}",
+                    missingFromPeti.size(), String.join(",", missingFromPeti));
         }
         if (!invalidTracks.isEmpty()) {
             log.error("event=generateNeTEx method=fillFromFirstPlatform gap=invalidScheduleTracks "
-                    + "likelyCause=invalid_schedule_track loggedAt={} invalidScheduleTracks={} gapItems={}",
-                    TimeUtil.nowWithoutMillis(), invalidTracks.size(),
+                    + "likelyCause=invalid_schedule_track invalidScheduleTracks={} gapItems={}",
+                    invalidTracks.size(),
                     String.join(",", invalidTracks.values()));
         }
     }

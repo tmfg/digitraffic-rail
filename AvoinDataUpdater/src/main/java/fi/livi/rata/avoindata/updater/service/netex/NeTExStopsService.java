@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import fi.livi.digitraffic.common.util.TimeUtil;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
@@ -137,8 +136,7 @@ public class NeTExStopsService {
 
         if (!stationsWithoutQuays.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData gap=stationsWithoutQuays "
-                    + "loggedAt={} stationsWithoutQuays={} gapItems={}",
-                    TimeUtil.nowWithoutMillis(),
+                    + "stationsWithoutQuays={} gapItems={}",
                     stationsWithoutQuays.size(),
                     stationsWithoutQuays.values().stream()
                             .map(s -> s.shortCode + "(uicCode:" + s.uicCode + ")")
@@ -147,8 +145,7 @@ public class NeTExStopsService {
 
         if (!stationsWithoutStopPlace.isEmpty()) {
             log.error("event=generateNeTEx method=createStopsData gap=stationsWithoutStopPlace "
-                    + "loggedAt={} stationsWithoutStopPlace={} gapItems={}",
-                    TimeUtil.nowWithoutMillis(),
+                    + "stationsWithoutStopPlace={} gapItems={}",
                     stationsWithoutStopPlace.size(),
                     stationsWithoutStopPlace.values().stream()
                             .map(s -> s.shortCode + "(uicCode:" + s.uicCode + ")")
