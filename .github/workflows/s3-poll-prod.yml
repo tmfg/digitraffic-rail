@@ -35,6 +35,14 @@ jobs:
       - name: Checkout
         if: ${{ steps.versions.outputs.infra || steps.versions.outputs.etj2 }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Update etj2-api(new prod)
+        if: ${{ steps.versions.outputs.etj2 }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo updating NEW PROD etj2-api to version ${{ steps.versions.outputs.etj2 }}
+          gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=etj2-api -f config-branch=master -f suffix=${{ steps.versions.outputs.etj2 }}
+        shell: bash
       - name: Update etj2-api
         if: ${{ steps.versions.outputs.etj2 }}
         env:
@@ -44,6 +52,15 @@ jobs:
           gh workflow run deploy-from-repo.yml -r rail-production -f env=prod -f application-name=etj2-api -f config-branch=rail-production -f suffix=${{ steps.versions.outputs.etj2 }}
           aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_prd.imported
         shell: bash
+      - name: Update infra-api(new prod)
+        if: ${{ steps.versions.outputs.infra }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo updating NEW PROD infra-api to version ${{ steps.versions.outputs.infra }}
+          gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=infra-api -f config-branch=master -f suffix=${{ steps.versions.outputs.infra }}
+        shell: bash
+
       - name: Update infra-api
         if: ${{ steps.versions.outputs.infra }}
         env:
