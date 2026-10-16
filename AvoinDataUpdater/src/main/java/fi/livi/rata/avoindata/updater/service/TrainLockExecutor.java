@@ -77,7 +77,7 @@ public class TrainLockExecutor {
     }
 
     private <T> Future<T> submitCallable(final String context, final Callable<T> callable) {
-        log.info("method=submitCallable context={} queueSize={}", context, itemsInQueue.incrementAndGet());
+        log.debug("method=submitCallable context={} queueSize={}", context, itemsInQueue.incrementAndGet());
 
         return executorService.submit(callable);
     }

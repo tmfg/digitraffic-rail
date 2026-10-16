@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.updater.service.TimeTablePeriodService;
-import fi.livi.rata.avoindata.updater.service.stopsector.StopSectorService;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;

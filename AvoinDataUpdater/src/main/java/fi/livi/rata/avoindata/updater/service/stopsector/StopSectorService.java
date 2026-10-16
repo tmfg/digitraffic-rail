@@ -75,27 +75,31 @@ public class StopSectorService {
     @Scheduled(fixedDelay = 1000)
     public void handleStopSectorQueue() {
         TimingUtil.log(log, "handleStopSectorQueue", () -> {
-            final var now = ZonedDateTime.now();
             final var items = stopSectorQueueItemRepository.findAllByOrderByCreated();
-            final var maxAge = items.stream()
-                    .map(item -> ChronoUnit.MILLIS.between(item.created, now))
-                    .max(Long::compareTo).orElse(0L);
 
-            log.info("method=handleStopSectorQueue maxAge={} queueSize={}", maxAge, items.size());
+            if(!items.isEmpty()) {
+                final var now = ZonedDateTime.now();
 
-            // take ITEMS_TO_HANDLE items from the queue and process them with TrainLockExecutor
-            items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> simpleTransactionManager.executeInTransaction(() -> {
-                final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
+                final var maxAge = items.stream()
+                        .map(item -> ChronoUnit.MILLIS.between(item.created, now))
+                        .max(Long::compareTo).orElse(0L);
 
-                // train might not have yet got the composition
-                composition.ifPresent(value -> trainLockExecutor.executeInLock("handleStopSectorQueue", () -> {
-                    TimingUtil.log(log, "handleItem", () -> handleItem(item, value));
+                log.info("method=handleStopSectorQueue maxAge={} queueSize={}", maxAge, items.size());
 
-                    return null;
+                // take ITEMS_TO_HANDLE items from the queue and process them with TrainLockExecutor
+                items.stream().limit(ITEMS_TO_HANDLE).forEach(item -> simpleTransactionManager.executeInTransaction(() -> {
+                    final var composition = compositionRepository.findById(new TrainId(item.trainNumber, item.departureDate));
+
+                    // train might not have yet got the composition
+                    composition.ifPresent(value -> trainLockExecutor.executeInLock("handleStopSectorQueue", () -> {
+                        TimingUtil.log(log, "handleItem", () -> handleItem(item, value));
+
+                        return null;
+                    }));
+
+                    stopSectorQueueItemRepository.delete(item);
                 }));
-
-                stopSectorQueueItemRepository.delete(item);
-            }));
+            }
         });
     }
 }

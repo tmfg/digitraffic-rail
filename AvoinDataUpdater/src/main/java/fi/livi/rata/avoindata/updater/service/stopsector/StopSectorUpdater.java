@@ -9,17 +9,18 @@ import fi.livi.rata.avoindata.common.domain.train.Train;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class StopSectorUpdater {
     private final TrainTypeRepository trainTypeRepository;
     private final TimeTableRowRepository timeTableRowRepository;
+
+    private final MissingSectorCounter missingSectorCounter = new MissingSectorCounter();
 
     private final SectorMap sectorMap = new SectorMap();
     private final DirectionMap directionMap = new DirectionMap();
@@ -126,6 +127,11 @@ public class StopSectorUpdater {
         }
     }
 
+    @Scheduled(fixedRate = 1000L * 60 * 60)
+    public void logMissingSectorsScheduled() {
+        missingSectorCounter.logMissingSectors();
+    }
+
     private String createStopSectorString(final TimeTableRow row, final String type, final boolean south, final int size) {
         return String.format("%s,%s,%s,%s,%d", row.station.stationShortCode, row.commercialTrack, type, south ? "SOUTH" : "NORTH", size);
     }
@@ -141,8 +147,11 @@ public class StopSectorUpdater {
 
         if(stopSector == null) {
             if (sectorMap.hasStation(row.station.stationShortCode)) {
-                log.info("method=updateStopSector No stop sector for attapId={} trainNumber={} departureDate={} missingSector={}",
-                        row.id.attapId, row.id.trainNumber, row.id.departureDate, createStopSectorString(row, type, south, elementCount));
+                final var sectorString = createStopSectorString(row, type, south, elementCount);
+                missingSectorCounter.addMissingSector(sectorString);
+
+                log.debug("method=updateStopSector No stop sector for attapId={} trainNumber={} departureDate={} source={} missingSector={}",
+                        row.id.attapId, row.id.trainNumber, row.id.departureDate, source, sectorString);
             }
         }
 
