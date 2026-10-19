@@ -1,24 +1,44 @@
 package fi.livi.rata.avoindata.updater.deserializers.timetable;
 
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
+import java.time.Duration;
+import java.util.Comparator;
+import java.util.Set;
+
+import org.springframework.stereotype.Component;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.train.Train;
 import fi.livi.rata.avoindata.common.utils.PreviousAndNext;
 import fi.livi.rata.avoindata.updater.deserializers.AEntityDeserializer;
-import fi.livi.rata.avoindata.updater.service.timetable.entities.*;
-import org.springframework.stereotype.Component;
-
-import java.util.Set;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleException;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 
 @Component
 public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
+
+    // Row ids are not always in the order the train passes the stations
+    // so we need to sort in the first place by times
+    private static final Comparator<ScheduleRow> SCHEDULE_ROW_ORDER = Comparator
+            .comparing(ScheduleDeserializer::getFirstTimestamp, Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparingLong(row -> row.id);
+
+    private static Duration getFirstTimestamp(final ScheduleRow row) {
+        if (row.arrival != null) {
+            return row.arrival.timestamp;
+        }
+        return row.departure != null ? row.departure.timestamp : null;
+    }
 
     @Override
     public Schedule deserialize(final JsonParser jsonParser,
@@ -32,7 +52,8 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         schedule.endDate = getNodeAsLocalDate(node.get("loppupvm"));
         schedule.trainNumber = node.get("aikataulunJunanumero").get("junanumero").asLong();
         schedule.version = node.get("version").asLong();
-        schedule.timetableType = node.get("kiireellinenHakemus") != null ? Train.TimetableType.ADHOC : Train.TimetableType.REGULAR;
+        schedule.timetableType = node.get("kiireellinenHakemus") != null ? Train.TimetableType.ADHOC
+                : Train.TimetableType.REGULAR;
         schedule.typeCode = node.get("tyyppi").asText();
         schedule.changeType = node.get("muutos").asText();
         schedule.capacityId = node.get("kapasiteettiId").asText();
@@ -68,20 +89,23 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
         schedule.runOnSunday = getNullableBoolean(node, "kulkuSu");
 
         schedule.scheduleRows = Lists.newArrayList(
-                jsonParser.objectReadContext().readValue(node.get("aikataulurivis").traverse(jsonParser.objectReadContext()), ScheduleRow[].class));
+                jsonParser.objectReadContext().readValue(
+                        node.get("aikataulurivis").traverse(jsonParser.objectReadContext()), ScheduleRow[].class));
 
-        schedule.scheduleRows.sort((o1, o2) -> Long.compare(o1.id, o2.id));
+        schedule.scheduleRows.sort(SCHEDULE_ROW_ORDER);
 
         for (final ScheduleRow scheduleRow : schedule.scheduleRows) {
             scheduleRow.schedule = schedule;
         }
 
         schedule.scheduleCancellations = Sets.newHashSet(
-                jsonParser.objectReadContext().readValue(node.get("peruminens").traverse(jsonParser.objectReadContext()), ScheduleCancellation[].class));
+                jsonParser.objectReadContext().readValue(
+                        node.get("peruminens").traverse(jsonParser.objectReadContext()), ScheduleCancellation[].class));
 
         schedule.scheduleExceptions = Sets.newHashSet(
-                jsonParser.objectReadContext().readValue(node.get("poikkeuspaivas").traverse(jsonParser.objectReadContext()), ScheduleException[].class));
-
+                jsonParser.objectReadContext().readValue(
+                        node.get("poikkeuspaivas").traverse(jsonParser.objectReadContext()),
+                        ScheduleException[].class));
 
         improveLiikeCancellationLogic(schedule);
 
@@ -90,21 +114,26 @@ public class ScheduleDeserializer extends AEntityDeserializer<Schedule> {
 
     private void improveLiikeCancellationLogic(final Schedule schedule) {
         for (final ScheduleCancellation scheduleCancellation : schedule.scheduleCancellations) {
-            if (scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY ||
+            if (scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.PARTIALLY
+                    ||
                     scheduleCancellation.scheduleCancellationType == ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE) {
-                for (final PreviousAndNext<ScheduleRow> previousAndNext : PreviousAndNext.build(schedule.scheduleRows)) {
+                for (final PreviousAndNext<ScheduleRow> previousAndNext : PreviousAndNext
+                        .build(schedule.scheduleRows)) {
 
                     final Set<ScheduleRowPart> cancelledRowParts = scheduleCancellation.cancelledRows;
                     if (previousAndNext.previous != null) {
-                        //Viimeinen lähtö peruttu, mutta nykyinen saapuminen ei => Perutaan lisää
-                        if (cancelledRowParts.contains(previousAndNext.previous.departure) && !cancelledRowParts.contains(
-                                previousAndNext.current.arrival)) {
+                        // Viimeinen lähtö peruttu, mutta nykyinen saapuminen ei => Perutaan lisää
+                        if (cancelledRowParts.contains(previousAndNext.previous.departure)
+                                && !cancelledRowParts.contains(
+                                        previousAndNext.current.arrival)) {
                             cancelledRowParts.add(previousAndNext.current.arrival);
                         }
 
-                        //Viimeinen lähtö ei ole peruttu, mutta nykyinen saapuminen on => Perutaan vähemmän
-                        if (!cancelledRowParts.contains(previousAndNext.previous.departure) && cancelledRowParts.contains(
-                                previousAndNext.current.arrival)) {
+                        // Viimeinen lähtö ei ole peruttu, mutta nykyinen saapuminen on => Perutaan
+                        // vähemmän
+                        if (!cancelledRowParts.contains(previousAndNext.previous.departure)
+                                && cancelledRowParts.contains(
+                                        previousAndNext.current.arrival)) {
                             cancelledRowParts.remove(previousAndNext.current.arrival);
                         }
                     }

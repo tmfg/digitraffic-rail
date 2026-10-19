@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 
 import fi.livi.rata.avoindata.updater.BaseTest;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
@@ -51,6 +54,25 @@ public class ScheduleDeserializerTest extends BaseTest {
         Assertions.assertEquals(Duration.parse("PT18H20M"), schedule.scheduleRows.get(0).departure.timestamp);
         Assertions.assertEquals(Duration.parse("PT33H38M"), schedule.scheduleRows.get(116).arrival.timestamp);
 
+    }
+
+    @Test
+    public void scheduleRowsAreOrderedByTimeNotById() throws Exception {
+        final ObjectNode scheduleNode = (ObjectNode) jsonMapper.readTree(new ClassPathResource("schedule.json").getFile());
+
+        // The first three stations get the highest row ids, so ordering by id would put them at the end of the trip
+        for (final JsonNode row : scheduleNode.get("aikataulurivis")) {
+            final String station = row.get("liikennepaikka").get("lyhenne").asText();
+            if (List.of("NRL", "TOH", "VSO").contains(station)) {
+                ((ObjectNode) row).put("id", row.get("id").asLong() + 1000);
+            }
+        }
+
+        final Schedule schedule = jsonMapper.treeToValue(scheduleNode, Schedule.class);
+
+        Assertions.assertEquals(
+                List.of("NRL", "TOH", "VSO", "SÄ", "TKK", "HSL", "NTH", "SUL", "PLT", "JNS", "JNS_V101", "KHI", "ENO", "UIM"),
+                schedule.scheduleRows.stream().map(row -> row.station.stationShortCode).toList());
     }
 
     private void assertSchedule(final Schedule schedule) {
