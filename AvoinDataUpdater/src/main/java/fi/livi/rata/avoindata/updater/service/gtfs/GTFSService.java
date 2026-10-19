@@ -1,18 +1,19 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import fi.livi.rata.avoindata.updater.service.gtfs.entities.Stop;
 import tools.jackson.databind.JsonNode;
 import fi.livi.rata.avoindata.updater.service.TrakediaLiikennepaikkaService;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
@@ -20,7 +21,6 @@ import fi.livi.rata.avoindata.updater.service.gtfs.observability.FeedMetricsSink
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunMetrics;
 import fi.livi.rata.avoindata.updater.service.gtfs.observability.GtfsRunScope;
 import fi.livi.rata.avoindata.updater.service.infraapi.InfraApiMapResult;
-import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -120,13 +120,30 @@ public class GTFSService {
 //    }
 
     /**
-     * Include stops that are set for passenger traffic and
-     * stops that are used in the included stop times
+     * Keeps only the stops that the feed's stop times use, and the stations they belong to.
+     * GTFS validators reject stops that no train stops at (stop_without_stop_time).
      */
-    private List<Stop> filterStops(final GTFSDto gtfsDto, final Set<String> stopIds) {
-        return gtfsDto.stops.stream().filter(
-                s -> BooleanUtils.isTrue(s.source.passengerTraffic) || stopIds.contains(s.stopId)
-                ).toList();
+    private void removeUnusedStops(final GTFSDto gtfsDto) {
+        final Set<String> usedIds = new HashSet<>();
+        for (final Trip trip : gtfsDto.trips) {
+            for (final StopTime stopTime : trip.stopTimes) {
+                usedIds.add(stopTime.getStopCodeWithPlatform());
+                usedIds.add(stopTime.stopId);
+            }
+        }
+
+        gtfsDto.stops = gtfsDto.stops.stream()
+                .filter(stop -> usedIds.contains(stop.stopId))
+                .toList();
+
+        final Set<String> remainingStationNames = gtfsDto.stops.stream()
+                .filter(stop -> stop.locationType == LOCATION_TYPE_STATION)
+                .map(stop -> stop.name)
+                .collect(Collectors.toSet());
+
+        gtfsDto.translations = gtfsDto.translations.stream()
+                .filter(translation -> remainingStationNames.contains(translation.finnishName()))
+                .toList();
     }
 
     private boolean hasAtLeastTwoStops(final Trip trip) {
@@ -137,13 +154,6 @@ public class GTFSService {
         return gtfsDto.trips.stream()
                 .filter(this::hasAtLeastTwoStops)
                 .toList();
-    }
-
-    private Set<String> collectStopIds(final List<Trip> trips) {
-        return trips.stream()
-                .flatMap(trip -> trip.stopTimes.stream())
-                .flatMap(stopTime -> Stream.of(stopTime.getStopCodeWithPlatform(), stopTime.stopId))
-                .collect(Collectors.toSet());
     }
 
     public GTFSDto createGtfs(final List<Schedule> passengerAdhocSchedules,
@@ -186,12 +196,10 @@ public class GTFSService {
                     trip.stopTimes = this.filterOutNonStops(trip.stopTimes);
                 }
 
-                // first filter out invalid trips
                 gtfsDto.trips = filterOutTripsWithLessThanTwoStops(gtfsDto);
-                // and then filter the stop-ids
-                final Set<String> stopIds = collectStopIds(gtfsDto.trips);
-                gtfsDto.stops = filterStops(gtfsDto, stopIds);
             }
+
+            removeUnusedStops(gtfsDto);
 
             gtfsWritingService.writeGTFSFiles(gtfsDto, zipFileName);
             metrics.recordFeedPublished(zipFileName);

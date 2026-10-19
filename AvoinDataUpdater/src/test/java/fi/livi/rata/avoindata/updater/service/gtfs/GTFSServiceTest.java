@@ -19,6 +19,8 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -28,9 +30,14 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STATION;
+import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -91,11 +98,7 @@ public class GTFSServiceTest {
                 .thenReturn(gtfsDto);
 
         // createGtfs resolves and validates the node snapshot before building the feed.
-        final Map<InfraApiDataset, Integer> sourceCounts = new EnumMap<>(InfraApiDataset.class);
-        sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, 1);
-        sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, 1);
-        when(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes())
-                .thenReturn(InfraApiMapResult.success(Map.of(), sourceCounts, Instant.now()));
+        mockNodes(trakediaLiikennepaikkaService);
 
         final Schedule regularSchedule = new Schedule();
         final GTFSDto result = gtfsService.createGtfs(Collections.emptyList(), List.of(regularSchedule), "gtfs-test.zip", true);
@@ -109,6 +112,77 @@ public class GTFSServiceTest {
 
         verify(gtfsWritingService).writeGTFSFiles(result, "gtfs-test.zip");
         assertSame(gtfsDto, result);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void createGtfsRemovesStopsWithoutStopTimes(final boolean filterOutNonStopsAndMuseumTrains) throws IOException {
+        final GTFSEntityService gtfsEntityService = mock(GTFSEntityService.class);
+        final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService = mock(TrakediaLiikennepaikkaService.class);
+        final GTFSService gtfsService = new GTFSService(
+                gtfsEntityService,
+                mock(GTFSWritingService.class),
+                mock(ScheduleProviderService.class),
+                mock(LastUpdateService.class),
+                mock(GTFSTripService.class),
+                trakediaLiikennepaikkaService);
+
+        final StopTime alphaOnTrackOne = createLongStop("AAA", 1);
+        alphaOnTrackOne.track = "1";
+
+        final GTFSDto gtfsDto = new GTFSDto();
+        gtfsDto.trips = new ArrayList<>(List.of(
+                createTrip("route", 1001, List.of(alphaOnTrackOne, createLongStop("BBB", 2)))
+        ));
+        // CCC has passenger traffic but no train in this feed stops there
+        gtfsDto.stops = new ArrayList<>(List.of(
+                createStop("AAA", "Alpha", LOCATION_TYPE_STATION, false),
+                createStop("AAA_0", "Alpha", LOCATION_TYPE_STOP, false),
+                createStop("AAA_1", "Alpha", LOCATION_TYPE_STOP, false),
+                createStop("AAA_2", "Alpha", LOCATION_TYPE_STOP, false),
+                createStop("BBB", "Bravo", LOCATION_TYPE_STATION, false),
+                createStop("BBB_0", "Bravo", LOCATION_TYPE_STOP, false),
+                createStop("CCC", "Charlie", LOCATION_TYPE_STATION, true),
+                createStop("CCC_0", "Charlie", LOCATION_TYPE_STOP, true),
+                createStop("CCC_1", "Charlie", LOCATION_TYPE_STOP, true)
+        ));
+        gtfsDto.translations = new ArrayList<>(List.of(
+                new Translation("Alpha", "en", "Alpha EN"),
+                new Translation("Charlie", "en", "Charlie EN")
+        ));
+
+        when(gtfsEntityService.createGTFSEntity(anyList(), anyList(), anyMap(), any(java.time.LocalDate.class),
+                any(FailedSegments.class)))
+                .thenReturn(gtfsDto);
+        mockNodes(trakediaLiikennepaikkaService);
+
+        final GTFSDto result = gtfsService.createGtfs(Collections.emptyList(), List.of(new Schedule()), "gtfs-test.zip",
+                filterOutNonStopsAndMuseumTrains);
+
+        assertEquals(Set.of("AAA", "AAA_1", "BBB", "BBB_0"),
+                result.stops.stream().map(stop -> stop.stopId).collect(Collectors.toSet()));
+        assertEquals(List.of("Alpha"), result.translations.stream().map(Translation::finnishName).toList());
+
+        final Set<String> stopIds = result.stops.stream().map(stop -> stop.stopId).collect(Collectors.toSet());
+        result.trips.stream()
+                .flatMap(trip -> trip.stopTimes.stream())
+                .forEach(stopTime -> assertTrue(stopIds.contains(stopTime.getStopCodeWithPlatform())));
+    }
+
+    private static void mockNodes(final TrakediaLiikennepaikkaService trakediaLiikennepaikkaService) {
+        final Map<InfraApiDataset, Integer> sourceCounts = new EnumMap<>(InfraApiDataset.class);
+        sourceCounts.put(InfraApiDataset.RAUTATIELIIKENNEPAIKAT, 1);
+        sourceCounts.put(InfraApiDataset.LIIKENNEPAIKANOSAT, 1);
+        when(trakediaLiikennepaikkaService.getTrakediaLiikennepaikkaNodes())
+                .thenReturn(InfraApiMapResult.success(Map.of(), sourceCounts, Instant.now()));
+    }
+
+    private static Stop createStop(final String stopId, final String name, final int locationType,
+                                   final boolean passengerTraffic) {
+        final Stop stop = createStop(stopId, name);
+        stop.locationType = locationType;
+        stop.source.passengerTraffic = passengerTraffic;
+        return stop;
     }
 
     private static Agency createAgency(final int agencyId) {
