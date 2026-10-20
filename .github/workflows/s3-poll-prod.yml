@@ -44,8 +44,9 @@ jobs:
           echo updating NEW PROD etj2-api to version ${{ steps.versions.outputs.etj2 }}
           gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=etj2-api -f config-branch=master -f etj2_suffix=${{ steps.versions.outputs.etj2 }}
         shell: bash
-      - name: Update etj2-api
-        if: ${{ steps.versions.outputs.etj2 }}
+      - name: Update etj2-api(old prod)
+        if: false
+        # if: ${{ steps.versions.outputs.etj2 }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -63,8 +64,9 @@ jobs:
           gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=infra-api -f config-branch=master -f infra_suffix=${{ steps.versions.outputs.infra }}
         shell: bash
 
-      - name: Update infra-api
-        if: ${{ steps.versions.outputs.infra }}
+      - name: Update infra-api(old prod)
+        if: false
+        #if: ${{ steps.versions.outputs.infra }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
