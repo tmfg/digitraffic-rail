@@ -43,6 +43,7 @@ jobs:
         run: |
           echo updating NEW PROD etj2-api to version ${{ steps.versions.outputs.etj2 }}
           gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=etj2-api -f config-branch=master -f etj2_suffix=${{ steps.versions.outputs.etj2 }}
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_prd.imported
         shell: bash
       - name: Update etj2-api(old prod)
         if: false
@@ -52,7 +53,6 @@ jobs:
         run: |
           echo updating PROD etj2-api to version ${{ steps.versions.outputs.etj2 }}
           gh workflow run deploy-from-repo.yml -r rail-production -f env=prod -f application-name=etj2-api -f config-branch=rail-production -f suffix=${{ steps.versions.outputs.etj2 }}
-          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/etj2_prd.imported
         shell: bash
       - name: Update infra-api(new prod)
 #        if: false
@@ -62,6 +62,7 @@ jobs:
         run: |
           echo updating NEW PROD infra-api to version ${{ steps.versions.outputs.infra }}
           gh workflow run deploy-from-repo.yml -r master -f env=prod -f application-name=infra-api -f config-branch=master -f infra_suffix=${{ steps.versions.outputs.infra }}
+          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_prd.imported
         shell: bash
 
       - name: Update infra-api(old prod)
@@ -72,5 +73,4 @@ jobs:
         run: |
           echo updating PROD infra-api to version ${{ steps.versions.outputs.infra }}
           gh workflow run deploy-from-repo.yml -r rail-production -f env=prod -f application-name=infra-api -f config-branch=rail-production -f suffix=${{ steps.versions.outputs.infra }}
-          aws s3 rm s3://${{ secrets.EXPORT_BUCKET_NAME }}/infra_prd.imported
         shell: bash
