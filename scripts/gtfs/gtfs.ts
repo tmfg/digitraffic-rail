@@ -74,9 +74,9 @@ function usage(): string {
 Options:
   -e, --env <tst|prd>   Environment to query (default: ${DEFAULT_ENV})
   -a, --api <api>       API to fetch (default: ${DEFAULT_API})
-  -d, --date <date>     Fetch data for a given date (YYYY-MM-DD).
-                        Maps to the 'on_date' query parameter; defaults to
-                        the current date when omitted.
+  -d, --date <date>     Fetch the zip package generated on a given date
+                        (YYYY-MM-DD). Maps to the 'on_date' query parameter;
+                        zip APIs only. Defaults to the current package.
   -o, --out <file>      Write output to a file instead of stdout
                         (required for zip APIs)
   -h, --help            Show this help
@@ -195,6 +195,11 @@ async function main(): Promise<void> {
   const url = new URL(definition.path, HOSTS[env]);
 
   if (date !== undefined) {
+    if (definition.kind === "realtime") {
+      throw new Error(
+        `API '${api}' only serves the current feed; --date works with the zip APIs only.`,
+      );
+    }
     url.searchParams.set("on_date", date);
   }
 

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
@@ -67,17 +68,15 @@ public class GtfsController {
     @Operation(summary = "Returns GTFS Realtime locations")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-locations", produces = "application/protobuf")
     @Transactional(readOnly = true)
-    public byte[] getGtfsRtLocations(final HttpServletResponse response,
-            @Parameter(description = DATE_PARAM_DESCRIPTION) @RequestParam(name = "on_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate onDate) {
-        return getData(response, "gtfs-rt-locations", onDate, CACHE_SECONDS_FOR_RT_LOCATIONS);
+    public byte[] getGtfsRtLocations(final HttpServletResponse response) {
+        return getData(response, RealtimeFeedFileNames.GTFS_RT_LOCATIONS, null, CACHE_SECONDS_FOR_RT_LOCATIONS);
     }
 
     @Operation(summary = "Returns GTFS Realtime updates")
     @RequestMapping(method = RequestMethod.GET, path = "gtfs-rt-updates", produces = "application/protobuf")
     @Transactional(readOnly = true)
-    public byte[] getGtfsRtUpdates(final HttpServletResponse response,
-            @Parameter(description = DATE_PARAM_DESCRIPTION) @RequestParam(name = "on_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate onDate) {
-        return getData(response, "gtfs-rt-updates", onDate, CACHE_SECONDS_FOR_RT_UPDATES);
+    public byte[] getGtfsRtUpdates(final HttpServletResponse response) {
+        return getData(response, RealtimeFeedFileNames.GTFS_RT_UPDATES, null, CACHE_SECONDS_FOR_RT_UPDATES);
     }
 
     @Hidden

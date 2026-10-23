@@ -37,6 +37,8 @@ class GtfsControllerIntegrationTest extends MockMvcBaseTest {
 
         private static final String GTFS_PASSENGER_URL = "/api/v1/trains/gtfs-passenger.zip";
         private static final String GTFS_PASSENGER_FILENAME = "gtfs-passenger.zip";
+        private static final String GTFS_RT_UPDATES_URL = "/api/v1/trains/gtfs-rt-updates";
+        private static final String GTFS_RT_UPDATES_FILENAME = "gtfs-rt-updates";
 
         @MockitoBean
         private GeneratedExportRepository generatedExportRepository;
@@ -129,6 +131,17 @@ class GtfsControllerIntegrationTest extends MockMvcBaseTest {
                 // does not accept
                 mockMvc.perform(get(GTFS_PASSENGER_URL).param("date", "2026-09-10"))
                                 .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void givenRealtimeFeed_whenGet_thenServesNewestExport() throws Exception {
+                final byte[] feed = "rt-feed".getBytes();
+                when(generatedExportRepository.findFirstByFileNameOrderByIdDesc(eq(GTFS_RT_UPDATES_FILENAME)))
+                                .thenReturn(export(feed, DateProvider.nowInHelsinki()));
+
+                mockMvc.perform(get(GTFS_RT_UPDATES_URL))
+                                .andExpect(status().isOk())
+                                .andExpect(content().bytes(feed));
         }
 
         private static GeneratedExport export(final byte[] data, final ZonedDateTime created) {

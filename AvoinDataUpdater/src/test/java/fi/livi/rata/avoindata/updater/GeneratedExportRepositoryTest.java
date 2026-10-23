@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,6 +73,41 @@ class GeneratedExportRepositoryTest extends BaseTest {
 
         assertTrue(result.isPresent());
         assertEquals(created.toInstant(), result.get());
+    }
+
+    @Test
+    void findLatestIdByFileNameCreatedBeforeIgnoresNewerAndOtherFiles() {
+        final ZonedDateTime cutoff = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        saveExport("gtfs-rt-locations", cutoff.minusMinutes(20));
+        final GeneratedExport newestExpired = saveExport("gtfs-rt-locations", cutoff.minusMinutes(10));
+        saveExport("siri-et.xml", cutoff.minusMinutes(5));
+        saveExport("gtfs-rt-locations", cutoff.plusMinutes(1));
+
+        assertEquals(Optional.of(newestExpired.id),
+                repository.findLatestIdByFileNameCreatedBefore("gtfs-rt-locations", cutoff));
+        assertFalse(repository.findLatestIdByFileNameCreatedBefore("gtfs-rt-updates", cutoff).isPresent());
+    }
+
+    @Test
+    void deleteBatchByFileNameUpToIdDeletesOnlyThatFileUpToTheIdAndAtMostTheLimit() {
+        final ZonedDateTime created = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        saveExport("siri-et.xml", created);
+        saveExport("siri-et.xml", created.plusMinutes(1));
+        final GeneratedExport third = saveExport("siri-et.xml", created.plusMinutes(2));
+        final GeneratedExport newest = saveExport("siri-et.xml", created.plusMinutes(3));
+        final GeneratedExport zip = saveExport("gtfs-all.zip", created);
+
+        assertEquals(2, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
+        assertEquals(Set.of(third.id, newest.id, zip.id), remainingIds());
+
+        assertEquals(1, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
+        assertEquals(Set.of(newest.id, zip.id), remainingIds());
+
+        assertEquals(0, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
+    }
+
+    private Set<Long> remainingIds() {
+        return repository.findAll().stream().map(export -> export.id).collect(Collectors.toSet());
     }
 
     private GeneratedExport saveExport(final String fileName, final ZonedDateTime created) {

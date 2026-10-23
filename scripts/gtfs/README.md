@@ -41,7 +41,7 @@ pnpm gtfs -h
 | --- | --- |
 | `-e`, `--env <tst\|prd>` | Environment to query. Default `prd`. |
 | `-a`, `--api <api>` | API to fetch. Default `locations`. |
-| `-d`, `--date <YYYY-MM-DD>` | Fetch data for a given date, via the `on_date` query parameter. Defaults to the current date. |
+| `-d`, `--date <YYYY-MM-DD>` | Fetch the zip package generated on a given date, via the `on_date` query parameter. Zip APIs only; realtime feeds are kept for an hour and only the current feed is served. Defaults to the current package. |
 | `-o`, `--out <file>` | Write output to a file instead of stdout. Required for the zip APIs. |
 | `-h`, `--help` | Show help. |
 
@@ -94,10 +94,10 @@ unzip -l gtfs-passenger.zip
 unzip -p gtfs-passenger.zip trips.txt | head
 ```
 
-Fetch data for a specific date:
+Fetch the zip package generated on a specific date:
 
 ```bash
-pnpm gtfs --api updates --date 2026-10-01
+pnpm gtfs --api passenger-zip --date 2026-10-01 --out gtfs-passenger-2026-10-01.zip
 ```
 
 Save realtime JSON to a file:

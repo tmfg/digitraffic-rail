@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnProperty(name = "avoindataserver.siri.et.enabled", havingValue = "true")
 public class SiriEtController {
 
-    private static final String ET_FILENAME = "siri-et.xml";
+    private static final String ET_FILENAME = RealtimeFeedFileNames.SIRI_ET;
     private static final int CACHE_SECONDS = 30;
     // Real-time feed is regenerated ~every minute; older than this is stale.
     private static final int FRESH_WITHIN_MINUTES = 5;
