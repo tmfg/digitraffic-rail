@@ -5,3 +5,8 @@ ignoreScripts: true
 # esbuild (via tsx) needs its postinstall to fetch its native binary
 onlyBuiltDependencies:
   - esbuild
+
+# Security overrides: exact, checked versions (advisories + 7-day cooldown).
+# markdown-it: GHSA-gfr2-rv44-r23c, GHSA-vfgh-jcmw-g37q (via gtfs-realtime-bindings > protobufjs-cli > jsdoc)
+overrides:
+  markdown-it@<14.3.3: "14.3.3"
