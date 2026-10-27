@@ -57,19 +57,10 @@ jobs:
         run: |
           GIT_SHA=$(git rev-parse --short HEAD)
           echo "sha_short=$GIT_SHA" >> $GITHUB_OUTPUT
-      - name: Log workflow inputs and environment
-        run: |
-          echo "## Workflow Inputs" >> $GITHUB_STEP_SUMMARY
-          echo "| Name | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| env | ${{ github.event.inputs.env }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ref | ${{ github.event.inputs.ref }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| config-repo-branch | ${{ github.event.inputs.config-repo-branch }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| install-server | ${{ github.event.inputs.install-server }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| install-updater | ${{ github.event.inputs.install-updater }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| install-mqtt | ${{ github.event.inputs.install-mqtt }} |" >> $GITHUB_STEP_SUMMARY
-
-          echo "" >> $GITHUB_STEP_SUMMARY
+      - name: Log workflow inputs
+        uses: tmfg/digitraffic-actions@24e33d7e6d14273dde9094c5172e8b440a70440c # log-workflow-inputs/v1
+        with:
+          inputs: ${{ toJSON(inputs) }}
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:

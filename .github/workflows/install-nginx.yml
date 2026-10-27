@@ -16,6 +16,10 @@ jobs:
     if: github.repository != 'tmfg/digitraffic-rail'
     runs-on: ubuntu-26.04
     steps:
+      - name: Log workflow inputs
+        uses: tmfg/digitraffic-actions@24e33d7e6d14273dde9094c5172e8b440a70440c # log-workflow-inputs/v1
+        with:
+          inputs: ${{ toJSON(inputs) }}
       - name: Create parameters.txt
         run: |
           echo "User ${{ github.actor }} started install on $(date)" > parameters.txt

@@ -17,6 +17,10 @@ jobs:
       contents: read
       actions: read
     steps:
+      - name: Log workflow inputs
+        uses: tmfg/digitraffic-actions@24e33d7e6d14273dde9094c5172e8b440a70440c # log-workflow-inputs/v1
+        with:
+          inputs: ${{ toJSON(inputs) }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
