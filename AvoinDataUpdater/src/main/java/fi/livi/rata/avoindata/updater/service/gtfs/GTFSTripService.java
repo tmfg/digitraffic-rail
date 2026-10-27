@@ -286,8 +286,8 @@ public class GTFSTripService {
         // 2 - No bicycles are allowed on this trip.
         return switch (s.trainType.name) {
             case "PVS", "PVV", "MUS" -> 0;
-            case "HL", "H", "P", "HDM", "IC2", "IC", "HSM", "PYO", "HLV" -> 1;
-            case "S", "AE" -> 2;
+            case "HL", "P", "HDM", "IC2", "IC", "HSM", "PYO", "HLV" -> 1;
+            case "S", "AE", "H" -> 2;
             default ->
 
                 // for all other types we leave it empty
