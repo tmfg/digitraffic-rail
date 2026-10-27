@@ -221,7 +221,7 @@ class SiriEtGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.get(0).data);
         assertTrue(exports.get(0).data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data));
+        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data, "et"));
     }
 
     // ===== GEN-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====

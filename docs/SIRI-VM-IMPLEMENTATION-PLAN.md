@@ -327,6 +327,18 @@ Only stations PETI doesn't know, or publishes no platforms for, still fall throu
 a quay ref and reported to the PETI maintainers — a data-quality incident, not a standing condition. No schema
 change needed here.
 
+### SIRI validation logging (done)
+
+- `InvalidSiriOutputException` message in `SiriEtGenerationService` / `SiriVmGenerationService` now says
+  "SIRI 2.0 XSD validation" (it used to say "structural (JAXB) validation", which was wrong).
+- `SiriWritingService.isSchemaValid(xml, feed)` logs `rail.siri.feed=et|vm|sx` on every `rail.siri.validation`
+  line, with the feed name passed in by the caller, so ET and VM failures can be told apart.
+
+### Update times endpoint (to do)
+
+Add the SIRI feeds (ET, VM, later SX) to `/api/info/v1/update-times`, so their freshness is visible like the
+other data sets.
+
 ## Unknown live-track fallback to the planned track (ET and VM)
 
 ### Problem

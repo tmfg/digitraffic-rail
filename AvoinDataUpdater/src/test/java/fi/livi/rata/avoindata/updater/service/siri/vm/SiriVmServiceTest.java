@@ -86,7 +86,7 @@ class SiriVmServiceTest {
 
         assertEquals(1, result.stats().locationsReceived());
         assertEquals(1, result.stats().activitiesEmitted());
-        assertTrue(writingService.isSchemaValid(result.bytes()), "Generated SIRI-VM output must be schema-valid");
+        assertTrue(writingService.isSchemaValid(result.bytes(), "vm"), "Generated SIRI-VM output must be schema-valid");
     }
 
     @Test

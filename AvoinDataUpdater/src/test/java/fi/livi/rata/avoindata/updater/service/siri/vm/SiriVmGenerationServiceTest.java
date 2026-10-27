@@ -355,7 +355,7 @@ class SiriVmGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.getFirst().data);
         assertTrue(exports.getFirst().data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data));
+        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data, "vm"));
     }
 
     // ===== GEN-VM-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====
@@ -663,7 +663,7 @@ class SiriVmGenerationServiceTest {
         // reaches isSchemaValid - this test would then pass for any build failure, not just a schema-invalid
         // one). Only isSchemaValid is stubbed, to force generation to fail specifically at the VALIDATE stage.
         final SiriWritingService invalidService = spy(new SiriWritingService());
-        doReturn(false).when(invalidService).isSchemaValid(any());
+        doReturn(false).when(invalidService).isSchemaValid(any(), any());
 
         final SiriVmGenerationService serviceWithInvalidWriter = new SiriVmGenerationService(
                 stationRepository,

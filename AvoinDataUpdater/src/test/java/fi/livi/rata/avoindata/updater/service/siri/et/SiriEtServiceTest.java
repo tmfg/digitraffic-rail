@@ -1452,7 +1452,7 @@ class SiriEtServiceTest {
         final byte[] xml = writingService.marshalToBytes(result);
 
         // then
-        assertTrue(writingService.isSchemaValid(xml));
+        assertTrue(writingService.isSchemaValid(xml, "et"));
     }
 
     // --- ET-32: Cancelled-train document passes XSD validation ---
@@ -1468,7 +1468,7 @@ class SiriEtServiceTest {
         final byte[] xml = writingService.marshalToBytes(result);
 
         // then
-        assertTrue(writingService.isSchemaValid(xml));
+        assertTrue(writingService.isSchemaValid(xml, "et"));
     }
 
     // ===== AREA 10 — IsCompleteStopSequence flag =====

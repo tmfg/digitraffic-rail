@@ -126,9 +126,9 @@ public class SiriVmGenerationService {
             outputSize = result.bytes().length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(result.bytes())) {
+            if (!siriWritingService.isSchemaValid(result.bytes(), "vm")) {
                 // Never publish structurally invalid SIRI: skip the persist so the last good feed keeps serving.
-                throw new InvalidSiriOutputException("SIRI-VM output failed structural (JAXB) validation");
+                throw new InvalidSiriOutputException("SIRI-VM output failed SIRI 2.0 XSD validation");
             }
 
             stage = Stage.PERSIST;
