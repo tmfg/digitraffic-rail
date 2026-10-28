@@ -127,6 +127,18 @@ public class SiriSxGenerationServiceTest {
     }
 
     @Test
+    public void noMessagesStoresValidEmptyFile() {
+        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of());
+
+        service.generate();
+
+        final String xml = new String(firstStored().data, StandardCharsets.UTF_8);
+        assertTrue(xml.contains("<SituationExchangeDelivery"));
+        assertTrue(!xml.contains("<PtSituationElement"));
+        verify(ramiMessageRepository, never()).findFirstCreated(any());
+    }
+
+    @Test
     public void changedSituationsStoreNewFile() {
         final GeneratedExport last = new GeneratedExport();
         last.data = "<Siri/>".getBytes(StandardCharsets.UTF_8);

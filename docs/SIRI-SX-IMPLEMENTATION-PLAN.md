@@ -272,7 +272,7 @@ Each step is small and can be checked on its own.
   the `created` time of the last file is updated.
 - Log line `rail.siri.generation` with `rail.siri.service=sx`.
 
-### Step 6 — Serve it
+### Step 6 — Serve it (done)
 - `SiriSxController`, only when `avoindataserver.siri.sx.enabled=true`; same caching headers as ET / VM;
   404 when nothing has been generated yet.
 
@@ -293,6 +293,6 @@ Each step is small and can be checked on its own.
 | 3. Read messages | Done: `RamiMessageRepository` (latest active versions, first creation time), tested |
 | 4. Convert and write | Done: `SxSituationConverter`, `SxSituationMarshaller`, XSD-valid, tested |
 | 5. Scheduled generation | Done: `SiriSxGenerationService` (includes convert + write), `SiriSxUpdatingService`, tested |
-| 6. Endpoint | Not started |
+| 6. Serve it | Done: `SiriSxController`, enabled and disabled tests |
 | 7. Update times | Not started |
 | 8. Tests and docs | Not started |

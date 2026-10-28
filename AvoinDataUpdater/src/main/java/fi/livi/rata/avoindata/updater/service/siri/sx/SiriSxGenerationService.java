@@ -91,9 +91,10 @@ public class SiriSxGenerationService {
             final List<RamiMessage> ramiMessages =
                     ramiMessageRepository.findLatestActive(now, now.minusHours(SxSituationConverter.CLOSED_HOURS));
             messages = ramiMessages.size();
-            final Map<String, ZonedDateTime> firstCreated = ramiMessageRepository
-                    .findFirstCreated(ramiMessages.stream().map(m -> m.id).distinct().toList()).stream()
-                    .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
+            final List<String> ids = ramiMessages.stream().map(m -> m.id).distinct().toList();
+            final Map<String, ZonedDateTime> firstCreated = ids.isEmpty() ? Map.of()
+                    : ramiMessageRepository.findFirstCreated(ids).stream()
+                            .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
 
             final SxSituationConverter converter = new SxSituationConverter(
                     new InMemoryStationUicLookup(stationRepository.findAll()),
