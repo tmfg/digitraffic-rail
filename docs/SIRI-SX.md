@@ -1,13 +1,64 @@
-# SIRI-SX (Situation Exchange) Data Mapping
+# SIRI-SX (Situation Exchange)
 
-Field-by-field status against the Entur SIRI-SX profile (v1.1,
-https://entur.atlassian.net/wiki/spaces/PUBLIC/pages/637370605/SIRI-SX). The rules behind the mapping (data source,
-closing, text cutting, `ReportType`, filtering) are in [`SIRI.md`](SIRI.md), section SIRI-SX.
+SIRI-SX publishes situation messages: disruption and passenger information that is shown on station and train
+displays and spoken in announcements. The overall SIRI overview is in [`SIRI.md`](SIRI.md).
+
+Flags (planned): `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
+`updater.siri.sx.fixed-rate-ms` (default 60000). Endpoint: `GET /api/v1/siri/sx`. Generated file: `siri-sx.xml`.
+
+Profile: Entur SIRI-SX v1.1, https://entur.atlassian.net/wiki/spaces/PUBLIC/pages/637370605/SIRI-SX.
+
+## Data source
+
+RAMI messages, the same messages that are shown on station and train displays and spoken in announcements.
+Tables: `rami_message` (one row per version), `rami_message_video` (screen text, fi/sv/en), `rami_message_audio`
+(spoken text) and `rami_message_station`. Only the latest version of each message counts. Two kinds exist: station
+messages (`SCHEDULED_MESSAGE`) and train messages (`MONITORED_JOURNEY_SCHEDULED_MESSAGE`, with train number,
+departure date and journey reference).
+
+The situations are read from the source on every run and the whole file is built from them; there is no own table for
+them. A source gives the situations that are active now as plain records, so another source can be added later
+without changing the rest. `SituationNumber` carries the source (`FTR:SituationNumber:RAMI-<id>`) so that ids from
+different sources never clash.
+
+### Possible sources for situations
+
+All disruption-type data in the project was reviewed. Only RAMI has ready passenger text. Other sources could be added later.
+
+| Source | What it is | Suitable for SX? |
+|---|---|---|
+| RAMI messages (`rami_message`) | Ready screen and spoken texts in fi/sv/en, target is a train or a station | **Used** |
+| Delay causes (`Cause` on a `TimeTableRow`; `CategoryCode`, `DetailedCategoryCode`, `ThirdCategoryCode`) | Cause codes on a timetable row. The codes have `PassengerTerm` texts in fi/sv/en | Possible. The text is short and the target is a train. Overlaps with RAMI: about 48 % of RAMI train messages start with "Myöhästymisen syy…" |
+| Track work notices (`TrackWorkNotification`, RUMA) | Planned track work with time ranges and locations (operating point, section between operating points, geometry) | Target could be found, but there is no passenger text. The notice is made for traffic control and contractors |
+| Traffic restrictions (`TrafficRestrictionNotification`, RUMA) | Speed and weight limits with validity time and location | No passenger text, mostly technical content |
+| Train running messages (`TrainRunningMessage`) | Train movement on a track section | No. These are position events, not notices |
+
+## Rules
+
+- A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
+  requirement), then left out.
+- `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
+  with `...` added, at most 160 characters (profile limit). A text that already fits is used as is.
+- Languages fi, sv and en, each with `xml:lang`. A language without text is left out. If there is no screen
+  text, the spoken text is used. If there is neither, the message is dropped.
+- Station message → `StopPlaces` (PETI stop place of the station; RAMI gives no platform). Train message →
+  `VehicleJourneys` (published NeTEx journey, line and operator, like ET). A message that cannot be tied to the
+  stop place or the published journey is dropped and counted in the generation log.
+- `ReportType` is `incident` for train messages and `general` for station messages. RAMI has no field for it, so
+  this is a rough rule and some messages get the wrong value (for example a train message that only says which
+  cars the train has, or a station message about closed platforms).
+- Train messages starting with "Seuraava pysähdys" ("next stop") are not published; they are plain display
+  information, not situations.
+- The XML is built on every run and is deterministic (messages sorted by id, languages in a fixed order, no
+  clock times inside a message). If the content is the same as the last saved file, no new file is stored and
+  only the time of the last one is updated.
+
+## Field mapping
 
 Status: ✅ implemented, ❌ not implemented (no data or not needed). Cardinality is from the profile
 (`1:1` required, `0:1` optional, `1:*` one or more).
 
-## Envelope (`ServiceDelivery` and `SituationExchangeDelivery`)
+### Envelope (`ServiceDelivery` and `SituationExchangeDelivery`)
 
 The messages are wrapped in two levels. `ServiceDelivery` is shared with ET and VM. `SituationExchangeDelivery` is the
 SX part, inside it:
@@ -41,7 +92,7 @@ subscription fields such as `SubscriberRef`, request fields such as `RequestMess
 | `SituationExchangeDelivery/@version` | `SituationExchangeDeliveryStructure` | 0:1 | ✅ | SIRI version of the delivery |
 | `SituationExchangeDelivery/Situations/PtSituationElement` | `SituationExchangeDeliveryStructure` | 1:* | ✅ | One per RAMI message |
 
-## Message (`PtSituationElement`)
+### Message (`PtSituationElement`)
 
 ```
 PtSituationElement < SituationElementStructure < AbstractSituationElementStructure
@@ -52,7 +103,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 
 | Field | Defined in | Cardinality | Status | Value / reason |
 |---|---|---|---|---|
-| `SituationNumber` | `AbstractSituationElementStructure` | 1:1 | ✅ | `FTR:SituationNumber:<RAMI message id>` |
+| `SituationNumber` | `AbstractSituationElementStructure` | 1:1 | ✅ | `FTR:SituationNumber:RAMI-<RAMI message id>` (source in the id so that other sources cannot clash) |
 | `Version` | `AbstractSituationElementStructure` | 0:1 | ✅ | RAMI `version` |
 | `CreationTime` | `AbstractSituationElementStructure` | 1:1 | ✅ | `created_source` of the first version |
 | `VersionedAtTime` | `SituationElementStructure` | 0:1 | ✅ | `created_source` of the latest version |
@@ -61,7 +112,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 | `Progress` | `PtSituationElement` | 1:1 | ✅ | `closed` if `deleted` is set, otherwise `open` |
 | `ValidityPeriod` | `PtSituationElement` | 1:* | ✅ | `start_validity` – `end_validity`. A closed message ends 5 hours after the deletion time |
 | `UndefinedReason` | `PtSituationElement` | 1:1 | ✅ | Always empty (required by the format, not used) |
-| `ReportType` | `PtSituationElement` | 1:1 | ✅ | Train message `incident`, station message `general` (rough rule, see `SIRI.md`) |
+| `ReportType` | `PtSituationElement` | 1:1 | ✅ | Train message `incident`, station message `general` (rough rule, see Rules above) |
 | `Summary` | `PtSituationElement` | 1:* | ✅ | Screen text cut to 160 characters, one per language |
 | `Description` | `PtSituationElement` | 0:* | ✅ | Full text, one per language |
 | `Affects` | `PtSituationElement` | 1:1 | ✅ | See below |
@@ -71,7 +122,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 | `Advice` | `PtSituationElement` | 0:* | ❌ | RAMI texts do not separate advice from the message |
 | `InfoLinks` | `PtSituationElement` | 0:1 | ❌ | Links exist only inside the text |
 
-## Target of the message (`PtSituationElement/Affects`)
+### Target of the message (`PtSituationElement/Affects`)
 
 `Affects` is of type `AffectsScopeStructure`. The "Defined in" column names the type that holds the last part of the
 path (the structure the field belongs to). Exactly one of these is used per message.

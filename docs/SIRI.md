@@ -6,6 +6,7 @@ the shared background, the common architecture pattern used by every service, an
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
 For VM-specific implementation history/checklists, see [`SIRI-VM-IMPLEMENTATION-PLAN.md`](SIRI-VM-IMPLEMENTATION-PLAN.md).
+For SIRI-SX data source, rules and field mapping, see [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Canonical source material
 
@@ -235,30 +236,7 @@ feed always holds the complete set of valid messages in one XML file.
 - **Flags** (planned): `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
   `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:
   `siri-sx.xml`.
-- **Data source**: RAMI messages, the same messages that are shown on station and train displays and spoken in
-  announcements: tables `rami_message` (one row per version), `rami_message_video` (screen text, fi/sv/en),
-  `rami_message_audio` (spoken text) and `rami_message_station`. Only the latest version of each message counts.
-  Two kinds exist: station messages (`SCHEDULED_MESSAGE`) and train messages
-  (`MONITORED_JOURNEY_SCHEDULED_MESSAGE`, with train number, departure date and journey reference).
-- **Rules**:
-  - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
-    requirement), then left out.
-  - `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
-    with `...` added, at most 160 characters (profile limit). A text that already fits is used as is.
-  - Languages fi, sv and en, each with `xml:lang`. A language without text is left out. If there is no screen
-    text, the spoken text is used. If there is neither, the message is dropped.
-  - Station message → `StopPlaces` (PETI stop place of the station; RAMI gives no platform). Train message →
-    `VehicleJourneys` (published NeTEx journey, line and operator, like ET). A message that cannot be tied to the
-    stop place or the published journey is dropped and counted in the generation log.
-  - `ReportType` is `incident` for train messages and `general` for station messages. RAMI has no field for it, so
-    this is a rough rule and some messages get the wrong value (for example a train message that only says which
-    cars the train has, or a station message about closed platforms).
-  - Train messages starting with "Seuraava pysähdys" ("next stop") are not published; they are plain display
-    information, not situations.
-  - The XML is built on every run and is deterministic (messages sorted by id, languages in a fixed order, no
-    clock times inside a message). If the content is the same as the last saved file, no new file is stored and
-    only the time of the last one is updated.
-- **Field-by-field status**: see [`SIRI-SX.md`](SIRI-SX.md).
+- **Details** (data source, other possible sources, rules, field-by-field status): [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Configuration reference
 

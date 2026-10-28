@@ -4,7 +4,7 @@
 > Background and shared rules: [`SIRI.md`](SIRI.md). Same pattern as ET and VM:
 > [`SIRI-VM-IMPLEMENTATION-PLAN.md`](SIRI-VM-IMPLEMENTATION-PLAN.md).
 
-> The permanent description lives in `SIRI.md` (section SIRI-SX, the rules) and `SIRI-SX.md` (field-by-field table).
+> The permanent description (data source, rules, field mapping) lives in `SIRI-SX.md`; `SIRI.md` has only a summary.
 > Keep them in step while working; this plan is deleted before the release.
 
 ## Goal
@@ -127,7 +127,7 @@ journey is not published.
 
 | SIRI-SX field | From RAMI | Status |
 |---|---|---|
-| `SituationNumber` | `FTR:SituationNumber:<id>` | Mapped |
+| `SituationNumber` | `FTR:SituationNumber:RAMI-<id>` | Mapped |
 | `Version` | `version` | Mapped |
 | `CreationTime` | `created_source` of the first version | Mapped |
 | `VersionedAtTime` | `created_source` of the latest version | Mapped |
@@ -244,12 +244,20 @@ Each step is small and can be checked on its own.
 ### Step 2 — Data source (done: RAMI tables, see above) and the decisions above
 
 ### Step 3 — Read the messages
-- Repository / query for the chosen source. Keep only messages that are active now (or closed and still
-  inside the 5 hour window).
+- Situations are read from the sources on every run and built into the file as a whole. No own table: the file is
+  already the stored result, and a copy of the source data would need syncing (deletions, versions, errors).
+- Small interface: each source returns the situations that are active now (or closed and still inside the 5 hour
+  window) as `SxSituation` records. `SiriSxGenerationService` collects them, sorts them and writes the XML. Only one
+  method, nothing more.
+- First and only source now: RAMI (entities and repository for `rami_message` with video, audio and station texts,
+  latest version only). Other possible sources are listed in `SIRI-SX.md` ("Possible sources for situations") and are
+  not part of this ticket.
+- `SituationNumber` has the source in it so that ids from different sources never clash:
+  `FTR:SituationNumber:RAMI-<id>`.
 
 ### Step 4 — Convert and write
 - `SxSituationConverter`: message → small plain record (`SxSituation`), no JAXB types.
-  - `SituationNumber` = `FTR:SituationNumber:<id>`
+  - `SituationNumber` = `FTR:SituationNumber:RAMI-<id>`
   - `Progress` open / closed, `ValidityPeriod`, `Summary` (cut to 160 characters), optional `Description`
   - `Affects` from the chosen scope; messages that cannot be tied to anything are dropped
 - `SxSituationMarshaller`: record → SIRI JAXB tree (`SituationExchangeDelivery`, `PtSituationElement`).
@@ -271,7 +279,7 @@ Each step is small and can be checked on its own.
 
 ### Step 8 — Tests and docs
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
-- Update `SIRI.md` (SX section, configuration table) and the Swagger / API docs if the endpoint is listed there.
+- Update `SIRI-SX.md` and `SIRI.md` (SX summary, configuration table) and the Swagger / API docs if the endpoint is listed there.
 
 ## Progress
 
