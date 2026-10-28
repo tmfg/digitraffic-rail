@@ -41,6 +41,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 public class SiriSxGenerationServiceTest {
 
     private RamiMessageRepository ramiMessageRepository;
+    private NeTExPublishedJourneyRepository publishedJourneyRepository;
     private GeneratedExportRepository generatedExportRepository;
     private SiriSxGenerationService service;
 
@@ -49,7 +50,7 @@ public class SiriSxGenerationServiceTest {
         ramiMessageRepository = mock(RamiMessageRepository.class);
         generatedExportRepository = mock(GeneratedExportRepository.class);
         final StationRepository stationRepository = mock(StationRepository.class);
-        final NeTExPublishedJourneyRepository publishedJourneyRepository = mock(NeTExPublishedJourneyRepository.class);
+        publishedJourneyRepository = mock(NeTExPublishedJourneyRepository.class);
         final PetiStopSource petiStopSource = mock(PetiStopSource.class);
 
         final Station station = new Station();
@@ -136,6 +137,27 @@ public class SiriSxGenerationServiceTest {
         assertTrue(xml.contains("<SituationExchangeDelivery"));
         assertTrue(!xml.contains("<PtSituationElement"));
         verify(ramiMessageRepository, never()).findFirstCreated(any());
+    }
+
+    @Test
+    public void publishedJourneysAreReadForDeparturesOfTrainMessages() {
+        final LocalDate departure = LocalDate.now().plusDays(2);
+        final RamiMessage trainMessage = ramiMessageRepository.findLatestActive(null, null).getFirst();
+        trainMessage.id = "MVM1";
+        trainMessage.messageType = MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
+        trainMessage.trainNumber = 1;
+        trainMessage.trainDepartureDate = departure;
+
+        service.generate();
+
+        verify(publishedJourneyRepository).findByDatasetVersionAndDepartureDatesFetchTracks(1L, List.of(departure));
+    }
+
+    @Test
+    public void publishedJourneysAreNotReadWithoutTrainMessages() {
+        service.generate();
+
+        verify(publishedJourneyRepository, never()).getMaxDatasetVersion();
     }
 
     @Test

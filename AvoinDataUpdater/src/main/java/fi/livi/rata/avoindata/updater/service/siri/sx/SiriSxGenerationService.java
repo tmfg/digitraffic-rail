@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -26,7 +27,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
@@ -99,7 +99,7 @@ public class SiriSxGenerationService {
             final SxSituationConverter converter = new SxSituationConverter(
                     new InMemoryStationUicLookup(stationRepository.findAll()),
                     new SiriStopResolver(petiMatcher()),
-                    new PublishedJourneyRefResolver(publishedJourneys()));
+                    new PublishedJourneyRefResolver(publishedJourneys(ramiMessages)));
 
             stage = Stage.BUILD;
             result = converter.convert(ramiMessages, firstCreated);
@@ -132,19 +132,23 @@ public class SiriSxGenerationService {
         return matcher;
     }
 
-    private Map<TrainId, ResolvedJourney> publishedJourneys() {
+    /** Published journeys for the departure dates of the train messages (they can be days ahead). */
+    private Map<TrainId, ResolvedJourney> publishedJourneys(final List<RamiMessage> ramiMessages) {
+        final List<LocalDate> dates = ramiMessages.stream()
+                .map(m -> m.trainDepartureDate)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (dates.isEmpty()) {
+            return Map.of();
+        }
         final Long version = publishedJourneyRepository.getMaxDatasetVersion();
         if (version == null) {
             throw new PublishedJourneysUnavailableException(PublishedJourneysUnavailableException.Reason.MISSING,
                     "no NeTEx-published journeys in the database");
         }
-        final List<LocalDate> dates = OperatingDayWindow.dates(DateProvider.dateInHelsinki());
         final List<NeTExPublishedJourney> journeys =
                 publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, dates);
-        if (journeys.isEmpty()) {
-            throw new PublishedJourneysUnavailableException(PublishedJourneysUnavailableException.Reason.EMPTY,
-                    "no NeTEx-published journeys for operating days " + dates);
-        }
         final Map<TrainId, ResolvedJourney> byTrainId = new HashMap<>();
         for (final NeTExPublishedJourney j : journeys) {
             byTrainId.put(j.trainId, new ResolvedJourney(

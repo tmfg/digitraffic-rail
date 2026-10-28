@@ -84,11 +84,13 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 - The XML is built on every run and is deterministic (messages sorted by id, languages in a fixed order, no
   clock times inside a message). If the content is the same as the last saved file, no new file is stored and
   only the time of the last one is updated.
-- The run fails, and nothing new is stored, if the published NeTEx journeys of the operating days are missing or the
-  PETI stops are not available. Example: the NeTEx run has not worked (new environment, NeTEx run is broken, or it
-  has not yet produced today's trains). Then station messages are not published either, even though only train
-  messages need the journeys. This is the same as in ET. The feed shows it as `x-is-fresh=false`. A possible later
-  change: drop only the train messages and publish the station messages.
+- Train messages are matched to the published NeTEx journeys by the departure dates of the messages (a message can be
+  about a train that leaves days ahead). The journeys are not read at all when there are no train messages.
+- The run fails, and nothing new is stored, if there are train messages but no NeTEx journeys at all, or the PETI
+  stops are not available. Example: the NeTEx run has not worked (new environment, NeTEx run is broken). Then
+  station messages are not published either, even though only train messages need the journeys. This is the same as
+  in ET. The feed shows it as `x-is-fresh=false`. A possible later change: drop only the train messages and publish
+  the station messages.
 
 ## Field mapping
 
