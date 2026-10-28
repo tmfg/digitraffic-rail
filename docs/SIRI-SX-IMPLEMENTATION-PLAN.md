@@ -276,8 +276,11 @@ Each step is small and can be checked on its own.
 - `SiriSxController`, only when `avoindataserver.siri.sx.enabled=true`; same caching headers as ET / VM;
   404 when nothing has been generated yet.
 
-### Step 7 — Update times (after the above)
+### Step 7 — Update times (not done)
 - Add ET, VM and SX to `/api/info/v1/update-times`.
+- The endpoint is not in this repository (no code or config mentions it), so this cannot be done here. Find out which
+  project serves it; the feeds' time is in `GeneratedExport.created` (file names `siri-et.xml`, `siri-vm.xml`,
+  `siri-sx.xml`).
 
 ### Step 8 — Tests and docs (done)
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
@@ -294,5 +297,5 @@ Each step is small and can be checked on its own.
 | 4. Convert and write | Done: `SxSituationConverter`, `SxSituationMarshaller`, XSD-valid, tested |
 | 5. Scheduled generation | Done: `SiriSxGenerationService` (includes convert + write), `SiriSxUpdatingService`, tested |
 | 6. Serve it | Done: `SiriSxController`, enabled and disabled tests |
-| 7. Update times | Not started |
+| 7. Update times | Not done: the endpoint is not in this repository |
 | 8. Tests and docs | Done: `SxGoldenXmlTest` (3 scenarios), `SIRI.md` and `SIRI-SX.md` updated |
