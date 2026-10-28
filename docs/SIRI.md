@@ -1,7 +1,7 @@
 # SIRI (Real-Time Data) — Unified Overview
 
 This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented)
-and **SIRI-VM** (implemented), and **SIRI-SX** (not yet implemented — planned). It covers
+and **SIRI-VM** (implemented), and **SIRI-SX** (in progress). It covers
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
@@ -225,24 +225,40 @@ each service gets:
   snapshot age (`CachingPetiStopSource.getSnapshotAgeSeconds()`) is logged for observability only and is
   never compared against a threshold — an old-but-non-empty PETI snapshot is accepted and used as-is.
 
-### SIRI-SX (not yet implemented)
+### SIRI-SX (in progress, DPO-4882)
 
-Situation Exchange — free-text disruption messages (`PtSituationElement`), tied by reference to affected
-`Networks`/`StopPlaces`/`StopPoints`/`VehicleJourneys`. Key points from the wiki spec, for when this is
-implemented:
+Situation Exchange — free-text disruption and passenger-information messages (`PtSituationElement`), tied to
+the published timetable by reference. SX is real-time in the sense that a message appears, changes and closes
+as soon as it does in the source, but unlike ET and VM the content only changes when a message changes. The
+feed always holds the complete set of valid messages in one XML file.
 
-- Root delivery type: `SituationExchangeDelivery` → one or more `PtSituationElement`. Each situation has a
-  **globally unique** `SituationNumber` (format `CODESPACE:SituationNumber:ID`, e.g. `FTR:SituationNumber:123`).
-- `Progress` (`open`/`closed`) — a `closed` situation is expired and must not be shown to the public; the
-  `ValidityPeriod`'s `EndTime` must be **at least 5 hours in the future** at the moment a situation is closed,
-  to ensure downstream systems have time to pick up the cancellation before it stops being redistributed.
-- `Severity` (`noImpact`…`verySevere`, default `normal`), `Priority` (1–10, 1 = highest), `ReportType`
-  (`general` vs `incident`), `Summary` (**max 160 characters**, one per language), optional `Description` /
-  `Advice` / `InfoLinks`.
-- `Affects` describes scope: `Networks` (operator/line/mode), `StopPlaces`, `StopPoints`, or `VehicleJourneys` —
-  can only be empty when `Progress = closed`.
-- No current Digitraffic Rail data source has been identified for disruption/situation text — this is the main
-  open question before implementation can start (where would `PtSituationElement` content come from?).
+- **Flags** (planned): `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
+  `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:
+  `siri-sx.xml`.
+- **Data source**: RAMI messages, the same messages that are shown on station and train displays and spoken in
+  announcements: tables `rami_message` (one row per version), `rami_message_video` (screen text, fi/sv/en),
+  `rami_message_audio` (spoken text) and `rami_message_station`. Only the latest version of each message counts.
+  Two kinds exist: station messages (`SCHEDULED_MESSAGE`) and train messages
+  (`MONITORED_JOURNEY_SCHEDULED_MESSAGE`, with train number, departure date and journey reference).
+- **Rules**:
+  - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
+    requirement), then left out.
+  - `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
+    with `...` added, at most 160 characters (profile limit). A text that already fits is used as is.
+  - Languages fi, sv and en, each with `xml:lang`. A language without text is left out. If there is no screen
+    text, the spoken text is used. If there is neither, the message is dropped.
+  - Station message → `StopPlaces` (PETI stop place of the station; RAMI gives no platform). Train message →
+    `VehicleJourneys` (published NeTEx journey, line and operator, like ET). A message that cannot be tied to the
+    stop place or the published journey is dropped and counted in the generation log.
+  - `ReportType` is `incident` for train messages and `general` for station messages. RAMI has no field for it, so
+    this is a rough rule and some messages get the wrong value (for example a train message that only says which
+    cars the train has, or a station message about closed platforms).
+  - Train messages starting with "Seuraava pysähdys" ("next stop") are not published; they are plain display
+    information, not situations.
+  - The XML is built on every run and is deterministic (messages sorted by id, languages in a fixed order, no
+    clock times inside a message). If the content is the same as the last saved file, no new file is stored and
+    only the time of the last one is updated.
+- **Field-by-field status**: see [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Configuration reference
 
