@@ -194,6 +194,7 @@ public class SiriSxGenerationService {
         final GeneratedExport last = generatedExportRepository.findFirstByFileNameOrderByIdDesc(FILE_NAME);
         if (last != null && withoutResponseTimestamps(last.data).equals(withoutResponseTimestamps(bytes))) {
             last.created = now;
+            generatedExportRepository.flush();
             return false;
         }
         final GeneratedExport export = new GeneratedExport();

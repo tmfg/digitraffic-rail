@@ -11,6 +11,8 @@ import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateServic
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACKSECTIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRACK_WORK_NOTIFICATIONS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAFFIC_RESTRICTION_NOTIFICATIONS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.COMPOSITIONS_DUMP;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAINS_DUMP;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_LOCATIONS_DUMP;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES;
 
@@ -66,6 +68,9 @@ public class IsUpToDateService {
         alarmLimits.put(STATIONS, Duration.ofHours(25));
         alarmLimits.put(CATEGORY_CODES, Duration.ofHours(25));
         alarmLimits.put(TRAIN_LOCATIONS_DUMP, Duration.ofHours(24 * 2));
+        // Made monthly on the 5th
+        alarmLimits.put(TRAINS_DUMP, Duration.ofDays(34));
+        alarmLimits.put(COMPOSITIONS_DUMP, Duration.ofDays(34));
     }
 
     public Map<LastUpdateService.LastUpdatedType, UpToDateInformation> getIsUpToDates() {

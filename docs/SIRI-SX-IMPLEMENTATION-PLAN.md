@@ -283,10 +283,15 @@ Each step is small and can be checked on its own.
   change (only the creation time is refreshed). Failed runs do not mark it.
 - SX has two keys: `SIRI_SX_STATIONS` is marked after every successful run; `SIRI_SX_TRAINS` only when the train
   messages could be handled (NeTEx journeys available and fresh, or no train messages). When NeTEx is missing or
-  stale it goes out of date after 5 minutes while the station messages stay up to date.
-- The entry appears after the first successful run (it is not read from the database at startup).
-- The format differs from `/api/info/v1/update-times` in the road and marine projects. Matching that format is a
-  separate ticket.
+  stale it goes out of date after 5 minutes from the start (or its last update) while the station messages stay up to date.
+- At startup every data type is listed in `last-updated`, so a type that never gets updated becomes outdated after
+  its alarm limit. The start time is used for real-time types. GTFS and the SIRI feeds (when enabled with
+  `updater.siri.*.enabled`) use the creation time of their latest stored file. Types updated rarely (stations,
+  operators, time table periods, track sections, rules, category codes, localizations, future and old trains) are
+  stored in the new table `last_update` (migration V53) and read from there, so an old update time is not lost on
+  restart. SIRI types of disabled feeds are not listed. The unused type `FORECASTS` was removed.
+  `TRAINS_DUMP` and `COMPOSITIONS_DUMP` (monthly S3 dumps made on the 5th, alarm limit 34 days) are now filled in
+  like `TRAIN_LOCATIONS_DUMP`.
 
 ### Step 8 — Tests and docs (done)
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
