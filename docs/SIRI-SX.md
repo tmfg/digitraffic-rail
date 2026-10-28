@@ -86,11 +86,12 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
   only the time of the last one is updated.
 - Train messages are matched to the published NeTEx journeys by the departure dates of the messages (a message can be
   about a train that leaves days ahead). The journeys are not read at all when there are no train messages.
-- If the published NeTEx journeys are missing, or the newest of them is more than 30 hours old (same limit as in ET
-  and VM), no journeys are used: train messages are dropped, station messages are still published. The run is
-  logged as `partial` with `rail.siri.sx.journeys_unavailable=MISSING|STALE`. Example: the NeTEx run has not worked
+- If the published NeTEx journeys are missing, there are none for a message departing today or tomorrow, or the
+  newest of them is more than 30 hours old (same limit as in ET and VM), no journeys are used: train messages are dropped, station messages are still published. The run is
+  logged as `partial` with `rail.siri.sx.journeys_unavailable=MISSING|EMPTY|STALE`. Example: the NeTEx run has not worked
   (new environment, NeTEx run is broken, or it has not yet produced today's trains). The feed itself stays fresh
-  (`x-is-fresh=true`), so only the log shows that train messages are missing.
+  (`x-is-fresh=true`), so only the log and `SIRI_SX_TRAINS` in `/api/v1/last-updated` show that train messages are
+  missing.
 - The run fails, and nothing new is stored, only if the PETI stops are not available (both station and train
   messages need them).
 

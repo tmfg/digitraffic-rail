@@ -208,6 +208,21 @@ public class SiriSxGenerationServiceTest {
     }
 
     @Test
+    public void noJourneysForTodayDropTrainMessagesAndTrainsAreNotUpdated() {
+        addTrainMessage();
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
+                org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of());
+
+        service.generate();
+
+        final String xml = storedXml();
+        assertTrue(xml.contains("FTR:SituationNumber:SHM1"));
+        assertTrue(!xml.contains("FTR:SituationNumber:MVM1"));
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
+        verify(lastUpdateService, org.mockito.Mockito.never()).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
+    }
+
+    @Test
     public void freshJourneysGiveTrainMessages() {
         addTrainMessage();
 
