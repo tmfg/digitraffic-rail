@@ -3,7 +3,6 @@ package fi.livi.rata.avoindata.server.config;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -31,15 +30,9 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(databaseInitializionInterceptor);
         registry.addInterceptor(executeTimeInterceptor);
         registry.addInterceptor(parameterValidationInterceptor);
-        // SIRI serves application/xml; this interceptor otherwise forces application/json onto every response.
-        registry.addInterceptor(contentTypeInterceptor).excludePathPatterns(CONTEXT_PATH + "siri/**");
+        // SIRI serves application/xml and swagger-ui serves html/css/js; this interceptor otherwise forces application/json onto every response.
+        registry.addInterceptor(contentTypeInterceptor).excludePathPatterns(CONTEXT_PATH + "siri/**", "/swagger-ui/**");
 
         registry.addWebRequestInterceptor(osivInterceptor);
-    }
-
-    @Override
-    public void addViewControllers(final ViewControllerRegistry registry) {
-        registry.addRedirectViewController("/configuration/ui", "/swagger-resources/configuration/ui");
-        registry.addRedirectViewController("/configuration/security", "/swagger-resources/configuration/security");
     }
 }
