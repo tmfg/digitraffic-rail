@@ -223,6 +223,28 @@ public class SiriSxGenerationServiceTest {
     }
 
     @Test
+    public void journeysMissingForOneOfTwoDatesAreNotHealthy() {
+        final RamiMessage today = addTrainMessage();
+        final RamiMessage tomorrow = new RamiMessage();
+        tomorrow.id = "MVM2";
+        tomorrow.version = 1;
+        tomorrow.messageType = today.messageType;
+        tomorrow.createdSource = today.createdSource;
+        tomorrow.startValidity = today.startValidity;
+        tomorrow.endValidity = today.endValidity;
+        tomorrow.trainNumber = 1;
+        tomorrow.trainDepartureDate = LocalDate.now().plusDays(1);
+        tomorrow.videos.addAll(today.videos);
+        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestActive(null, null));
+        all.add(tomorrow);
+        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(all);
+
+        service.generate();
+
+        verify(lastUpdateService, org.mockito.Mockito.never()).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
+    }
+
+    @Test
     public void freshJourneysGiveTrainMessages() {
         addTrainMessage();
 

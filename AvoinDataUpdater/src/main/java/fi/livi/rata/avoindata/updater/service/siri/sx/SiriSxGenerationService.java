@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -148,7 +149,7 @@ public class SiriSxGenerationService {
 
     /**
      * Published journeys for the departure dates of the train messages (they can be days ahead). When the NeTEx
-     * journeys are missing, empty for today or tomorrow, or old, no journeys are returned: train messages are dropped and station messages are
+     * journeys are missing, missing for today or tomorrow, or old, no journeys are returned: train messages are dropped and station messages are
      * still published.
      */
     private JourneySource publishedJourneys(final List<RamiMessage> ramiMessages) {
@@ -166,10 +167,13 @@ public class SiriSxGenerationService {
         }
         final List<NeTExPublishedJourney> journeys =
                 publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, dates);
-        // NeTEx publishes today and the next days; an empty result for such a date means the dataset is not usable.
+        // NeTEx publishes today and the next days; no journeys for such a date means the dataset is not usable.
         // Dates further ahead are not in NeTEx yet, so no journeys for them is normal.
         final LocalDate lastPublishedDate = DateProvider.dateInHelsinki().plusDays(1);
-        if (journeys.isEmpty() && dates.stream().anyMatch(d -> !d.isAfter(lastPublishedDate))) {
+        final Set<LocalDate> datesWithJourneys = journeys.stream()
+                .map(j -> j.trainId.departureDate)
+                .collect(Collectors.toSet());
+        if (dates.stream().anyMatch(d -> !d.isAfter(lastPublishedDate) && !datesWithJourneys.contains(d))) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.EMPTY.name());
         }
         final ZonedDateTime newest = journeys.stream()
