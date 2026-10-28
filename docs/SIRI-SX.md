@@ -18,8 +18,10 @@ departure date and journey reference).
 
 The situations are read from the source on every run and the whole file is built from them; there is no own table for
 them. A source gives the situations that are active now as plain records, so another source can be added later
-without changing the rest. `SituationNumber` carries the source (`FTR:SituationNumber:RAMI-<id>`) so that ids from
-different sources never clash.
+without changing the rest. `SituationNumber` is `FTR:SituationNumber:<RAMI message id>` (for example
+`FTR:SituationNumber:SHM20260901123456789`). RAMI ids already look different from any other source, so no source prefix
+is added; if a second source is added, give it its own prefix then. The id is public and must not change once
+published.
 
 ### RAMI fields and codes
 
@@ -66,11 +68,14 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
   requirement), then left out.
 - `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
   with `...` added, at most 160 characters (profile limit). A text that already fits is used as is.
-- Languages fi, sv and en, each with `xml:lang`. A language without text is left out. If there is no screen
+- Languages fi, sv and en, each with `xml:lang`, written in upper case (`FI`, `SV`, `EN`) because the SIRI 2.0
+  schema accepts only upper case codes. A language without text is left out. If there is no screen
   text, the spoken text is used. If there is neither, the message is dropped.
 - Station message → `StopPlaces` (PETI stop place of the station; RAMI gives no platform). Train message →
-  `VehicleJourneys` (published NeTEx journey, line and operator, like ET). A message that cannot be tied to the
-  stop place or the published journey is dropped and counted in the generation log.
+  `VehicleJourneys` (published NeTEx journey, line and operator, like ET). A station message with several
+  stations gets the stop places that are found; stations without one are counted in the generation log. A message
+  that has no stop place at all, or whose train is not in the published journeys, is dropped and counted in the
+  log.
 - `ReportType` is `incident` for train messages and `general` for station messages. RAMI has no field for it, so
   this is a rough rule and some messages get the wrong value (for example a train message that only says which
   cars the train has, or a station message about closed platforms).
@@ -131,7 +136,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 
 | Field | Defined in | Cardinality | Status | Value / reason |
 |---|---|---|---|---|
-| `SituationNumber` | `AbstractSituationElementStructure` | 1:1 | ✅ | `FTR:SituationNumber:RAMI-<RAMI message id>` (source in the id so that other sources cannot clash) |
+| `SituationNumber` | `AbstractSituationElementStructure` | 1:1 | ✅ | `FTR:SituationNumber:<RAMI message id>` |
 | `Version` | `AbstractSituationElementStructure` | 0:1 | ✅ | RAMI `version` |
 | `CreationTime` | `AbstractSituationElementStructure` | 1:1 | ✅ | `created_source` of the first version |
 | `VersionedAtTime` | `SituationElementStructure` | 0:1 | ✅ | `created_source` of the latest version |

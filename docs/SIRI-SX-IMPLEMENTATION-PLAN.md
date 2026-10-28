@@ -120,14 +120,15 @@ Tables: `rami_message` (+ `_video`, `_audio`, `_station`). Sample exports are in
 | `AccessibilityAssessment`, `AccessibilityLimitation` | No | No accessibility data |
 | `AffectedComponent` | No | Part of a station (platform, lift): no data |
 
-If the station is not found in PETI, the message is dropped and counted in the log, like a train message whose
-journey is not published.
+If none of the stations of a message is found in PETI, the message is dropped and counted in the log, like a train
+message whose journey is not published. If only some are found, the message keeps those and the others are counted
+(agreed while implementing step 4, because a station message can list up to 20 stations).
 
 ## What is mapped and what is left out
 
 | SIRI-SX field | From RAMI | Status |
 |---|---|---|
-| `SituationNumber` | `FTR:SituationNumber:RAMI-<id>` | Mapped |
+| `SituationNumber` | `FTR:SituationNumber:<id>` | Mapped |
 | `Version` | `version` | Mapped |
 | `CreationTime` | `created_source` of the first version | Mapped |
 | `VersionedAtTime` | `created_source` of the latest version | Mapped |
@@ -252,12 +253,12 @@ Each step is small and can be checked on its own.
 - First and only source now: RAMI (entities and repository for `rami_message` with video, audio and station texts,
   latest version only). Other possible sources are listed in `SIRI-SX.md` ("Possible sources for situations") and are
   not part of this ticket.
-- `SituationNumber` has the source in it so that ids from different sources never clash:
-  `FTR:SituationNumber:RAMI-<id>`.
+- `SituationNumber` = `FTR:SituationNumber:<RAMI id>`, no source prefix (decided: RAMI ids already differ). Add one
+  if another source is added.
 
-### Step 4 — Convert and write
+### Step 4 — Convert and write (done)
 - `SxSituationConverter`: message → small plain record (`SxSituation`), no JAXB types.
-  - `SituationNumber` = `FTR:SituationNumber:RAMI-<id>`
+  - `SituationNumber` = `FTR:SituationNumber:<id>`
   - `Progress` open / closed, `ValidityPeriod`, `Summary` (cut to 160 characters), optional `Description`
   - `Affects` from the chosen scope; messages that cannot be tied to anything are dropped
 - `SxSituationMarshaller`: record → SIRI JAXB tree (`SituationExchangeDelivery`, `PtSituationElement`).
@@ -289,7 +290,7 @@ Each step is small and can be checked on its own.
 | 1. Validation logging | Done |
 | 2. Data source | Done: RAMI tables, decisions agreed |
 | 3. Read messages | Done: `RamiMessageRepository` (latest active versions, first creation time), tested |
-| 4. Convert and write | Not started |
+| 4. Convert and write | Done: `SxSituationConverter`, `SxSituationMarshaller`, XSD-valid, tested |
 | 5. Scheduled generation | Not started |
 | 6. Endpoint | Not started |
 | 7. Update times | Not started |

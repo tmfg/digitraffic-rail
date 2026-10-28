@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
 
 import java.util.Optional;
 
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 
 /**
@@ -24,6 +25,11 @@ public class SiriStopResolver {
         return matcher.match(stationUicCode)
                 .flatMap(stop -> stop.resolveQuay(commercialTrack))
                 .map(quay -> new StopRef(quay.quayId()));
+    }
+
+    /** The PETI stop place id (for example {@code FSR:StopPlace:1}) of a station, empty when PETI has none. */
+    public Optional<String> resolveStopPlaceId(final int stationUicCode) {
+        return matcher.match(stationUicCode).map(PetiStop::stopPlaceId);
     }
 
     /** Whether PETI has a stop place for this station UIC (used to tell "no stop" apart from "no quay"). */
