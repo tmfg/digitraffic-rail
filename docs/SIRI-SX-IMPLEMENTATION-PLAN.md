@@ -265,8 +265,8 @@ Each step is small and can be checked on its own.
 - `SxSituationMarshaller`: record → SIRI JAXB tree (`SituationExchangeDelivery`, `PtSituationElement`).
 - Shared envelope and validation through `SiriWritingService` (`feed` = `sx`).
 
-### Step 5 — Generate on a schedule
-- `SiriSxService` (convert + write + stats), `SiriSxGenerationService` (prepare → build → validate → save → log),
+### Step 5 — Generate on a schedule (done)
+- `SiriSxGenerationService` (prepare → build → validate → save → log),
   `SiriSxUpdatingService` (`@Scheduled`, only when `updater.siri.sx.enabled=true`).
 - Saved as `GeneratedExport` with the name `siri-sx.xml`, only when the content changed (decision 10); otherwise only
   the `created` time of the last file is updated.
@@ -292,7 +292,7 @@ Each step is small and can be checked on its own.
 | 2. Data source | Done: RAMI tables, decisions agreed |
 | 3. Read messages | Done: `RamiMessageRepository` (latest active versions, first creation time), tested |
 | 4. Convert and write | Done: `SxSituationConverter`, `SxSituationMarshaller`, XSD-valid, tested |
-| 5. Scheduled generation | Not started |
+| 5. Scheduled generation | Done: `SiriSxGenerationService` (includes convert + write), `SiriSxUpdatingService`, tested |
 | 6. Endpoint | Not started |
 | 7. Update times | Not started |
 | 8. Tests and docs | Not started |
