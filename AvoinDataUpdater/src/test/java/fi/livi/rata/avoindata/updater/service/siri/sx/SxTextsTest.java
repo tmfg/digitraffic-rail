@@ -47,4 +47,12 @@ public class SxTextsTest {
             assertTrue(SxTexts.summary(text).length() <= 160, "length " + length);
         }
     }
+
+    @Test
+    public void characterOutsideBasicPlaneIsNotCutInHalf() {
+        final String summary = SxTexts.summary("a".repeat(156) + "😀" + "b".repeat(50));
+
+        assertEquals("a".repeat(156) + "😀...", summary);
+        assertTrue(summary.codePointCount(0, summary.length()) <= 160);
+    }
 }

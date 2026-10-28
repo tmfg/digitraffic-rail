@@ -12,17 +12,19 @@ final class SxTexts {
     }
 
     /**
-     * Returns the text as is when it fits in {@link #SUMMARY_MAX_LENGTH}, otherwise the text cut after the last whole
-     * word that fits, with {@code ...} added (the result is at most {@link #SUMMARY_MAX_LENGTH} long).
+     * Returns the text as is when it fits in {@link #SUMMARY_MAX_LENGTH} characters, otherwise the text cut after
+     * the last whole word that fits, with {@code ...} added (the result is at most {@link #SUMMARY_MAX_LENGTH}
+     * characters long). Characters are counted as code points, so a character is never cut in half.
      */
     static String summary(final String text) {
-        if (text.length() <= SUMMARY_MAX_LENGTH) {
+        final int[] chars = text.codePoints().toArray();
+        if (chars.length <= SUMMARY_MAX_LENGTH) {
             return text;
         }
         final int room = SUMMARY_MAX_LENGTH - ELLIPSIS.length();
         int end = room;
-        if (!Character.isWhitespace(text.charAt(room))) {
-            while (end > 0 && !Character.isWhitespace(text.charAt(end - 1))) {
+        if (!Character.isWhitespace(chars[room])) {
+            while (end > 0 && !Character.isWhitespace(chars[end - 1])) {
                 end--;
             }
             // A single word longer than the room is cut in the middle.
@@ -30,6 +32,6 @@ final class SxTexts {
                 end = room;
             }
         }
-        return text.substring(0, end).stripTrailing() + ELLIPSIS;
+        return new String(chars, 0, end).stripTrailing() + ELLIPSIS;
     }
 }
