@@ -90,9 +90,9 @@
     </repositories>
 
     <modules>
-        <module>/AvoinDataCommon/</module>
-        <module>/AvoinDataServer/</module>
-        <module>/AvoinDataUpdater/</module>
+        <module>AvoinDataCommon</module>
+        <module>AvoinDataServer</module>
+        <module>AvoinDataUpdater</module>
     </modules>
 
     <dependencyManagement>
