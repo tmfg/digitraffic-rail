@@ -3,7 +3,7 @@
 SIRI-SX publishes situation messages: disruption and passenger information that is shown on station and train
 displays and spoken in announcements. The overall SIRI overview is in [`SIRI.md`](SIRI.md).
 
-Flags (planned): `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
+Flags: `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
 `updater.siri.sx.fixed-rate-ms` (default 60000). Endpoint: `GET /api/v1/siri/sx`. Generated file: `siri-sx.xml`.
 
 Profile: Entur SIRI-SX v1.1, https://entur.atlassian.net/wiki/spaces/PUBLIC/pages/637370605/SIRI-SX.
@@ -96,7 +96,7 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 
 ## Field mapping
 
-Status: ✅ planned for the implementation (not yet in code, this note is removed when the feed is ready), ❌ not
+Status: ✅ in the feed, ❌ not
 implemented (no data or not needed). Cardinality is from the profile (`1:1` required, `0:1` optional, `1:*` one or
 more).
 

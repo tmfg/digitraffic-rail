@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Siri version="2.0" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+    <ServiceDelivery>
+        <ResponseTimestamp>2026-10-27T12:00:00</ResponseTimestamp>
+        <ProducerRef>FTR</ProducerRef>
+        <SituationExchangeDelivery version="2.0">
+            <ResponseTimestamp>2026-10-27T12:00:00</ResponseTimestamp>
+            <Situations>
+                <PtSituationElement>
+                    <CreationTime>2026-10-27T07:00:00</CreationTime>
+                    <ParticipantRef>FTR</ParticipantRef>
+                    <SituationNumber>FTR:SituationNumber:SHM20261027100000001</SituationNumber>
+                    <Version>2</Version>
+                    <Source>
+                        <SourceType>directReport</SourceType>
+                    </Source>
+                    <VersionedAtTime>2026-10-27T08:00:00</VersionedAtTime>
+                    <Progress>open</Progress>
+                    <ValidityPeriod>
+                        <StartTime>2026-10-27T07:00:00</StartTime>
+                        <EndTime>2026-10-28T12:00:00</EndTime>
+                    </ValidityPeriod>
+                    <UndefinedReason></UndefinedReason>
+                    <ReportType>general</ReportType>
+                    <Summary xml:lang="FI">Raide 3 on suljettu huoltotöiden vuoksi. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4...</Summary>
+                    <Summary xml:lang="SV">Spår 3 är avstängt.</Summary>
+                    <Summary xml:lang="EN">Platform 3 is closed.</Summary>
+                    <Description xml:lang="FI">Raide 3 on suljettu huoltotöiden vuoksi. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta. Kulje raiteen 4 kautta.</Description>
+                    <Description xml:lang="SV">Spår 3 är avstängt.</Description>
+                    <Description xml:lang="EN">Platform 3 is closed.</Description>
+                    <Affects>
+                        <StopPlaces>
+                            <AffectedStopPlace>
+                                <StopPlaceRef>FSR:StopPlace:1</StopPlaceRef>
+                            </AffectedStopPlace>
+                            <AffectedStopPlace>
+                                <StopPlaceRef>FSR:StopPlace:10</StopPlaceRef>
+                            </AffectedStopPlace>
+                        </StopPlaces>
+                    </Affects>
+                </PtSituationElement>
+            </Situations>
+        </SituationExchangeDelivery>
+    </ServiceDelivery>
+</Siri>

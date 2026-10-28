@@ -1,7 +1,7 @@
 # SIRI (Real-Time Data) — Unified Overview
 
 This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented)
-and **SIRI-VM** (implemented), and **SIRI-SX** (in progress). It covers
+**SIRI-VM** (implemented) and **SIRI-SX** (implemented, DPO-4882). It covers
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
@@ -75,7 +75,7 @@ real-time consumers, which is also what Håndbok N801 §5.1 requires of any Norw
 
 ## Common architecture: Interpreter → domain IR → Marshaller
 
-Every SIRI service in this codebase (ET today, VM on this branch, SX in the future) is built from the same
+Every SIRI service in this codebase (ET, VM and SX) is built from the same
 three-stage pipeline, split across two Java packages:
 
 - **`service/siri/common`** — collaborators shared by *all* services: `ResolvedJourney` / `LineId` /
@@ -110,9 +110,9 @@ three-stage pipeline, split across two Java packages:
 keeps interpretation and marshalling as separate, independently testable concerns (interpreter unit tests
 assert on plain record fields, no XML/JAXB involved); it gives the Service a pre-XML checkpoint to compute
 stats from; and it isolates any future SIRI schema-version bump to the Marshaller only. See the `VmActivity`
-Javadoc for the fuller rationale (applies equally to ET, and will apply to SX).
+Javadoc for the fuller rationale (applies equally to ET and SX).
 
-### Why ET and VM (and future SX) are separate Spring beans, not methods on one class
+### Why ET, VM and SX are separate Spring beans, not methods on one class
 
 `@ConditionalOnProperty` in Spring only gates **whole bean/class registration** — it cannot conditionally
 enable/disable a single `@RequestMapping` method or a single `@Scheduled` method inside an always-registered
@@ -226,14 +226,14 @@ each service gets:
   snapshot age (`CachingPetiStopSource.getSnapshotAgeSeconds()`) is logged for observability only and is
   never compared against a threshold — an old-but-non-empty PETI snapshot is accepted and used as-is.
 
-### SIRI-SX (in progress, DPO-4882)
+### SIRI-SX (DPO-4882)
 
 Situation Exchange — free-text disruption and passenger-information messages (`PtSituationElement`), tied to
 the published timetable by reference. SX is real-time in the sense that a message appears, changes and closes
 as soon as it does in the source, but unlike ET and VM the content only changes when a message changes. The
 feed always holds the complete set of valid messages in one XML file.
 
-- **Flags** (planned): `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
+- **Flags**: `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
   `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:
   `siri-sx.xml`.
 - **Details** (data source, other possible sources, rules, field-by-field status): [`SIRI-SX.md`](SIRI-SX.md).
@@ -248,10 +248,13 @@ feed always holds the complete set of valid messages in one XML file.
 | `updater.siri.et.fixed-rate-ms` | AvoinDataUpdater | SIRI-ET generation interval (default 60000 ms) |
 | `updater.siri.vm.enabled` | AvoinDataUpdater | Enables scheduled SIRI-VM generation |
 | `updater.siri.vm.fixed-rate-ms` | AvoinDataUpdater | SIRI-VM generation interval (default 60000 ms) |
+| `avoindataserver.siri.sx.enabled` | AvoinDataServer | Enables `GET /api/v1/siri/sx` |
+| `updater.siri.sx.enabled` | AvoinDataUpdater | Enables scheduled SIRI-SX generation |
+| `updater.siri.sx.fixed-rate-ms` | AvoinDataUpdater | SIRI-SX generation interval (default 60000 ms) |
 
-## Testing approach (applies to ET, VM, and future SX)
+## Testing approach (applies to ET, VM and SX)
 
-- **Golden XML tests** (`SiriEtGoldenXmlTest`, `SiriVmGoldenXmlTest`): deterministic scenario inputs → compare
+- **Golden XML tests** (`SiriEtGoldenXmlTest`, `SiriVmGoldenXmlTest`, `SxGoldenXmlTest`): deterministic scenario inputs → compare
   normalized XML output byte-for-byte against a checked-in reference file
   (`src/test/resources/siri/expected-siri-<service>-<scenario>.xml`). When the mapping changes intentionally,
   regenerate from `target/siri-<service>-actual-<scenario>.xml` (written on every run) after manually verifying

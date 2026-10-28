@@ -279,7 +279,7 @@ Each step is small and can be checked on its own.
 ### Step 7 — Update times (after the above)
 - Add ET, VM and SX to `/api/info/v1/update-times`.
 
-### Step 8 — Tests and docs
+### Step 8 — Tests and docs (done)
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
 - In `SIRI-SX.md` (Field mapping) remove the note that the ✅ marks are planned, not yet in code.
 - Update `SIRI-SX.md` and `SIRI.md` (SX summary, configuration table) and the Swagger / API docs if the endpoint is listed there.
@@ -295,4 +295,4 @@ Each step is small and can be checked on its own.
 | 5. Scheduled generation | Done: `SiriSxGenerationService` (includes convert + write), `SiriSxUpdatingService`, tested |
 | 6. Serve it | Done: `SiriSxController`, enabled and disabled tests |
 | 7. Update times | Not started |
-| 8. Tests and docs | Not started |
+| 8. Tests and docs | Done: `SxGoldenXmlTest` (3 scenarios), `SIRI.md` and `SIRI-SX.md` updated |
