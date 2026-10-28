@@ -10,7 +10,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
@@ -44,6 +54,39 @@ public class SwaggerConfig {
             final Server server = new Server();
             server.setUrl(scheme + "://" + host);
             openApi.setServers(List.of(server));
+
+            addLastUpdated(openApi);
         };
+    }
+
+    /**
+     * The endpoint is served by the updater application (not by this one), so it is described here by hand
+     * for the public API documentation.
+     */
+    private static void addLastUpdated(final OpenAPI openApi) {
+        final Schema<?> information = new ObjectSchema()
+                .addProperty("lastUpdated", new StringSchema().format("date-time")
+                        .description("When the data type was last updated"))
+                .addProperty("alarmLimit", new StringSchema().example("PT5M")
+                        .description("How old the data can be before it is considered outdated (ISO 8601 duration)"))
+                .addProperty("durationSinceLastUpdate", new StringSchema().example("PT1.2S")
+                        .description("Time since the last update (ISO 8601 duration)"))
+                .addProperty("isUpToDate", new Schema<Boolean>().type("boolean")
+                        .description("False when the time since the last update is longer than the alarm limit"));
+
+        final Schema<?> response = new ObjectSchema()
+                .additionalProperties(information)
+                .description("Keyed by data type, for example TRAINS, TRAIN_LOCATIONS, GTFS, SIRI_ET, SIRI_VM, SIRI_SX_STATIONS and SIRI_SX_TRAINS. "
+                        + "A data type is listed only after it has been updated at least once since the service started.");
+
+        final Operation operation = new Operation()
+                .addTagsItem("last-updated")
+                .summary("Returns the last update time of each data type")
+                .description("Shows how fresh the data is and whether it is within the alarm limit.")
+                .responses(new ApiResponses().addApiResponse("200", new ApiResponse()
+                        .description("OK")
+                        .content(new Content().addMediaType("application/json", new MediaType().schema(response)))));
+
+        openApi.path("/api/v1/last-updated", new PathItem().get(operation));
     }
 }
