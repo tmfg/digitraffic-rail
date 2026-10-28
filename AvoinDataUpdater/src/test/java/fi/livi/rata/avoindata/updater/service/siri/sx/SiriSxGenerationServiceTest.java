@@ -33,6 +33,7 @@ import fi.livi.rata.avoindata.common.domain.rami.RamiMessage.MessageType;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageStation;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageVideo;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
@@ -43,6 +44,7 @@ public class SiriSxGenerationServiceTest {
     private RamiMessageRepository ramiMessageRepository;
     private NeTExPublishedJourneyRepository publishedJourneyRepository;
     private GeneratedExportRepository generatedExportRepository;
+    private final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
     private SiriSxGenerationService service;
 
     @BeforeEach
@@ -90,7 +92,7 @@ public class SiriSxGenerationServiceTest {
         when(ramiMessageRepository.findFirstCreated(anyCollection())).thenReturn(List.of(first));
 
         service = new SiriSxGenerationService(ramiMessageRepository, stationRepository, publishedJourneyRepository,
-                petiStopSource, new SiriWritingService(), generatedExportRepository);
+                petiStopSource, new SiriWritingService(), generatedExportRepository, lastUpdateService);
     }
 
     @SuppressWarnings("unchecked")
@@ -183,6 +185,8 @@ public class SiriSxGenerationServiceTest {
         final String xml = storedXml();
         assertTrue(xml.contains("FTR:SituationNumber:SHM1"));
         assertTrue(!xml.contains("FTR:SituationNumber:MVM1"));
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
+        verify(lastUpdateService, org.mockito.Mockito.never()).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
     }
 
     @Test
@@ -199,6 +203,8 @@ public class SiriSxGenerationServiceTest {
         final String xml = storedXml();
         assertTrue(xml.contains("FTR:SituationNumber:SHM1"));
         assertTrue(!xml.contains("FTR:SituationNumber:MVM1"));
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
+        verify(lastUpdateService, org.mockito.Mockito.never()).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
     }
 
     @Test
@@ -227,6 +233,25 @@ public class SiriSxGenerationServiceTest {
         service.generate();
 
         assertNotNull(firstStored().data);
+    }
+
+    @Test
+    public void successfulRunMarksSxUpdated() {
+        service.generate();
+
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
+    }
+
+    @Test
+    public void unchangedRunMarksSxUpdated() {
+        service.generate();
+        final GeneratedExport last = firstStored();
+        when(generatedExportRepository.findFirstByFileNameOrderByIdDesc("siri-sx.xml")).thenReturn(last);
+
+        service.generate();
+
+        verify(lastUpdateService, org.mockito.Mockito.times(2)).update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
     }
 
     @Test

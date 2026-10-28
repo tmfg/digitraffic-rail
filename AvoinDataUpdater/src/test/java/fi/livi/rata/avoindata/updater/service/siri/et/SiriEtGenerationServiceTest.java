@@ -43,6 +43,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -67,6 +68,7 @@ class SiriEtGenerationServiceTest {
     private SiriWritingService siriWritingService;
     private NeTExPublishedJourneyRepository publishedJourneyRepository;
 
+    private final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
     private SiriEtGenerationService service;
 
     @BeforeEach
@@ -84,7 +86,8 @@ class SiriEtGenerationServiceTest {
                 petiStopSource,
                 siriWritingService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
     }
 
     // ===== HELPERS =====
@@ -195,6 +198,15 @@ class SiriEtGenerationServiceTest {
         final ArgumentCaptor<Collection<GeneratedExport>> captor = ArgumentCaptor.forClass(Collection.class);
         verify(generatedExportRepository).persist(captor.capture());
         return new ArrayList<>(captor.getValue());
+    }
+
+    @Test
+    void successfulRunMarksSiriETUpdated() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_ET);
     }
 
     // ===== GEN-01: Happy path — persists GeneratedExport with fileName "siri-et.xml" =====

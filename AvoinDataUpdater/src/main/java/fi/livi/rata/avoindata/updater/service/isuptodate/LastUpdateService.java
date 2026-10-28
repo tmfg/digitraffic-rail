@@ -54,7 +54,11 @@ public class LastUpdateService {
         TRAFFIC_RESTRICTION_NOTIFICATIONS,
         TRAINS_DUMP,
         COMPOSITIONS_DUMP,
-        TRAIN_LOCATIONS_DUMP
+        TRAIN_LOCATIONS_DUMP,
+        SIRI_ET,
+        SIRI_VM,
+        SIRI_SX_STATIONS,
+        SIRI_SX_TRAINS
     }
 
     private final Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();

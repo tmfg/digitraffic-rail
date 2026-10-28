@@ -18,6 +18,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -64,6 +65,7 @@ class SiriVmGenerationServiceTest {
     private SiriWritingService siriWritingService;
     private NeTExPublishedJourneyRepository publishedJourneyRepository;
 
+    private final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
     private SiriVmGenerationService service;
 
     @BeforeEach
@@ -83,7 +85,8 @@ class SiriVmGenerationServiceTest {
                 petiStopSource,
                 siriWritingService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
     }
 
     // ===== HELPERS =====
@@ -244,6 +247,15 @@ class SiriVmGenerationServiceTest {
         // Stop#isRowEligible requires (see CommercialStopVisits) for the row to count as the current visit.
         row.liveEstimateTime = scheduledTime;
         train.timeTableRows.add(row);
+    }
+
+    @Test
+    void successfulRunMarksSiriVmUpdated() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_VM);
     }
 
     private List<GeneratedExport> capturePersistedExports() {
@@ -672,7 +684,8 @@ class SiriVmGenerationServiceTest {
                 petiStopSource,
                 invalidService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
 
         assertDoesNotThrow(serviceWithInvalidWriter::generate);
         verify(generatedExportRepository, never()).persist(any());

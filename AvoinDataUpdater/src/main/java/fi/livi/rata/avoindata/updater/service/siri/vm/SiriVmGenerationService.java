@@ -32,6 +32,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -80,6 +81,7 @@ public class SiriVmGenerationService {
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExPublishedJourneyRepository publishedJourneyRepository;
+    private final LastUpdateService lastUpdateService;
 
     public SiriVmGenerationService(
             final StationRepository stationRepository,
@@ -88,7 +90,8 @@ public class SiriVmGenerationService {
             final PetiStopSource petiStopSource,
             final SiriWritingService siriWritingService,
             final GeneratedExportRepository generatedExportRepository,
-            final NeTExPublishedJourneyRepository publishedJourneyRepository) {
+            final NeTExPublishedJourneyRepository publishedJourneyRepository,
+            final LastUpdateService lastUpdateService) {
         this.stationRepository = stationRepository;
         this.trainLocationRepository = trainLocationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
@@ -96,6 +99,7 @@ public class SiriVmGenerationService {
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
         this.publishedJourneyRepository = publishedJourneyRepository;
+        this.lastUpdateService = lastUpdateService;
     }
 
     @Transactional
@@ -134,6 +138,7 @@ public class SiriVmGenerationService {
             export.created = DateProvider.nowInHelsinki();
             export.fileName = "siri-vm.xml";
             generatedExportRepository.persist(List.of(export));
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_VM);
 
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(locationsReceived, stats), "NULL", stage,

@@ -276,11 +276,17 @@ Each step is small and can be checked on its own.
 - `SiriSxController`, only when `avoindataserver.siri.sx.enabled=true`; same caching headers as ET / VM;
   404 when nothing has been generated yet.
 
-### Step 7 — Update times (not done)
-- Add ET, VM and SX to `/api/info/v1/update-times`.
-- The endpoint is not in this repository (no code or config mentions it), so this cannot be done here. Find out which
-  project serves it; the feeds' time is in `GeneratedExport.created` (file names `siri-et.xml`, `siri-vm.xml`,
-  `siri-sx.xml`).
+### Step 7 — Update times (done)
+- ET, VM and SX are added to the existing `GET /api/v1/last-updated` (Updater) as `SIRI_ET`, `SIRI_VM`, `SIRI_SX_STATIONS`, `SIRI_SX_TRAINS`
+  (`LastUpdateService`, alarm limit 5 minutes).
+- Each generation service marks its feed updated after a successful run. SX also marks it when the content did not
+  change (only the creation time is refreshed). Failed runs do not mark it.
+- SX has two keys: `SIRI_SX_STATIONS` is marked after every successful run; `SIRI_SX_TRAINS` only when the train
+  messages could be handled (NeTEx journeys available and fresh, or no train messages). When NeTEx is missing or
+  stale it goes out of date after 5 minutes while the station messages stay up to date.
+- The entry appears after the first successful run (it is not read from the database at startup).
+- The format differs from `/api/info/v1/update-times` in the road and marine projects. Matching that format is a
+  separate ticket.
 
 ### Step 8 — Tests and docs (done)
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
@@ -297,5 +303,5 @@ Each step is small and can be checked on its own.
 | 4. Convert and write | Done: `SxSituationConverter`, `SxSituationMarshaller`, XSD-valid, tested |
 | 5. Scheduled generation | Done: `SiriSxGenerationService` (includes convert + write), `SiriSxUpdatingService`, tested |
 | 6. Serve it | Done: `SiriSxController`, enabled and disabled tests |
-| 7. Update times | Not done: the endpoint is not in this repository |
+| 7. Update times | Done: `SIRI_ET`, `SIRI_VM`, `SIRI_SX_STATIONS`, `SIRI_SX_TRAINS` in `/api/v1/last-updated` |
 | 8. Tests and docs | Done: `SxGoldenXmlTest` (3 scenarios), `SIRI.md` and `SIRI-SX.md` updated |

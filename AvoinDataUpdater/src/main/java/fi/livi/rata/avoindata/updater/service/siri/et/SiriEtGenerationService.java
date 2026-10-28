@@ -30,6 +30,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -59,6 +60,7 @@ public class SiriEtGenerationService {
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExPublishedJourneyRepository publishedJourneyRepository;
+    private final LastUpdateService lastUpdateService;
 
     public SiriEtGenerationService(
             final StationRepository stationRepository,
@@ -66,13 +68,15 @@ public class SiriEtGenerationService {
             final PetiStopSource petiStopSource,
             final SiriWritingService siriWritingService,
             final GeneratedExportRepository generatedExportRepository,
-            final NeTExPublishedJourneyRepository publishedJourneyRepository) {
+            final NeTExPublishedJourneyRepository publishedJourneyRepository,
+            final LastUpdateService lastUpdateService) {
         this.stationRepository = stationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
         this.petiStopSource = petiStopSource;
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
         this.publishedJourneyRepository = publishedJourneyRepository;
+        this.lastUpdateService = lastUpdateService;
     }
 
     @Transactional
@@ -110,6 +114,7 @@ public class SiriEtGenerationService {
             export.created = DateProvider.nowInHelsinki();
             export.fileName = "siri-et.xml";
             generatedExportRepository.persist(List.of(export));
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_ET);
 
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(trainsReceived, stats), "NULL", stage,

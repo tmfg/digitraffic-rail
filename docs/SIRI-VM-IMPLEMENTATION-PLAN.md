@@ -334,10 +334,9 @@ change needed here.
 - `SiriWritingService.isSchemaValid(xml, feed)` logs `rail.siri.feed=et|vm|sx` on every `rail.siri.validation`
   line, with the feed name passed in by the caller, so ET and VM failures can be told apart.
 
-### Update times endpoint (to do)
+### Update times (done)
 
-Add the SIRI feeds (ET, VM, later SX) to `/api/info/v1/update-times`, so their freshness is visible like the
-other data sets.
+ET, VM and SX are listed in `GET /api/v1/last-updated` as `SIRI_ET`, `SIRI_VM`, `SIRI_SX_STATIONS` and `SIRI_SX_TRAINS`.
 
 ## Unknown live-track fallback to the planned track (ET and VM)
 

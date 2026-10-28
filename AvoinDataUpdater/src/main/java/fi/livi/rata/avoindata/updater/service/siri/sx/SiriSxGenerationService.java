@@ -28,6 +28,7 @@ import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiUicMatcher;
 import fi.livi.rata.avoindata.updater.service.siri.common.DataFrameRef;
@@ -64,6 +65,7 @@ public class SiriSxGenerationService {
     private final PetiStopSource petiStopSource;
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
+    private final LastUpdateService lastUpdateService;
 
     public SiriSxGenerationService(
             final RamiMessageRepository ramiMessageRepository,
@@ -71,13 +73,15 @@ public class SiriSxGenerationService {
             final NeTExPublishedJourneyRepository publishedJourneyRepository,
             final PetiStopSource petiStopSource,
             final SiriWritingService siriWritingService,
-            final GeneratedExportRepository generatedExportRepository) {
+            final GeneratedExportRepository generatedExportRepository,
+            final LastUpdateService lastUpdateService) {
         this.ramiMessageRepository = ramiMessageRepository;
         this.stationRepository = stationRepository;
         this.publishedJourneyRepository = publishedJourneyRepository;
         this.petiStopSource = petiStopSource;
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
+        this.lastUpdateService = lastUpdateService;
     }
 
     @Transactional
@@ -120,6 +124,10 @@ public class SiriSxGenerationService {
 
             stage = Stage.PERSIST;
             stored = persist(bytes, now) ? "new" : "unchanged";
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
+            if (journeyProblem == null) {
+                lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
+            }
 
             stage = Stage.COMPLETE;
             logEvent(result.dropped() > 0 || journeyProblem != null ? "partial" : "success", "NULL", stage, stopWatch,
