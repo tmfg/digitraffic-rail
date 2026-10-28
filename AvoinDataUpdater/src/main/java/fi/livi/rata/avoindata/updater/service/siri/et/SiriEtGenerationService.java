@@ -53,9 +53,6 @@ public class SiriEtGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(SiriEtGenerationService.class);
 
-    // Published journeys older than this (vs. their newest generatedAt) are treated as stale → the cycle fails.
-    private static final long JOURNEY_SOURCE_MAX_AGE_HOURS = 26;
-
     private final StationRepository stationRepository;
     private final GTFSTrainRepository gtfsTrainRepository;
     private final PetiStopSource petiStopSource;
@@ -176,7 +173,7 @@ public class SiriEtGenerationService {
     /**
      * The DB read path: builds the journey/track lookups from the newest NeTEx-published dataset version.
      * Throws {@link PublishedJourneysUnavailableException} when the published NeTEx is missing, has no rows for
-     * the operating days, or is stale (newest {@code generatedAt} older than {@link #JOURNEY_SOURCE_MAX_AGE_HOURS})
+     * the operating days, or is stale (newest {@code generatedAt} older than {@link PublishedJourneysUnavailableException#MAX_AGE_HOURS})
      * — SIRI-ET generation then fails for the cycle rather than resolving live and risking drift.
      */
     private DbSources buildDbSources(final List<LocalDate> operatingDates) {
@@ -200,7 +197,7 @@ public class SiriEtGenerationService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(JOURNEY_SOURCE_MAX_AGE_HOURS);
+        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,

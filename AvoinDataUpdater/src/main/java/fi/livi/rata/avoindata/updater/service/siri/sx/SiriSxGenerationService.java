@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.siri.sx;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +57,7 @@ public class SiriSxGenerationService {
 
     static final String FILE_NAME = "siri-sx.xml";
 
+
     private final RamiMessageRepository ramiMessageRepository;
     private final StationRepository stationRepository;
     private final NeTExPublishedJourneyRepository publishedJourneyRepository;
@@ -86,6 +88,7 @@ public class SiriSxGenerationService {
         SxResult result = null;
         int outputSize = 0;
         String stored = "NULL";
+        String journeyProblem = null;
         try {
             final ZonedDateTime now = DateProvider.nowInHelsinki();
             final List<RamiMessage> ramiMessages =
@@ -96,10 +99,12 @@ public class SiriSxGenerationService {
                     : ramiMessageRepository.findFirstCreated(ids).stream()
                             .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
 
+            final JourneySource journeySource = publishedJourneys(ramiMessages);
+            journeyProblem = journeySource.unavailableReason();
             final SxSituationConverter converter = new SxSituationConverter(
                     new InMemoryStationUicLookup(stationRepository.findAll()),
                     new SiriStopResolver(petiMatcher()),
-                    new PublishedJourneyRefResolver(publishedJourneys(ramiMessages)));
+                    new PublishedJourneyRefResolver(journeySource.journeys()));
 
             stage = Stage.BUILD;
             result = converter.convert(ramiMessages, firstCreated);
@@ -117,10 +122,11 @@ public class SiriSxGenerationService {
             stored = persist(bytes, now) ? "new" : "unchanged";
 
             stage = Stage.COMPLETE;
-            logEvent(result.dropped() > 0 ? "partial" : "success", "NULL", stage, stopWatch, messages, result,
-                    outputSize, stored, null);
+            logEvent(result.dropped() > 0 || journeyProblem != null ? "partial" : "success", "NULL", stage, stopWatch,
+                    messages, result, outputSize, stored, journeyProblem, null);
         } catch (final Exception e) {
-            logEvent("error", e.getClass().getSimpleName(), stage, stopWatch, messages, result, outputSize, stored, e);
+            logEvent("error", e.getClass().getSimpleName(), stage, stopWatch, messages, result, outputSize, stored,
+                    journeyProblem, e);
         }
     }
 
@@ -132,23 +138,35 @@ public class SiriSxGenerationService {
         return matcher;
     }
 
-    /** Published journeys for the departure dates of the train messages (they can be days ahead). */
-    private Map<TrainId, ResolvedJourney> publishedJourneys(final List<RamiMessage> ramiMessages) {
+    /**
+     * Published journeys for the departure dates of the train messages (they can be days ahead). When the NeTEx
+     * journeys are missing or old, no journeys are returned: train messages are dropped and station messages are
+     * still published.
+     */
+    private JourneySource publishedJourneys(final List<RamiMessage> ramiMessages) {
         final List<LocalDate> dates = ramiMessages.stream()
                 .map(m -> m.trainDepartureDate)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
         if (dates.isEmpty()) {
-            return Map.of();
+            return new JourneySource(Map.of(), null);
         }
         final Long version = publishedJourneyRepository.getMaxDatasetVersion();
         if (version == null) {
-            throw new PublishedJourneysUnavailableException(PublishedJourneysUnavailableException.Reason.MISSING,
-                    "no NeTEx-published journeys in the database");
+            return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.MISSING.name());
         }
         final List<NeTExPublishedJourney> journeys =
                 publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, dates);
+        final ZonedDateTime newest = journeys.stream()
+                .map(j -> j.generatedAt)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        if (!journeys.isEmpty()
+                && (newest == null || newest.isBefore(DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS)))) {
+            return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.STALE.name());
+        }
         final Map<TrainId, ResolvedJourney> byTrainId = new HashMap<>();
         for (final NeTExPublishedJourney j : journeys) {
             byTrainId.put(j.trainId, new ResolvedJourney(
@@ -158,8 +176,10 @@ public class SiriSxGenerationService {
                     j.operatorRef != null ? new OperatorRef(j.operatorRef) : null,
                     null));
         }
-        return byTrainId;
+        return new JourneySource(byTrainId, null);
     }
+
+    private record JourneySource(Map<TrainId, ResolvedJourney> journeys, String unavailableReason) {}
 
     /** @return true when a new file was stored, false when the situations were unchanged */
     private boolean persist(final byte[] bytes, final ZonedDateTime now) {
@@ -185,19 +205,20 @@ public class SiriSxGenerationService {
 
     private void logEvent(final String outcome, final String errorType, final Stage stage, final StopWatch stopWatch,
             final int messages, final SxResult result, final int outputSize, final String stored,
-            final Throwable thrown) {
+            final String journeyProblem, final Throwable thrown) {
         final String line = StringUtil.format(
                 "event=rail.siri.generation operation=generateSiriSx outcome={} error.type={} stage={} duration={} "
                         + "rail.siri.service=sx rail.siri.sx.messages={} rail.siri.sx.situations={} "
                         + "rail.siri.sx.dropped.no_text={} rail.siri.sx.dropped.next_stop={} "
                         + "rail.siri.sx.dropped.no_stop_place={} rail.siri.sx.dropped.no_journey={} "
-                        + "rail.siri.sx.unknown_stations={} rail.siri.sx.stored={} rail.siri.output.size={}",
+                        + "rail.siri.sx.unknown_stations={} rail.siri.sx.journeys_unavailable={} rail.siri.sx.stored={} "
+                        + "rail.siri.output.size={}",
                 outcome, errorType, stage.name().toLowerCase(Locale.ROOT),
                 durationSeconds(stopWatch.getDuration().toMillis()), messages,
                 result != null ? result.situations().size() : 0, result != null ? result.noText() : 0,
                 result != null ? result.nextStop() : 0, result != null ? result.noStopPlace() : 0,
                 result != null ? result.noJourneyIds().size() : 0, result != null ? result.unknownStations() : 0,
-                stored, outputSize);
+                journeyProblem != null ? journeyProblem : "NULL", stored, outputSize);
         switch (outcome) {
             case "success" -> log.info(line);
             case "partial" -> {

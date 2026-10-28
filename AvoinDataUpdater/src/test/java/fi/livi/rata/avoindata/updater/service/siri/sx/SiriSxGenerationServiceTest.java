@@ -153,6 +153,63 @@ public class SiriSxGenerationServiceTest {
         verify(publishedJourneyRepository).findByDatasetVersionAndDepartureDatesFetchTracks(1L, List.of(departure));
     }
 
+    private RamiMessage addTrainMessage() {
+        final RamiMessage trainMessage = ramiMessageRepository.findLatestActive(null, null).getFirst();
+        final RamiMessage copy = new RamiMessage();
+        copy.id = "MVM1";
+        copy.version = 1;
+        copy.messageType = MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
+        copy.createdSource = trainMessage.createdSource;
+        copy.startValidity = trainMessage.startValidity;
+        copy.endValidity = trainMessage.endValidity;
+        copy.trainNumber = 1;
+        copy.trainDepartureDate = LocalDate.now();
+        copy.videos.addAll(trainMessage.videos);
+        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of(trainMessage, copy));
+        return copy;
+    }
+
+    private String storedXml() {
+        return new String(firstStored().data, StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void missingJourneysDropTrainMessagesButKeepStationMessages() {
+        addTrainMessage();
+        when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(null);
+
+        service.generate();
+
+        final String xml = storedXml();
+        assertTrue(xml.contains("FTR:SituationNumber:SHM1"));
+        assertTrue(!xml.contains("FTR:SituationNumber:MVM1"));
+    }
+
+    @Test
+    public void oldJourneysDropTrainMessagesButKeepStationMessages() {
+        addTrainMessage();
+        final NeTExPublishedJourney old = new NeTExPublishedJourney(
+                new TrainId(1L, LocalDate.now()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
+                "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki().minusHours(31));
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
+                org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(old));
+
+        service.generate();
+
+        final String xml = storedXml();
+        assertTrue(xml.contains("FTR:SituationNumber:SHM1"));
+        assertTrue(!xml.contains("FTR:SituationNumber:MVM1"));
+    }
+
+    @Test
+    public void freshJourneysGiveTrainMessages() {
+        addTrainMessage();
+
+        service.generate();
+
+        assertTrue(storedXml().contains("FTR:SituationNumber:MVM1"));
+    }
+
     @Test
     public void publishedJourneysAreNotReadWithoutTrainMessages() {
         service.generate();

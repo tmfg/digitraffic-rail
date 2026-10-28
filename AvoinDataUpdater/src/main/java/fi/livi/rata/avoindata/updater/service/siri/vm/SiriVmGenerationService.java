@@ -73,9 +73,6 @@ public class SiriVmGenerationService {
     // Same freshness window as the existing GTFS-Realtime VehiclePosition feed (FeedMessageService).
     private static final int LOCATION_MAX_AGE_MINUTES = 30;
 
-    // Published journeys older than this (vs. their newest generatedAt) are treated as stale -> the cycle fails.
-    private static final long JOURNEY_SOURCE_MAX_AGE_HOURS = 26;
-
     private final StationRepository stationRepository;
     private final TrainLocationRepository trainLocationRepository;
     private final GTFSTrainRepository gtfsTrainRepository;
@@ -282,7 +279,7 @@ public class SiriVmGenerationService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(JOURNEY_SOURCE_MAX_AGE_HOURS);
+        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,
