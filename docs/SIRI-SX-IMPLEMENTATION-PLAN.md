@@ -181,7 +181,8 @@ fi: "Myöhästymisen syy: tekninen vika." / sv: "Orsak till förseningen: teknis
 
 **2. Train message that is not a disturbance**
 `MVM20261027121491910` v1, train 8673, station `TKL`: "Seuraava pysähdys: Oulunkylä."
-→ `incident` would be wrong here ("next stop" is plain information). Only 2 of ~28 000 messages, so we accept it.
+→ Left out: train messages starting with "Seuraava pysähdys" are plain information, not a disturbance
+(decision 8). The message is counted as `nextStop`.
 
 **3. Train message with a stop list**
 `MVM20261021191628891` v1, train 140, stations `JY,JÄS`: "S140 korvataan bussilla Jyväskylä - Orivesi välillä.
