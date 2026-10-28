@@ -21,6 +21,33 @@ them. A source gives the situations that are active now as plain records, so ano
 without changing the rest. `SituationNumber` carries the source (`FTR:SituationNumber:RAMI-<id>`) so that ids from
 different sources never clash.
 
+### RAMI fields and codes
+
+Station codes in the repository:
+
+| Code | Example | Where |
+|---|---|---|
+| Short code (`Station.shortCode`) | `HKI`, `TPE`, `RI`, `OLLI` | RAMI (`rami_message_station.station_short_code`), 2–4 characters, upper case |
+| UIC code (`Station.uicCode`) | HKI = 1, PSL = 10 | Station table, used by ET and VM |
+| PETI stop place | station UIC + 1 000 000 | PETI. `PetiUicMatcher` does the conversion. Platforms are `FSR:Quay` |
+
+The chain is RAMI short code → `Station` → UIC → PETI stop place. All 297 codes in the production data exist in the
+station table. Of them 206 are stations, 59 are stopping points (for example `KRS`) and 2 are turnouts in the open
+line (`KTN`, `OLLI`). A turnout probably has no PETI stop place; such a message is dropped and counted in the log.
+
+Other fields that differ by message:
+
+| Field | Station message | Train message |
+|---|---|---|
+| `id` | starts with `SHM` | starts with `MVM` |
+| `message_type` | `SCHEDULED_MESSAGE` | `MONITORED_JOURNEY_SCHEDULED_MESSAGE` |
+| `train_number`, `train_departure_date`, `journey_ref` | always empty | always set (`journey_ref` is for example `100145` for train 145 and is not used) |
+| `rami_message_station` | stations where the message applies | stations where the message is shown, not necessarily an affected stretch |
+
+For all messages: `version` starts from 1 and grows by one on every edit, `created_source` is the creation time of
+that version, `deleted` is empty while the message is in use, and any language of the screen or spoken text can be
+missing (about 15 % of messages have only the spoken text).
+
 ### Possible sources for situations
 
 All disruption-type data in the project was reviewed. Only RAMI has ready passenger text. Other sources could be added later.
@@ -55,8 +82,9 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 
 ## Field mapping
 
-Status: ✅ implemented, ❌ not implemented (no data or not needed). Cardinality is from the profile
-(`1:1` required, `0:1` optional, `1:*` one or more).
+Status: ✅ planned for the implementation (not yet in code, this note is removed when the feed is ready), ❌ not
+implemented (no data or not needed). Cardinality is from the profile (`1:1` required, `0:1` optional, `1:*` one or
+more).
 
 ### Envelope (`ServiceDelivery` and `SituationExchangeDelivery`)
 

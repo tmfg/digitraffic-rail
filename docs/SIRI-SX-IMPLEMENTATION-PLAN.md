@@ -243,11 +243,11 @@ Each step is small and can be checked on its own.
 
 ### Step 2 — Data source (done: RAMI tables, see above) and the decisions above
 
-### Step 3 — Read the messages
+### Step 3 — Read the messages (done)
 - Situations are read from the sources on every run and built into the file as a whole. No own table: the file is
   already the stored result, and a copy of the source data would need syncing (deletions, versions, errors).
 - Small interface: each source returns the situations that are active now (or closed and still inside the 5 hour
-  window) as `SxSituation` records. `SiriSxGenerationService` collects them, sorts them and writes the XML. Only one
+  window) as `SxSituation` records. A deleted message counts only if it was deleted before it expired. `SiriSxGenerationService` collects them, sorts them and writes the XML. Only one
   method, nothing more.
 - First and only source now: RAMI (entities and repository for `rami_message` with video, audio and station texts,
   latest version only). Other possible sources are listed in `SIRI-SX.md` ("Possible sources for situations") and are
@@ -279,6 +279,7 @@ Each step is small and can be checked on its own.
 
 ### Step 8 — Tests and docs
 - Golden XML test, service test (valid XML, dropped messages), controller tests (enabled / disabled).
+- In `SIRI-SX.md` (Field mapping) remove the note that the ✅ marks are planned, not yet in code.
 - Update `SIRI-SX.md` and `SIRI.md` (SX summary, configuration table) and the Swagger / API docs if the endpoint is listed there.
 
 ## Progress
@@ -287,7 +288,7 @@ Each step is small and can be checked on its own.
 |---|---|
 | 1. Validation logging | Done |
 | 2. Data source | Done: RAMI tables, decisions agreed |
-| 3. Read messages | Not started |
+| 3. Read messages | Done: `RamiMessageRepository` (latest active versions, first creation time), tested |
 | 4. Convert and write | Not started |
 | 5. Scheduled generation | Not started |
 | 6. Endpoint | Not started |
