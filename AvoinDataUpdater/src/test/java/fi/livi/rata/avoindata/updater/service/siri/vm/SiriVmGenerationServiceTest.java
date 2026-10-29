@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import ch.qos.logback.classic.Logger;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import fi.livi.rata.avoindata.updater.service.siri.LogEventText;
 import ch.qos.logback.core.read.ListAppender;
@@ -368,7 +369,7 @@ class SiriVmGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.getFirst().data);
         assertTrue(exports.getFirst().data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data, "vm"));
+        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data, SiriFeed.VM));
     }
 
     // ===== GEN-VM-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====

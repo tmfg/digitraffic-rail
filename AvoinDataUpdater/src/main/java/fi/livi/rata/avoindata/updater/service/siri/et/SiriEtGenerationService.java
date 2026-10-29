@@ -45,6 +45,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnava
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 
 import static fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository.*;
@@ -103,7 +104,7 @@ public class SiriEtGenerationService {
             outputSize = result.bytes().length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(result.bytes(), "et")) {
+            if (!siriWritingService.isSchemaValid(result.bytes(), SiriFeed.ET)) {
                 // Never publish structurally invalid SIRI: skip the persist so the last good feed keeps serving.
                 throw new InvalidSiriOutputException("SIRI-ET output failed SIRI 2.0 XSD validation");
             }
@@ -284,7 +285,7 @@ public class SiriEtGenerationService {
                 .addKeyValue("error.type", errorType)
                 .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
                 .addKeyValue("duration", durationSeconds(durationMs))
-                .addKeyValue("rail.siri.service", "et")
+                .addKeyValue("rail.siri.service", SiriFeed.ET.logName())
                 .addKeyValue("rail.siri.trains.received", trainsReceived)
                 .addKeyValue("rail.siri.journeys.emitted", stats.journeysEmitted())
                 .addKeyValue("rail.siri.journeys.cancelled", stats.journeysCancelled())

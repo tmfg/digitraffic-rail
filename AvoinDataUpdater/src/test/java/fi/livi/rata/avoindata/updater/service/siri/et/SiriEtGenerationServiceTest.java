@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -234,7 +235,7 @@ class SiriEtGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.get(0).data);
         assertTrue(exports.get(0).data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data, "et"));
+        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data, SiriFeed.ET));
     }
 
     // ===== GEN-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====

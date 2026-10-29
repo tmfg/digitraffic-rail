@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.sx;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -38,7 +39,7 @@ public class SxSituationMarshallerTest {
 
     private String xml(final List<SxSituation> situations) {
         final byte[] bytes = marshaller.marshalToBytes(marshaller.marshal(situations, NOW));
-        assertTrue(writer.isSchemaValid(bytes, "sx"), "XML is not valid against the SIRI 2.0 schema");
+        assertTrue(writer.isSchemaValid(bytes, SiriFeed.SX), "XML is not valid against the SIRI 2.0 schema");
         return new String(bytes, StandardCharsets.UTF_8);
     }
 

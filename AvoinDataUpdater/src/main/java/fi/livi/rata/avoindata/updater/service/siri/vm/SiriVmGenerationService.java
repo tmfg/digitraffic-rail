@@ -49,6 +49,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnava
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.siri.common.TimeTableRowsLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationNameLookup;
@@ -127,7 +128,7 @@ public class SiriVmGenerationService {
             outputSize = result.bytes().length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(result.bytes(), "vm")) {
+            if (!siriWritingService.isSchemaValid(result.bytes(), SiriFeed.VM)) {
                 // Never publish structurally invalid SIRI: skip the persist so the last good feed keeps serving.
                 throw new InvalidSiriOutputException("SIRI-VM output failed SIRI 2.0 XSD validation");
             }
@@ -372,7 +373,7 @@ public class SiriVmGenerationService {
                 .addKeyValue("error.type", errorType)
                 .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
                 .addKeyValue("duration", durationSeconds(durationMs))
-                .addKeyValue("rail.siri.service", "vm")
+                .addKeyValue("rail.siri.service", SiriFeed.VM.logName())
                 .addKeyValue("rail.siri.locations.received", stats.locationsReceived())
                 .addKeyValue("rail.siri.activities.emitted", stats.activitiesEmitted())
                 .addKeyValue("rail.siri.journey_source.dataset_version", datasetVersion)

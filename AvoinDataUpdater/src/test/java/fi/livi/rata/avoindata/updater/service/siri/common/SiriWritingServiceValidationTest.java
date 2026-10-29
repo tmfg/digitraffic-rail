@@ -16,7 +16,7 @@ class SiriWritingServiceValidationTest {
     // Our SIRI-ET output validates against the true SIRI 2.0 XML Schema.
     @Test
     void givenSiri20Output_whenValidate_thenValid() throws IOException {
-        assertTrue(service.isSchemaValid(golden(), "et"));
+        assertTrue(service.isSchemaValid(golden(), SiriFeed.ET));
     }
 
     // A 2.1-only element (DepartureStatus on a RecordedCall) is rejected by the 2.0 schema.
@@ -30,7 +30,7 @@ class SiriWritingServiceValidationTest {
                 "<ActualDepartureTime>2026-07-15T08:01:00</ActualDepartureTime>"
                         + "<DepartureStatus>onTime</DepartureStatus>");
         assertNotEquals(valid, with21, "injection should have modified the document");
-        assertFalse(service.isSchemaValid(with21.getBytes(UTF_8), "et"));
+        assertFalse(service.isSchemaValid(with21.getBytes(UTF_8), SiriFeed.ET));
     }
 
     private byte[] golden() throws IOException {

@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
@@ -1452,7 +1453,7 @@ class SiriEtServiceTest {
         final byte[] xml = writingService.marshalToBytes(result);
 
         // then
-        assertTrue(writingService.isSchemaValid(xml, "et"));
+        assertTrue(writingService.isSchemaValid(xml, SiriFeed.ET));
     }
 
     // --- ET-32: Cancelled-train document passes XSD validation ---
@@ -1468,7 +1469,7 @@ class SiriEtServiceTest {
         final byte[] xml = writingService.marshalToBytes(result);
 
         // then
-        assertTrue(writingService.isSchemaValid(xml, "et"));
+        assertTrue(writingService.isSchemaValid(xml, SiriFeed.ET));
     }
 
     // ===== AREA 10 — IsCompleteStopSequence flag =====

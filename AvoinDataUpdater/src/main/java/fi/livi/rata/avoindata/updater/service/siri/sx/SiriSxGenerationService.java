@@ -42,6 +42,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnava
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationUicLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.PublishedJourneyRefResolver;
@@ -111,7 +112,7 @@ public class SiriSxGenerationService {
             outputSize = bytes.length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(bytes, "sx")) {
+            if (!siriWritingService.isSchemaValid(bytes, SiriFeed.SX)) {
                 throw new InvalidSiriOutputException("SIRI-SX output failed SIRI 2.0 XSD validation");
             }
 
@@ -264,7 +265,7 @@ public class SiriSxGenerationService {
                 .addKeyValue("error.type", errorType)
                 .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
                 .addKeyValue("duration", durationSeconds(stopWatch.getDuration().toMillis()))
-                .addKeyValue("rail.siri.service", "sx")
+                .addKeyValue("rail.siri.service", SiriFeed.SX.logName())
                 .addKeyValue("rail.siri.sx.messages", ramiMessageCount)
                 .addKeyValue("rail.siri.sx.situations", converted ? conversionResult.situations().size() : 0)
                 .addKeyValue("rail.siri.sx.dropped.no_text", converted ? conversionResult.noText() : 0)
