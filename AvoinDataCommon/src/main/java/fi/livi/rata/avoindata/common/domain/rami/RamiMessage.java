@@ -50,10 +50,10 @@ public class RamiMessage {
 
     public ZonedDateTime endValidity;
 
-    /** Train messages only, for example 145. */
+    /** Train messages only, for example 145. Null for station messages. */
     public Integer trainNumber;
 
-    /** Train messages only. */
+    /** Train messages only. Null for station messages. */
     public LocalDate trainDepartureDate;
 
     /** Time the message was removed; null while the message is in use. */
