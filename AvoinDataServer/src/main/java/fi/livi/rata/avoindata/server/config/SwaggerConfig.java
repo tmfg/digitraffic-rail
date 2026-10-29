@@ -30,7 +30,7 @@ public class SwaggerConfig {
     private final String host;
     private final String scheme;
 
-    public SwaggerConfig(final @Value("${dt.domain.url:https://rata.digitraffic.fi}") String domainUrl) throws URISyntaxException {
+    public SwaggerConfig(final @Value("${dt.domain.url}") String domainUrl) throws URISyntaxException {
         final URI uri = new URI(domainUrl);
         final int port = uri.getPort();
         host = port > -1 ? uri.getHost() + ":" + port : uri.getHost();
