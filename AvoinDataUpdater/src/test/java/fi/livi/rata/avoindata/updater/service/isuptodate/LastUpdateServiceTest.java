@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import fi.livi.rata.avoindata.common.dao.LastUpdateRepository;
@@ -31,7 +30,12 @@ class LastUpdateServiceTest {
     private final LastUpdateRepository lastUpdateRepository = mock(LastUpdateRepository.class);
 
     private LastUpdateService newService() {
-        return new LastUpdateService(webClient, simpleTransactionManager, generatedExportRepository, lastUpdateRepository);
+        return newService(false);
+    }
+
+    private LastUpdateService newService(final boolean siriSxEnabled) {
+        return new LastUpdateService(webClient, simpleTransactionManager, generatedExportRepository,
+                lastUpdateRepository, false, false, siriSxEnabled);
     }
 
     @Test
@@ -73,8 +77,7 @@ class LastUpdateServiceTest {
 
     @Test
     void setupInitializesSiriFromLatestExportWhenEnabled() {
-        final LastUpdateService service = newService();
-        ReflectionTestUtils.setField(service, "siriSxEnabled", true);
+        final LastUpdateService service = newService(true);
         final Instant created = Instant.now().minusSeconds(100);
         when(generatedExportRepository.findLatestCreatedByFileName(any())).thenReturn(Optional.empty());
         when(generatedExportRepository.findLatestCreatedByFileName("siri-sx.xml")).thenReturn(Optional.of(created));

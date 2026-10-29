@@ -33,19 +33,22 @@ public class LastUpdateService {
     private final GeneratedExportRepository generatedExportRepository;
     private final LastUpdateRepository lastUpdateRepository;
 
-    @Value("${updater.siri.et.enabled:false}")
-    private boolean siriEtEnabled;
-    @Value("${updater.siri.vm.enabled:false}")
-    private boolean siriVmEnabled;
-    @Value("${updater.siri.sx.enabled:false}")
-    private boolean siriSxEnabled;
+    private final boolean siriEtEnabled;
+    private final boolean siriVmEnabled;
+    private final boolean siriSxEnabled;
 
-    public LastUpdateService(final WebClient webClient, SimpleTransactionManager simpleTransactionManager, GeneratedExportRepository generatedExportRepository,
-                             LastUpdateRepository lastUpdateRepository) {
+    public LastUpdateService(final WebClient webClient, final SimpleTransactionManager simpleTransactionManager, final GeneratedExportRepository generatedExportRepository,
+                             final LastUpdateRepository lastUpdateRepository,
+                             @Value("${updater.siri.et.enabled:false}") final boolean siriEtEnabled,
+                             @Value("${updater.siri.vm.enabled:false}") final boolean siriVmEnabled,
+                             @Value("${updater.siri.sx.enabled:false}") final boolean siriSxEnabled) {
         this.webClient = webClient;
         this.simpleTransactionManager = simpleTransactionManager;
         this.generatedExportRepository = generatedExportRepository;
         this.lastUpdateRepository = lastUpdateRepository;
+        this.siriEtEnabled = siriEtEnabled;
+        this.siriVmEnabled = siriVmEnabled;
+        this.siriSxEnabled = siriSxEnabled;
     }
 
     public enum LastUpdatedType {
@@ -75,7 +78,9 @@ public class LastUpdateService {
         SIRI_SX_TRAINS
     }
 
-    /** Updated rarely, so the time is stored in the database to survive a restart. */
+    /**
+     * Updated rarely, so the time is stored in the database to survive a restart.
+     */
     private static final Set<LastUpdatedType> STORED_IN_DATABASE = Set.of(
             LastUpdatedType.LOCALIZATIONS,
             LastUpdatedType.OPERATORS,
@@ -240,6 +245,7 @@ public class LastUpdateService {
             return null;
         }
     }
+
     public Map<LastUpdatedType, Instant> getLastUpdateTimes() {
         return lastUpdateTimes;
     }
