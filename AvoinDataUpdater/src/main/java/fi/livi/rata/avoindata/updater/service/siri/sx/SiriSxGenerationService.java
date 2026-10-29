@@ -149,8 +149,8 @@ public class SiriSxGenerationService {
 
     /**
      * Published journeys for the departure dates of the train messages (they can be days ahead). When the NeTEx
-     * journeys are missing, missing for today or tomorrow, or old, no journeys are returned: train messages are dropped and station messages are
-     * still published.
+     * journeys are missing, missing for today or tomorrow (when a message needs them), or old, no journeys are
+     * returned: train messages are dropped and station messages are still published.
      */
     private JourneySource publishedJourneys(final List<RamiMessage> ramiMessages) {
         final List<LocalDate> dates = ramiMessages.stream()
@@ -167,13 +167,15 @@ public class SiriSxGenerationService {
         }
         final List<NeTExPublishedJourney> journeys =
                 publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, dates);
-        // NeTEx publishes today and the next days; no journeys for such a date means the dataset is not usable.
-        // Dates further ahead are not in NeTEx yet, so no journeys for them is normal.
-        final LocalDate lastPublishedDate = DateProvider.dateInHelsinki().plusDays(1);
+        // Train departure dates are Finnish dates, like the NeTEx window. NeTEx always has today and tomorrow, so
+        // journeys must be found for those dates. Older dates may be outside the NeTEx window and later dates are not
+        // in NeTEx yet, so a message for them is simply dropped when it has no journey.
+        final LocalDate today = DateProvider.dateInHelsinki();
         final Set<LocalDate> datesWithJourneys = journeys.stream()
                 .map(j -> j.trainId.departureDate)
                 .collect(Collectors.toSet());
-        if (dates.stream().anyMatch(d -> !d.isAfter(lastPublishedDate) && !datesWithJourneys.contains(d))) {
+        if (dates.stream().anyMatch(d -> !d.isBefore(today) && !d.isAfter(today.plusDays(1))
+                && !datesWithJourneys.contains(d))) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.EMPTY.name());
         }
         final ZonedDateTime newest = journeys.stream()

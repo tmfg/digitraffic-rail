@@ -63,7 +63,7 @@ public class SiriSxGenerationServiceTest {
                 new PetiStop("FSR:StopPlace:1", 1_000_001, "Helsinki", true, null, List.of()))));
         when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(1L);
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
-                new TrainId(1L, LocalDate.now()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
+                new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki());
         when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(journey));
@@ -143,7 +143,7 @@ public class SiriSxGenerationServiceTest {
 
     @Test
     public void publishedJourneysAreReadForDeparturesOfTrainMessages() {
-        final LocalDate departure = LocalDate.now().plusDays(2);
+        final LocalDate departure = DateProvider.dateInHelsinki().plusDays(2);
         final RamiMessage trainMessage = ramiMessageRepository.findLatestActive(null, null).getFirst();
         trainMessage.id = "MVM1";
         trainMessage.messageType = MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
@@ -165,7 +165,7 @@ public class SiriSxGenerationServiceTest {
         copy.startValidity = trainMessage.startValidity;
         copy.endValidity = trainMessage.endValidity;
         copy.trainNumber = 1;
-        copy.trainDepartureDate = LocalDate.now();
+        copy.trainDepartureDate = DateProvider.dateInHelsinki();
         copy.videos.addAll(trainMessage.videos);
         when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of(trainMessage, copy));
         return copy;
@@ -193,7 +193,7 @@ public class SiriSxGenerationServiceTest {
     public void oldJourneysDropTrainMessagesButKeepStationMessages() {
         addTrainMessage();
         final NeTExPublishedJourney old = new NeTExPublishedJourney(
-                new TrainId(1L, LocalDate.now()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
+                new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki().minusHours(31));
         when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(old));
@@ -233,7 +233,7 @@ public class SiriSxGenerationServiceTest {
         tomorrow.startValidity = today.startValidity;
         tomorrow.endValidity = today.endValidity;
         tomorrow.trainNumber = 1;
-        tomorrow.trainDepartureDate = LocalDate.now().plusDays(1);
+        tomorrow.trainDepartureDate = DateProvider.dateInHelsinki().plusDays(1);
         tomorrow.videos.addAll(today.videos);
         final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestActive(null, null));
         all.add(tomorrow);
@@ -242,6 +242,31 @@ public class SiriSxGenerationServiceTest {
         service.generate();
 
         verify(lastUpdateService, org.mockito.Mockito.never()).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
+    }
+
+    @Test
+    public void oldUnmatchedTrainMessageDoesNotDropCurrentTrainMessages() {
+        final RamiMessage current = addTrainMessage();
+        final RamiMessage old = new RamiMessage();
+        old.id = "MVM3";
+        old.version = 1;
+        old.messageType = current.messageType;
+        old.createdSource = current.createdSource;
+        old.startValidity = current.startValidity;
+        old.endValidity = current.endValidity;
+        old.trainNumber = 2;
+        old.trainDepartureDate = DateProvider.dateInHelsinki().minusDays(5);
+        old.videos.addAll(current.videos);
+        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestActive(null, null));
+        all.add(old);
+        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(all);
+
+        service.generate();
+
+        final String xml = storedXml();
+        assertTrue(xml.contains("FTR:SituationNumber:MVM1"));
+        assertTrue(!xml.contains("FTR:SituationNumber:MVM3"));
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
     }
 
     @Test
