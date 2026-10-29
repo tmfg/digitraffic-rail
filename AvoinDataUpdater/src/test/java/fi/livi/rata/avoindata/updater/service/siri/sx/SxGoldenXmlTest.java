@@ -79,7 +79,7 @@ class SxGoldenXmlTest {
     void generatedSiriSx_matchesGoldenFile(final String scenario, final Supplier<RamiMessage> messageBuilder)
             throws IOException {
         final RamiMessage message = messageBuilder.get();
-        final SxResult result = converter.convert(List.of(message), Map.of(message.id, CREATED));
+        final SxResult result = converter.convert(List.of(message), Map.of(message.id, CREATED.toInstant()));
         final SxSituationMarshaller marshaller = new SxSituationMarshaller(writingService, "FTR");
         final String actual = new String(
                 marshaller.marshalToBytes(marshaller.marshal(result.situations(), NOW)), StandardCharsets.UTF_8);
@@ -124,7 +124,7 @@ class SxGoldenXmlTest {
     /** Deleted message: published as closed, ends 5 hours after the deletion. */
     private static RamiMessage closedMessage() {
         final RamiMessage message = message("SHM20261027100000003", MessageType.SCHEDULED_MESSAGE);
-        message.deleted = NOW.minusHours(1);
+        message.deleted = NOW.minusHours(1).toInstant();
         final RamiMessageVideo video = new RamiMessageVideo();
         video.id = 1L;
         video.textFi = "Hissi on poissa käytöstä.";
@@ -138,9 +138,9 @@ class SxGoldenXmlTest {
         message.id = id;
         message.version = 2;
         message.messageType = type;
-        message.createdSource = CREATED.plusHours(1);
-        message.startValidity = CREATED;
-        message.endValidity = NOW.plusDays(1);
+        message.createdSource = CREATED.plusHours(1).toInstant();
+        message.startValidity = CREATED.toInstant();
+        message.endValidity = NOW.plusDays(1).toInstant();
         return message;
     }
 

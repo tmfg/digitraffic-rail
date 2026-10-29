@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.Immutable;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,11 +44,11 @@ public class RamiMessage {
     public MessageType messageType;
 
     /** Creation time of this version in the source system (not of the first version). */
-    public ZonedDateTime createdSource;
+    public Instant createdSource;
 
-    public ZonedDateTime startValidity;
+    public Instant startValidity;
 
-    public ZonedDateTime endValidity;
+    public Instant endValidity;
 
     /** Train messages only, for example 145. Null for station messages. */
     public Integer trainNumber;
@@ -57,7 +57,7 @@ public class RamiMessage {
     public LocalDate trainDepartureDate;
 
     /** Time the message was removed; null while the message is in use. */
-    public ZonedDateTime deleted;
+    public Instant deleted;
 
     @OneToMany
     @JoinColumns({

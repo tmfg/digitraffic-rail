@@ -1,9 +1,9 @@
 package fi.livi.rata.avoindata.common.dao.rami;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 public interface RamiFirstCreated {
     String getId();
 
-    ZonedDateTime getCreated();
+    Instant getCreated();
 }

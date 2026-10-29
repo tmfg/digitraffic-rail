@@ -58,9 +58,9 @@ public class SxSituationConverterTest {
         message.id = id;
         message.version = 2;
         message.messageType = type;
-        message.createdSource = CREATED.plusHours(1);
-        message.startValidity = CREATED;
-        message.endValidity = CREATED.plusDays(1);
+        message.createdSource = CREATED.plusHours(1).toInstant();
+        message.startValidity = CREATED.toInstant();
+        message.endValidity = CREATED.plusDays(1).toInstant();
         if (type == MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE) {
             message.trainNumber = 145;
             message.trainDepartureDate = DATE;
@@ -88,7 +88,7 @@ public class SxSituationConverterTest {
     }
 
     private SxResult convert(final RamiMessage... messages) {
-        return converter.convert(List.of(messages), Map.of("SHM1", CREATED.minusHours(1)));
+        return converter.convert(List.of(messages), Map.of("SHM1", CREATED.minusHours(1).toInstant()));
     }
 
     @Test
@@ -101,9 +101,9 @@ public class SxSituationConverterTest {
         assertEquals("FTR:SituationNumber:SHM1", situation.situationNumber());
         assertEquals(2, situation.version());
         assertEquals(SxReportType.GENERAL, situation.reportType());
-        assertEquals(CREATED.minusHours(1), situation.creationTime());
-        assertEquals(CREATED.plusHours(1), situation.versionedAtTime());
-        assertEquals(CREATED.plusDays(1), situation.endTime());
+        assertEquals(CREATED.minusHours(1).toInstant(), situation.creationTime().toInstant());
+        assertEquals(CREATED.plusHours(1).toInstant(), situation.versionedAtTime().toInstant());
+        assertEquals(CREATED.plusDays(1).toInstant(), situation.endTime().toInstant());
         assertEquals(new SxTarget.StopPlaces(List.of("FSR:StopPlace:1", "FSR:StopPlace:10")), situation.target());
     }
 
@@ -191,12 +191,12 @@ public class SxSituationConverterTest {
     @Test
     public void deletedMessageIsClosedUntilFiveHoursAfterDeletion() {
         final RamiMessage deleted = message("SHM1", MessageType.SCHEDULED_MESSAGE, "Teksti", null, "HKI");
-        deleted.deleted = CREATED.plusHours(2);
+        deleted.deleted = CREATED.plusHours(2).toInstant();
 
         final SxSituation situation = convert(deleted).situations().getFirst();
 
         assertTrue(situation.closed());
-        assertEquals(CREATED.plusHours(7), situation.endTime());
+        assertEquals(CREATED.plusHours(7).toInstant(), situation.endTime().toInstant());
     }
 
     @Test

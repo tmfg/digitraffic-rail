@@ -73,9 +73,9 @@ public class SiriSxGenerationServiceTest {
         message.id = "SHM1";
         message.version = 1;
         message.messageType = MessageType.SCHEDULED_MESSAGE;
-        message.createdSource = now.minusHours(1);
-        message.startValidity = now.minusHours(1);
-        message.endValidity = now.plusHours(1);
+        message.createdSource = now.minusHours(1).toInstant();
+        message.startValidity = now.minusHours(1).toInstant();
+        message.endValidity = now.plusHours(1).toInstant();
         final RamiMessageVideo video = new RamiMessageVideo();
         video.id = 1L;
         video.textFi = "Raide 3 suljettu";
@@ -88,7 +88,7 @@ public class SiriSxGenerationServiceTest {
 
         final RamiFirstCreated first = mock(RamiFirstCreated.class);
         when(first.getId()).thenReturn("SHM1");
-        when(first.getCreated()).thenReturn(now.minusHours(1));
+        when(first.getCreated()).thenReturn(now.minusHours(1).toInstant());
         when(ramiMessageRepository.findFirstCreated(anyCollection())).thenReturn(List.of(first));
 
         service = new SiriSxGenerationService(ramiMessageRepository, stationRepository, publishedJourneyRepository,

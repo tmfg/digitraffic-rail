@@ -2,7 +2,9 @@ package fi.livi.rata.avoindata.updater.service.siri.sx;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -96,11 +98,11 @@ public class SiriSxGenerationService {
         String journeyProblem = null;
         try {
             final ZonedDateTime now = DateProvider.nowInHelsinki();
-            final List<RamiMessage> ramiMessages =
-                    ramiMessageRepository.findLatestActive(now, now.minusHours(SxSituationConverter.CLOSED_HOURS));
+            final List<RamiMessage> ramiMessages = ramiMessageRepository.findLatestActive(
+                    now.toInstant(), now.toInstant().minus(SxSituationConverter.CLOSED_HOURS, ChronoUnit.HOURS));
             messages = ramiMessages.size();
             final List<String> ids = ramiMessages.stream().map(m -> m.id).distinct().toList();
-            final Map<String, ZonedDateTime> firstCreated = ids.isEmpty() ? Map.of()
+            final Map<String, Instant> firstCreated = ids.isEmpty() ? Map.of()
                     : ramiMessageRepository.findFirstCreated(ids).stream()
                             .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
 

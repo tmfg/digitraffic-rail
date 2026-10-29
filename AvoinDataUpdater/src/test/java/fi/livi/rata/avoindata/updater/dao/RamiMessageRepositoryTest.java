@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneOffset;
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Transactional
 public class RamiMessageRepositoryTest extends BaseTest {
-    private static final ZonedDateTime NOW = ZonedDateTime.of(2026, 10, 27, 12, 0, 0, 0, ZoneOffset.UTC);
+    private static final Instant NOW = ZonedDateTime.of(2026, 10, 27, 12, 0, 0, 0, ZoneOffset.UTC).toInstant();
 
     @Autowired
     private RamiMessageRepository repository;
@@ -67,7 +69,7 @@ public class RamiMessageRepositoryTest extends BaseTest {
         entityManager.flush();
         entityManager.clear();
 
-        final List<RamiMessage> messages = repository.findLatestActive(NOW, NOW.minusHours(5));
+        final List<RamiMessage> messages = repository.findLatestActive(NOW, NOW.minus(5, ChronoUnit.HOURS));
 
         assertEquals(List.of("A", "D"), messages.stream().map(m -> m.id).sorted().toList());
         final RamiMessage a = messages.stream().filter(m -> m.id.equals("A")).findFirst().orElseThrow();
@@ -76,7 +78,7 @@ public class RamiMessageRepositoryTest extends BaseTest {
         assertEquals("Hej", a.videos.iterator().next().textSv);
         assertEquals(1, a.audios.size());
         assertEquals(2, a.stations.size());
-        assertEquals(NOW.minusHours(3), a.createdSource);
+        assertEquals(NOW.minus(3, ChronoUnit.HOURS), a.createdSource);
     }
 
     @Test
@@ -90,6 +92,6 @@ public class RamiMessageRepositoryTest extends BaseTest {
         final List<RamiFirstCreated> result = repository.findFirstCreated(List.of("A"));
 
         assertEquals(1, result.size());
-        assertTrue(result.get(0).getCreated().isEqual(NOW.minusHours(4)));
+        assertTrue(result.get(0).getCreated().equals(NOW.minus(4, ChronoUnit.HOURS)));
     }
 }

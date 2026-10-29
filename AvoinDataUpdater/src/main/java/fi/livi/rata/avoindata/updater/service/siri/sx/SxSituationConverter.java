@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.siri.sx;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.TreeSet;
 
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage.MessageType;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageAudio;
@@ -51,7 +54,7 @@ public class SxSituationConverter {
      * @param firstCreated creation time of the first version by message id; the creation time of the message
      *                     itself is used when an id is missing
      */
-    public SxResult convert(final List<RamiMessage> messages, final Map<String, ZonedDateTime> firstCreated) {
+    public SxResult convert(final List<RamiMessage> messages, final Map<String, Instant> firstCreated) {
         final List<SxSituation> situations = new ArrayList<>();
         final List<String> noJourneyIds = new ArrayList<>();
         int noText = 0;
@@ -101,7 +104,7 @@ public class SxSituationConverter {
             }
 
             situations.add(situation(message, trainMessage, texts, target,
-                    firstCreated.getOrDefault(message.id, message.createdSource)));
+                    toHelsinki(firstCreated.getOrDefault(message.id, message.createdSource))));
         }
 
         situations.sort(Comparator.comparing(SxSituation::situationNumber));
@@ -113,15 +116,16 @@ public class SxSituationConverter {
                                          final List<SxText> texts, final SxTarget target,
                                          final ZonedDateTime creationTime) {
         final boolean closed = message.deleted != null;
-        final ZonedDateTime endTime = closed ? message.deleted.plusHours(CLOSED_HOURS) : message.endValidity;
+        final ZonedDateTime endTime = toHelsinki(
+                closed ? message.deleted.plus(CLOSED_HOURS, ChronoUnit.HOURS) : message.endValidity);
         // RAMI ids (SHM..., MVM...) already differ from other id formats; add a source prefix if another source is added.
         return new SxSituation(
                 NeTExIdGenerator.CODESPACE + ":SituationNumber:" + message.id,
                 message.version,
                 creationTime,
-                message.createdSource,
+                toHelsinki(message.createdSource),
                 closed,
-                message.startValidity,
+                toHelsinki(message.startValidity),
                 endTime,
                 reportType(message),
                 texts.stream().map(t -> new SxText(t.language(), SxTexts.summary(t.text()))).toList(),
@@ -166,5 +170,9 @@ public class SxSituationConverter {
      */
     private static SxReportType reportType(final RamiMessage message) {
         return SxReportType.GENERAL;
+    }
+
+    private static ZonedDateTime toHelsinki(final Instant instant) {
+        return instant == null ? null : instant.atZone(DateProvider.ZONE_ID_HKI);
     }
 }

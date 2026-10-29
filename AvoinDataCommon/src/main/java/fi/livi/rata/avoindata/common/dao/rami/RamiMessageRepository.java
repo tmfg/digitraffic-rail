@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -31,7 +31,7 @@ public interface RamiMessageRepository extends JpaRepository<RamiMessage, RamiMe
             and ((m.deleted is null and m.endValidity > :now)
                  or (m.deleted is not null and m.deleted < m.endValidity and m.deleted > :windowStart))
             """)
-    List<RamiMessage> findLatestActive(@Param("now") ZonedDateTime now, @Param("windowStart") ZonedDateTime windowStart);
+    List<RamiMessage> findLatestActive(@Param("now") Instant now, @Param("windowStart") Instant windowStart);
 
     @Query("select m.id as id, min(m.createdSource) as created from RamiMessage m where m.id in :ids group by m.id")
     List<RamiFirstCreated> findFirstCreated(@Param("ids") Collection<String> ids);
