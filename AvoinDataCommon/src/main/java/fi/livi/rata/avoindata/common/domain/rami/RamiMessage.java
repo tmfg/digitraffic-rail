@@ -82,4 +82,18 @@ public class RamiMessage {
     })
     /** One or more stations per message. */
     public Set<RamiMessageStation> stations = new HashSet<>();
+
+    /**
+     * A message about one train, as opposed to a message about stations.
+     */
+    public boolean isTrainMessage() {
+        return messageType == MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
+    }
+
+    /**
+     * True when both the train number and the departure date are set.
+     */
+    public boolean hasTrainDefined() {
+        return trainNumber != null && trainDepartureDate != null;
+    }
 }

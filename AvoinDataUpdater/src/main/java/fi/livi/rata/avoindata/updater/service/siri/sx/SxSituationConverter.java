@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage;
-import fi.livi.rata.avoindata.common.domain.rami.RamiMessage.MessageType;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageAudio;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageStation;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessageVideo;
@@ -38,8 +37,6 @@ public class SxSituationConverter {
 
     /** A deleted message is published as closed for this many hours after it was deleted. */
     public static final int CLOSED_HOURS = 5;
-
-    private static final String NEXT_STOP_PREFIX = "seuraava pysähdys";
 
     private final StationUicLookup stationUicLookup;
     private final SiriStopResolver stopResolver;
@@ -65,13 +62,13 @@ public class SxSituationConverter {
         int unknownStations = 0;
 
         for (final RamiMessage message : messages) {
-            final boolean trainMessage = message.messageType == MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
+            final boolean trainMessage = message.isTrainMessage();
             final List<SxText> texts = texts(message);
             if (texts.isEmpty()) {
                 noText++;
                 continue;
             }
-            if (trainMessage && texts.getFirst().language().equals("fi") && isNextStop(texts.getFirst().text())) {
+            if (trainMessage && texts.getFirst().isNextStop()) {
                 nextStop++;
                 continue;
             }
@@ -79,7 +76,7 @@ public class SxSituationConverter {
             final SxTarget target;
             if (trainMessage) {
                 // The columns can be empty in the database, even though train messages normally have both.
-                final Optional<ResolvedJourney> journey = message.trainNumber == null || message.trainDepartureDate == null
+                final Optional<ResolvedJourney> journey = !message.hasTrainDefined()
                         ? Optional.empty()
                         : journeyRefResolver.resolve(message.trainNumber, message.trainDepartureDate);
                 if (journey.isEmpty()) {
@@ -139,10 +136,6 @@ public class SxSituationConverter {
     private Optional<String> stopPlaceId(final String stationShortCode) {
         final OptionalInt uic = stationUicLookup.uicFor(stationShortCode);
         return uic.isPresent() ? stopResolver.resolveStopPlaceId(uic.getAsInt()) : Optional.empty();
-    }
-
-    private static boolean isNextStop(final String finnishText) {
-        return finnishText.toLowerCase().startsWith(NEXT_STOP_PREFIX);
     }
 
     /** Screen text per language, spoken text when a language has no screen text. Order: fi, sv, en. */
