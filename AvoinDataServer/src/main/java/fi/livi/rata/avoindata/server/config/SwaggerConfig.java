@@ -14,11 +14,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.core.converter.ModelConverters;
+import fi.livi.rata.avoindata.common.domain.lastupdated.UpToDateInformation;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
@@ -60,19 +61,12 @@ public class SwaggerConfig {
     }
 
     /**
-     * The endpoint is served by the updater application (not by this one), so it is described here by hand
-     * for the public API documentation.
+     * The endpoint is served by the updater application (not by this one), so it is added here
+     * to the public API documentation. The schema is generated from the model shared with the updater.
      */
     private static void addLastUpdated(final OpenAPI openApi) {
-        final Schema<?> information = new ObjectSchema()
-                .addProperty("lastUpdated", new StringSchema().format("date-time")
-                        .description("When the data type was last updated"))
-                .addProperty("alarmLimit", new StringSchema().example("PT5M")
-                        .description("How old the data can be before it is considered outdated (ISO 8601 duration)"))
-                .addProperty("durationSinceLastUpdate", new StringSchema().example("PT1.2S")
-                        .description("Time since the last update (ISO 8601 duration)"))
-                .addProperty("isUpToDate", new Schema<Boolean>().type("boolean")
-                        .description("False when the time since the last update is longer than the alarm limit"));
+        final Schema<?> information = ModelConverters.getInstance()
+                .readAllAsResolvedSchema(UpToDateInformation.class).schema;
 
         final Schema<?> response = new ObjectSchema()
                 .additionalProperties(information)

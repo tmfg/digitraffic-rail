@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.controllers;
 
+import fi.livi.rata.avoindata.common.domain.lastupdated.UpToDateInformation;
 import java.util.Map;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -23,11 +24,11 @@ public class LastUpdateController {
 
     @RequestMapping("/api/v1/last-updated")
     @ResponseBody
-    public Map<LastUpdateService.LastUpdatedType, IsUpToDateService.UpToDateInformation> getLastUpdated(final HttpServletResponse response) {
+    public Map<LastUpdateService.LastUpdatedType, UpToDateInformation> getLastUpdated(final HttpServletResponse response) {
         response.setHeader("Cache-Control", String.format("max-age=%d, public", 1));
 
         final StopWatch getIsUpToDates = StopWatch.createStarted();
-        final Map<LastUpdateService.LastUpdatedType, IsUpToDateService.UpToDateInformation> isUpToDates = isUpToDateService.getIsUpToDates();
+        final Map<LastUpdateService.LastUpdatedType, UpToDateInformation> isUpToDates = isUpToDateService.getIsUpToDates();
         getIsUpToDates.stop();
 
         log.info("method=getLastUpdated tookMs={} ", getIsUpToDates.getTime());

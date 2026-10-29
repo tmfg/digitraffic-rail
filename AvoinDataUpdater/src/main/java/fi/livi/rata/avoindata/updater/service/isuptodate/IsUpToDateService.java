@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.isuptodate;
 
+import fi.livi.rata.avoindata.common.domain.lastupdated.UpToDateInformation;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.CATEGORY_CODES;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.FUTURE_TRAINS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.GTFS;
@@ -35,17 +36,6 @@ public class IsUpToDateService {
 
     public IsUpToDateService(final LastUpdateService lastUpdateService) {
         this.lastUpdateService = lastUpdateService;
-    }
-
-    public record UpToDateInformation(
-            Instant lastUpdated,
-            Duration alarmLimit,
-            Duration durationSinceLastUpdate) {
-
-        @com.fasterxml.jackson.annotation.JsonProperty("isUpToDate")
-        public boolean isUpToDate() {
-            return !alarmLimit.minus(durationSinceLastUpdate).isNegative();
-        }
     }
 
     @PostConstruct
