@@ -65,7 +65,7 @@ public class SiriSxGenerationServiceTest {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki());
-        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDates(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(journey));
 
         final ZonedDateTime now = DateProvider.nowInHelsinki();
@@ -152,7 +152,7 @@ public class SiriSxGenerationServiceTest {
 
         service.generate();
 
-        verify(publishedJourneyRepository).findByDatasetVersionAndDepartureDatesFetchTracks(1L, List.of(departure));
+        verify(publishedJourneyRepository).findByDatasetVersionAndDepartureDates(1L, List.of(departure));
     }
 
     private RamiMessage addTrainMessage() {
@@ -195,7 +195,7 @@ public class SiriSxGenerationServiceTest {
         final NeTExPublishedJourney old = new NeTExPublishedJourney(
                 new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
                 "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki().minusHours(31));
-        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDates(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(old));
 
         service.generate();
@@ -210,7 +210,7 @@ public class SiriSxGenerationServiceTest {
     @Test
     public void noJourneysForTodayDropTrainMessagesAndTrainsAreNotUpdated() {
         addTrainMessage();
-        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(
+        when(publishedJourneyRepository.findByDatasetVersionAndDepartureDates(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of());
 
         service.generate();

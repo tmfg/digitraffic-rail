@@ -71,7 +71,8 @@ public class SwaggerConfig {
         final Schema<?> response = new ObjectSchema()
                 .additionalProperties(information)
                 .description("Keyed by data type, for example TRAINS, TRAIN_LOCATIONS, GTFS, SIRI_ET, SIRI_VM, SIRI_SX_STATIONS and SIRI_SX_TRAINS. "
-                        + "A data type is listed only after it has been updated at least once since the service started.");
+                        + "Every data type in use is listed from the service start. The time is the stored time of the last update, "
+                        + "or the service start time when nothing has been stored yet.");
 
         final Operation operation = new Operation()
                 .addTagsItem("last-updated")

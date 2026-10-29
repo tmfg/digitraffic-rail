@@ -177,7 +177,7 @@ public class SiriSxGenerationService {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.MISSING.name());
         }
         final List<NeTExPublishedJourney> journeys =
-                publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, departureDates);
+                publishedJourneyRepository.findByDatasetVersionAndDepartureDates(version, departureDates);
         // Train departure dates are Finnish dates, like the NeTEx window. NeTEx always has today and tomorrow, so
         // journeys must be found for those dates. Older dates may be outside the NeTEx window and later dates are not
         // in NeTEx yet, so a message for them is simply dropped when it has no journey.
