@@ -95,6 +95,9 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 - Train messages for a departure date more than one day ahead are not published yet, because NeTEx does not have
   the journeys of that day. This is normal and not an error. The message appears after the NeTEx run that adds the
   day. Station messages are published by their validity time regardless of the departure date.
+- Possible simplification: the 30 hour age limit could be dropped from SX, because the per-date check above already
+  notices a missing NeTEx day and SX only needs the journey ids. The cost is that a broken NeTEx run is noticed
+  1-2 days later. It is kept for now to match ET and VM.
 - The run fails, and nothing new is stored, only if the PETI stops are not available (both station and train
   messages need them).
 
