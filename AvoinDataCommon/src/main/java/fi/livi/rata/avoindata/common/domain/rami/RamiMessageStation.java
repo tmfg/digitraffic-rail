@@ -18,9 +18,8 @@ public class RamiMessageStation {
 
     /**
      * Station short code as in {@code Station.shortCode}, upper case, 2 to 4 characters (for example {@code HKI},
-     * {@code TPE}, {@code RI}, {@code OLLI}). Not the UIC code (for example HKI is UIC 1) and not a PETI id. Every
-     * code in the production data exists in the station table; the table also holds stopping points ({@code KRS})
-     * and turnouts ({@code KTN}).
+     * {@code TPE}, {@code RI}, {@code OLLI}). Not the UIC code (for example HKI is UIC 1) and not a PETI id. The code is
+     * not linked to the station table, and may also be a stopping point ({@code KRS}) or a turnout ({@code KTN}).
      */
     public String stationShortCode;
 }

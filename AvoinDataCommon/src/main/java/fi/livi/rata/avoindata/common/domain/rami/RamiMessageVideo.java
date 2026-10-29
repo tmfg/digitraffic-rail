@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.Immutable;
 
 /**
- * Text shown on displays. A language can be missing; some messages have only the spoken text.
+ * Text shown on displays. A language can be missing.
  */
 @Entity
 @Immutable
