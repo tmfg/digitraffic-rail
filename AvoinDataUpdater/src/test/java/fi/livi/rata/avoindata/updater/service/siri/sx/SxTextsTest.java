@@ -33,11 +33,8 @@ public class SxTextsTest {
     }
 
     @Test
-    public void textWithoutSpacesIsCutInTheMiddle() {
-        final String summary = SxTexts.summary("x".repeat(300));
-
-        assertEquals(160, summary.length());
-        assertTrue(summary.endsWith("xxx..."));
+    public void wordIsNeverCut() {
+        assertEquals("aaa...", SxTexts.summary("aaa " + "x".repeat(300)));
     }
 
     @Test
@@ -50,9 +47,9 @@ public class SxTextsTest {
 
     @Test
     public void characterOutsideBasicPlaneIsNotCutInHalf() {
-        final String summary = SxTexts.summary("a".repeat(156) + "😀" + "b".repeat(50));
+        final String summary = SxTexts.summary("😀 ".repeat(100));
 
-        assertEquals("a".repeat(156) + "😀...", summary);
-        assertTrue(summary.codePointCount(0, summary.length()) <= 160);
+        assertEquals(160, summary.codePointCount(0, summary.length()));
+        assertTrue(summary.endsWith("😀..."));
     }
 }

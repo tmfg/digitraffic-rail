@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
+
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage;
 import fi.livi.rata.avoindata.common.domain.rami.RamiMessage.MessageType;
@@ -87,6 +89,7 @@ public class SxSituationConverter {
                 target = new SxTarget.Journey(journey.get().serviceJourneyId(), journey.get().dataFrameRef(),
                         journey.get().operatorRef(), journey.get().lineId());
             } else {
+                // Sorted and without duplicates, so the same stations always give the same XML
                 final TreeSet<String> stopPlaceIds = new TreeSet<>();
                 for (final RamiMessageStation station : message.stations) {
                     final Optional<String> stopPlaceId = stopPlaceId(station.stationShortCode);
@@ -153,15 +156,15 @@ public class SxSituationConverter {
         return result;
     }
 
+    /**
+     * Adds the text of one language: the first non-blank screen text, or the first non-blank spoken text when the
+     * language has no screen text. Nothing is added when both are missing.
+     */
     private static void addText(final List<SxText> result, final String language, final List<String> screen,
                                 final List<String> spoken) {
-        screen.stream().filter(SxSituationConverter::hasText).findFirst()
-                .or(() -> spoken.stream().filter(SxSituationConverter::hasText).findFirst())
+        screen.stream().filter(StringUtils::isNotBlank).findFirst()
+                .or(() -> spoken.stream().filter(StringUtils::isNotBlank).findFirst())
                 .ifPresent(text -> result.add(new SxText(language, text.strip())));
-    }
-
-    private static boolean hasText(final String text) {
-        return text != null && !text.isBlank();
     }
 
     /**

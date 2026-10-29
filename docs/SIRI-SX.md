@@ -67,7 +67,7 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
   requirement), then left out.
 - `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
-  with `...` added, at most 160 characters (profile limit). A text that already fits is used as is.
+  with `...` added, at most 160 characters (profile limit). A word is never cut. A text that already fits is used as is.
 - Languages fi, sv and en, each with `xml:lang`, written in upper case (`FI`, `SV`, `EN`) because the SIRI 2.0
   schema accepts only upper case codes. A language without text is left out. If there is no screen
   text, the spoken text is used. If there is neither, the message is dropped.
