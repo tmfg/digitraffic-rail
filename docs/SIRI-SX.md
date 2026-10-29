@@ -76,9 +76,9 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
   stations gets the stop places that are found; stations without one are counted in the generation log. A message
   that has no stop place at all, or whose train is not in the published journeys, is dropped and counted in the
   log.
-- `ReportType` is `incident` for train messages and `general` for station messages. RAMI has no field for it, so
-  this is a rough rule and some messages get the wrong value (for example a train message that only says which
-  cars the train has, or a station message about closed platforms).
+- `ReportType` is always `general`. RAMI has no field for it and the texts cannot be sorted reliably into incidents
+  and general information (checked against all RAMI messages), so no guess is made. The decision is in one place
+  (`SxSituationConverter.reportType`) and can be changed later.
 - Train messages starting with "Seuraava pysähdys" ("next stop") are not published; they are plain display
   information, not situations.
 - The XML is built on every run and is deterministic (messages sorted by id, languages in a fixed order, no
@@ -162,7 +162,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 | `Progress` | `PtSituationElement` | 1:1 | ✅ | `closed` if `deleted` is set, otherwise `open` |
 | `ValidityPeriod` | `PtSituationElement` | 1:* | ✅ | `start_validity` – `end_validity`. A closed message ends 5 hours after the deletion time |
 | `UndefinedReason` | `PtSituationElement` | 1:1 | ✅ | Always empty (required by the format, not used) |
-| `ReportType` | `PtSituationElement` | 1:1 | ✅ | Train message `incident`, station message `general` (rough rule, see Rules above) |
+| `ReportType` | `PtSituationElement` | 1:1 | ✅ | Always `general` (see Rules above) |
 | `Summary` | `PtSituationElement` | 1:* | ✅ | Screen text cut to 160 characters, one per language |
 | `Description` | `PtSituationElement` | 0:* | ✅ | Full text, one per language |
 | `Affects` | `PtSituationElement` | 1:1 | ✅ | See below |

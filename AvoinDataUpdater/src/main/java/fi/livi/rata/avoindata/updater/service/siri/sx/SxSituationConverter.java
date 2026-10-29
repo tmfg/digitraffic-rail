@@ -123,7 +123,7 @@ public class SxSituationConverter {
                 closed,
                 message.startValidity,
                 endTime,
-                trainMessage ? SxReportType.INCIDENT : SxReportType.GENERAL,
+                reportType(message),
                 texts.stream().map(t -> new SxText(t.language(), SxTexts.summary(t.text()))).toList(),
                 texts,
                 target);
@@ -158,5 +158,13 @@ public class SxSituationConverter {
 
     private static boolean hasText(final String text) {
         return text != null && !text.isBlank();
+    }
+
+    /**
+     * RAMI has no field for the report type, and the message texts cannot be sorted reliably into incidents and
+     * general information, so every message is general. Change here if a better rule is found.
+     */
+    private static SxReportType reportType(final RamiMessage message) {
+        return SxReportType.GENERAL;
     }
 }

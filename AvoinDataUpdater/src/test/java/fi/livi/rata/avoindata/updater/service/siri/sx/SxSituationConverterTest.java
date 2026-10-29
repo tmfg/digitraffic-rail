@@ -125,7 +125,7 @@ public class SxSituationConverterTest {
                 "Vaunut 6 ja 7 puuttuvat", null, "HKI"));
 
         final SxSituation situation = result.situations().getFirst();
-        assertEquals(SxReportType.INCIDENT, situation.reportType());
+        assertEquals(SxReportType.GENERAL, situation.reportType());
         assertEquals(new SxTarget.Journey(new ServiceJourneyId("FTR:ServiceJourney:145"), new DataFrameRef("2026-10-27"),
                 new OperatorRef("FTR:Operator:vr"), new LineId("FTR:Line:IC")), situation.target());
     }

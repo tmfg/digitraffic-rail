@@ -58,7 +58,7 @@ Tables: `rami_message` (+ `_video`, `_audio`, `_station`). Sample exports are in
    message ids).
 5. **ReportType:** SIRI-SX has only two values: `general` (information that does not change how the service runs,
    e.g. "no food service on this journey") and `incident` (affects the service, e.g. delays, cancellations,
-   replacement buses). RAMI has no such field. Rule: train message = `incident`, station message = `general`.
+   replacement buses). RAMI has no such field. Decided in a meeting: every message is `general` (see the Rule below for the earlier idea: train = `incident`).
    This is rough, so some messages get the wrong value (the real data does not split cleanly by type):
    - Train messages that are really only information, so `general` would be right: "Seuraava pysähdys:
      Oulunkylä." (2 of ~28 000), also car order notes like "Junassa vaunut 1-6 Kajaaniin ja vaunut 7-12
@@ -137,7 +137,7 @@ message whose journey is not published. If only some are found, the message keep
 | `UndefinedReason` | empty element | Fixed value (profile requires it) |
 | `Progress` | `deleted` set = `closed`, else `open` | Mapped |
 | `ValidityPeriod` | `start_validity`, `end_validity` (closed: deletion + 5 h) | Mapped |
-| `ReportType` | train = `incident`, station = `general` | Mapped (rough, see decision 5) |
+| `ReportType` | always `general` | Mapped (decided in meeting, see decision 5) |
 | `Summary` | screen text, cut to 160 characters + `...` | Mapped |
 | `Description` | screen text, full | Mapped |
 | `Affects` | train: `VehicleJourneys` (+ `Operator`, `LineRef`); station: `StopPlaces` | Mapped |
