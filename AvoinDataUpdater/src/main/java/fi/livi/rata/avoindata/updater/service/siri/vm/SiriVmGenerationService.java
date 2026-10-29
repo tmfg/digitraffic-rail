@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
@@ -169,7 +169,10 @@ public class SiriVmGenerationService {
 
         final DbSources dbSources = buildDbSources(operatingDates);
         final JourneyRefResolver journeyRefResolver = dbSources.journeyRefResolver();
-        log.info("event=rail.siri.vm.prepare rail.siri.vm.journey_source=db");
+        log.atInfo()
+                .addKeyValue("event", "rail.siri.vm.prepare")
+                .addKeyValue("rail.siri.vm.journey_source", "db")
+                .log("SIRI-VM prepare");
 
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
@@ -358,21 +361,26 @@ public class SiriVmGenerationService {
                 ? Double.toString(durationSeconds(
                         java.time.Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
                 : "NULL";
-        final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriVm outcome={} error.type={} stage={} duration={} "
-                        + "rail.siri.service=vm "
-                        + "rail.siri.locations.received={} rail.siri.activities.emitted={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
-                        + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs),
-                stats.locationsReceived(), stats.activitiesEmitted(),
-                datasetVersion, journeySourceAge, unavailableReason,
-                petiStopSource.getSnapshotAgeSeconds(), outputSize);
-        switch (outcome) {
-            case "success" -> log.info(line);
-            case "partial" -> log.warn(line);
-            default -> log.error(line, thrown);
-        }
+        final LoggingEventBuilder event = switch (outcome) {
+            case "success" -> log.atInfo();
+            case "partial" -> log.atWarn();
+            default -> log.atError();
+        };
+        event.addKeyValue("event", "rail.siri.generation")
+                .addKeyValue("operation", "generateSiriVm")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("error.type", errorType)
+                .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
+                .addKeyValue("duration", durationSeconds(durationMs))
+                .addKeyValue("rail.siri.service", "vm")
+                .addKeyValue("rail.siri.locations.received", stats.locationsReceived())
+                .addKeyValue("rail.siri.activities.emitted", stats.activitiesEmitted())
+                .addKeyValue("rail.siri.journey_source.dataset_version", datasetVersion)
+                .addKeyValue("rail.siri.journey_source.age", journeySourceAge)
+                .addKeyValue("rail.siri.journey_source.unavailable_reason", unavailableReason)
+                .addKeyValue("rail.netex.peti.snapshot.age", petiStopSource.getSnapshotAgeSeconds())
+                .addKeyValue("rail.siri.output.size", outputSize)
+                .setCause(thrown)
+                .log("SIRI-VM generation");
     }
 }

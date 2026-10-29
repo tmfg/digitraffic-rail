@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import fi.livi.rata.avoindata.updater.service.siri.LogEventText;
 import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
@@ -551,7 +552,7 @@ class SiriVmGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
                 .toList()
                 .getLast();
@@ -593,7 +594,7 @@ class SiriVmGenerationServiceTest {
         }
 
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.locations.received="))
                 .toList()
                 .getLast();
@@ -771,7 +772,7 @@ class SiriVmGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("outcome=error") && m.contains("rail.siri.locations.received="))
                 .toList()
                 .getLast();

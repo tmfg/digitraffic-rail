@@ -14,10 +14,10 @@ import java.util.Set;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
@@ -151,7 +151,10 @@ public class SiriEtGenerationService {
         final DbSources dbSources = buildDbSources(operatingDates);
         final JourneyRefResolver journeyRefResolver = dbSources.journeyRefResolver();
         final PlannedTrackLookup plannedTrackLookup = dbSources.plannedTrackLookup();
-        log.info("event=rail.siri.et.prepare rail.siri.et.journey_source=db");
+        log.atInfo()
+                .addKeyValue("event", "rail.siri.et.prepare")
+                .addKeyValue("rail.siri.et.journey_source", "db")
+                .log("SIRI-ET prepare");
 
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
@@ -270,32 +273,38 @@ public class SiriEtGenerationService {
                 ? Double.toString(durationSeconds(
                         Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
                 : "NULL";
-        final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriEt outcome={} error.type={} stage={} duration={} "
-                        + "rail.siri.service=et "
-                        + "rail.siri.trains.received={} rail.siri.journeys.emitted={} "
-                        + "rail.siri.journeys.cancelled={} rail.siri.journeys.skipped.unresolved_journey={} "
-                        + "rail.siri.journeys.skipped.unresolved_stop.no_stop={} "
-                        + "rail.siri.journeys.skipped.unresolved_stop.no_quay={} "
-                        + "rail.siri.journeys.skipped.completed_carryover={} rail.siri.calls.total={} "
-                        + "rail.siri.calls.recorded={} rail.siri.calls.estimated={} "
-                        + "rail.siri.stop_refs.resolved.quay={} rail.siri.stop_refs.resolved.stop_place={} "
-                        + "rail.siri.stop_refs.unresolved={} rail.siri.peti.match_rate={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
-                        + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs), trainsReceived,
-                stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
-                stats.skippedUnresolvedStopNoStop(), stats.skippedUnresolvedStopNoQuay(),
-                stats.skippedCompletedCarryover(), stats.callsTotal(),
-                stats.callsRecorded(), stats.callsEstimated(),
-                stats.stopRefsQuay(), stats.stopRefsStopPlace(), stats.stopRefsUnresolved(), matchRate,
-                datasetVersion, journeySourceAge, unavailableReason,
-                petiStopSource.getSnapshotAgeSeconds(), outputSize);
-        switch (outcome) {
-            case "success" -> log.info(line);
-            case "partial" -> log.warn(line);
-            default -> log.error(line, thrown);
-        }
+        final LoggingEventBuilder event = switch (outcome) {
+            case "success" -> log.atInfo();
+            case "partial" -> log.atWarn();
+            default -> log.atError();
+        };
+        event.addKeyValue("event", "rail.siri.generation")
+                .addKeyValue("operation", "generateSiriEt")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("error.type", errorType)
+                .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
+                .addKeyValue("duration", durationSeconds(durationMs))
+                .addKeyValue("rail.siri.service", "et")
+                .addKeyValue("rail.siri.trains.received", trainsReceived)
+                .addKeyValue("rail.siri.journeys.emitted", stats.journeysEmitted())
+                .addKeyValue("rail.siri.journeys.cancelled", stats.journeysCancelled())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_journey", stats.skippedUnresolvedJourney())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_stop.no_stop", stats.skippedUnresolvedStopNoStop())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_stop.no_quay", stats.skippedUnresolvedStopNoQuay())
+                .addKeyValue("rail.siri.journeys.skipped.completed_carryover", stats.skippedCompletedCarryover())
+                .addKeyValue("rail.siri.calls.total", stats.callsTotal())
+                .addKeyValue("rail.siri.calls.recorded", stats.callsRecorded())
+                .addKeyValue("rail.siri.calls.estimated", stats.callsEstimated())
+                .addKeyValue("rail.siri.stop_refs.resolved.quay", stats.stopRefsQuay())
+                .addKeyValue("rail.siri.stop_refs.resolved.stop_place", stats.stopRefsStopPlace())
+                .addKeyValue("rail.siri.stop_refs.unresolved", stats.stopRefsUnresolved())
+                .addKeyValue("rail.siri.peti.match_rate", matchRate)
+                .addKeyValue("rail.siri.journey_source.dataset_version", datasetVersion)
+                .addKeyValue("rail.siri.journey_source.age", journeySourceAge)
+                .addKeyValue("rail.siri.journey_source.unavailable_reason", unavailableReason)
+                .addKeyValue("rail.netex.peti.snapshot.age", petiStopSource.getSnapshotAgeSeconds())
+                .addKeyValue("rail.siri.output.size", outputSize)
+                .setCause(thrown)
+                .log("SIRI-ET generation");
     }
 }

@@ -15,7 +15,7 @@
         <!-- Log message format -->
         <encoder>
             <!-- If needed to exclude stacktrace put %xEx{0} at the end of the pattern -->
-            <pattern>%d{ISO8601} %p&#9;[%t] - %c: %m%n</pattern>
+            <pattern>%d{ISO8601} %p&#9;[%t] - %c: %m %kvp%n</pattern>
         </encoder>
     </appender>
 

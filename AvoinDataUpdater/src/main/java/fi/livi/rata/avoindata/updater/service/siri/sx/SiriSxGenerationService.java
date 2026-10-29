@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -17,10 +16,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
@@ -164,12 +163,12 @@ public class SiriSxGenerationService {
      * returned: train messages are dropped and station messages are still published.
      */
     private JourneySource publishedJourneys(final List<RamiMessage> ramiMessages) {
-        final List<LocalDate> dates = ramiMessages.stream()
+        final List<LocalDate> departureDates = ramiMessages.stream()
                 .map(m -> m.trainDepartureDate)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
-        if (dates.isEmpty()) {
+        if (departureDates.isEmpty()) {
             return new JourneySource(Map.of(), null);
         }
         final Long version = publishedJourneyRepository.getMaxDatasetVersion();
@@ -177,16 +176,11 @@ public class SiriSxGenerationService {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.MISSING.name());
         }
         final List<NeTExPublishedJourney> journeys =
-                publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, dates);
+                publishedJourneyRepository.findByDatasetVersionAndDepartureDatesFetchTracks(version, departureDates);
         // Train departure dates are Finnish dates, like the NeTEx window. NeTEx always has today and tomorrow, so
         // journeys must be found for those dates. Older dates may be outside the NeTEx window and later dates are not
         // in NeTEx yet, so a message for them is simply dropped when it has no journey.
-        final LocalDate today = DateProvider.dateInHelsinki();
-        final Set<LocalDate> datesWithJourneys = journeys.stream()
-                .map(j -> j.trainId.departureDate)
-                .collect(Collectors.toSet());
-        if (dates.stream().anyMatch(d -> !d.isBefore(today) && !d.isAfter(today.plusDays(1))
-                && !datesWithJourneys.contains(d))) {
+        if (isJourneyMissingForTodayOrTomorrow(departureDates, journeys)) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.EMPTY.name());
         }
         final ZonedDateTime newest = journeys.stream()
@@ -198,16 +192,32 @@ public class SiriSxGenerationService {
                 && (newest == null || newest.isBefore(DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS)))) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.STALE.name());
         }
-        final Map<TrainId, ResolvedJourney> byTrainId = new HashMap<>();
-        for (final NeTExPublishedJourney j : journeys) {
-            byTrainId.put(j.trainId, new ResolvedJourney(
-                    new ServiceJourneyId(j.serviceJourneyId),
-                    new DataFrameRef(j.trainId.departureDate.toString()),
-                    new LineId(j.lineId),
-                    j.operatorRef != null ? new OperatorRef(j.operatorRef) : null,
-                    null));
-        }
+        final Map<TrainId, ResolvedJourney> byTrainId = journeys.stream()
+                .collect(Collectors.toMap(j -> j.trainId, SiriSxGenerationService::toResolvedJourney, (_, b) -> b));
         return new JourneySource(byTrainId, null);
+    }
+
+    private static ResolvedJourney toResolvedJourney(final NeTExPublishedJourney j) {
+        return new ResolvedJourney(
+                new ServiceJourneyId(j.serviceJourneyId),
+                new DataFrameRef(j.trainId.departureDate.toString()),
+                new LineId(j.lineId),
+                j.operatorRef != null ? new OperatorRef(j.operatorRef) : null,
+                null);
+    }
+
+    private static boolean isJourneyMissingForTodayOrTomorrow(final List<LocalDate> messageDates,
+                                                              final List<NeTExPublishedJourney> journeys) {
+        final LocalDate today = DateProvider.dateInHelsinki();
+        final Set<LocalDate> datesWithJourneys = journeys.stream()
+                .map(j -> j.trainId.departureDate)
+                .collect(Collectors.toSet());
+        // NeTEx always has journeys for today and tomorrow, so a message date in that range without any journeys
+        // means the NeTEx data is missing. Older dates may be outside the NeTEx window and later dates are not in
+        // NeTEx yet, so those are not checked.
+        return messageDates.stream()
+                .filter(d -> !d.isBefore(today) && !d.isAfter(today.plusDays(1)))
+                .anyMatch(d -> !datesWithJourneys.contains(d));
     }
 
     private record JourneySource(Map<TrainId, ResolvedJourney> journeys, String unavailableReason) {
@@ -242,28 +252,37 @@ public class SiriSxGenerationService {
     private void logEvent(final String outcome, final String errorType, final Stage stage, final StopWatch stopWatch,
                           final int ramiMessageCount, final SxResult conversionResult, final int outputSize, final String storeResult,
                           final String journeysUnavailableReason, final Throwable thrown) {
-        final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriSx outcome={} error.type={} stage={} duration={} "
-                        + "rail.siri.service=sx rail.siri.sx.messages={} rail.siri.sx.situations={} "
-                        + "rail.siri.sx.dropped.no_text={} rail.siri.sx.dropped.next_stop={} "
-                        + "rail.siri.sx.dropped.no_stop_place={} rail.siri.sx.dropped.no_journey={} "
-                        + "rail.siri.sx.unknown_stations={} rail.siri.sx.journeys_unavailable={} rail.siri.sx.stored={} "
-                        + "rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT),
-                durationSeconds(stopWatch.getDuration().toMillis()), ramiMessageCount,
-                conversionResult != null ? conversionResult.situations().size() : 0, conversionResult != null ? conversionResult.noText() : 0,
-                conversionResult != null ? conversionResult.nextStop() : 0, conversionResult != null ? conversionResult.noStopPlace() : 0,
-                conversionResult != null ? conversionResult.noJourneyIds().size() : 0, conversionResult != null ? conversionResult.unknownStations() : 0,
-                journeysUnavailableReason != null ? journeysUnavailableReason : "NULL", storeResult, outputSize);
-        switch (outcome) {
-            case "success" -> log.info(line);
-            case "partial" -> {
-                log.warn(line);
-                if (conversionResult != null && !conversionResult.noJourneyIds().isEmpty()) {
-                    log.warn("event=rail.siri.sx.no_journey ids={}", conversionResult.noJourneyIds());
-                }
-            }
-            default -> log.error(line, thrown);
+        final boolean converted = conversionResult != null;
+        final LoggingEventBuilder event = switch (outcome) {
+            case "success" -> log.atInfo();
+            case "partial" -> log.atWarn();
+            default -> log.atError();
+        };
+        event.addKeyValue("event", "rail.siri.generation")
+                .addKeyValue("operation", "generateSiriSx")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("error.type", errorType)
+                .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
+                .addKeyValue("duration", durationSeconds(stopWatch.getDuration().toMillis()))
+                .addKeyValue("rail.siri.service", "sx")
+                .addKeyValue("rail.siri.sx.messages", ramiMessageCount)
+                .addKeyValue("rail.siri.sx.situations", converted ? conversionResult.situations().size() : 0)
+                .addKeyValue("rail.siri.sx.dropped.no_text", converted ? conversionResult.noText() : 0)
+                .addKeyValue("rail.siri.sx.dropped.next_stop", converted ? conversionResult.nextStop() : 0)
+                .addKeyValue("rail.siri.sx.dropped.no_stop_place", converted ? conversionResult.noStopPlace() : 0)
+                .addKeyValue("rail.siri.sx.dropped.no_journey", converted ? conversionResult.noJourneyIds().size() : 0)
+                .addKeyValue("rail.siri.sx.unknown_stations", converted ? conversionResult.unknownStations() : 0)
+                .addKeyValue("rail.siri.sx.journeys_unavailable",
+                        journeysUnavailableReason != null ? journeysUnavailableReason : "NULL")
+                .addKeyValue("rail.siri.sx.stored", storeResult)
+                .addKeyValue("rail.siri.output.size", outputSize)
+                .setCause(thrown)
+                .log("SIRI-SX generation");
+        if ("partial".equals(outcome) && converted && !conversionResult.noJourneyIds().isEmpty()) {
+            log.atWarn()
+                    .addKeyValue("event", "rail.siri.sx.no_journey")
+                    .addKeyValue("ids", conversionResult.noJourneyIds())
+                    .log("SIRI-SX messages without a journey");
         }
     }
 }

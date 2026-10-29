@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import fi.livi.rata.avoindata.updater.service.siri.LogEventText;
 import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
@@ -403,7 +404,7 @@ class SiriEtGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
                 .reduce((a, b) -> b)
                 .orElse("");
