@@ -259,21 +259,18 @@ public class SiriEtGenerationService {
 
     /**
      * Emits the one-line {@code rail.siri.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
+     * absent where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
      * error the throwable rides along on this same line, so the event is never logged twice.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final long trainsReceived, final SiriEtStats stats, final int outputSize,
             final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
             final String unavailableReason, final Throwable thrown) {
-        final String matchRate = stats.matchRate().isPresent()
-                ? String.format(Locale.ROOT, "%.4f", stats.matchRate().getAsDouble())
-                : "NULL";
-        final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
-        final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Double.toString(durationSeconds(
-                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
-                : "NULL";
+        final Double matchRate = stats.matchRate().isPresent() ? stats.matchRate().getAsDouble() : null;
+        final Double journeySourceAge = journeySourceGeneratedAt != null
+                ? durationSeconds(
+                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis())
+                : null;
         final LoggingEventBuilder event = switch (outcome) {
             case "success" -> log.atInfo();
             case "partial" -> log.atWarn();
@@ -300,7 +297,7 @@ public class SiriEtGenerationService {
                 .addKeyValue("rail.siri.stop_refs.resolved.stop_place", stats.stopRefsStopPlace())
                 .addKeyValue("rail.siri.stop_refs.unresolved", stats.stopRefsUnresolved())
                 .addKeyValue("rail.siri.peti.match_rate", matchRate)
-                .addKeyValue("rail.siri.journey_source.dataset_version", datasetVersion)
+                .addKeyValue("rail.siri.journey_source.dataset_version", journeySourceVersion)
                 .addKeyValue("rail.siri.journey_source.age", journeySourceAge)
                 .addKeyValue("rail.siri.journey_source.unavailable_reason", unavailableReason)
                 .addKeyValue("rail.netex.peti.snapshot.age", petiStopSource.getSnapshotAgeSeconds())
