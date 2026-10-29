@@ -91,33 +91,24 @@ public class SiriSxGenerationService {
     public void generate() {
         final StopWatch stopWatch = StopWatch.createStarted();
         Stage stage = Stage.PREPARE;
-        int messages = 0;
-        SxResult result = null;
+        int ramiMessageCount = 0;
+        SxResult conversionResult = null;
         int outputSize = 0;
-        String stored = "NULL";
-        String journeyProblem = null;
+        String storeResult = "NULL";
+        String journeysUnavailableReason = null;
         try {
             final ZonedDateTime now = DateProvider.nowInHelsinki();
             final List<RamiMessage> ramiMessages = ramiMessageRepository.findLatestActive(
                     now.toInstant(), now.toInstant().minus(SxSituationConverter.CLOSED_HOURS, ChronoUnit.HOURS));
-            messages = ramiMessages.size();
-            final List<String> ids = ramiMessages.stream().map(m -> m.id).distinct().toList();
-            final Map<String, Instant> firstCreated = ids.isEmpty() ? Map.of()
-                    : ramiMessageRepository.findFirstCreated(ids).stream()
-                            .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
+            ramiMessageCount = ramiMessages.size();
 
             final JourneySource journeySource = publishedJourneys(ramiMessages);
-            journeyProblem = journeySource.unavailableReason();
-            final SxSituationConverter converter = new SxSituationConverter(
-                    new InMemoryStationUicLookup(stationRepository.findAll()),
-                    new SiriStopResolver(petiMatcher()),
-                    new PublishedJourneyRefResolver(journeySource.journeys()));
+            journeysUnavailableReason = journeySource.unavailableReason();
 
             stage = Stage.BUILD;
-            result = converter.convert(ramiMessages, firstCreated);
-            final SxSituationMarshaller marshaller =
-                    new SxSituationMarshaller(siriWritingService, NeTExIdGenerator.CODESPACE);
-            final byte[] bytes = marshaller.marshalToBytes(marshaller.marshal(result.situations(), now));
+            conversionResult = convert(ramiMessages, journeySource);
+
+            final byte[] bytes = marshal(conversionResult, now);
             outputSize = bytes.length;
 
             stage = Stage.VALIDATE;
@@ -126,19 +117,37 @@ public class SiriSxGenerationService {
             }
 
             stage = Stage.PERSIST;
-            stored = persist(bytes, now) ? "new" : "unchanged";
+            storeResult = persist(bytes, now) ? "new" : "unchanged";
             lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS);
-            if (journeyProblem == null) {
+            if (journeysUnavailableReason == null) {
                 lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS);
             }
 
             stage = Stage.COMPLETE;
-            logEvent(result.dropped() > 0 || journeyProblem != null ? "partial" : "success", "NULL", stage, stopWatch,
-                    messages, result, outputSize, stored, journeyProblem, null);
+            logEvent(conversionResult.dropped() > 0 || journeysUnavailableReason != null ? "partial" : "success", "NULL", stage, stopWatch,
+                    ramiMessageCount, conversionResult, outputSize, storeResult, journeysUnavailableReason, null);
         } catch (final Exception e) {
-            logEvent("error", e.getClass().getSimpleName(), stage, stopWatch, messages, result, outputSize, stored,
-                    journeyProblem, e);
+            logEvent("error", e.getClass().getSimpleName(), stage, stopWatch, ramiMessageCount, conversionResult, outputSize, storeResult,
+                    journeysUnavailableReason, e);
         }
+    }
+
+    private SxResult convert(final List<RamiMessage> ramiMessages, final JourneySource journeySource) {
+        final List<String> ramiMessageIds = ramiMessages.stream().map(m -> m.id).distinct().toList();
+        final Map<String, Instant> firstCreated = ramiMessageIds.isEmpty() ? Map.of()
+                : ramiMessageRepository.findFirstCreated(ramiMessageIds).stream()
+                .collect(Collectors.toMap(RamiFirstCreated::getId, RamiFirstCreated::getCreated));
+        return new SxSituationConverter(
+                new InMemoryStationUicLookup(stationRepository.findAll()),
+                new SiriStopResolver(petiMatcher()),
+                new PublishedJourneyRefResolver(journeySource.journeys()))
+                .convert(ramiMessages, firstCreated);
+    }
+
+    private byte[] marshal(final SxResult conversionResult, final ZonedDateTime now) {
+        final SxSituationMarshaller marshaller =
+                new SxSituationMarshaller(siriWritingService, NeTExIdGenerator.CODESPACE);
+        return marshaller.marshalToBytes(marshaller.marshal(conversionResult.situations(), now));
     }
 
     private PetiUicMatcher petiMatcher() {
@@ -201,11 +210,15 @@ public class SiriSxGenerationService {
         return new JourneySource(byTrainId, null);
     }
 
-    private record JourneySource(Map<TrainId, ResolvedJourney> journeys, String unavailableReason) {}
+    private record JourneySource(Map<TrainId, ResolvedJourney> journeys, String unavailableReason) {
+    }
 
-    /** @return true when a new file was stored, false when the situations were unchanged */
+    /**
+     * @return true when a new file was stored, false when the situations were unchanged
+     */
     private boolean persist(final byte[] bytes, final ZonedDateTime now) {
         final GeneratedExport last = generatedExportRepository.findFirstByFileNameOrderByIdDesc(FILE_NAME);
+        // If last data is equal to current, update the creation time of the last stored file instead of storing a new file.
         if (last != null && withoutResponseTimestamps(last.data).equals(withoutResponseTimestamps(bytes))) {
             last.created = now;
             generatedExportRepository.flush();
@@ -224,11 +237,11 @@ public class SiriSxGenerationService {
                 .replaceAll("<ResponseTimestamp>[^<]*</ResponseTimestamp>", "");
     }
 
-    private enum Stage { PREPARE, BUILD, VALIDATE, PERSIST, COMPLETE }
+    private enum Stage {PREPARE, BUILD, VALIDATE, PERSIST, COMPLETE}
 
     private void logEvent(final String outcome, final String errorType, final Stage stage, final StopWatch stopWatch,
-            final int messages, final SxResult result, final int outputSize, final String stored,
-            final String journeyProblem, final Throwable thrown) {
+                          final int ramiMessageCount, final SxResult conversionResult, final int outputSize, final String storeResult,
+                          final String journeysUnavailableReason, final Throwable thrown) {
         final String line = StringUtil.format(
                 "event=rail.siri.generation operation=generateSiriSx outcome={} error.type={} stage={} duration={} "
                         + "rail.siri.service=sx rail.siri.sx.messages={} rail.siri.sx.situations={} "
@@ -237,17 +250,17 @@ public class SiriSxGenerationService {
                         + "rail.siri.sx.unknown_stations={} rail.siri.sx.journeys_unavailable={} rail.siri.sx.stored={} "
                         + "rail.siri.output.size={}",
                 outcome, errorType, stage.name().toLowerCase(Locale.ROOT),
-                durationSeconds(stopWatch.getDuration().toMillis()), messages,
-                result != null ? result.situations().size() : 0, result != null ? result.noText() : 0,
-                result != null ? result.nextStop() : 0, result != null ? result.noStopPlace() : 0,
-                result != null ? result.noJourneyIds().size() : 0, result != null ? result.unknownStations() : 0,
-                journeyProblem != null ? journeyProblem : "NULL", stored, outputSize);
+                durationSeconds(stopWatch.getDuration().toMillis()), ramiMessageCount,
+                conversionResult != null ? conversionResult.situations().size() : 0, conversionResult != null ? conversionResult.noText() : 0,
+                conversionResult != null ? conversionResult.nextStop() : 0, conversionResult != null ? conversionResult.noStopPlace() : 0,
+                conversionResult != null ? conversionResult.noJourneyIds().size() : 0, conversionResult != null ? conversionResult.unknownStations() : 0,
+                journeysUnavailableReason != null ? journeysUnavailableReason : "NULL", storeResult, outputSize);
         switch (outcome) {
             case "success" -> log.info(line);
             case "partial" -> {
                 log.warn(line);
-                if (result != null && !result.noJourneyIds().isEmpty()) {
-                    log.warn("event=rail.siri.sx.no_journey ids={}", result.noJourneyIds());
+                if (conversionResult != null && !conversionResult.noJourneyIds().isEmpty()) {
+                    log.warn("event=rail.siri.sx.no_journey ids={}", conversionResult.noJourneyIds());
                 }
             }
             default -> log.error(line, thrown);

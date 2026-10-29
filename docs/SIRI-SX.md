@@ -136,11 +136,13 @@ subscription fields such as `SubscriberRef`, request fields such as `RequestMess
 
 | Field | Defined in | Cardinality | Status | Value |
 |---|---|---|---|---|
-| `ServiceDelivery/ResponseTimestamp` | `ResponseStructure` | 1:1 | ✅ | When the file was built |
+| `ServiceDelivery/ResponseTimestamp` | `ResponseStructure` | 1:1 | ✅ | When the content last changed (see below) |
 | `ServiceDelivery/ProducerRef` | `ProducerResponseStructure` | 1:1 | ✅ | `FTR` |
-| `SituationExchangeDelivery/ResponseTimestamp` | `ResponseStructure` | 1:1 | ✅ | When the file was built |
+| `SituationExchangeDelivery/ResponseTimestamp` | `ResponseStructure` | 1:1 | ✅ | When the content last changed (see below) |
 | `SituationExchangeDelivery/@version` | `SituationExchangeDeliveryStructure` | 0:1 | ✅ | SIRI version of the delivery |
 | `SituationExchangeDelivery/Situations/PtSituationElement` | `SituationExchangeDeliveryStructure` | 1:* | ✅ | One per RAMI message |
+
+`ResponseTimestamp` changes only when the situations change: an unchanged file is not stored again, only its creation time is updated. The `x-timestamp` header tells when the data was last checked.
 
 ### Message (`PtSituationElement`)
 

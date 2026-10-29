@@ -51,10 +51,10 @@ public class SxSituationConverter {
     }
 
     /**
-     * @param firstCreated creation time of the first version by message id; the creation time of the message
+     * @param ramiMessageFirstCreatedById creation time of the first version by message id; the creation time of the message
      *                     itself is used when an id is missing
      */
-    public SxResult convert(final List<RamiMessage> messages, final Map<String, Instant> firstCreated) {
+    public SxResult convert(final List<RamiMessage> messages, final Map<String, Instant> ramiMessageFirstCreatedById) {
         final List<SxSituation> situations = new ArrayList<>();
         final List<String> noJourneyIds = new ArrayList<>();
         int noText = 0;
@@ -104,7 +104,7 @@ public class SxSituationConverter {
             }
 
             situations.add(situation(message, trainMessage, texts, target,
-                    toHelsinki(firstCreated.getOrDefault(message.id, message.createdSource))));
+                    toHelsinki(ramiMessageFirstCreatedById.getOrDefault(message.id, message.createdSource))));
         }
 
         situations.sort(Comparator.comparing(SxSituation::situationNumber));
