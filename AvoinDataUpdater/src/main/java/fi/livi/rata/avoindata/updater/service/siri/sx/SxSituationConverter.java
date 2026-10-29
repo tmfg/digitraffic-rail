@@ -86,7 +86,9 @@ public class SxSituationConverter {
                 target = new SxTarget.Journey(journey.get().serviceJourneyId(), journey.get().dataFrameRef(),
                         journey.get().operatorRef(), journey.get().lineId());
             } else {
-                // Sorted and without duplicates, so the same stations always give the same XML
+                // Keep this a TreeSet, not a HashSet: the order must always be the same. The generation compares the
+                // new XML with the stored one and saves only when it differs, so a changing order would cause a new
+                // save on every run. The same station can also be in the message twice.
                 final TreeSet<String> stopPlaceIds = new TreeSet<>();
                 for (final RamiMessageStation station : message.stations) {
                     final Optional<String> stopPlaceId = stopPlaceId(station.stationShortCode);
