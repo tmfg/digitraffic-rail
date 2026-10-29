@@ -2,12 +2,11 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.server.config.WebConfig;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,15 +54,9 @@ public class SiriVmController {
             return ResponseEntity.notFound().build();
         }
 
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setCacheControl(String.format("max-age=%d, public", CACHE_SECONDS));
-        headers.add("x-is-fresh",
-                Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
-        headers.add("x-timestamp", export.created.toString());
-        headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_XML)
-                .headers(headers)
+                .headers(CacheControl.exportHeaders(export, CACHE_SECONDS, FRESH_WITHIN_MINUTES))
                 .body(export.data);
     }
 }
