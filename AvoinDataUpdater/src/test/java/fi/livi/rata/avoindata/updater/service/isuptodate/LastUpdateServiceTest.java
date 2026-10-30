@@ -10,16 +10,28 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import fi.livi.rata.avoindata.common.dao.LastUpdateRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.common.LastUpdate;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.service.SimpleTransactionManager;
+import reactor.core.publisher.Mono;
 
 class LastUpdateServiceTest {
 
@@ -148,5 +160,69 @@ class LastUpdateServiceTest {
         service.update(LastUpdateService.LastUpdatedType.STATIONS);
 
         assertTrue(service.getLastUpdateTimes().containsKey(LastUpdateService.LastUpdatedType.STATIONS));
+    }
+
+    @Test
+    void monthlyDumpOfPreviousMonthIsUsedAfterTheFifth() {
+        assertEquals("2026-02-01", trainsDumpMonthOn(LocalDate.of(2026, 3, 6)));
+    }
+
+    @Test
+    void monthlyDumpOfMonthBeforePreviousIsUsedUntilTheFifth() {
+        assertEquals("2026-01-01", trainsDumpMonthOn(LocalDate.of(2026, 3, 5)));
+    }
+
+    @Test
+    void monthlyDumpMonthWorksOverNewYear() {
+        assertEquals("2025-12-01", trainsDumpMonthOn(LocalDate.of(2026, 1, 6)));
+        assertEquals("2025-11-01", trainsDumpMonthOn(LocalDate.of(2026, 1, 5)));
+    }
+
+    @Test
+    void monthlyDumpTimeIsTheLastModifiedOfTheDump() {
+        final ZonedDateTime modified = ZonedDateTime.of(2026, 3, 5, 10, 15, 30, 0, ZoneOffset.UTC);
+        final LastUpdateService service = newServiceWithWebClient(request -> Mono.just(ClientResponse.create(HttpStatus.OK)
+                .header("Last-Modified", DateTimeFormatter.RFC_1123_DATE_TIME.format(modified)).build()));
+
+        updateAt(service, LocalDate.of(2026, 3, 10));
+
+        assertEquals(modified.toInstant(), service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.TRAINS_DUMP));
+        assertEquals(modified.toInstant(), service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.COMPOSITIONS_DUMP));
+    }
+
+    @Test
+    void monthlyDumpTimeStaysWhenTheRequestFails() {
+        final LastUpdateService service = newServiceWithWebClient(request -> Mono.error(new IllegalStateException("fail")));
+        service.setup();
+        final Instant before = service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.TRAINS_DUMP);
+
+        updateAt(service, LocalDate.of(2026, 3, 10));
+
+        assertEquals(before, service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.TRAINS_DUMP));
+    }
+
+    private String trainsDumpMonthOn(final LocalDate today) {
+        final List<String> urls = new ArrayList<>();
+        final LastUpdateService service = newServiceWithWebClient(request -> {
+            urls.add(request.url().toString());
+            return Mono.just(ClientResponse.create(HttpStatus.OK).build());
+        });
+
+        updateAt(service, today);
+
+        final String url = urls.stream().filter(u -> u.contains("/trains/dumps/")).findFirst().orElseThrow();
+        return url.substring(url.lastIndexOf("trains-") + "trains-".length(), url.length() - ".zip".length());
+    }
+
+    private LastUpdateService newServiceWithWebClient(final ExchangeFunction exchange) {
+        return new LastUpdateService(WebClient.builder().exchangeFunction(exchange).build(), simpleTransactionManager,
+                generatedExportRepository, lastUpdateRepository, false, false, false);
+    }
+
+    private static void updateAt(final LastUpdateService service, final LocalDate today) {
+        try (final MockedStatic<DateProvider> dateProvider = Mockito.mockStatic(DateProvider.class)) {
+            dateProvider.when(DateProvider::dateInHelsinki).thenReturn(today);
+            service.updateLastUpdateTimesScheduled();
+        }
     }
 }
