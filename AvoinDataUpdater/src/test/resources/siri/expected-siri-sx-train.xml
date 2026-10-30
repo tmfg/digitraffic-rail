@@ -23,7 +23,6 @@
                     <UndefinedReason></UndefinedReason>
                     <ReportType>general</ReportType>
                     <Summary xml:lang="FI">Junan vaunut 6 ja 7 puuttuvat.</Summary>
-                    <Description xml:lang="FI">Junan vaunut 6 ja 7 puuttuvat.</Description>
                     <Affects>
                         <VehicleJourneys>
                             <AffectedVehicleJourney>

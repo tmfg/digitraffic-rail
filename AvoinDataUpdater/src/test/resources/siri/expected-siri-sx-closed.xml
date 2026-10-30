@@ -23,7 +23,6 @@
                     <UndefinedReason></UndefinedReason>
                     <ReportType>general</ReportType>
                     <Summary xml:lang="FI">Hissi on poissa käytöstä.</Summary>
-                    <Description xml:lang="FI">Hissi on poissa käytöstä.</Description>
                     <Affects>
                         <StopPlaces>
                             <AffectedStopPlace>
