@@ -130,9 +130,25 @@ public class SxSituationConverter {
                 toHelsinki(message.startValidity),
                 endTime,
                 reportType(message),
-                texts.stream().map(t -> new SxText(t.language(), SxTexts.summary(t.text()))).toList(),
-                texts,
+                summaries(texts),
+                descriptions(texts),
                 target);
+    }
+
+    /**
+     * Creates the Summary texts, shortening texts that exceed the SIRI-SX limit.
+     */
+    private static List<SxText> summaries(final List<SxText> texts) {
+        return texts.stream().map(t -> new SxText(t.language(), SxTexts.summary(t.text()))).toList();
+    }
+
+    /**
+     * Creates Description texts only for texts that were shortened for Summary.
+     */
+    private static List<SxText> descriptions(final List<SxText> texts) {
+        return texts.stream()
+                .filter(t -> !SxTexts.summary(t.text()).equals(t.text()))
+                .toList();
     }
 
     private Optional<String> stopPlaceId(final String stationShortCode) {

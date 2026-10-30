@@ -171,8 +171,19 @@ public class SxSituationConverterTest {
                 message("SHM1", MessageType.SCHEDULED_MESSAGE, null, "Vain puhuttu", "HKI"),
                 message("SHM2", MessageType.SCHEDULED_MESSAGE, "  ", null, "HKI"));
 
-        assertEquals("Vain puhuttu", result.situations().getFirst().descriptions().getFirst().text());
+        assertEquals("Vain puhuttu", result.situations().getFirst().summaries().getFirst().text());
+        assertTrue(result.situations().getFirst().descriptions().isEmpty());
         assertEquals(1, result.noText());
+    }
+
+    @Test
+    public void shortTextGivesOnlySummary() {
+        final SxSituation situation = convert(
+                message("SHM1", MessageType.SCHEDULED_MESSAGE, "Lyhyt viesti", null, "HKI"))
+                .situations().getFirst();
+
+        assertEquals("Lyhyt viesti", situation.summaries().getFirst().text());
+        assertTrue(situation.descriptions().isEmpty());
     }
 
     @Test
@@ -183,6 +194,7 @@ public class SxSituationConverterTest {
                 .situations().getFirst();
 
         assertEquals(text, situation.descriptions().getFirst().text());
+        assertEquals(1, situation.descriptions().size());
         assertTrue(situation.summaries().getFirst().text().length() <= 160);
         assertTrue(situation.summaries().getFirst().text().endsWith("..."));
         assertEquals("fi", situation.summaries().getFirst().language());
