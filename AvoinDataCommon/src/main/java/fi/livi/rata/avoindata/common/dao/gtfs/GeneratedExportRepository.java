@@ -41,13 +41,6 @@ public interface GeneratedExportRepository extends CustomGeneralRepository<Gener
         @Query("select max(gtfs.id) from GeneratedExport gtfs where gtfs.fileName = ?1 and gtfs.created < ?2")
         Optional<Long> findLatestIdByFileNameCreatedBefore(String fileName, ZonedDateTime before);
 
-        /**
-         * Deletes the oldest rows of the file, up to the given id, but no more than the
-         * given number of rows.
-         * A SIRI ET row is about 12 MB, so a large backlog is deleted in many small
-         * transactions
-         * instead of one huge one.
-         */
         @Transactional
         @Modifying
         @Query(value = "DELETE FROM gtfs WHERE file_name = :fileName AND id <= :maxId ORDER BY id LIMIT :maxRows", nativeQuery = true)

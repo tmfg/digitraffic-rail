@@ -2,10 +2,6 @@ package fi.livi.rata.avoindata.common.domain.gtfs;
 
 import java.util.List;
 
-/**
- * File names of the realtime feeds stored in the gtfs table. Only the newest row of each is served, so older rows
- * are kept for a short time only.
- */
 public final class RealtimeFeedFileNames {
     public static final String GTFS_RT_LOCATIONS = "gtfs-rt-locations";
     public static final String GTFS_RT_UPDATES = "gtfs-rt-updates";

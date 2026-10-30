@@ -18,8 +18,10 @@ import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 
 /**
- * Deletes realtime feed snapshots older than the retention period. The API only serves the newest snapshot of each
- * feed, so the newest one is always kept, even when the feed has stopped updating.
+ * Deletes realtime feed snapshots older than the retention period. The API only
+ * serves the newest snapshot of each
+ * feed, so the newest one is always kept, even when the feed has stopped
+ * updating.
  */
 @Service
 public class RealtimeFeedCleanupService {
@@ -29,22 +31,19 @@ public class RealtimeFeedCleanupService {
     private final Duration retention;
     private final int batchSize;
     private final int siriEtBatchSize;
-    private final int maxBatchesPerRun;
 
     public RealtimeFeedCleanupService(final GeneratedExportRepository repository,
             @Value("${updater.realtime-feed.cleanup.retention-minutes:60}") final int retentionMinutes,
             @Value("${updater.realtime-feed.cleanup.batch-size:1000}") final int batchSize,
-            @Value("${updater.realtime-feed.cleanup.siri-et-batch-size:50}") final int siriEtBatchSize,
-            @Value("${updater.realtime-feed.cleanup.max-batches-per-run:10}") final int maxBatchesPerRun) {
+            @Value("${updater.realtime-feed.cleanup.siri-et-batch-size:50}") final int siriEtBatchSize) {
         this.repository = repository;
         this.retention = Duration.ofMinutes(retentionMinutes);
         this.batchSize = batchSize;
         this.siriEtBatchSize = siriEtBatchSize;
-        this.maxBatchesPerRun = maxBatchesPerRun;
     }
 
-    @Scheduled(fixedDelayString = "${updater.realtime-feed.cleanup.fixed-delay-ms:300000}",
-            initialDelay = 1000 * 60 * 2)
+    @Scheduled(fixedDelayString = "${updater.realtime-feed.cleanup.fixed-delay-ms:300000}", initialDelay = 1000 * 60
+            * 2)
     public void deleteOldSnapshots() {
         final ZonedDateTime cutoff = DateProvider.nowInHelsinki().minus(retention);
 
@@ -52,8 +51,9 @@ public class RealtimeFeedCleanupService {
             try {
                 deleteOldSnapshots(fileName, cutoff);
             } catch (final Exception e) {
-                log.error(StringUtil.format("event=rail.realtime_feed.prune outcome=failure file_name={}", fileName),
-                        e);
+                log.error(StringUtil.format(
+                        "event=rail.realtime_feed.prune outcome=error file_name={} error.type={}",
+                        fileName, e.getClass().getSimpleName()), e);
             }
         }
     }
@@ -66,22 +66,15 @@ public class RealtimeFeedCleanupService {
             return;
         }
 
+        // if feed is not updating, don't delete latest even if expired
         final long maxId = Math.min(newestExpiredId.get(), newestId.get() - 1);
-        final int limit = RealtimeFeedFileNames.SIRI_ET.equals(fileName) ? siriEtBatchSize : batchSize;
-
-        int deletedRows = 0;
-        int batches = 0;
-        int lastBatchRows;
-        do {
-            lastBatchRows = repository.deleteBatchByFileNameUpToId(fileName, maxId, limit);
-            deletedRows += lastBatchRows;
-            batches++;
-        } while (lastBatchRows == limit && batches < maxBatchesPerRun);
+        final int maxRows = RealtimeFeedFileNames.SIRI_ET.equals(fileName) ? siriEtBatchSize : batchSize;
+        final int prunedRows = repository.deleteBatchByFileNameUpToId(fileName, maxId, maxRows);
 
         log.info(StringUtil.format(
-                "event=rail.realtime_feed.prune outcome=success file_name={} cutoff={} deleted_rows={} batches={} "
-                        + "more_left={} duration={}",
-                fileName, cutoff, deletedRows, batches, lastBatchRows == limit,
+                "event=rail.realtime_feed.prune outcome=success file_name={} cutoff={} pruned_rows={} batch_size={} "
+                        + "duration={}",
+                fileName, cutoff, prunedRows, maxRows,
                 durationSeconds(System.currentTimeMillis() - startTime)));
     }
 }

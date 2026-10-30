@@ -23,7 +23,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 class RealtimeFeedCleanupServiceTest {
     private static final int BATCH_SIZE = 100;
     private static final int SIRI_ET_BATCH_SIZE = 5;
-    private static final int MAX_BATCHES_PER_RUN = 3;
 
     private static final String LOCATIONS = RealtimeFeedFileNames.GTFS_RT_LOCATIONS;
 
@@ -33,8 +32,7 @@ class RealtimeFeedCleanupServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(GeneratedExportRepository.class);
-        service = new RealtimeFeedCleanupService(repository, 60, BATCH_SIZE, SIRI_ET_BATCH_SIZE,
-                MAX_BATCHES_PER_RUN);
+        service = new RealtimeFeedCleanupService(repository, 60, BATCH_SIZE, SIRI_ET_BATCH_SIZE);
     }
 
     private void givenIds(final String fileName, final long newestId, final long newestExpiredId) {
@@ -44,13 +42,14 @@ class RealtimeFeedCleanupServiceTest {
     }
 
     @Test
-    void givenExpiredSnapshots_whenCleaning_thenDeletesUpToNewestExpiredUntilABatchIsNotFull() {
-        givenIds(LOCATIONS, 100, 90);
-        when(repository.deleteBatchByFileNameUpToId(LOCATIONS, 90, BATCH_SIZE)).thenReturn(BATCH_SIZE, 7);
+    void givenExpiredSnapshots_whenCleaning_thenDeletesOneBatchUpToNewestExpired() {
+        givenIds(LOCATIONS, 100_000, 90_000);
+        // a full batch means more rows are left; the next scheduled run deletes them
+        when(repository.deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE)).thenReturn(BATCH_SIZE);
 
         service.deleteOldSnapshots();
 
-        verify(repository, times(2)).deleteBatchByFileNameUpToId(LOCATIONS, 90, BATCH_SIZE);
+        verify(repository, times(1)).deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE);
     }
 
     @Test
@@ -70,16 +69,6 @@ class RealtimeFeedCleanupServiceTest {
         service.deleteOldSnapshots();
 
         verify(repository, never()).deleteBatchByFileNameUpToId(anyString(), anyLong(), anyInt());
-    }
-
-    @Test
-    void givenLargeBacklog_whenCleaning_thenStopsAfterMaxBatches() {
-        givenIds(LOCATIONS, 100_000, 90_000);
-        when(repository.deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE)).thenReturn(BATCH_SIZE);
-
-        service.deleteOldSnapshots();
-
-        verify(repository, times(MAX_BATCHES_PER_RUN)).deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE);
     }
 
     @Test

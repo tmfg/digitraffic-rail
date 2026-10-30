@@ -258,9 +258,8 @@ implemented:
 | `updater.siri.vm.fixed-rate-ms` | AvoinDataUpdater | SIRI-VM generation interval (default 60000 ms) |
 | `updater.realtime-feed.cleanup.fixed-delay-ms` | AvoinDataUpdater | Interval of the realtime feed cleanup, SIRI and GTFS Realtime (default 300000 ms) |
 | `updater.realtime-feed.cleanup.retention-minutes` | AvoinDataUpdater | How long realtime feed snapshots are kept; the newest is always kept (default 60) |
-| `updater.realtime-feed.cleanup.batch-size` | AvoinDataUpdater | Snapshots deleted per transaction (default 1000) |
+| `updater.realtime-feed.cleanup.batch-size` | AvoinDataUpdater | Maximum number of snapshots deleted per feed per run, in one transaction; a large backlog is deleted over several runs (default 1000) |
 | `updater.realtime-feed.cleanup.siri-et-batch-size` | AvoinDataUpdater | Same for SIRI-ET, whose snapshots are about 12 MB each (default 50) |
-| `updater.realtime-feed.cleanup.max-batches-per-run` | AvoinDataUpdater | Batches per feed per run, so a large backlog is deleted over several runs (default 10) |
 
 ## Testing approach (applies to ET, VM, and future SX)
 
