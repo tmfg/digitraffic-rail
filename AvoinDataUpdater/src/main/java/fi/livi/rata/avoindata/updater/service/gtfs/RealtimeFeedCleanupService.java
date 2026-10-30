@@ -4,6 +4,7 @@ import static fi.livi.digitraffic.common.logging.LogFields.durationSeconds;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -69,7 +70,8 @@ public class RealtimeFeedCleanupService {
         // if feed is not updating, don't delete latest even if expired
         final long maxId = Math.min(newestExpiredId.get(), newestId.get() - 1);
         final int maxRows = RealtimeFeedFileNames.SIRI_ET.equals(fileName) ? siriEtBatchSize : batchSize;
-        final int prunedRows = repository.deleteBatchByFileNameUpToId(fileName, maxId, maxRows);
+        final List<Long> ids = repository.findIdsByFileNameUpToId(fileName, maxId, maxRows);
+        final int prunedRows = ids.isEmpty() ? 0 : repository.deleteByIds(ids);
 
         log.info(StringUtil.format(
                 "event=rail.realtime_feed.prune outcome=success file_name={} cutoff={} pruned_rows={} batch_size={} "

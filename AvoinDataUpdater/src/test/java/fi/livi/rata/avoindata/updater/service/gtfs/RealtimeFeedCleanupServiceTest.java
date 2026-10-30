@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +25,6 @@ import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 class RealtimeFeedCleanupServiceTest {
     private static final int BATCH_SIZE = 100;
     private static final int SIRI_ET_BATCH_SIZE = 5;
-
-    private static final String LOCATIONS = RealtimeFeedFileNames.GTFS_RT_LOCATIONS;
 
     private GeneratedExportRepository repository;
     private RealtimeFeedCleanupService service;
@@ -43,23 +43,36 @@ class RealtimeFeedCleanupServiceTest {
 
     @Test
     void givenExpiredSnapshots_whenCleaning_thenDeletesOneBatchUpToNewestExpired() {
-        givenIds(LOCATIONS, 100_000, 90_000);
-        // a full batch means more rows are left; the next scheduled run deletes them
-        when(repository.deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE)).thenReturn(BATCH_SIZE);
+        givenIds(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 100_000, 90_000);
+        when(repository.findIdsByFileNameUpToId(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 90_000, BATCH_SIZE))
+                .thenReturn(List.of(1L, 2L, 3L));
 
         service.deleteOldSnapshots();
 
-        verify(repository, times(1)).deleteBatchByFileNameUpToId(LOCATIONS, 90_000, BATCH_SIZE);
+        verify(repository, times(1)).findIdsByFileNameUpToId(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 90_000,
+                BATCH_SIZE);
+        verify(repository, times(1)).deleteByIds(List.of(1L, 2L, 3L));
+    }
+
+    @Test
+    void givenNoRowsLeftInBatch_whenCleaning_thenDeleteIsNotRun() {
+        givenIds(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 100, 90);
+        when(repository.findIdsByFileNameUpToId(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 90, BATCH_SIZE))
+                .thenReturn(List.of());
+
+        service.deleteOldSnapshots();
+
+        verify(repository, never()).deleteByIds(anyCollection());
     }
 
     @Test
     void givenFeedHasStoppedUpdating_whenCleaning_thenNewestSnapshotIsKept() {
         // every snapshot of the feed is older than the retention, including the one the API serves
-        givenIds(LOCATIONS, 100, 100);
+        givenIds(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 100, 100);
 
         service.deleteOldSnapshots();
 
-        verify(repository).deleteBatchByFileNameUpToId(LOCATIONS, 99, BATCH_SIZE);
+        verify(repository).findIdsByFileNameUpToId(RealtimeFeedFileNames.GTFS_RT_LOCATIONS, 99, BATCH_SIZE);
     }
 
     @Test
@@ -68,7 +81,8 @@ class RealtimeFeedCleanupServiceTest {
 
         service.deleteOldSnapshots();
 
-        verify(repository, never()).deleteBatchByFileNameUpToId(anyString(), anyLong(), anyInt());
+        verify(repository, never()).findIdsByFileNameUpToId(anyString(), anyLong(), anyInt());
+        verify(repository, never()).deleteByIds(anyCollection());
     }
 
     @Test
@@ -77,16 +91,17 @@ class RealtimeFeedCleanupServiceTest {
 
         service.deleteOldSnapshots();
 
-        verify(repository).deleteBatchByFileNameUpToId(RealtimeFeedFileNames.SIRI_ET, 90, SIRI_ET_BATCH_SIZE);
+        verify(repository).findIdsByFileNameUpToId(RealtimeFeedFileNames.SIRI_ET, 90, SIRI_ET_BATCH_SIZE);
     }
 
     @Test
     void givenOneFeedFails_whenCleaning_thenOtherFeedsAreStillCleaned() {
-        when(repository.findLatestIdByFileName(LOCATIONS)).thenThrow(new RuntimeException("database unavailable"));
+        when(repository.findLatestIdByFileName(RealtimeFeedFileNames.GTFS_RT_LOCATIONS))
+                .thenThrow(new RuntimeException("database unavailable"));
         givenIds(RealtimeFeedFileNames.SIRI_VM, 100, 90);
 
         service.deleteOldSnapshots();
 
-        verify(repository).deleteBatchByFileNameUpToId(RealtimeFeedFileNames.SIRI_VM, 90, BATCH_SIZE);
+        verify(repository).findIdsByFileNameUpToId(RealtimeFeedFileNames.SIRI_VM, 90, BATCH_SIZE);
     }
 }

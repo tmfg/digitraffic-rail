@@ -41,9 +41,18 @@ public interface GeneratedExportRepository extends CustomGeneralRepository<Gener
         @Query("select max(gtfs.id) from GeneratedExport gtfs where gtfs.fileName = ?1 and gtfs.created < ?2")
         Optional<Long> findLatestIdByFileNameCreatedBefore(String fileName, ZonedDateTime before);
 
+        /**
+         * Ids of the oldest snapshots of one realtime feed, for deleting them with {@link #deleteByIds}. Deleting
+         * them with a single DELETE ... ORDER BY id LIMIT made MySQL read every snapshot of every feed in between,
+         * including SIRI-ET snapshots of about 12 MB each, and one batch took over ten minutes. This query reads
+         * only the index on file_name, not the snapshot data.
+         */
+        @Query(value = "SELECT id FROM gtfs WHERE file_name = :fileName AND id <= :maxId ORDER BY id LIMIT :maxRows", nativeQuery = true)
+        List<Long> findIdsByFileNameUpToId(@Param("fileName") String fileName, @Param("maxId") long maxId,
+                        @Param("maxRows") int maxRows);
+
         @Transactional
         @Modifying
-        @Query(value = "DELETE FROM gtfs WHERE file_name = :fileName AND id <= :maxId ORDER BY id LIMIT :maxRows", nativeQuery = true)
-        int deleteBatchByFileNameUpToId(@Param("fileName") String fileName, @Param("maxId") long maxId,
-                        @Param("maxRows") int maxRows);
+        @Query(value = "DELETE FROM gtfs WHERE id IN (:ids)", nativeQuery = true)
+        int deleteByIds(@Param("ids") Collection<Long> ids);
 }

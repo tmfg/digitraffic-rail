@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,21 +90,30 @@ class GeneratedExportRepositoryTest extends BaseTest {
     }
 
     @Test
-    void deleteBatchByFileNameUpToIdDeletesOnlyThatFileUpToTheIdAndAtMostTheLimit() {
+    void findIdsByFileNameUpToIdReturnsOldestIdsOfThatFileUpToTheIdAndAtMostTheLimit() {
         final ZonedDateTime created = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
-        saveExport("siri-et.xml", created);
-        saveExport("siri-et.xml", created.plusMinutes(1));
+        final GeneratedExport first = saveExport("siri-et.xml", created);
+        saveExport("gtfs-all.zip", created);
+        final GeneratedExport second = saveExport("siri-et.xml", created.plusMinutes(1));
         final GeneratedExport third = saveExport("siri-et.xml", created.plusMinutes(2));
-        final GeneratedExport newest = saveExport("siri-et.xml", created.plusMinutes(3));
+        saveExport("siri-et.xml", created.plusMinutes(3));
+
+        assertEquals(List.of(first.id, second.id), repository.findIdsByFileNameUpToId("siri-et.xml", third.id, 2));
+        assertEquals(List.of(first.id, second.id, third.id),
+                repository.findIdsByFileNameUpToId("siri-et.xml", third.id, 10));
+        assertEquals(List.of(), repository.findIdsByFileNameUpToId("gtfs-rt-updates", third.id, 10));
+    }
+
+    @Test
+    void deleteByIdsDeletesOnlyThoseRows() {
+        final ZonedDateTime created = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        final GeneratedExport first = saveExport("siri-et.xml", created);
+        final GeneratedExport second = saveExport("siri-et.xml", created.plusMinutes(1));
+        final GeneratedExport newest = saveExport("siri-et.xml", created.plusMinutes(2));
         final GeneratedExport zip = saveExport("gtfs-all.zip", created);
 
-        assertEquals(2, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
-        assertEquals(Set.of(third.id, newest.id, zip.id), remainingIds());
-
-        assertEquals(1, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
+        assertEquals(2, repository.deleteByIds(List.of(first.id, second.id)));
         assertEquals(Set.of(newest.id, zip.id), remainingIds());
-
-        assertEquals(0, repository.deleteBatchByFileNameUpToId("siri-et.xml", third.id, 2));
     }
 
     private Set<Long> remainingIds() {
