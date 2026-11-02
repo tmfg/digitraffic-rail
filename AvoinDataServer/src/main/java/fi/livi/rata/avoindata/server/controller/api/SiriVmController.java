@@ -2,6 +2,7 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.server.config.WebConfig;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnProperty(name = "avoindataserver.siri.vm.enabled", havingValue = "true")
 public class SiriVmController {
 
-    private static final String VM_FILENAME = "siri-vm.xml";
     private static final int CACHE_SECONDS = 30;
     // Live positions are regenerated ~every minute; older than this is stale.
     private static final int FRESH_WITHIN_MINUTES = 5;
@@ -37,19 +37,18 @@ public class SiriVmController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(
-            summary = "Returns SIRI Nordic Vehicle Monitoring (VM) real-time XML",
-            description = """
-                    Stop references use identifiers from Fintraffic's national stop registry (PETI).
+    @Operation(summary = "Returns SIRI Nordic Vehicle Monitoring (VM) real-time XML", description = """
+            Stop references use identifiers from Fintraffic's national stop registry (PETI).
 
-                    For example, `FSR:Quay:415` in `StopPointRef` identifies the corresponding PETI `Quay`.
+            For example, `FSR:Quay:415` in `StopPointRef` identifies the corresponding PETI `Quay`.
 
-                    [Browse rail stops and their quays in PETI](https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail).
-                    """)
+            [Browse rail stops and their quays in PETI](https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail).
+            """)
     @RequestMapping(method = RequestMethod.GET, path = "vm", produces = MediaType.APPLICATION_XML_VALUE)
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> getSiriVm() {
-        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(VM_FILENAME);
+        final GeneratedExport export = generatedExportRepository
+                .findFirstByFileNameOrderByIdDesc(RealtimeFeedFileNames.SIRI_VM);
         if (export == null) {
             return ResponseEntity.notFound().build();
         }

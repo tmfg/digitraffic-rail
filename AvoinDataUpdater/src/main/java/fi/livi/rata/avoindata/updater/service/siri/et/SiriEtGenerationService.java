@@ -25,6 +25,7 @@ import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
@@ -113,7 +114,7 @@ public class SiriEtGenerationService {
             final GeneratedExport export = new GeneratedExport();
             export.data = result.bytes();
             export.created = DateProvider.nowInHelsinki();
-            export.fileName = "siri-et.xml";
+            export.fileName = RealtimeFeedFileNames.SIRI_ET;
             generatedExportRepository.persist(List.of(export));
             lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_ET);
 

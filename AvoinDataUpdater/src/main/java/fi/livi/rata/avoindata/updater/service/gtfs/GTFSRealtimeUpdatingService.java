@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.google.transit.realtime.GtfsRealtime;
 
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.utils.TimingUtil;
 @Service
 public class GTFSRealtimeUpdatingService {
@@ -26,7 +27,7 @@ public class GTFSRealtimeUpdatingService {
         TimingUtil.log(log, "updateVehicleLocations", () -> {
             final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createVehiceLocationFeedMessage();
 
-            gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-locations");
+            gtfsWritingService.writeRealtimeGTFS(message, RealtimeFeedFileNames.GTFS_RT_LOCATIONS);
         });
     }
 
@@ -36,7 +37,7 @@ public class GTFSRealtimeUpdatingService {
             TimingUtil.log(log, "updateTripUpdates", () -> {
                 final GtfsRealtime.FeedMessage message = gtfsRealtimeService.createTripUpdateFeedMessage();
 
-                gtfsWritingService.writeRealtimeGTFS(message, "gtfs-rt-updates");
+                gtfsWritingService.writeRealtimeGTFS(message, RealtimeFeedFileNames.GTFS_RT_UPDATES);
             });
         } catch(final Exception e) {
             log.error("method=updateTripUpdates got exception", e);

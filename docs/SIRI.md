@@ -102,7 +102,9 @@ three-stage pipeline, split across two Java packages:
     itself is telemetry-only, not a rejection criterion) → BUILD (call the
     Service) → VALIDATE (schema-validate the output) → PERSIST (write to `GeneratedExport` with a
     service-specific filename, e.g. `siri-vm.xml`) → COMPLETE (emit a `rail.siri.generation` wide-event log
-    line with a `rail.siri.service=et|vm|sx` tag for observability).
+    line with a `rail.siri.service=et|vm|sx` tag for observability). Only the newest snapshot is served, so
+    `RealtimeFeedCleanupService` deletes snapshots older than an hour (always keeping the newest one), the same
+    as for the GTFS Realtime feeds.
 
 **Why this split exists**, rather than one method building JAXB objects directly from the raw data source: it
 keeps conversion and marshalling as separate, independently testable concerns (converter unit tests
@@ -276,6 +278,10 @@ All SIRI services (and NeTEx generation) read PETI stops through `CachingPetiSto
 | `avoindataserver.siri.sx.enabled` | AvoinDataServer | Enables `GET /api/v1/siri/sx` |
 | `updater.siri.sx.enabled` | AvoinDataUpdater | Enables scheduled SIRI-SX generation |
 | `updater.siri.sx.fixed-rate-ms` | AvoinDataUpdater | SIRI-SX generation interval (default 60000 ms) |
+| `updater.realtime-feed.cleanup.fixed-delay-ms` | AvoinDataUpdater | Interval of the realtime feed cleanup, SIRI and GTFS Realtime |
+| `updater.realtime-feed.cleanup.retention-minutes` | AvoinDataUpdater | How long realtime feed snapshots are kept; the newest is always kept |
+| `updater.realtime-feed.cleanup.batch-size` | AvoinDataUpdater | Maximum number of snapshots deleted per feed per run, in one transaction; a large backlog is deleted over several runs |
+| `updater.realtime-feed.cleanup.siri-et-batch-size` | AvoinDataUpdater | Same for SIRI-ET, whose snapshots are about 12 MB each |
 
 ## Testing approach (applies to ET, VM and SX)
 

@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,6 +74,50 @@ class GeneratedExportRepositoryTest extends BaseTest {
 
         assertTrue(result.isPresent());
         assertEquals(created.toInstant(), result.get());
+    }
+
+    @Test
+    void findLatestIdByFileNameCreatedBeforeIgnoresNewerAndOtherFiles() {
+        final ZonedDateTime cutoff = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        saveExport("gtfs-rt-locations", cutoff.minusMinutes(20));
+        final GeneratedExport newestExpired = saveExport("gtfs-rt-locations", cutoff.minusMinutes(10));
+        saveExport("siri-et.xml", cutoff.minusMinutes(5));
+        saveExport("gtfs-rt-locations", cutoff.plusMinutes(1));
+
+        assertEquals(Optional.of(newestExpired.id),
+                repository.findLatestIdByFileNameCreatedBefore("gtfs-rt-locations", cutoff));
+        assertFalse(repository.findLatestIdByFileNameCreatedBefore("gtfs-rt-updates", cutoff).isPresent());
+    }
+
+    @Test
+    void findIdsByFileNameUpToIdReturnsOldestIdsOfThatFileUpToTheIdAndAtMostTheLimit() {
+        final ZonedDateTime created = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        final GeneratedExport first = saveExport("siri-et.xml", created);
+        saveExport("gtfs-all.zip", created);
+        final GeneratedExport second = saveExport("siri-et.xml", created.plusMinutes(1));
+        final GeneratedExport third = saveExport("siri-et.xml", created.plusMinutes(2));
+        saveExport("siri-et.xml", created.plusMinutes(3));
+
+        assertEquals(List.of(first.id, second.id), repository.findIdsByFileNameUpToId("siri-et.xml", third.id, 2));
+        assertEquals(List.of(first.id, second.id, third.id),
+                repository.findIdsByFileNameUpToId("siri-et.xml", third.id, 10));
+        assertEquals(List.of(), repository.findIdsByFileNameUpToId("gtfs-rt-updates", third.id, 10));
+    }
+
+    @Test
+    void deleteByIdsDeletesOnlyThoseRows() {
+        final ZonedDateTime created = ZonedDateTime.of(2026, 10, 9, 10, 0, 0, 0, ZoneOffset.UTC);
+        final GeneratedExport first = saveExport("siri-et.xml", created);
+        final GeneratedExport second = saveExport("siri-et.xml", created.plusMinutes(1));
+        final GeneratedExport newest = saveExport("siri-et.xml", created.plusMinutes(2));
+        final GeneratedExport zip = saveExport("gtfs-all.zip", created);
+
+        assertEquals(2, repository.deleteByIds(List.of(first.id, second.id)));
+        assertEquals(Set.of(newest.id, zip.id), remainingIds());
+    }
+
+    private Set<Long> remainingIds() {
+        return repository.findAll().stream().map(export -> export.id).collect(Collectors.toSet());
     }
 
     private GeneratedExport saveExport(final String fileName, final ZonedDateTime created) {
