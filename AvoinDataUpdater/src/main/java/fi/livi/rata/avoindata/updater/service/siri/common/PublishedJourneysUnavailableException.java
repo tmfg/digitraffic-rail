@@ -8,6 +8,12 @@ package fi.livi.rata.avoindata.updater.service.siri.common;
  */
 public class PublishedJourneysUnavailableException extends RuntimeException {
 
+    /**
+     * Published journeys older than this (vs. their newest {@code generatedAt}) are stale. NeTEx is generated once
+     * a day, so this is a day plus 6 hours of margin for a late or retried run.
+     */
+    public static final long MAX_AGE_HOURS = 30;
+
     /** Why the published NeTEx journeys could not be used. */
     public enum Reason {
         /** No dataset has ever been published (no rows at all). */

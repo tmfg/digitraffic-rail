@@ -97,24 +97,25 @@ public class SiriWritingService {
     /**
      * Validates the marshalled document against the SIRI <strong>2.0</strong> XML Schema (Entur
      * {@link SiriValidator}, {@code VERSION_2_0}). Returns {@code false} (and logs each event) on any schema
-     * violation, so a 2.1-only element or a cardinality breach is never published.
+     * violation, so a 2.1-only element or a cardinality breach is never published. {@code feed} is only used to
+     * tell the feeds apart in the log.
      */
-    public boolean isSchemaValid(final byte[] xml) {
+    public boolean isSchemaValid(final byte[] xml, final SiriFeed feed) {
         final String xmlString = new String(xml, StandardCharsets.UTF_8);
         try {
             final SiriValidationEventHandler handler =
                     SiriValidator.validateAndGetHandler(xmlString, SiriValidator.Version.VERSION_2_0);
             if (!handler.isValid()) {
                 for (final ValidationEvent event : handler.events) {
-                    log.warn("event=rail.siri.validation outcome=invalid rail.siri.validation.severity={} "
-                                    + "rail.siri.validation.detail={}",
-                            event.getSeverity(), quoted(event.getMessage()));
+                    log.warn("event=rail.siri.validation rail.siri.feed={} outcome=invalid "
+                                    + "rail.siri.validation.severity={} rail.siri.validation.detail={}",
+                            feed.logName(), event.getSeverity(), quoted(event.getMessage()));
                 }
                 return false;
             }
             return true;
         } catch (final JAXBException | SAXException e) {
-            log.error("event=rail.siri.validation outcome=error error.type={}", e.getClass().getSimpleName(), e);
+            log.error("event=rail.siri.validation rail.siri.feed={} outcome=error error.type={}", feed.logName(), e.getClass().getSimpleName(), e);
             return false;
         }
     }

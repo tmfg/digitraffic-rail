@@ -1,7 +1,9 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import ch.qos.logback.classic.Logger;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import fi.livi.rata.avoindata.updater.service.siri.LogEventText;
 import ch.qos.logback.core.read.ListAppender;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
@@ -18,6 +20,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -64,6 +67,7 @@ class SiriVmGenerationServiceTest {
     private SiriWritingService siriWritingService;
     private NeTExPublishedJourneyRepository publishedJourneyRepository;
 
+    private final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
     private SiriVmGenerationService service;
 
     @BeforeEach
@@ -83,7 +87,8 @@ class SiriVmGenerationServiceTest {
                 petiStopSource,
                 siriWritingService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
     }
 
     // ===== HELPERS =====
@@ -246,6 +251,15 @@ class SiriVmGenerationServiceTest {
         train.timeTableRows.add(row);
     }
 
+    @Test
+    void successfulRunMarksSiriVmUpdated() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_VM);
+    }
+
     private List<GeneratedExport> capturePersistedExports() {
         @SuppressWarnings("unchecked")
         final ArgumentCaptor<Collection<GeneratedExport>> captor = ArgumentCaptor.forClass(Collection.class);
@@ -355,7 +369,7 @@ class SiriVmGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.getFirst().data);
         assertTrue(exports.getFirst().data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data));
+        assertTrue(siriWritingService.isSchemaValid(exports.getFirst().data, SiriFeed.VM));
     }
 
     // ===== GEN-VM-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====
@@ -539,7 +553,7 @@ class SiriVmGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
                 .toList()
                 .getLast();
@@ -581,7 +595,7 @@ class SiriVmGenerationServiceTest {
         }
 
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.locations.received="))
                 .toList()
                 .getLast();
@@ -663,7 +677,7 @@ class SiriVmGenerationServiceTest {
         // reaches isSchemaValid - this test would then pass for any build failure, not just a schema-invalid
         // one). Only isSchemaValid is stubbed, to force generation to fail specifically at the VALIDATE stage.
         final SiriWritingService invalidService = spy(new SiriWritingService());
-        doReturn(false).when(invalidService).isSchemaValid(any());
+        doReturn(false).when(invalidService).isSchemaValid(any(), any());
 
         final SiriVmGenerationService serviceWithInvalidWriter = new SiriVmGenerationService(
                 stationRepository,
@@ -672,7 +686,8 @@ class SiriVmGenerationServiceTest {
                 petiStopSource,
                 invalidService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
 
         assertDoesNotThrow(serviceWithInvalidWriter::generate);
         verify(generatedExportRepository, never()).persist(any());
@@ -704,7 +719,7 @@ class SiriVmGenerationServiceTest {
      * picks the next known stop (here TPE) as the {@code OriginRef}, instead of the real origin (HKI).
      *
      * <p>This is tracked in the "Origin/Destination endpoint derivation" follow-up in
-     * {@code docs/SIRI-VM-IMPLEMENTATION-PLAN.md} and is expected to become moot once the in-progress NeTEx-side
+     * {@code docs/SIRI-VM.md} and is expected to become moot once the in-progress NeTEx-side
      * change (in a separate branch) lands, which guarantees every published stop always carries a planned track —
      * at that point this test (and the follow-up note) can be deleted.
      */
@@ -758,7 +773,7 @@ class SiriVmGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("outcome=error") && m.contains("rail.siri.locations.received="))
                 .toList()
                 .getLast();

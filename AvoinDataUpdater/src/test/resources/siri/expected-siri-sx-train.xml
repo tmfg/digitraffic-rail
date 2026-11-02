@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Siri version="2.0" xmlns="http://www.siri.org.uk/siri" xmlns:ns5="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns:ns4="http://datex2.eu/schema/2_0RC1/2_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+    <ServiceDelivery>
+        <ResponseTimestamp>2026-10-27T12:00:00</ResponseTimestamp>
+        <ProducerRef>FTR</ProducerRef>
+        <SituationExchangeDelivery version="2.0">
+            <ResponseTimestamp>2026-10-27T12:00:00</ResponseTimestamp>
+            <Situations>
+                <PtSituationElement>
+                    <CreationTime>2026-10-27T07:00:00</CreationTime>
+                    <ParticipantRef>FTR</ParticipantRef>
+                    <SituationNumber>FTR:SituationNumber:MVM20261027100000002</SituationNumber>
+                    <Version>2</Version>
+                    <Source>
+                        <SourceType>directReport</SourceType>
+                    </Source>
+                    <VersionedAtTime>2026-10-27T08:00:00</VersionedAtTime>
+                    <Progress>open</Progress>
+                    <ValidityPeriod>
+                        <StartTime>2026-10-27T07:00:00</StartTime>
+                        <EndTime>2026-10-28T12:00:00</EndTime>
+                    </ValidityPeriod>
+                    <UndefinedReason></UndefinedReason>
+                    <ReportType>general</ReportType>
+                    <Summary xml:lang="FI">Junan vaunut 6 ja 7 puuttuvat.</Summary>
+                    <Affects>
+                        <VehicleJourneys>
+                            <AffectedVehicleJourney>
+                                <FramedVehicleJourneyRef>
+                                    <DataFrameRef>2026-10-27</DataFrameRef>
+                                    <DatedVehicleJourneyRef>FTR:ServiceJourney:145</DatedVehicleJourneyRef>
+                                </FramedVehicleJourneyRef>
+                                <Operator>
+                                    <OperatorRef>FTR:Operator:vr</OperatorRef>
+                                </Operator>
+                                <LineRef>FTR:Line:IC</LineRef>
+                                <Route/>
+                            </AffectedVehicleJourney>
+                        </VehicleJourneys>
+                    </Affects>
+                </PtSituationElement>
+            </Situations>
+        </SituationExchangeDelivery>
+    </ServiceDelivery>
+</Siri>

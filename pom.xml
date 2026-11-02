@@ -55,7 +55,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>12.2.2</version>
+                        <version>13.0.0</version>
                         <configuration>
                             <!--suppress UnresolvedMavenProperty -->
                             <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
@@ -90,9 +90,9 @@
     </repositories>
 
     <modules>
-        <module>/AvoinDataCommon/</module>
-        <module>/AvoinDataServer/</module>
-        <module>/AvoinDataUpdater/</module>
+        <module>AvoinDataCommon</module>
+        <module>AvoinDataServer</module>
+        <module>AvoinDataUpdater</module>
     </modules>
 
     <dependencyManagement>

@@ -30,16 +30,16 @@ import fi.livi.rata.avoindata.updater.service.siri.et.model.EtCall;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.QuayChange;
 
-/// Interprets a live [GTFSTrain] into the domain [EtJourney] IR: it decides *what the
+/// Converts a live [GTFSTrain] into the domain [EtJourney] IR: it decides *what the
 /// real-time situation is* (journey ref, per-stop recorded/estimated, delay status, cancellation
 /// boundary, quay ref) without touching any SIRI/JAXB type. Marshalling is a separate concern
 /// ([EtJourneyMarshaller]).
 ///
-/// Returns an [InterpretResult.Skipped] when the journey does not resolve to a published
+/// Returns an [ConvertResult.Skipped] when the journey does not resolve to a published
 /// `ServiceJourney` (`UNRESOLVED_JOURNEY`), or when any commercial stop cannot be resolved to a PETI
 /// `FSR:Quay` (`UNRESOLVED_STOP_NO_STOP` / `UNRESOLVED_STOP_NO_QUAY`) — because the profile
 /// requires a complete stop sequence, an incomplete journey is skipped rather than emitted.
-public class EtJourneyInterpreter {
+public class EtJourneyConverter {
 
     // Deviations within a minute are treated as on-time.
     private static final long ON_TIME_TOLERANCE_SECONDS = 60;
@@ -53,7 +53,7 @@ public class EtJourneyInterpreter {
     private final StationNameLookup stationNameLookup;
     private final PlannedTrackLookup plannedTrackLookup;
 
-    public EtJourneyInterpreter(final JourneyRefResolver journeyRefResolver,
+    public EtJourneyConverter(final JourneyRefResolver journeyRefResolver,
                                 final StationUicLookup stationUicLookup,
                                 final SiriStopResolver siriStopResolver,
                                 final StationNameLookup stationNameLookup,
@@ -65,11 +65,11 @@ public class EtJourneyInterpreter {
         this.plannedTrackLookup = plannedTrackLookup;
     }
 
-    public InterpretResult interpret(final GTFSTrain train, final ZonedDateTime now) {
+    public ConvertResult convert(final GTFSTrain train, final ZonedDateTime now) {
         final Optional<ResolvedJourney> resolved =
                 journeyRefResolver.resolve(train.id.trainNumber, train.id.departureDate);
         if (resolved.isEmpty()) {
-            return new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_JOURNEY);
+            return new ConvertResult.Skipped(ConvertResult.SkipReason.UNRESOLVED_JOURNEY);
         }
 
         final List<PairedStop> commercialStops = new ArrayList<>();
@@ -82,14 +82,14 @@ public class EtJourneyInterpreter {
         // A previous operating day's train only belongs in today's ET while it is genuinely still running; a
         // completed or stale carryover is dropped rather than re-published every cycle.
         if (train.id.departureDate.isBefore(now.toLocalDate()) && !isStillRunning(commercialStops, now)) {
-            return new InterpretResult.Skipped(InterpretResult.SkipReason.COMPLETED_CARRYOVER);
+            return new ConvertResult.Skipped(ConvertResult.SkipReason.COMPLETED_CARRYOVER);
         }
 
         final List<ResolvedStop> stops = new ArrayList<>(commercialStops.size());
         boolean monitored = false;
         int resolvedQuays = 0;
         int unresolvedStops = 0;
-        InterpretResult.SkipReason firstUnresolvedReason = null;
+        ConvertResult.SkipReason firstUnresolvedReason = null;
         // Counts, per station short code, how many times that station has been visited so far while walking the
         // stops in order. Map.merge(key, 1, Integer::sum) puts 1 on the first visit and adds 1 on every later
         // visit to the same station, always returning the updated (post-increment) count. Subtracting 1 turns
@@ -120,7 +120,7 @@ public class EtJourneyInterpreter {
             monitored = monitored || hasLiveData(stop);
         }
         if (firstUnresolvedReason != null) {
-            return new InterpretResult.Skipped(firstUnresolvedReason, resolvedQuays, unresolvedStops);
+            return new ConvertResult.Skipped(firstUnresolvedReason, resolvedQuays, unresolvedStops);
         }
 
         final List<EtCall> calls = new ArrayList<>(stops.size());
@@ -149,7 +149,7 @@ public class EtJourneyInterpreter {
         }
 
         final ResolvedJourney j = resolved.get();
-        return new InterpretResult.Emitted(new EtJourney(
+        return new ConvertResult.Emitted(new EtJourney(
                 j.serviceJourneyId(), j.dataFrameRef(), j.lineId(), j.operatorRef(), j.journeyPatternRef(),
                 train.cancelled, monitored,
                 stops.isEmpty() ? null : stops.getFirst().stopName(),
@@ -248,13 +248,13 @@ public class EtJourneyInterpreter {
     }
 
     /// Why a commercial stop didn't resolve: no PETI stop place for the station, or a stop place but no quay.
-    private InterpretResult.SkipReason unresolvedStopReason(final PairedStop stop) {
+    private ConvertResult.SkipReason unresolvedStopReason(final PairedStop stop) {
         final GTFSTimeTableRow representative = representativeRow(stop);
         final OptionalInt uic = stationUicLookup.uicFor(representative.stationShortCode);
         if (uic.isEmpty() || !siriStopResolver.hasStopPlace(uic.getAsInt())) {
-            return InterpretResult.SkipReason.UNRESOLVED_STOP_NO_STOP;
+            return ConvertResult.SkipReason.UNRESOLVED_STOP_NO_STOP;
         }
-        return InterpretResult.SkipReason.UNRESOLVED_STOP_NO_QUAY;
+        return ConvertResult.SkipReason.UNRESOLVED_STOP_NO_QUAY;
     }
 
     private static GTFSTimeTableRow representativeRow(final PairedStop stop) {

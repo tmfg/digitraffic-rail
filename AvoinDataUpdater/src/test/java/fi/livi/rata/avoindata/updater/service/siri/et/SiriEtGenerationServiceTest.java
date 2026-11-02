@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import fi.livi.rata.avoindata.updater.service.siri.LogEventText;
 import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
@@ -43,6 +45,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.domain.train.TimeTableRow;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -67,6 +70,7 @@ class SiriEtGenerationServiceTest {
     private SiriWritingService siriWritingService;
     private NeTExPublishedJourneyRepository publishedJourneyRepository;
 
+    private final LastUpdateService lastUpdateService = mock(LastUpdateService.class);
     private SiriEtGenerationService service;
 
     @BeforeEach
@@ -84,7 +88,8 @@ class SiriEtGenerationServiceTest {
                 petiStopSource,
                 siriWritingService,
                 generatedExportRepository,
-                publishedJourneyRepository);
+                publishedJourneyRepository,
+                lastUpdateService);
     }
 
     // ===== HELPERS =====
@@ -197,6 +202,15 @@ class SiriEtGenerationServiceTest {
         return new ArrayList<>(captor.getValue());
     }
 
+    @Test
+    void successfulRunMarksSiriETUpdated() {
+        setupHappyPath();
+
+        service.generate();
+
+        verify(lastUpdateService).update(LastUpdateService.LastUpdatedType.SIRI_ET);
+    }
+
     // ===== GEN-01: Happy path — persists GeneratedExport with fileName "siri-et.xml" =====
 
     @Test
@@ -221,7 +235,7 @@ class SiriEtGenerationServiceTest {
         final List<GeneratedExport> exports = capturePersistedExports();
         assertNotNull(exports.get(0).data);
         assertTrue(exports.get(0).data.length > 0);
-        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data));
+        assertTrue(siriWritingService.isSchemaValid(exports.get(0).data, SiriFeed.ET));
     }
 
     // ===== GEN-03: Happy path — persisted doc references the published ServiceJourney id for train 59 =====
@@ -391,7 +405,7 @@ class SiriEtGenerationServiceTest {
 
         verify(generatedExportRepository, never()).persist(any());
         final String wideEvent = appender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
+                .map(LogEventText::of)
                 .filter(m -> m.contains("rail.siri.journey_source.unavailable_reason="))
                 .reduce((a, b) -> b)
                 .orElse("");

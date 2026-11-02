@@ -14,10 +14,10 @@ import java.util.Set;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
@@ -31,6 +31,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -45,6 +46,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnava
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 
 import static fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository.*;
@@ -54,15 +56,13 @@ public class SiriEtGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(SiriEtGenerationService.class);
 
-    // Published journeys older than this (vs. their newest generatedAt) are treated as stale → the cycle fails.
-    private static final long JOURNEY_SOURCE_MAX_AGE_HOURS = 26;
-
     private final StationRepository stationRepository;
     private final GTFSTrainRepository gtfsTrainRepository;
     private final PetiStopSource petiStopSource;
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExPublishedJourneyRepository publishedJourneyRepository;
+    private final LastUpdateService lastUpdateService;
 
     public SiriEtGenerationService(
             final StationRepository stationRepository,
@@ -70,13 +70,15 @@ public class SiriEtGenerationService {
             final PetiStopSource petiStopSource,
             final SiriWritingService siriWritingService,
             final GeneratedExportRepository generatedExportRepository,
-            final NeTExPublishedJourneyRepository publishedJourneyRepository) {
+            final NeTExPublishedJourneyRepository publishedJourneyRepository,
+            final LastUpdateService lastUpdateService) {
         this.stationRepository = stationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
         this.petiStopSource = petiStopSource;
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
         this.publishedJourneyRepository = publishedJourneyRepository;
+        this.lastUpdateService = lastUpdateService;
     }
 
     @Transactional
@@ -103,9 +105,9 @@ public class SiriEtGenerationService {
             outputSize = result.bytes().length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(result.bytes())) {
+            if (!siriWritingService.isSchemaValid(result.bytes(), SiriFeed.ET)) {
                 // Never publish structurally invalid SIRI: skip the persist so the last good feed keeps serving.
-                throw new InvalidSiriOutputException("SIRI-ET output failed structural (JAXB) validation");
+                throw new InvalidSiriOutputException("SIRI-ET output failed SIRI 2.0 XSD validation");
             }
 
             stage = Stage.PERSIST;
@@ -114,6 +116,7 @@ public class SiriEtGenerationService {
             export.created = DateProvider.nowInHelsinki();
             export.fileName = RealtimeFeedFileNames.SIRI_ET;
             generatedExportRepository.persist(List.of(export));
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_ET);
 
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(trainsReceived, stats), "NULL", stage,
@@ -150,7 +153,10 @@ public class SiriEtGenerationService {
         final DbSources dbSources = buildDbSources(operatingDates);
         final JourneyRefResolver journeyRefResolver = dbSources.journeyRefResolver();
         final PlannedTrackLookup plannedTrackLookup = dbSources.plannedTrackLookup();
-        log.info("event=rail.siri.et.prepare rail.siri.et.journey_source=db");
+        log.atInfo()
+                .addKeyValue("event", "rail.siri.et.prepare")
+                .addKeyValue("rail.siri.et.journey_source", "db")
+                .log("SIRI-ET prepare");
 
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
@@ -177,7 +183,7 @@ public class SiriEtGenerationService {
     /**
      * The DB read path: builds the journey/track lookups from the newest NeTEx-published dataset version.
      * Throws {@link PublishedJourneysUnavailableException} when the published NeTEx is missing, has no rows for
-     * the operating days, or is stale (newest {@code generatedAt} older than {@link #JOURNEY_SOURCE_MAX_AGE_HOURS})
+     * the operating days, or is stale (newest {@code generatedAt} older than {@link PublishedJourneysUnavailableException#MAX_AGE_HOURS})
      * — SIRI-ET generation then fails for the cycle rather than resolving live and risking drift.
      */
     private DbSources buildDbSources(final List<LocalDate> operatingDates) {
@@ -201,7 +207,7 @@ public class SiriEtGenerationService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(JOURNEY_SOURCE_MAX_AGE_HOURS);
+        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,
@@ -254,47 +260,50 @@ public class SiriEtGenerationService {
 
     /**
      * Emits the one-line {@code rail.siri.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
+     * absent where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
      * error the throwable rides along on this same line, so the event is never logged twice.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final long trainsReceived, final SiriEtStats stats, final int outputSize,
             final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
             final String unavailableReason, final Throwable thrown) {
-        final String matchRate = stats.matchRate().isPresent()
-                ? String.format(Locale.ROOT, "%.4f", stats.matchRate().getAsDouble())
-                : "NULL";
-        final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
-        final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Double.toString(durationSeconds(
-                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
-                : "NULL";
-        final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriEt outcome={} error.type={} stage={} duration={} "
-                        + "rail.siri.service=et "
-                        + "rail.siri.trains.received={} rail.siri.journeys.emitted={} "
-                        + "rail.siri.journeys.cancelled={} rail.siri.journeys.skipped.unresolved_journey={} "
-                        + "rail.siri.journeys.skipped.unresolved_stop.no_stop={} "
-                        + "rail.siri.journeys.skipped.unresolved_stop.no_quay={} "
-                        + "rail.siri.journeys.skipped.completed_carryover={} rail.siri.calls.total={} "
-                        + "rail.siri.calls.recorded={} rail.siri.calls.estimated={} "
-                        + "rail.siri.stop_refs.resolved.quay={} rail.siri.stop_refs.resolved.stop_place={} "
-                        + "rail.siri.stop_refs.unresolved={} rail.siri.peti.match_rate={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
-                        + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs), trainsReceived,
-                stats.journeysEmitted(), stats.journeysCancelled(), stats.skippedUnresolvedJourney(),
-                stats.skippedUnresolvedStopNoStop(), stats.skippedUnresolvedStopNoQuay(),
-                stats.skippedCompletedCarryover(), stats.callsTotal(),
-                stats.callsRecorded(), stats.callsEstimated(),
-                stats.stopRefsQuay(), stats.stopRefsStopPlace(), stats.stopRefsUnresolved(), matchRate,
-                datasetVersion, journeySourceAge, unavailableReason,
-                petiStopSource.getSnapshotAgeSeconds(), outputSize);
-        switch (outcome) {
-            case "success" -> log.info(line);
-            case "partial" -> log.warn(line);
-            default -> log.error(line, thrown);
-        }
+        final Double matchRate = stats.matchRate().isPresent() ? stats.matchRate().getAsDouble() : null;
+        final Double journeySourceAge = journeySourceGeneratedAt != null
+                ? durationSeconds(
+                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis())
+                : null;
+        final LoggingEventBuilder event = switch (outcome) {
+            case "success" -> log.atInfo();
+            case "partial" -> log.atWarn();
+            default -> log.atError();
+        };
+        event.addKeyValue("event", "rail.siri.generation")
+                .addKeyValue("operation", "generateSiriEt")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("error.type", errorType)
+                .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
+                .addKeyValue("duration", durationSeconds(durationMs))
+                .addKeyValue("rail.siri.service", SiriFeed.ET.logName())
+                .addKeyValue("rail.siri.trains.received", trainsReceived)
+                .addKeyValue("rail.siri.journeys.emitted", stats.journeysEmitted())
+                .addKeyValue("rail.siri.journeys.cancelled", stats.journeysCancelled())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_journey", stats.skippedUnresolvedJourney())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_stop.no_stop", stats.skippedUnresolvedStopNoStop())
+                .addKeyValue("rail.siri.journeys.skipped.unresolved_stop.no_quay", stats.skippedUnresolvedStopNoQuay())
+                .addKeyValue("rail.siri.journeys.skipped.completed_carryover", stats.skippedCompletedCarryover())
+                .addKeyValue("rail.siri.calls.total", stats.callsTotal())
+                .addKeyValue("rail.siri.calls.recorded", stats.callsRecorded())
+                .addKeyValue("rail.siri.calls.estimated", stats.callsEstimated())
+                .addKeyValue("rail.siri.stop_refs.resolved.quay", stats.stopRefsQuay())
+                .addKeyValue("rail.siri.stop_refs.resolved.stop_place", stats.stopRefsStopPlace())
+                .addKeyValue("rail.siri.stop_refs.unresolved", stats.stopRefsUnresolved())
+                .addKeyValue("rail.siri.peti.match_rate", matchRate)
+                .addKeyValue("rail.siri.journey_source.dataset_version", journeySourceVersion)
+                .addKeyValue("rail.siri.journey_source.age", journeySourceAge)
+                .addKeyValue("rail.siri.journey_source.unavailable_reason", unavailableReason)
+                .addKeyValue("rail.netex.peti.snapshot.age", petiStopSource.getSnapshotAgeSeconds())
+                .addKeyValue("rail.siri.output.size", outputSize)
+                .setCause(thrown)
+                .log("SIRI-ET generation");
     }
 }

@@ -10,7 +10,7 @@ import fi.livi.rata.avoindata.common.domain.train.TimeTableRow.TimeTableRowType;
 
 /// Common shape shared by `TimeTableRow` and `GTFSTimeTableRow` (two otherwise unrelated entities) so both can
 /// be ordered the same way: by {@link #getScheduledTime()}, ARRIVAL before DEPARTURE on a same-instant tie.
-/// Used by `CommercialStopVisits#of`, `EtJourneyInterpreter#pairRows`, and
+/// Used by `CommercialStopVisits#of`, `EtJourneyConverter#pairRows`, and
 /// `ScheduleToTrainConverter#createTrain`, all of which assume rows are sorted this way.
 ///
 /// A same-station tie (a station's own ARRIVAL and DEPARTURE sharing the exact same `scheduledTime` - a

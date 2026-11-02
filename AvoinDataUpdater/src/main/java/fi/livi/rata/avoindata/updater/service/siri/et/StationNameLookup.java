@@ -4,7 +4,7 @@ import java.util.Optional;
 
 /**
  * Resolves a station short code to its human-readable name for the SIRI {@code OriginName} /
- * {@code DestinationName} / {@code StopPointName} fields. A seam so the interpreter stays free of the DB;
+ * {@code DestinationName} / {@code StopPointName} fields. A seam so the converter stays free of the DB;
  * the generation side supplies {@link InMemoryStationNameLookup}.
  */
 @FunctionalInterface

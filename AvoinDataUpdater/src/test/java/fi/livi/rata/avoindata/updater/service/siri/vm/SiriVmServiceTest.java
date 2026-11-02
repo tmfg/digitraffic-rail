@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import static fi.livi.rata.avoindata.common.utils.DateProvider.ZONE_ID_HKI;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
@@ -86,7 +87,7 @@ class SiriVmServiceTest {
 
         assertEquals(1, result.stats().locationsReceived());
         assertEquals(1, result.stats().activitiesEmitted());
-        assertTrue(writingService.isSchemaValid(result.bytes()), "Generated SIRI-VM output must be schema-valid");
+        assertTrue(writingService.isSchemaValid(result.bytes(), SiriFeed.VM), "Generated SIRI-VM output must be schema-valid");
     }
 
     @Test

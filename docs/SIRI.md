@@ -1,11 +1,12 @@
 # SIRI (Real-Time Data) — Unified Overview
 
 This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented)
-and **SIRI-VM** (implemented), and **SIRI-SX** (not yet implemented — planned). It covers
+**SIRI-VM** (implemented) and **SIRI-SX** (implemented, DPO-4882). It covers
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
-For VM-specific implementation history/checklists, see [`SIRI-VM-IMPLEMENTATION-PLAN.md`](SIRI-VM-IMPLEMENTATION-PLAN.md).
+For each service's data source, rules and field mapping, see [`SIRI-ET.md`](SIRI-ET.md), [`SIRI-VM.md`](SIRI-VM.md)
+and [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Canonical source material
 
@@ -72,9 +73,9 @@ real-time consumers, which is also what Håndbok N801 §5.1 requires of any Norw
   self-contained (not depend on other SIRI files to be meaningful); updates should be published as soon as
   feasible after the source data changes (data freshness).
 
-## Common architecture: Interpreter → domain IR → Marshaller
+## Common architecture: Converter → domain IR → Marshaller
 
-Every SIRI service in this codebase (ET today, VM on this branch, SX in the future) is built from the same
+Every SIRI service in this codebase (ET, VM and SX) is built from the same
 three-stage pipeline, split across two Java packages:
 
 - **`service/siri/common`** — collaborators shared by *all* services: `ResolvedJourney` / `LineId` /
@@ -83,17 +84,15 @@ three-stage pipeline, split across two Java packages:
   schema validation, shared envelope building), `PetiUnavailableException` /
   `PublishedJourneysUnavailableException` (dependency-failure signaling used by every generation service).
 - **`service/siri/<service>`** (e.g. `siri/et`, `siri/vm`) — everything specific to that one SIRI service:
-  - **Interpreter/Converter** (`EtJourneyInterpreter`, `VmJourneyConverter`, future `SxSituationInterpreter`):
+  - **Converter** (`EtJourneyConverter`, `VmJourneyConverter`, `SxSituationConverter`):
     decides *what the real-time situation is* — resolves the published journey/stop via `JourneyRefResolver` /
     `StationUicLookup` / `StationNameLookup` / `SiriStopResolver`, applies unit conversions, and returns a small
     immutable **domain record** (`EtCall`-family, `VmActivity`). Has zero dependency on JAXB/`uk.org.siri.*`
-    types. VM uses the `*Converter`/`converter`/`convert(...)` naming; ET still uses the older
-    `*Interpreter`/`interpreter`/`interpret(...)` naming — see "Follow-up: Consistency Improvements" in
-    `SIRI-VM-IMPLEMENTATION-PLAN.md` for the (deferred, purely cosmetic) plan to align them.
+    types.
   - **Marshaller** (`EtJourneyMarshaller`, `VmJourneyMarshaller`): pure translation from the domain record to
     the SIRI JAXB object tree (timezone conversion, `BigDecimal`/`Duration` formatting, envelope assembly). No
-    interpretation logic.
-  - **Service** (`SiriEtService`, `SiriVmService`): orchestrates interpreter + marshaller over a batch of
+    conversion logic.
+  - **Service** (`SiriEtService`, `SiriVmService`): orchestrates converter + marshaller over a batch of
     trains/locations, and computes per-cycle stats (e.g. how many inputs were dropped as unresolvable) from the
     size of the intermediate domain-record list, before any XML exists.
   - **GenerationService** (`SiriEtGenerationService`, `SiriVmGenerationService`): the full scheduled-cycle
@@ -108,12 +107,12 @@ three-stage pipeline, split across two Java packages:
     as for the GTFS Realtime feeds.
 
 **Why this split exists**, rather than one method building JAXB objects directly from the raw data source: it
-keeps interpretation and marshalling as separate, independently testable concerns (interpreter unit tests
+keeps conversion and marshalling as separate, independently testable concerns (converter unit tests
 assert on plain record fields, no XML/JAXB involved); it gives the Service a pre-XML checkpoint to compute
 stats from; and it isolates any future SIRI schema-version bump to the Marshaller only. See the `VmActivity`
-Javadoc for the fuller rationale (applies equally to ET, and will apply to SX).
+Javadoc for the fuller rationale (applies equally to ET and SX).
 
-### Why ET and VM (and future SX) are separate Spring beans, not methods on one class
+### Why ET, VM and SX are separate Spring beans, not methods on one class
 
 `@ConditionalOnProperty` in Spring only gates **whole bean/class registration** — it cannot conditionally
 enable/disable a single `@RequestMapping` method or a single `@Scheduled` method inside an always-registered
@@ -212,10 +211,10 @@ each service gets:
   `VehicleStatus` (no status enum source), `ProgressBetweenStops`
   (investigated in depth — PALA optionally carries a track-km linear position (`ratakmsijainti`) that could
   feed this, but its production reliability is unverified and no station↔track-km reference dataset exists
-  to pair it with; see "ProgressBetweenStops investigation" in `SIRI-VM-IMPLEMENTATION-PLAN.md` for the full
+  to pair it with; see "ProgressBetweenStops" in `SIRI-VM.md` for the full
   analysis and rejected alternatives). `DirectionRef` is optional in VM (unlike ET) and is
   omitted entirely rather than emitting a meaningless `"0"`. See the field-by-field table in
-  `SIRI-VM-IMPLEMENTATION-PLAN.md` → "SIRI-VM Data Mapping" for the full implemented/not-implemented breakdown
+  `SIRI-VM.md` → "Field mapping" for the full implemented/not-implemented breakdown
   with reasoning per field. Revisit any of these if a real data source becomes available (e.g. a heading sensor,
   track-km reference data).
 - **Precondition**: the spec states valid timetable data (NeTEx/SIRI-ET) must exist before VM position data is
@@ -227,24 +226,44 @@ each service gets:
   snapshot age (`CachingPetiStopSource.getSnapshotAgeSeconds()`) is logged for observability only and is
   never compared against a threshold — an old-but-non-empty PETI snapshot is accepted and used as-is.
 
-### SIRI-SX (not yet implemented)
+### SIRI-SX (DPO-4882)
 
-Situation Exchange — free-text disruption messages (`PtSituationElement`), tied by reference to affected
-`Networks`/`StopPlaces`/`StopPoints`/`VehicleJourneys`. Key points from the wiki spec, for when this is
-implemented:
+Situation Exchange — free-text disruption and passenger-information messages (`PtSituationElement`), tied to
+the published timetable by reference. SX is real-time in the sense that a message appears, changes and closes
+as soon as it does in the source, but unlike ET and VM the content only changes when a message changes. The
+feed always holds the complete set of valid messages in one XML file.
 
-- Root delivery type: `SituationExchangeDelivery` → one or more `PtSituationElement`. Each situation has a
-  **globally unique** `SituationNumber` (format `CODESPACE:SituationNumber:ID`, e.g. `FTR:SituationNumber:123`).
-- `Progress` (`open`/`closed`) — a `closed` situation is expired and must not be shown to the public; the
-  `ValidityPeriod`'s `EndTime` must be **at least 5 hours in the future** at the moment a situation is closed,
-  to ensure downstream systems have time to pick up the cancellation before it stops being redistributed.
-- `Severity` (`noImpact`…`verySevere`, default `normal`), `Priority` (1–10, 1 = highest), `ReportType`
-  (`general` vs `incident`), `Summary` (**max 160 characters**, one per language), optional `Description` /
-  `Advice` / `InfoLinks`.
-- `Affects` describes scope: `Networks` (operator/line/mode), `StopPlaces`, `StopPoints`, or `VehicleJourneys` —
-  can only be empty when `Progress = closed`.
-- No current Digitraffic Rail data source has been identified for disruption/situation text — this is the main
-  open question before implementation can start (where would `PtSituationElement` content come from?).
+- **Flags**: `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
+  `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:
+  `siri-sx.xml`.
+- **Details** (data source, other possible sources, rules, field-by-field status): [`SIRI-SX.md`](SIRI-SX.md).
+
+## PETI stop-source caching and resilience (`CachingPetiStopSource`)
+
+All SIRI services (and NeTEx generation) read PETI stops through `CachingPetiStopSource`.
+
+- **Lazy initialization.** `getStops()` loads the PETI snapshot on first use if it is still empty (for example right
+  after a restart, before the daily 02:00:30 UTC `refresh()`). Callers do not need a separate "ensure loaded" step.
+  Concurrent first callers share one lock (`refreshLock`, double-checked), so only one HTTP fetch happens. An hourly
+  safety net (`retry-cron`, on the hour) retries `refresh()` if the last attempt failed, so the 02:00:30 fetch has a
+  real chance to recover by 03:00, before the 04:00 UTC NeTEx generation.
+- **Retry-delay gate (1 minute).** If the first load fails, `nextInitialLoadAttempt` stops every later `getStops()`
+  call from trying again (and waiting for the timeout) for one minute. The scheduled `refresh()` always tries
+  regardless. The gate only protects against SIRI cycles hammering a down or slow PETI.
+- **Retry inside one fetch (transient failures only).** 5xx responses, connection errors and a per-attempt timeout
+  (`updater.netex.peti.request-timeout-seconds`, default 10 s) are retried twice with a fixed backoff of 1 s then 2 s
+  (capped at 4 s, no jitter). 4xx responses and parse errors are never retried. The outer limit for the whole fetch
+  including retries is `updater.netex.peti.block-timeout-seconds` (default 40 s); it must be clearly more than
+  `request-timeout-seconds × 3` plus backoff.
+- **Logging.** Errors are logged per attempt group (`method=refresh operation=fetchPeti outcome=error`), each retry as
+  `outcome=retry attempt=…`, and an empty result as `method=ensureLoaded outcome=empty`.
+- **Last good snapshot is kept.** On any failure the previous snapshot stays in use. SIRI then serves stale but valid
+  data (or the cycle fails and the previous file stays published) instead of a package with missing stops.
+- **Stable ids.** `FSR:Quay:*` and `FSR:StopPlace:*` ids do not change over time, so they can be cached across cycles.
+
+## Open items
+
+- Document the SIRI response formats on digitraffic.fi.
 
 ## Configuration reference
 
@@ -256,14 +275,17 @@ implemented:
 | `updater.siri.et.fixed-rate-ms` | AvoinDataUpdater | SIRI-ET generation interval (default 60000 ms) |
 | `updater.siri.vm.enabled` | AvoinDataUpdater | Enables scheduled SIRI-VM generation |
 | `updater.siri.vm.fixed-rate-ms` | AvoinDataUpdater | SIRI-VM generation interval (default 60000 ms) |
+| `avoindataserver.siri.sx.enabled` | AvoinDataServer | Enables `GET /api/v1/siri/sx` |
+| `updater.siri.sx.enabled` | AvoinDataUpdater | Enables scheduled SIRI-SX generation |
+| `updater.siri.sx.fixed-rate-ms` | AvoinDataUpdater | SIRI-SX generation interval (default 60000 ms) |
 | `updater.realtime-feed.cleanup.fixed-delay-ms` | AvoinDataUpdater | Interval of the realtime feed cleanup, SIRI and GTFS Realtime |
 | `updater.realtime-feed.cleanup.retention-minutes` | AvoinDataUpdater | How long realtime feed snapshots are kept; the newest is always kept |
 | `updater.realtime-feed.cleanup.batch-size` | AvoinDataUpdater | Maximum number of snapshots deleted per feed per run, in one transaction; a large backlog is deleted over several runs |
 | `updater.realtime-feed.cleanup.siri-et-batch-size` | AvoinDataUpdater | Same for SIRI-ET, whose snapshots are about 12 MB each |
 
-## Testing approach (applies to ET, VM, and future SX)
+## Testing approach (applies to ET, VM and SX)
 
-- **Golden XML tests** (`SiriEtGoldenXmlTest`, `SiriVmGoldenXmlTest`): deterministic scenario inputs → compare
+- **Golden XML tests** (`SiriEtGoldenXmlTest`, `SiriVmGoldenXmlTest`, `SxGoldenXmlTest`): deterministic scenario inputs → compare
   normalized XML output byte-for-byte against a checked-in reference file
   (`src/test/resources/siri/expected-siri-<service>-<scenario>.xml`). When the mapping changes intentionally,
   regenerate from `target/siri-<service>-actual-<scenario>.xml` (written on every run) after manually verifying
@@ -276,5 +298,4 @@ implemented:
   complementary "flag left disabled entirely, route never mapped" case has its own 404 test in a separate class
   (`SiriVmControllerDisabledIntegrationTest`/`SiriEtControllerDisabledIntegrationTest`), since it needs the
   opposite property configuration and thus a separate Spring context.
-- Not yet covered for VM: a DB-level end-to-end integration test equivalent to `SiriEtDbIntegrationTest` (see
-  `SIRI-VM-IMPLEMENTATION-PLAN.md` Phase 4).
+- **Database tests** (`SiriEtDbIntegrationTest`, `SiriVmDbIntegrationTest`): real database rows, no mocked repositories.

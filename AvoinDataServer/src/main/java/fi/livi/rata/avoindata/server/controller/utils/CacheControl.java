@@ -4,6 +4,11 @@ import java.time.LocalDate;
 import java.util.Collection;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.http.HttpHeaders;
+
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+
 public class CacheControl {
 
     public static final int CACHE_AGE_DAY = (24 * 60 * 60);
@@ -23,6 +28,18 @@ public class CacheControl {
 
     public static void setCacheMaxAgeSeconds(HttpServletResponse response, int maxAge) {
         response.setHeader("Cache-Control", String.format("max-age=%d, public", maxAge));
+    }
+
+    /** Headers of a stored export file: cache time, freshness, creation time and length. */
+    public static HttpHeaders exportHeaders(final GeneratedExport export, final int cacheSeconds,
+            final int freshWithinMinutes) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(String.format("max-age=%d, public", cacheSeconds));
+        headers.add("x-is-fresh", Boolean.toString(
+                export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(freshWithinMinutes))));
+        headers.add("x-timestamp", export.created.toString());
+        headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
+        return headers;
     }
 
     public static void clearCacheMaxAgeSeconds(HttpServletResponse response) {

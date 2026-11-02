@@ -24,6 +24,14 @@ public interface NeTExPublishedJourneyRepository extends CustomGeneralRepository
     List<NeTExPublishedJourney> findByDatasetVersionAndDepartureDatesFetchTracks(@Param("version") long version,
             @Param("departureDates") Collection<LocalDate> departureDates);
 
+    /**
+     * Loads the journeys without their tracks, for a dataset version and set of operating days.
+     */
+    @Query("select j from NeTExPublishedJourney j "
+            + "where j.datasetVersion = :version and j.trainId.departureDate in :departureDates")
+    List<NeTExPublishedJourney> findByDatasetVersionAndDepartureDates(@Param("version") long version,
+            @Param("departureDates") Collection<LocalDate> departureDates);
+
     @Modifying
     @Query("delete from NeTExPublishedJourney j where j.generatedAt < :cutoff")
     int deleteByGeneratedAtBefore(@Param("cutoff") ZonedDateTime cutoff);

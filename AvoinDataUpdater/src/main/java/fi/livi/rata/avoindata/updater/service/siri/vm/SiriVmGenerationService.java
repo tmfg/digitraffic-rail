@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.gtfs.GTFSTrainRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.dao.metadata.StationRepository;
@@ -33,6 +33,7 @@ import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExIdGenerator;
 import fi.livi.rata.avoindata.updater.service.netex.OperatingDayWindow;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
@@ -49,6 +50,7 @@ import fi.livi.rata.avoindata.updater.service.siri.common.PublishedJourneysUnava
 import fi.livi.rata.avoindata.updater.service.siri.common.ResolvedJourney;
 import fi.livi.rata.avoindata.updater.service.siri.common.ServiceJourneyId;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriStopResolver;
+import fi.livi.rata.avoindata.updater.service.siri.common.SiriFeed;
 import fi.livi.rata.avoindata.updater.service.siri.common.SiriWritingService;
 import fi.livi.rata.avoindata.updater.service.siri.common.TimeTableRowsLookup;
 import fi.livi.rata.avoindata.updater.service.siri.et.InMemoryStationNameLookup;
@@ -74,9 +76,6 @@ public class SiriVmGenerationService {
     // Same freshness window as the existing GTFS-Realtime VehiclePosition feed (FeedMessageService).
     private static final int LOCATION_MAX_AGE_MINUTES = 30;
 
-    // Published journeys older than this (vs. their newest generatedAt) are treated as stale -> the cycle fails.
-    private static final long JOURNEY_SOURCE_MAX_AGE_HOURS = 26;
-
     private final StationRepository stationRepository;
     private final TrainLocationRepository trainLocationRepository;
     private final GTFSTrainRepository gtfsTrainRepository;
@@ -84,6 +83,7 @@ public class SiriVmGenerationService {
     private final SiriWritingService siriWritingService;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExPublishedJourneyRepository publishedJourneyRepository;
+    private final LastUpdateService lastUpdateService;
 
     public SiriVmGenerationService(
             final StationRepository stationRepository,
@@ -92,7 +92,8 @@ public class SiriVmGenerationService {
             final PetiStopSource petiStopSource,
             final SiriWritingService siriWritingService,
             final GeneratedExportRepository generatedExportRepository,
-            final NeTExPublishedJourneyRepository publishedJourneyRepository) {
+            final NeTExPublishedJourneyRepository publishedJourneyRepository,
+            final LastUpdateService lastUpdateService) {
         this.stationRepository = stationRepository;
         this.trainLocationRepository = trainLocationRepository;
         this.gtfsTrainRepository = gtfsTrainRepository;
@@ -100,6 +101,7 @@ public class SiriVmGenerationService {
         this.siriWritingService = siriWritingService;
         this.generatedExportRepository = generatedExportRepository;
         this.publishedJourneyRepository = publishedJourneyRepository;
+        this.lastUpdateService = lastUpdateService;
     }
 
     @Transactional
@@ -127,9 +129,9 @@ public class SiriVmGenerationService {
             outputSize = result.bytes().length;
 
             stage = Stage.VALIDATE;
-            if (!siriWritingService.isSchemaValid(result.bytes())) {
+            if (!siriWritingService.isSchemaValid(result.bytes(), SiriFeed.VM)) {
                 // Never publish structurally invalid SIRI: skip the persist so the last good feed keeps serving.
-                throw new InvalidSiriOutputException("SIRI-VM output failed structural (JAXB) validation");
+                throw new InvalidSiriOutputException("SIRI-VM output failed SIRI 2.0 XSD validation");
             }
 
             stage = Stage.PERSIST;
@@ -138,6 +140,7 @@ public class SiriVmGenerationService {
             export.created = DateProvider.nowInHelsinki();
             export.fileName = RealtimeFeedFileNames.SIRI_VM;
             generatedExportRepository.persist(List.of(export));
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.SIRI_VM);
 
             stage = Stage.COMPLETE;
             logGenerationEvent(resolveOutcome(locationsReceived, stats), "NULL", stage,
@@ -168,7 +171,10 @@ public class SiriVmGenerationService {
 
         final DbSources dbSources = buildDbSources(operatingDates);
         final JourneyRefResolver journeyRefResolver = dbSources.journeyRefResolver();
-        log.info("event=rail.siri.vm.prepare rail.siri.vm.journey_source=db");
+        log.atInfo()
+                .addKeyValue("event", "rail.siri.vm.prepare")
+                .addKeyValue("rail.siri.vm.journey_source", "db")
+                .log("SIRI-VM prepare");
 
         final InMemoryStationUicLookup stationUicLookup = new InMemoryStationUicLookup(stations);
         final InMemoryStationNameLookup stationNameLookup = new InMemoryStationNameLookup(stations);
@@ -283,7 +289,7 @@ public class SiriVmGenerationService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(JOURNEY_SOURCE_MAX_AGE_HOURS);
+        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,
@@ -345,33 +351,37 @@ public class SiriVmGenerationService {
 
     /**
      * Emits the one-line {@code rail.siri.generation} wide event — same field set on every outcome (zeros /
-     * NULL where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
+     * absent where unavailable); the level tracks the outcome (success=info, partial=warn, error=error). On
      * error the throwable rides along on this same line, so the event is never logged twice.
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final SiriVmStats stats, final int outputSize,
             final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
             final String unavailableReason, final Throwable thrown) {
-        final String datasetVersion = journeySourceVersion != null ? journeySourceVersion.toString() : "NULL";
-        final String journeySourceAge = journeySourceGeneratedAt != null
-                ? Double.toString(durationSeconds(
-                        java.time.Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis()))
-                : "NULL";
-        final String line = StringUtil.format(
-                "event=rail.siri.generation operation=generateSiriVm outcome={} error.type={} stage={} duration={} "
-                        + "rail.siri.service=vm "
-                        + "rail.siri.locations.received={} rail.siri.activities.emitted={} "
-                        + "rail.siri.journey_source.dataset_version={} rail.siri.journey_source.age={} "
-                        + "rail.siri.journey_source.unavailable_reason={} "
-                        + "rail.netex.peti.snapshot.age={} rail.siri.output.size={}",
-                outcome, errorType, stage.name().toLowerCase(Locale.ROOT), durationSeconds(durationMs),
-                stats.locationsReceived(), stats.activitiesEmitted(),
-                datasetVersion, journeySourceAge, unavailableReason,
-                petiStopSource.getSnapshotAgeSeconds(), outputSize);
-        switch (outcome) {
-            case "success" -> log.info(line);
-            case "partial" -> log.warn(line);
-            default -> log.error(line, thrown);
-        }
+        final Double journeySourceAge = journeySourceGeneratedAt != null
+                ? durationSeconds(
+                        java.time.Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis())
+                : null;
+        final LoggingEventBuilder event = switch (outcome) {
+            case "success" -> log.atInfo();
+            case "partial" -> log.atWarn();
+            default -> log.atError();
+        };
+        event.addKeyValue("event", "rail.siri.generation")
+                .addKeyValue("operation", "generateSiriVm")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("error.type", errorType)
+                .addKeyValue("stage", stage.name().toLowerCase(Locale.ROOT))
+                .addKeyValue("duration", durationSeconds(durationMs))
+                .addKeyValue("rail.siri.service", SiriFeed.VM.logName())
+                .addKeyValue("rail.siri.locations.received", stats.locationsReceived())
+                .addKeyValue("rail.siri.activities.emitted", stats.activitiesEmitted())
+                .addKeyValue("rail.siri.journey_source.dataset_version", journeySourceVersion)
+                .addKeyValue("rail.siri.journey_source.age", journeySourceAge)
+                .addKeyValue("rail.siri.journey_source.unavailable_reason", unavailableReason)
+                .addKeyValue("rail.netex.peti.snapshot.age", petiStopSource.getSnapshotAgeSeconds())
+                .addKeyValue("rail.siri.output.size", outputSize)
+                .setCause(thrown)
+                .log("SIRI-VM generation");
     }
 }

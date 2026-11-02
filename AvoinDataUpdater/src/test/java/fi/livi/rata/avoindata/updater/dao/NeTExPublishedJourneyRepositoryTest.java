@@ -66,4 +66,24 @@ public class NeTExPublishedJourneyRepositoryTest extends BaseTest {
         assertThat(tracks.getFirst().plannedTrack).isEqualTo("7");
         assertThat(tracks.getLast().stationShortCode).isEqualTo("OL");
     }
+
+    @Test
+    public void journeysAreFoundWithoutLoadingTracks() {
+        final LocalDate departureDate = DateProvider.dateInHelsinki();
+        final NeTExPublishedJourney journey = new NeTExPublishedJourney(new TrainId(59L, departureDate),
+                "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr", "FTR:JourneyPattern:59", 1L,
+                DateProvider.nowInHelsinki());
+        journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
+        publishedJourneyRepository.persist(List.of(journey));
+        publishedJourneyRepository.flush();
+        entityManager.clear();
+
+        final List<NeTExPublishedJourney> found = publishedJourneyRepository
+                .findByDatasetVersionAndDepartureDates(1L, List.of(departureDate));
+
+        assertThat(found).hasSize(1);
+        assertThat(found.getFirst().serviceJourneyId).isEqualTo("FTR:ServiceJourney:59-12345");
+        assertThat(entityManager.getEntityManagerFactory().getPersistenceUnitUtil()
+                .isLoaded(found.getFirst(), "tracks")).isFalse();
+    }
 }

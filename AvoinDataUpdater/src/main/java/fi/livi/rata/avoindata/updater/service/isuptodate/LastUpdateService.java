@@ -1,15 +1,20 @@
 package fi.livi.rata.avoindata.updater.service.isuptodate;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
+import fi.livi.rata.avoindata.common.dao.LastUpdateRepository;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.domain.common.LastUpdate;
 import fi.livi.rata.avoindata.updater.service.SimpleTransactionManager;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,11 +31,24 @@ public class LastUpdateService {
     private final WebClient webClient;
     private final SimpleTransactionManager simpleTransactionManager;
     private final GeneratedExportRepository generatedExportRepository;
+    private final LastUpdateRepository lastUpdateRepository;
 
-    public LastUpdateService(final WebClient webClient, SimpleTransactionManager simpleTransactionManager, GeneratedExportRepository generatedExportRepository) {
+    private final boolean siriEtEnabled;
+    private final boolean siriVmEnabled;
+    private final boolean siriSxEnabled;
+
+    public LastUpdateService(final WebClient webClient, final SimpleTransactionManager simpleTransactionManager, final GeneratedExportRepository generatedExportRepository,
+                             final LastUpdateRepository lastUpdateRepository,
+                             @Value("${updater.siri.et.enabled:false}") final boolean siriEtEnabled,
+                             @Value("${updater.siri.vm.enabled:false}") final boolean siriVmEnabled,
+                             @Value("${updater.siri.sx.enabled:false}") final boolean siriSxEnabled) {
         this.webClient = webClient;
         this.simpleTransactionManager = simpleTransactionManager;
         this.generatedExportRepository = generatedExportRepository;
+        this.lastUpdateRepository = lastUpdateRepository;
+        this.siriEtEnabled = siriEtEnabled;
+        this.siriVmEnabled = siriVmEnabled;
+        this.siriSxEnabled = siriSxEnabled;
     }
 
     public enum LastUpdatedType {
@@ -39,7 +57,6 @@ public class LastUpdateService {
         ROUTESETS,
         TRAIN_RUNNING_MESSAGES,
         TRAIN_LOCATIONS,
-        FORECASTS,
         LOCALIZATIONS,
         OPERATORS,
         TIME_TABLE_PERIODS,
@@ -52,10 +69,28 @@ public class LastUpdateService {
         CATEGORY_CODES,
         TRACK_WORK_NOTIFICATIONS,
         TRAFFIC_RESTRICTION_NOTIFICATIONS,
+        TRAIN_LOCATIONS_DUMP,
         TRAINS_DUMP,
         COMPOSITIONS_DUMP,
-        TRAIN_LOCATIONS_DUMP
+        SIRI_ET,
+        SIRI_VM,
+        SIRI_SX_STATIONS,
+        SIRI_SX_TRAINS
     }
+
+    /**
+     * Updated rarely, so the time is stored in the database to survive a restart.
+     */
+    private static final Set<LastUpdatedType> STORED_IN_DATABASE = Set.of(
+            LastUpdatedType.LOCALIZATIONS,
+            LastUpdatedType.OPERATORS,
+            LastUpdatedType.TIME_TABLE_PERIODS,
+            LastUpdatedType.TRAIN_RUNNING_MESSAGE_RULES,
+            LastUpdatedType.TRACKSECTIONS,
+            LastUpdatedType.STATIONS,
+            LastUpdatedType.CATEGORY_CODES,
+            LastUpdatedType.FUTURE_TRAINS,
+            LastUpdatedType.OLD_TRAINS);
 
     private final Map<String, LastUpdatedType> prefixToEnumMap = new HashMap<>();
     private final Map<LastUpdatedType, Instant> lastUpdateTimes = new HashMap<>();
@@ -68,7 +103,6 @@ public class LastUpdateService {
         prefixToEnumMap.put("julkisetkokoonpanot", LastUpdatedType.COMPOSITIONS); // new compositions
         prefixToEnumMap.put("trainrunningmessages", LastUpdatedType.TRAIN_RUNNING_MESSAGES);
         prefixToEnumMap.put("trainLocations", LastUpdatedType.TRAIN_LOCATIONS);
-        prefixToEnumMap.put("forecasts", LastUpdatedType.FORECASTS);
 
         prefixToEnumMap.put("localizations", LastUpdatedType.LOCALIZATIONS);
         prefixToEnumMap.put("operators", LastUpdatedType.OPERATORS);
@@ -78,7 +112,64 @@ public class LastUpdateService {
         prefixToEnumMap.put("stations", LastUpdatedType.STATIONS);
         prefixToEnumMap.put("categorycodes", LastUpdatedType.CATEGORY_CODES);
 
-        updateGtfsLastUpdated();
+        initializeLastUpdateTimes();
+    }
+
+    /**
+     * Every data type is listed from the start, so a type that never gets updated shows up as outdated.
+     * The time is read from the database when the data is stored there, otherwise it is the start time.
+     */
+    private void initializeLastUpdateTimes() {
+        final Instant started = Instant.now();
+        for (final LastUpdatedType type : LastUpdatedType.values()) {
+            if (isInUse(type)) {
+                lastUpdateTimes.put(type, started);
+            }
+        }
+
+        simpleTransactionManager.executeInTransaction(() -> {
+            lastUpdateRepository.findAll().forEach(this::initializeFromStored);
+            initializeFromExport(LastUpdatedType.GTFS, "gtfs-passenger-stops.zip");
+            if (siriEtEnabled) {
+                initializeFromExport(LastUpdatedType.SIRI_ET, "siri-et.xml");
+            }
+            if (siriVmEnabled) {
+                initializeFromExport(LastUpdatedType.SIRI_VM, "siri-vm.xml");
+            }
+            if (siriSxEnabled) {
+                initializeFromExport(LastUpdatedType.SIRI_SX_STATIONS, "siri-sx.xml");
+            }
+        });
+    }
+
+    private boolean isInUse(final LastUpdatedType type) {
+        return switch (type) {
+            case SIRI_ET -> siriEtEnabled;
+            case SIRI_VM -> siriVmEnabled;
+            case SIRI_SX_STATIONS, SIRI_SX_TRAINS -> siriSxEnabled;
+            default -> true;
+        };
+    }
+
+    private void initializeFromStored(final LastUpdate stored) {
+        try {
+            final LastUpdatedType type = LastUpdatedType.valueOf(stored.type);
+            if (STORED_IN_DATABASE.contains(type)) {
+                lastUpdateTimes.put(type, stored.lastUpdated);
+            }
+        } catch (final IllegalArgumentException e) {
+            log.warn("Unknown last update type {} in database", stored.type);
+        }
+    }
+
+    private void initializeFromExport(final LastUpdatedType type, final String fileName) {
+        final var createdOpt = generatedExportRepository.findLatestCreatedByFileName(fileName);
+
+        if (createdOpt.isPresent()) {
+            lastUpdateTimes.put(type, createdOpt.get());
+        } else {
+            log.warn("No export {} found in database", fileName);
+        }
     }
 
     /**
@@ -90,6 +181,8 @@ public class LastUpdateService {
         final StopWatch stopWatch = StopWatch.createStarted();
 
         updateTrainLocationsDumpLastUpdated();
+        updateMonthlyDumpLastUpdated(LastUpdatedType.TRAINS_DUMP, "trains");
+        updateMonthlyDumpLastUpdated(LastUpdatedType.COMPOSITIONS_DUMP, "compositions");
 
         stopWatch.stop();
 
@@ -106,23 +199,18 @@ public class LastUpdateService {
     }
 
     public void update(final LastUpdatedType lastUpdatedType) {
-        lastUpdateTimes.put(lastUpdatedType, Instant.now());
-    }
+        final Instant now = Instant.now();
+        lastUpdateTimes.put(lastUpdatedType, now);
 
-    /**
-     * Update GTFS last updated from database.  When starting the updater,
-     * it takes hours before next GTFS export is generated, so we need to get the last updated time from database.
-     */
-    private void updateGtfsLastUpdated() {
-        simpleTransactionManager.executeInTransaction(() -> {
-            final var createdOpt = generatedExportRepository.findLatestCreatedByFileName("gtfs-passenger-stops.zip");
-
-            if (createdOpt.isPresent()) {
-                lastUpdateTimes.put(LastUpdatedType.GTFS, createdOpt.get());
-            } else {
-                log.warn("No GTFS export found in database");
+        if (STORED_IN_DATABASE.contains(lastUpdatedType)) {
+            try {
+                simpleTransactionManager.executeInTransaction(() -> {
+                    lastUpdateRepository.save(new LastUpdate(lastUpdatedType.name(), now));
+                });
+            } catch (final Exception e) {
+                log.error("Could not store last update time of {}", lastUpdatedType, e);
             }
-        });
+        }
     }
 
     private void updateTrainLocationsDumpLastUpdated() {
@@ -131,6 +219,19 @@ public class LastUpdateService {
                 DateProvider.dateInHelsinki().minusDays(3)));
         if (lastUpdated != null) {
             lastUpdateTimes.put(LastUpdatedType.TRAIN_LOCATIONS_DUMP, lastUpdated);
+        }
+    }
+
+    /**
+     * The dump of the previous month is made on the 5th, so until then the month before it is the latest.
+     */
+    private void updateMonthlyDumpLastUpdated(final LastUpdatedType type, final String name) {
+        final LocalDate today = DateProvider.dateInHelsinki();
+        final LocalDate month = today.withDayOfMonth(1).minusMonths(today.getDayOfMonth() > 5 ? 1 : 2);
+        final Instant lastUpdated = getLastUpdatedForUrl(String.format(
+                "https://rata.digitraffic.fi/api/v1/%s/dumps/digitraffic-rata-%s-%s.zip", name, name, month));
+        if (lastUpdated != null) {
+            lastUpdateTimes.put(type, lastUpdated);
         }
     }
 
@@ -144,6 +245,7 @@ public class LastUpdateService {
             return null;
         }
     }
+
     public Map<LastUpdatedType, Instant> getLastUpdateTimes() {
         return lastUpdateTimes;
     }

@@ -114,7 +114,7 @@ class SiriWritingServiceTest {
         }
 
         // when
-        final boolean valid = writingService.isSchemaValid(bytes);
+        final boolean valid = writingService.isSchemaValid(bytes, SiriFeed.ET);
 
         // then
         assertTrue(valid);
@@ -128,7 +128,7 @@ class SiriWritingServiceTest {
         final byte[] invalidXml = "<notSiri/>".getBytes(StandardCharsets.UTF_8);
 
         // when
-        final boolean valid = writingService.isSchemaValid(invalidXml);
+        final boolean valid = writingService.isSchemaValid(invalidXml, SiriFeed.ET);
 
         // then
         assertFalse(valid);

@@ -98,7 +98,7 @@ public class VmJourneyConverter {
     /**
      * Resolves the upcoming stop's Quay from its live (real-time) track, falling back to the planned (NeTEx)
      * track when the live track is unknown ({@code unknownTrack=true}) — mirrors SIRI-ET's {@code
-     * EtJourneyInterpreter.resolveStopRef} fallback: if the confirmed real-time track isn't known yet, the
+     * EtJourneyConverter.resolveStopRef} fallback: if the confirmed real-time track isn't known yet, the
      * planned value is used in its place. {@code unknownTrack} itself has no SIRI/{@link
      * fi.livi.rata.avoindata.updater.service.siri.vm.model.VmActivity VmActivity} field of its own — it is a
      * purely internal signal that only decides which track source to resolve the Quay from; the resolved Quay
