@@ -1,11 +1,5 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
-import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
-import fi.livi.rata.avoindata.server.config.WebConfig;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -15,6 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.server.config.WebConfig;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @Tag(name = "siri", description = "Returns real-time data in SIRI Nordic format")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "siri")
@@ -22,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnProperty(name = "avoindataserver.siri.et.enabled", havingValue = "true")
 public class SiriEtController {
 
-    private static final String ET_FILENAME = "siri-et.xml";
     private static final int CACHE_SECONDS = 30;
     // Real-time feed is regenerated ~every minute; older than this is stale.
     private static final int FRESH_WITHIN_MINUTES = 5;
@@ -33,19 +34,18 @@ public class SiriEtController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(
-            summary = "Returns SIRI Nordic Estimated Timetable (ET) real-time XML",
-            description = """
-                    Stop references use identifiers from Fintraffic's national stop registry (PETI).
+    @Operation(summary = "Returns SIRI Nordic Estimated Timetable (ET) real-time XML", description = """
+            Stop references use identifiers from Fintraffic's national stop registry (PETI).
 
-                    For example, `FSR:Quay:415` in `StopPointRef` identifies the corresponding PETI `Quay`.
+            For example, `FSR:Quay:415` in `StopPointRef` identifies the corresponding PETI `Quay`.
 
-                    [Browse rail stops and their quays in PETI](https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail).
-                    """)
+            [Browse rail stops and their quays in PETI](https://peti.fintraffic.fi/api/fintraffic/v1/stops?transportModes=rail).
+            """)
     @RequestMapping(method = RequestMethod.GET, path = "et", produces = MediaType.APPLICATION_XML_VALUE)
     @Transactional(readOnly = true)
     public ResponseEntity<byte[]> getSiriEt() {
-        final GeneratedExport export = generatedExportRepository.findFirstByFileNameOrderByIdDesc(ET_FILENAME);
+        final GeneratedExport export = generatedExportRepository
+                .findFirstByFileNameOrderByIdDesc(RealtimeFeedFileNames.SIRI_ET);
         if (export == null) {
             return ResponseEntity.notFound().build();
         }
@@ -53,7 +53,8 @@ public class SiriEtController {
         final HttpHeaders headers = new HttpHeaders();
         headers.setCacheControl(String.format("max-age=%d, public", CACHE_SECONDS));
         headers.add("x-is-fresh",
-                Boolean.toString(export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
+                Boolean.toString(
+                        export.created.isAfter(DateProvider.nowInHelsinki().minusMinutes(FRESH_WITHIN_MINUTES))));
         headers.add("x-timestamp", export.created.toString());
         headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(export.data.length));
         return ResponseEntity.ok()

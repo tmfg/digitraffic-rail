@@ -27,6 +27,7 @@ import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTimeTableRow;
 import fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrainLocation;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
+import fi.livi.rata.avoindata.common.domain.gtfs.RealtimeFeedFileNames;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourney;
 import fi.livi.rata.avoindata.common.domain.netex.NeTExPublishedJourneyTrack;
@@ -135,7 +136,7 @@ public class SiriVmGenerationService {
             final GeneratedExport export = new GeneratedExport();
             export.data = result.bytes();
             export.created = DateProvider.nowInHelsinki();
-            export.fileName = "siri-vm.xml";
+            export.fileName = RealtimeFeedFileNames.SIRI_VM;
             generatedExportRepository.persist(List.of(export));
 
             stage = Stage.COMPLETE;
