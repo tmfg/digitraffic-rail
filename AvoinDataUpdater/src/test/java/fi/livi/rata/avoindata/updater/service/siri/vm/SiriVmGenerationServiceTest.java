@@ -719,7 +719,7 @@ class SiriVmGenerationServiceTest {
      * picks the next known stop (here TPE) as the {@code OriginRef}, instead of the real origin (HKI).
      *
      * <p>This is tracked in the "Origin/Destination endpoint derivation" follow-up in
-     * {@code docs/SIRI-VM-IMPLEMENTATION-PLAN.md} and is expected to become moot once the in-progress NeTEx-side
+     * {@code docs/SIRI-VM.md} and is expected to become moot once the in-progress NeTEx-side
      * change (in a separate branch) lands, which guarantees every published stop always carries a planned track —
      * at that point this test (and the follow-up note) can be deleted.
      */

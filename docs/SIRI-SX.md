@@ -66,8 +66,9 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 
 - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
   requirement), then left out.
-- `Description` is the full screen text. `Summary` is the same text cut after the last whole word that fits,
-  with `...` added, at most 160 characters (profile limit). A word is never cut. A text that already fits is used as is.
+- `Summary` is the screen text, at most 160 characters (profile limit). A longer text is cut after the last whole
+  word that fits, with `...` added. A word is never cut. `Description` is the full text and is given only for a
+  language whose summary was cut; a text that fits gets only `Summary`.
 - Languages fi, sv and en, each with `xml:lang`, written in upper case (`FI`, `SV`, `EN`) because the SIRI 2.0
   schema accepts only upper case codes. A language without text is left out. If there is no screen
   text, the spoken text is used. If there is neither, the message is dropped.
@@ -167,7 +168,7 @@ profile are listed; the schema has many more (for example `Keywords`, `Details`,
 | `UndefinedReason` | `PtSituationElement` | 1:1 | ✅ | Always empty (required by the format, not used) |
 | `ReportType` | `PtSituationElement` | 1:1 | ✅ | Always `general` (see Rules above) |
 | `Summary` | `PtSituationElement` | 1:* | ✅ | Screen text cut to 160 characters, one per language |
-| `Description` | `PtSituationElement` | 0:* | ✅ | Full text, one per language |
+| `Description` | `PtSituationElement` | 0:* | ✅ | Full text, only for a language whose `Summary` was cut |
 | `Affects` | `PtSituationElement` | 1:1 | ✅ | See below |
 | `Severity` | `PtSituationElement` | 0:1 | ❌ | No data. Default `normal` applies |
 | `Priority` | `PtSituationElement` | 0:1 | ❌ | No data |

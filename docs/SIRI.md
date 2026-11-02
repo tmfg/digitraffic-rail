@@ -5,8 +5,8 @@ This document is the single entry point for Digitraffic Rail's SIRI real-time fe
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
 
-For VM-specific implementation history/checklists, see [`SIRI-VM-IMPLEMENTATION-PLAN.md`](SIRI-VM-IMPLEMENTATION-PLAN.md).
-For SIRI-SX data source, rules and field mapping, see [`SIRI-SX.md`](SIRI-SX.md).
+For each service's data source, rules and field mapping, see [`SIRI-ET.md`](SIRI-ET.md), [`SIRI-VM.md`](SIRI-VM.md)
+and [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Canonical source material
 
@@ -73,7 +73,7 @@ real-time consumers, which is also what Håndbok N801 §5.1 requires of any Norw
   self-contained (not depend on other SIRI files to be meaningful); updates should be published as soon as
   feasible after the source data changes (data freshness).
 
-## Common architecture: Interpreter → domain IR → Marshaller
+## Common architecture: Converter → domain IR → Marshaller
 
 Every SIRI service in this codebase (ET, VM and SX) is built from the same
 three-stage pipeline, split across two Java packages:
@@ -84,17 +84,15 @@ three-stage pipeline, split across two Java packages:
   schema validation, shared envelope building), `PetiUnavailableException` /
   `PublishedJourneysUnavailableException` (dependency-failure signaling used by every generation service).
 - **`service/siri/<service>`** (e.g. `siri/et`, `siri/vm`) — everything specific to that one SIRI service:
-  - **Interpreter/Converter** (`EtJourneyInterpreter`, `VmJourneyConverter`, future `SxSituationInterpreter`):
+  - **Converter** (`EtJourneyConverter`, `VmJourneyConverter`, `SxSituationConverter`):
     decides *what the real-time situation is* — resolves the published journey/stop via `JourneyRefResolver` /
     `StationUicLookup` / `StationNameLookup` / `SiriStopResolver`, applies unit conversions, and returns a small
     immutable **domain record** (`EtCall`-family, `VmActivity`). Has zero dependency on JAXB/`uk.org.siri.*`
-    types. VM uses the `*Converter`/`converter`/`convert(...)` naming; ET still uses the older
-    `*Interpreter`/`interpreter`/`interpret(...)` naming — see "Follow-up: Consistency Improvements" in
-    `SIRI-VM-IMPLEMENTATION-PLAN.md` for the (deferred, purely cosmetic) plan to align them.
+    types.
   - **Marshaller** (`EtJourneyMarshaller`, `VmJourneyMarshaller`): pure translation from the domain record to
     the SIRI JAXB object tree (timezone conversion, `BigDecimal`/`Duration` formatting, envelope assembly). No
-    interpretation logic.
-  - **Service** (`SiriEtService`, `SiriVmService`): orchestrates interpreter + marshaller over a batch of
+    conversion logic.
+  - **Service** (`SiriEtService`, `SiriVmService`): orchestrates converter + marshaller over a batch of
     trains/locations, and computes per-cycle stats (e.g. how many inputs were dropped as unresolvable) from the
     size of the intermediate domain-record list, before any XML exists.
   - **GenerationService** (`SiriEtGenerationService`, `SiriVmGenerationService`): the full scheduled-cycle
@@ -107,7 +105,7 @@ three-stage pipeline, split across two Java packages:
     line with a `rail.siri.service=et|vm|sx` tag for observability).
 
 **Why this split exists**, rather than one method building JAXB objects directly from the raw data source: it
-keeps interpretation and marshalling as separate, independently testable concerns (interpreter unit tests
+keeps conversion and marshalling as separate, independently testable concerns (converter unit tests
 assert on plain record fields, no XML/JAXB involved); it gives the Service a pre-XML checkpoint to compute
 stats from; and it isolates any future SIRI schema-version bump to the Marshaller only. See the `VmActivity`
 Javadoc for the fuller rationale (applies equally to ET and SX).
@@ -211,10 +209,10 @@ each service gets:
   `VehicleStatus` (no status enum source), `ProgressBetweenStops`
   (investigated in depth — PALA optionally carries a track-km linear position (`ratakmsijainti`) that could
   feed this, but its production reliability is unverified and no station↔track-km reference dataset exists
-  to pair it with; see "ProgressBetweenStops investigation" in `SIRI-VM-IMPLEMENTATION-PLAN.md` for the full
+  to pair it with; see "ProgressBetweenStops" in `SIRI-VM.md` for the full
   analysis and rejected alternatives). `DirectionRef` is optional in VM (unlike ET) and is
   omitted entirely rather than emitting a meaningless `"0"`. See the field-by-field table in
-  `SIRI-VM-IMPLEMENTATION-PLAN.md` → "SIRI-VM Data Mapping" for the full implemented/not-implemented breakdown
+  `SIRI-VM.md` → "Field mapping" for the full implemented/not-implemented breakdown
   with reasoning per field. Revisit any of these if a real data source becomes available (e.g. a heading sensor,
   track-km reference data).
 - **Precondition**: the spec states valid timetable data (NeTEx/SIRI-ET) must exist before VM position data is
@@ -237,6 +235,33 @@ feed always holds the complete set of valid messages in one XML file.
   `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:
   `siri-sx.xml`.
 - **Details** (data source, other possible sources, rules, field-by-field status): [`SIRI-SX.md`](SIRI-SX.md).
+
+## PETI stop-source caching and resilience (`CachingPetiStopSource`)
+
+All SIRI services (and NeTEx generation) read PETI stops through `CachingPetiStopSource`.
+
+- **Lazy initialization.** `getStops()` loads the PETI snapshot on first use if it is still empty (for example right
+  after a restart, before the daily 02:00:30 UTC `refresh()`). Callers do not need a separate "ensure loaded" step.
+  Concurrent first callers share one lock (`refreshLock`, double-checked), so only one HTTP fetch happens. An hourly
+  safety net (`retry-cron`, on the hour) retries `refresh()` if the last attempt failed, so the 02:00:30 fetch has a
+  real chance to recover by 03:00, before the 04:00 UTC NeTEx generation.
+- **Retry-delay gate (1 minute).** If the first load fails, `nextInitialLoadAttempt` stops every later `getStops()`
+  call from trying again (and waiting for the timeout) for one minute. The scheduled `refresh()` always tries
+  regardless. The gate only protects against SIRI cycles hammering a down or slow PETI.
+- **Retry inside one fetch (transient failures only).** 5xx responses, connection errors and a per-attempt timeout
+  (`updater.netex.peti.request-timeout-seconds`, default 10 s) are retried twice with a fixed backoff of 1 s then 2 s
+  (capped at 4 s, no jitter). 4xx responses and parse errors are never retried. The outer limit for the whole fetch
+  including retries is `updater.netex.peti.block-timeout-seconds` (default 40 s); it must be clearly more than
+  `request-timeout-seconds × 3` plus backoff.
+- **Logging.** Errors are logged per attempt group (`method=refresh operation=fetchPeti outcome=error`), each retry as
+  `outcome=retry attempt=…`, and an empty result as `method=ensureLoaded outcome=empty`.
+- **Last good snapshot is kept.** On any failure the previous snapshot stays in use. SIRI then serves stale but valid
+  data (or the cycle fails and the previous file stays published) instead of a package with missing stops.
+- **Stable ids.** `FSR:Quay:*` and `FSR:StopPlace:*` ids do not change over time, so they can be cached across cycles.
+
+## Open items
+
+- Document the SIRI response formats on digitraffic.fi.
 
 ## Configuration reference
 
@@ -267,5 +292,4 @@ feed always holds the complete set of valid messages in one XML file.
   complementary "flag left disabled entirely, route never mapped" case has its own 404 test in a separate class
   (`SiriVmControllerDisabledIntegrationTest`/`SiriEtControllerDisabledIntegrationTest`), since it needs the
   opposite property configuration and thus a separate Spring context.
-- Not yet covered for VM: a DB-level end-to-end integration test equivalent to `SiriEtDbIntegrationTest` (see
-  `SIRI-VM-IMPLEMENTATION-PLAN.md` Phase 4).
+- **Database tests** (`SiriEtDbIntegrationTest`, `SiriVmDbIntegrationTest`): real database rows, no mocked repositories.
