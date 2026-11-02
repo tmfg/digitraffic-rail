@@ -16,7 +16,7 @@ class SiriEtStatsTest {
     @Test
     void givenSkippedNoQuayWithPartialResolution_whenFrom_thenCountsResolvedAndUnresolved() {
         final SiriEtStats stats = SiriEtStats.from(List.of(
-                new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_STOP_NO_QUAY, 3, 1)));
+                new ConvertResult.Skipped(ConvertResult.SkipReason.UNRESOLVED_STOP_NO_QUAY, 3, 1)));
 
         assertEquals(3, stats.stopRefsQuay());
         assertEquals(1, stats.stopRefsUnresolved());
@@ -27,7 +27,7 @@ class SiriEtStatsTest {
     @Test
     void givenSkippedNoStopWithPartialResolution_whenFrom_thenCountsCarry() {
         final SiriEtStats stats = SiriEtStats.from(List.of(
-                new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_STOP_NO_STOP, 2, 2)));
+                new ConvertResult.Skipped(ConvertResult.SkipReason.UNRESOLVED_STOP_NO_STOP, 2, 2)));
 
         assertEquals(2, stats.stopRefsQuay());
         assertEquals(2, stats.stopRefsUnresolved());
@@ -37,8 +37,8 @@ class SiriEtStatsTest {
     @Test
     void givenJourneyLevelAndCarryoverSkips_whenFrom_thenNoStopRefCounts() {
         final SiriEtStats stats = SiriEtStats.from(List.of(
-                new InterpretResult.Skipped(InterpretResult.SkipReason.UNRESOLVED_JOURNEY),
-                new InterpretResult.Skipped(InterpretResult.SkipReason.COMPLETED_CARRYOVER)));
+                new ConvertResult.Skipped(ConvertResult.SkipReason.UNRESOLVED_JOURNEY),
+                new ConvertResult.Skipped(ConvertResult.SkipReason.COMPLETED_CARRYOVER)));
 
         assertEquals(0, stats.stopRefsQuay());
         assertEquals(0, stats.stopRefsUnresolved());

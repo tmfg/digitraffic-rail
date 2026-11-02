@@ -29,8 +29,8 @@ public record SiriEtStats(
         return new SiriEtStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
-    /** Folds one cycle's interpretation results into the counters — the sole place these tallies live. */
-    public static SiriEtStats from(final List<InterpretResult> results) {
+    /** Folds one cycle's conversion results into the counters — the sole place these tallies live. */
+    public static SiriEtStats from(final List<ConvertResult> results) {
         long emitted = 0;
         long cancelled = 0;
         long skippedUnresolvedJourney = 0;
@@ -43,9 +43,9 @@ public record SiriEtStats(
         long stopRefsStopPlace = 0;
         long stopRefsUnresolved = 0;
 
-        for (final InterpretResult result : results) {
+        for (final ConvertResult result : results) {
             switch (result) {
-                case InterpretResult.Skipped skipped -> {
+                case ConvertResult.Skipped skipped -> {
                     switch (skipped.reason()) {
                         case UNRESOLVED_JOURNEY -> skippedUnresolvedJourney++;
                         case UNRESOLVED_STOP_NO_STOP -> {
@@ -61,7 +61,7 @@ public record SiriEtStats(
                         case COMPLETED_CARRYOVER -> skippedCompletedCarryover++;
                     }
                 }
-                case InterpretResult.Emitted emittedResult -> {
+                case ConvertResult.Emitted emittedResult -> {
                     final EtJourney journey = emittedResult.journey();
                     emitted++;
                     if (journey.cancelled()) {

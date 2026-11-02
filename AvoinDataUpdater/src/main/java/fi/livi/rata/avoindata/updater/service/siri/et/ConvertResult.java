@@ -3,11 +3,11 @@ package fi.livi.rata.avoindata.updater.service.siri.et;
 import fi.livi.rata.avoindata.updater.service.siri.et.model.EtJourney;
 
 /**
- * Outcome of interpreting one {@link fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain}: either an
+ * Outcome of converting one {@link fi.livi.rata.avoindata.common.domain.gtfs.GTFSTrain}: either an
  * {@link Emitted} journey, or a {@link Skipped} with the reason (so the generation wide event can count
  * <em>why</em> journeys were dropped, not just that they were).
  */
-public sealed interface InterpretResult permits InterpretResult.Emitted, InterpretResult.Skipped {
+public sealed interface ConvertResult permits ConvertResult.Emitted, ConvertResult.Skipped {
 
     enum SkipReason {
         /** No winning schedule — the train is not in the published timetable. */
@@ -20,7 +20,7 @@ public sealed interface InterpretResult permits InterpretResult.Emitted, Interpr
         COMPLETED_CARRYOVER
     }
 
-    record Emitted(EtJourney journey) implements InterpretResult {}
+    record Emitted(EtJourney journey) implements ConvertResult {}
 
     /**
      * A skipped journey, with the per-journey stop-resolution tally so the wide-event {@code match_rate} reflects
@@ -28,7 +28,7 @@ public sealed interface InterpretResult permits InterpretResult.Emitted, Interpr
      * unresolved stop. {@code resolvedQuays} / {@code unresolvedStops} are 0 for journey-level skips
      * ({@code UNRESOLVED_JOURNEY}, {@code COMPLETED_CARRYOVER}).
      */
-    record Skipped(SkipReason reason, int resolvedQuays, int unresolvedStops) implements InterpretResult {
+    record Skipped(SkipReason reason, int resolvedQuays, int unresolvedStops) implements ConvertResult {
 
         /** A journey-level skip that resolved no stops. */
         Skipped(final SkipReason reason) {

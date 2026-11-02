@@ -285,7 +285,7 @@ public class GTFSTrainRepositoryTest extends BaseTest {
     // Regression test for the vehicle_at_stop window function's own tiebreak (as opposed to the outer
     // "next stop" selection tiebreak covered by getTrainLocationsTieAtStationBoundaryPrefersDeparture below):
     // PSL's own ARRIVAL and DEPARTURE (rows 1-2) are forced to share the exact same scheduled_time (a
-    // zero-dwell stop - see CommercialStopVisits/EtJourneyInterpreter's own tie-break handling for the same,
+    // zero-dwell stop - see CommercialStopVisits/EtJourneyConverter's own tie-break handling for the same,
     // real-if-rare occurrence). The train is still approaching PSL (neither row has happened yet), so
     // PSL's DEPARTURE - selected as "next" because the outer tiebreak also prefers DEPARTURE - must NOT be
     // reported as vehicle_at_stop=true: without a deterministic secondary sort key in the window functions

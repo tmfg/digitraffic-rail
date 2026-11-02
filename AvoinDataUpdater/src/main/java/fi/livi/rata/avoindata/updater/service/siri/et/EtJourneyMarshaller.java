@@ -36,8 +36,8 @@ import uk.org.siri.siri21.VehicleModesEnumeration;
 
 /**
  * Owns <em>all</em> SIRI-ET XML construction: it assembles the delivery envelope and, for each
- * {@link EtJourney} produced by {@link EtJourneyInterpreter}, the {@code EstimatedVehicleJourney}, then
- * serializes the whole {@code Siri} document to bytes. Pure translation — no interpretation: it switches on
+ * {@link EtJourney} produced by {@link EtJourneyConverter}, the {@code EstimatedVehicleJourney}, then
+ * serializes the whole {@code Siri} document to bytes. Pure translation — no conversion logic: it switches on
  * the sealed {@link EtCall} to build a {@code RecordedCall} or {@code EstimatedCall} and does the
  * local-Helsinki time formatting.
  */
@@ -55,7 +55,7 @@ public class EtJourneyMarshaller {
     }
 
     /**
-     * Assembles the complete SIRI-ET {@code ServiceDelivery} document from the interpreted journeys.
+     * Assembles the complete SIRI-ET {@code ServiceDelivery} document from the converted journeys.
      */
     public Siri marshal(final List<EtJourney> journeys, final ZonedDateTime now) {
         final Siri siri = siriWritingService.buildEnvelope(now, producerRef);

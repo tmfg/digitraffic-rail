@@ -23,7 +23,7 @@ import fi.livi.rata.avoindata.updater.service.timetable.CommercialStopRule.Leg;
 /// (which carries no visitIndex of its own, e.g. SIRI-VM's `GTFSTrainLocation`) can be matched back to the
 /// right planned track when a station is served more than once.
 ///
-/// Mirrors the pairing/commercial-filter rules SIRI-ET's `EtJourneyInterpreter` applies to a train's full
+/// Mirrors the pairing/commercial-filter rules SIRI-ET's `EtJourneyConverter` applies to a train's full
 /// row list. Kept as a separate, narrower utility (rather than shared directly with that class) since SIRI-VM only
 /// needs this one lookup — an on-demand fallback for the rare "live track unknown" case (see
 /// `VmJourneyConverter`), not the full call-by-call conversion ET performs on every row.
@@ -183,7 +183,7 @@ public final class CommercialStopVisits {
             final Stop stop = stops.get(i);
             final String station = stop.representative().stationShortCode;
             // 0-based occurrence of this station within the journey so far, incremented on every visit
-            // regardless of whether it is the one being searched for (see EtJourneyInterpreter for the same
+            // regardless of whether it is the one being searched for (see EtJourneyConverter for the same
             // counting pattern).
             final int visitIndex = visitCounts.merge(station, 1, Integer::sum) - 1;
             visitIndexPerStop[i] = visitIndex;
