@@ -1,6 +1,6 @@
 package fi.livi.rata.avoindata.common.domain.netex;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class NeTExPublishedJourney {
     public String operatorRef;
     public String journeyPatternRef;
     public long datasetVersion;
-    public ZonedDateTime generatedAt;
+    public Instant generatedAt;
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, orphanRemoval = true)
     // Order by sequenceIndex (the track's own journey-visitation position), not visitIndex (a per-station
@@ -43,7 +43,7 @@ public class NeTExPublishedJourney {
 
     public NeTExPublishedJourney(final TrainId trainId, final String serviceJourneyId, final String lineId,
             final String operatorRef, final String journeyPatternRef, final long datasetVersion,
-            final ZonedDateTime generatedAt) {
+            final Instant generatedAt) {
         this.trainId = trainId;
         this.serviceJourneyId = serviceJourneyId;
         this.lineId = lineId;

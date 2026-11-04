@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ public class NeTExPublishedJourneyRepositoryTest extends BaseTest {
         final LocalDate departureDate = DateProvider.dateInHelsinki();
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(new TrainId(59L, departureDate),
                 "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr", "FTR:JourneyPattern:59", 1L,
-                DateProvider.nowInHelsinki());
+                Instant.now());
         // HKI -> TPE -> HKI (revisited) -> OL, in that journey order. TPE and OL each have visitIndex 0 (their
         // only visit); HKI has visitIndex 0 then 1. Ordering by visitIndex alone would put HKI's second visit
         // (index=1) after every visitIndex=0 track, i.e. last - not its true position (third of four).
@@ -72,7 +73,7 @@ public class NeTExPublishedJourneyRepositoryTest extends BaseTest {
         final LocalDate departureDate = DateProvider.dateInHelsinki();
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(new TrainId(59L, departureDate),
                 "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr", "FTR:JourneyPattern:59", 1L,
-                DateProvider.nowInHelsinki());
+                Instant.now());
         journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
         publishedJourneyRepository.persist(List.of(journey));
         publishedJourneyRepository.flush();

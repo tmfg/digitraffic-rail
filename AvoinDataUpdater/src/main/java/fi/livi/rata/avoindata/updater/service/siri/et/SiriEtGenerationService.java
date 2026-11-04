@@ -2,6 +2,8 @@ package fi.livi.rata.avoindata.updater.service.siri.et;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -91,7 +93,7 @@ public class SiriEtGenerationService {
         // Journey-source correlation for the wide event: which NeTEx dataset this cycle read and how old it is,
         // or (on failure) why it was unusable. Populated once the source is resolved; stay NULL if we fail first.
         Long journeySourceVersion = null;
-        ZonedDateTime journeySourceGeneratedAt = null;
+        Instant journeySourceGeneratedAt = null;
         String unavailableReason = "NULL";
         try {
             final EtGenerationContext context = prepareContext();
@@ -202,12 +204,12 @@ public class SiriEtGenerationService {
                     "no NeTEx-published journeys for operating days " + operatingDates);
         }
 
-        final ZonedDateTime newestGeneratedAt = journeys.stream()
+        final Instant newestGeneratedAt = journeys.stream()
                 .map(j -> j.generatedAt)
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
+        final Instant staleThreshold = Instant.now().minus(PublishedJourneysUnavailableException.MAX_AGE_HOURS, ChronoUnit.HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,
@@ -241,10 +243,10 @@ public class SiriEtGenerationService {
 
     /** The DB-read journey/track lookups + the published (trainNumber, date) set to fetch live trains for. */
     private record DbSources(JourneyRefResolver journeyRefResolver, PlannedTrackLookup plannedTrackLookup,
-            Set<TrainId> trainIds, long datasetVersion, ZonedDateTime newestGeneratedAt) {}
+            Set<TrainId> trainIds, long datasetVersion, Instant newestGeneratedAt) {}
 
     private record EtGenerationContext(SiriEtService etService, List<GTFSTrain> trains, ZonedDateTime now,
-            Long journeySourceVersion, ZonedDateTime journeySourceGeneratedAt) {}
+            Long journeySourceVersion, Instant journeySourceGeneratedAt) {}
 
     /**
      * Degraded-but-not-failed cycles. Two triggers: an empty feed despite having candidate trains, and any
@@ -265,12 +267,12 @@ public class SiriEtGenerationService {
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final long trainsReceived, final SiriEtStats stats, final int outputSize,
-            final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
+            final Long journeySourceVersion, final Instant journeySourceGeneratedAt,
             final String unavailableReason, final Throwable thrown) {
         final Double matchRate = stats.matchRate().isPresent() ? stats.matchRate().getAsDouble() : null;
         final Double journeySourceAge = journeySourceGeneratedAt != null
                 ? durationSeconds(
-                        Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis())
+                        Duration.between(journeySourceGeneratedAt, Instant.now()).toMillis())
                 : null;
         final LoggingEventBuilder event = switch (outcome) {
             case "success" -> log.atInfo();

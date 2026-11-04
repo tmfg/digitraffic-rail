@@ -85,8 +85,15 @@ public class NeTExService {
     private final TimeTableRowService timeTableRowService;
     private final HistoricalTrackSource historicalTrackSource;
 
+    // The persist-journeys settings only affect the journey table that SIRI reads, not the NeTEx XML.
     @Value("${updater.netex.persist-journeys.enabled:true}")
     private boolean persistJourneysEnabled = true;
+
+    @Value("${updater.netex.persist-journeys.lookback-days:2}")
+    private int persistJourneysLookbackDays = 2;
+
+    @Value("${updater.netex.persist-journeys.lookahead-days:14}")
+    private int persistJourneysLookaheadDays = 14;
 
     public NeTExService(final NeTExEntityService entityService,
             final NeTExCalendarService calendarService,
@@ -462,13 +469,17 @@ public class NeTExService {
                 + "dayTypeAssignments={}",
                 calendar.dayTypes().size(), calendar.operatingPeriods().size(), calendar.assignments().size());
 
+        // The window is fixed here and travels with the dataset, so the writer stores exactly the days the drafts
+        // were built for even if the run crosses midnight.
+        final PublishedJourneyWindow publishedWindow = PublishedJourneyWindow.of(DateProvider.dateInHelsinki(),
+                persistJourneysLookbackDays, persistJourneysLookaheadDays);
         final List<PublishedJourneyDraft> publishedJourneys = buildPublishedJourneyDrafts(winningByTrainDate,
-                serviceJourneys);
+                serviceJourneys, publishedWindow);
 
         log.info("event=generateNeTEx method=computeDataset publishedJourneyDrafts={} ofWinningTrainDates={}",
                 publishedJourneys.size(), winningByTrainDate.size());
 
-        return new NeTExDataset(allFiltered, publishedJourneys, stopsData, routeData,
+        return new NeTExDataset(allFiltered, publishedJourneys, publishedWindow, stopsData, routeData,
                 lines, operators, serviceJourneys, calendar, operatingDays);
     }
 
@@ -480,48 +491,69 @@ public class NeTExService {
      * persisted shape — refs plus planned tracks — explicit at the point the data
      * is computed.
      *
+     * Used only by SIRI (journey ids and planned tracks stored for matching); does not affect the NeTEx XML.
+     *
      * Skipped entirely when journey persistence is off, so the run does not join a
      * draft per train per day
      * for a writer that will not store any of them.
+     *
+     * <p>
+     * Restricted to the stored window: the package spans more than a year, so joining every day would build
+     * hundreds of thousands of drafts for the writer to discard. The tracks of a ServiceJourney are the same on
+     * every date it runs, so they are built once and shared by its drafts.
      */
     private List<PublishedJourneyDraft> buildPublishedJourneyDrafts(final Map<TrainId, Schedule> winningByTrainDate,
-            final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys) {
+            final List<NeTExEntityService.NeTExServiceJourney> serviceJourneys,
+            final PublishedJourneyWindow window) {
         if (!persistJourneysEnabled) {
             return List.of();
         }
 
         final Map<String, NeTExEntityService.NeTExServiceJourney> serviceJourneysById = serviceJourneys.stream()
                 .collect(Collectors.toMap(NeTExEntityService.NeTExServiceJourney::id, sj -> sj, (a, b) -> a));
+        final Map<String, List<PublishedJourneyDraft.PublishedTrack>> tracksByServiceJourneyId = new HashMap<>();
 
         final List<PublishedJourneyDraft> drafts = new ArrayList<>();
         winningByTrainDate.forEach((trainId, schedule) -> {
+            if (!window.contains(trainId.departureDate)) {
+                return;
+            }
             final String serviceJourneyId = entityService.serviceJourneyIdFor(schedule);
             final NeTExEntityService.NeTExServiceJourney serviceJourney = serviceJourneysById.get(serviceJourneyId);
             if (serviceJourney == null) {
                 return;
             }
-            // Count each station's occurrences over the (commercial) passing times so a station served more than
-            // once keeps a planned track per visit; only stops with a known track are stored. sequenceIndex is a
-            // separate counter that only ever increases, counting over the *stored* tracks only, so it reflects
-            // their true journey order (unlike visitIndex, which resets per station and is meant only to
-            // disambiguate repeated stops for lookup, not for ordering — see NeTExPublishedJourney#tracks).
-            final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
-            final Map<String, Integer> visitCounts = new HashMap<>();
-            int sequenceIndex = 0;
-            for (final var pt : serviceJourney.passingTimes()) {
-                if (pt.stationShortCode() == null) {
-                    continue;
-                }
-                final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
-                if (pt.commercialTrack() != null) {
-                    tracks.add(new PublishedJourneyDraft.PublishedTrack(
-                            pt.stationShortCode(), pt.commercialTrack(), visitIndex, sequenceIndex++));
-                }
-            }
+            final List<PublishedJourneyDraft.PublishedTrack> tracks = tracksByServiceJourneyId
+                    .computeIfAbsent(serviceJourneyId, _ -> publishedTracks(serviceJourney));
             drafts.add(new PublishedJourneyDraft(trainId, serviceJourneyId, serviceJourney.lineRef(),
                     serviceJourney.operatorRef(), serviceJourney.journeyPatternRef(), tracks));
         });
         return drafts;
+    }
+
+    /**
+     * Counts each station's occurrences over the (commercial) passing times so a station served more than once
+     * keeps a planned track per visit; only stops with a known track are stored. sequenceIndex is a separate
+     * counter that only ever increases, counting over the *stored* tracks only, so it reflects their true journey
+     * order (unlike visitIndex, which resets per station and is meant only to disambiguate repeated stops for
+     * lookup, not for ordering — see NeTExPublishedJourney#tracks).
+     */
+    private static List<PublishedJourneyDraft.PublishedTrack> publishedTracks(
+            final NeTExEntityService.NeTExServiceJourney serviceJourney) {
+        final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
+        final Map<String, Integer> visitCounts = new HashMap<>();
+        int sequenceIndex = 0;
+        for (final var pt : serviceJourney.passingTimes()) {
+            if (pt.stationShortCode() == null) {
+                continue;
+            }
+            final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
+            if (pt.commercialTrack() != null) {
+                tracks.add(new PublishedJourneyDraft.PublishedTrack(
+                        pt.stationShortCode(), pt.commercialTrack(), visitIndex, sequenceIndex++));
+            }
+        }
+        return tracks;
     }
 
     /**
@@ -546,11 +578,13 @@ public class NeTExService {
      * resolved journey refs, without re-fetching or re-resolving.
      * publishedJourneys is the per-journey
      * aggregate (refs + planned tracks) for every winning
-     * (trainNumber, operatingDate) across the feed
+     * (trainNumber, operatingDate) across the package
      * horizon — already joined so the writer just maps it to rows.
+     * publishedWindow is the departure dates the drafts were built for.
      */
     public record NeTExDataset(List<Schedule> winningSchedules,
             List<PublishedJourneyDraft> publishedJourneys,
+            PublishedJourneyWindow publishedWindow,
             NeTExStopsData stopsData,
             NeTExRouteData routeData,
             List<NeTExEntityService.NeTExLine> lines,
@@ -718,7 +752,7 @@ public class NeTExService {
      * platform — a yard or work track that a passenger train should never be on.
      * The latter is a fault in
      * the source data, so every one is logged for reporting; the fallback only
-     * keeps the feed usable
+     * keeps the package usable
      * meanwhile. Runs after the exact sources so a real observation always wins.
      */
     private void fillFromFirstPlatform(final List<Schedule> schedules,
@@ -800,7 +834,7 @@ public class NeTExService {
     }
 
     /**
-     * First day in the feed window the schedule actually runs, so the reported example can be
+     * First day in the package window the schedule actually runs, so the reported example can be
      * looked up directly. Weekday flags, cancellations and exceptions all rule days out, so the
      * start date on its own is not enough.
      */

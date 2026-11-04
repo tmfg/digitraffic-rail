@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.Test;
@@ -28,9 +28,9 @@ class NeTExPublishedJourneyCleanupServiceTest {
 
         service.deleteOldJourneys();
 
-        final ArgumentCaptor<ZonedDateTime> cutoff = ArgumentCaptor.forClass(ZonedDateTime.class);
+        final ArgumentCaptor<Instant> cutoff = ArgumentCaptor.forClass(Instant.class);
         verify(journeyRepo).deleteByGeneratedAtBefore(cutoff.capture());
-        final long daysBack = ChronoUnit.DAYS.between(cutoff.getValue(), DateProvider.nowInHelsinki());
+        final long daysBack = ChronoUnit.DAYS.between(cutoff.getValue(), Instant.now());
         assertTrue(daysBack >= 13 && daysBack <= 14, "cutoff should be ~14 days back but was " + daysBack);
     }
 }

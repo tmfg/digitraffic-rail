@@ -94,10 +94,13 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
   (`x-is-fresh=true`), so only the log and `SIRI_SX_TRAINS` in `/api/v1/last-updated` show that train messages are
   missing.
 - A train message for an older departure date (outside the NeTEx window) is dropped alone when it has no journey; it does not affect other train messages.
-- A train message is published when its journey is in the published NeTEx window (today and the next days, 2 days
-  ahead by default). A message for a later departure date is not published yet, because NeTEx does not have the
-  journeys of that day. This is normal and not an error. The message appears after the NeTEx run that adds the
-  day. Station messages are published by their validity time regardless of the departure date.
+- A train message is published when its journey is in the stored NeTEx journeys. The NeTEx package itself covers
+  more than a year, but the journey ids are stored for SIRI only from 2 days back to 14 days ahead
+  (`updater.netex.persist-journeys.lookback-days` / `lookahead-days`). Most RAMI train messages are made for the
+  same day, and the longest advance in the RAMI history is 10 days, so 14 days covers them with a margin. A message for a later departure date is not
+  published yet and is counted as `no_journey`. This is normal and not an error. The message appears after the
+  NeTEx run that stores the day. Station messages are published by their validity time regardless of the
+  departure date.
 - Possible simplification: the 30 hour age limit could be dropped from SX, because the per-date check above already
   notices a missing NeTEx day and SX only needs the journey ids. The cost is that a broken NeTEx run is noticed
   1-2 days later. It is kept for now to match ET and VM.

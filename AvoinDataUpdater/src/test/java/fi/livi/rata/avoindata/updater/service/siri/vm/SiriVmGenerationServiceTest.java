@@ -33,6 +33,8 @@ import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -117,7 +119,7 @@ class SiriVmGenerationServiceTest {
     private static NeTExPublishedJourney publishedJourney59() {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
+                "FTR:JourneyPattern:59", DATASET_VERSION, Instant.now());
         journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
         journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 1));
         journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 2));
@@ -520,7 +522,7 @@ class SiriVmGenerationServiceTest {
     void givenStalePublishedJourneys_whenGenerate_thenFailsWithoutPublishing() {
         final NeTExPublishedJourney stale = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki().minusHours(30));
+                "FTR:JourneyPattern:59", DATASET_VERSION, Instant.now().minus(30, ChronoUnit.HOURS));
         seedPublished(stale);
         setupStationsAndPeti();
         setupLiveLocation(location59());
@@ -614,7 +616,7 @@ class SiriVmGenerationServiceTest {
         // Add another published journey for train 60
         final NeTExPublishedJourney journey60 = new NeTExPublishedJourney(
                 new TrainId(60L, TODAY), "FTR:ServiceJourney:60-67890", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:60", DATASET_VERSION, DateProvider.nowInHelsinki());
+                "FTR:JourneyPattern:60", DATASET_VERSION, Instant.now());
         journey60.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
         journey60.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 1));
 
@@ -727,7 +729,7 @@ class SiriVmGenerationServiceTest {
     void givenOmittedOriginTrack_whenGenerate_thenOriginIdentityShiftsToNextKnownStop() {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
+                "FTR:JourneyPattern:59", DATASET_VERSION, Instant.now());
         // HKI's track was unknown at publish time, so the writer never persisted a row for it — it simply isn't
         // in the list (not stored with track=null; see NeTExService.buildPublishedJourneyDrafts).
         journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 0));

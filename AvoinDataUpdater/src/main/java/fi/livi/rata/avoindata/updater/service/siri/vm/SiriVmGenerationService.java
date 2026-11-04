@@ -1,6 +1,8 @@
 package fi.livi.rata.avoindata.updater.service.siri.vm;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -111,7 +113,7 @@ public class SiriVmGenerationService {
         int outputSize = 0;
         Stage stage = Stage.PREPARE;
         Long journeySourceVersion = null;
-        ZonedDateTime journeySourceGeneratedAt = null;
+        Instant journeySourceGeneratedAt = null;
         String unavailableReason = "NULL";
         try {
             final VmGenerationContext context = prepareContext();
@@ -284,12 +286,12 @@ public class SiriVmGenerationService {
                     "no NeTEx-published journeys for operating days " + operatingDates);
         }
 
-        final ZonedDateTime newestGeneratedAt = journeys.stream()
+        final Instant newestGeneratedAt = journeys.stream()
                 .map(j -> j.generatedAt)
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        final ZonedDateTime staleThreshold = DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS);
+        final Instant staleThreshold = Instant.now().minus(PublishedJourneysUnavailableException.MAX_AGE_HOURS, ChronoUnit.HOURS);
         if (newestGeneratedAt == null || newestGeneratedAt.isBefore(staleThreshold)) {
             throw new PublishedJourneysUnavailableException(
                     PublishedJourneysUnavailableException.Reason.STALE,
@@ -338,10 +340,10 @@ public class SiriVmGenerationService {
 
     /** The DB-read journey ref + planned-track lookups, and the published dataset version/age used for it. */
     private record DbSources(JourneyRefResolver journeyRefResolver, PlannedTrackLookup plannedTrackLookup,
-            long datasetVersion, ZonedDateTime newestGeneratedAt) {}
+            long datasetVersion, Instant newestGeneratedAt) {}
 
     private record VmGenerationContext(SiriVmService vmService, List<GTFSTrainLocation> locations, ZonedDateTime now,
-            Long journeySourceVersion, ZonedDateTime journeySourceGeneratedAt) {}
+            Long journeySourceVersion, Instant journeySourceGeneratedAt) {}
 
     /** An empty feed despite having candidate locations is a real coverage loss, not a routine skip. */
     private static String resolveOutcome(final long locationsReceived, final SiriVmStats stats) {
@@ -356,11 +358,11 @@ public class SiriVmGenerationService {
      */
     private void logGenerationEvent(final String outcome, final String errorType, final Stage stage,
             final long durationMs, final SiriVmStats stats, final int outputSize,
-            final Long journeySourceVersion, final ZonedDateTime journeySourceGeneratedAt,
+            final Long journeySourceVersion, final Instant journeySourceGeneratedAt,
             final String unavailableReason, final Throwable thrown) {
         final Double journeySourceAge = journeySourceGeneratedAt != null
                 ? durationSeconds(
-                        java.time.Duration.between(journeySourceGeneratedAt, DateProvider.nowInHelsinki()).toMillis())
+                        java.time.Duration.between(journeySourceGeneratedAt, Instant.now()).toMillis())
                 : null;
         final LoggingEventBuilder event = switch (outcome) {
             case "success" -> log.atInfo();

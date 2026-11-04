@@ -178,19 +178,19 @@ public class SiriSxGenerationService {
         }
         final List<NeTExPublishedJourney> journeys =
                 publishedJourneyRepository.findByDatasetVersionAndDepartureDates(version, departureDates);
-        // Train departure dates are Finnish dates, like the NeTEx window. NeTEx always has today and tomorrow, so
-        // journeys must be found for those dates. Older dates may be outside the NeTEx window and later dates are not
-        // in NeTEx yet, so a message for them is simply dropped when it has no journey.
+        // Train departure dates are Finnish dates, like the stored NeTEx window. The window always has today and
+        // tomorrow, so journeys must be found for those dates. Older and later dates may be outside the stored
+        // window, so a message for them is simply dropped when it has no journey.
         if (isJourneyMissingForTodayOrTomorrow(departureDates, journeys)) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.EMPTY.name());
         }
-        final ZonedDateTime newest = journeys.stream()
+        final Instant newest = journeys.stream()
                 .map(j -> j.generatedAt)
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
         if (!journeys.isEmpty()
-                && (newest == null || newest.isBefore(DateProvider.nowInHelsinki().minusHours(PublishedJourneysUnavailableException.MAX_AGE_HOURS)))) {
+                && (newest == null || newest.isBefore(Instant.now().minus(PublishedJourneysUnavailableException.MAX_AGE_HOURS, ChronoUnit.HOURS)))) {
             return new JourneySource(Map.of(), PublishedJourneysUnavailableException.Reason.STALE.name());
         }
         final Map<TrainId, ResolvedJourney> byTrainId = journeys.stream()
@@ -213,9 +213,9 @@ public class SiriSxGenerationService {
         final Set<LocalDate> datesWithJourneys = journeys.stream()
                 .map(j -> j.trainId.departureDate)
                 .collect(Collectors.toSet());
-        // NeTEx always has journeys for today and tomorrow, so a message date in that range without any journeys
-        // means the NeTEx data is missing. Older dates may be outside the NeTEx window and later dates are not in
-        // NeTEx yet, so those are not checked.
+        // The stored NeTEx window always has journeys for today and tomorrow, so a message date in that range without
+        // any journeys means the NeTEx data is missing. Older and later dates may be outside the stored window, so
+        // those are not checked.
         return messageDates.stream()
                 .filter(d -> !d.isBefore(today) && !d.isAfter(today.plusDays(1)))
                 .anyMatch(d -> !datesWithJourneys.contains(d));

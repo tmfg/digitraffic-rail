@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -64,7 +66,7 @@ public class SiriSxGenerationServiceTest {
         when(publishedJourneyRepository.getMaxDatasetVersion()).thenReturn(1L);
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki());
+                "FTR:JourneyPattern:1", 1L, Instant.now());
         when(publishedJourneyRepository.findByDatasetVersionAndDepartureDates(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(journey));
 
@@ -194,7 +196,7 @@ public class SiriSxGenerationServiceTest {
         addTrainMessage();
         final NeTExPublishedJourney old = new NeTExPublishedJourney(
                 new TrainId(1L, DateProvider.dateInHelsinki()), "FTR:ServiceJourney:1", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:1", 1L, DateProvider.nowInHelsinki().minusHours(31));
+                "FTR:JourneyPattern:1", 1L, Instant.now().minus(31, ChronoUnit.HOURS));
         when(publishedJourneyRepository.findByDatasetVersionAndDepartureDates(
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(List.of(old));
 

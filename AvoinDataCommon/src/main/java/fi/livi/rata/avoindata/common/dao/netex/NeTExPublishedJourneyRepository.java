@@ -1,7 +1,7 @@
 package fi.livi.rata.avoindata.common.dao.netex;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,5 +34,5 @@ public interface NeTExPublishedJourneyRepository extends CustomGeneralRepository
 
     @Modifying
     @Query("delete from NeTExPublishedJourney j where j.generatedAt < :cutoff")
-    int deleteByGeneratedAtBefore(@Param("cutoff") ZonedDateTime cutoff);
+    int deleteByGeneratedAtBefore(@Param("cutoff") Instant cutoff);
 }

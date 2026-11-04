@@ -1,6 +1,7 @@
 package fi.livi.rata.avoindata.updater.service.netex;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.digitraffic.common.util.StringUtil;
 import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
-import fi.livi.rata.avoindata.common.utils.DateProvider;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
 
 /**
@@ -27,7 +27,7 @@ public class NeTExPublishedJourneyCleanupService {
     private final int retentionDays;
 
     public NeTExPublishedJourneyCleanupService(final NeTExPublishedJourneyRepository journeyRepo,
-            @Value("${updater.netex.persist-journeys.retention-days:14}") final int retentionDays) {
+            @Value("${updater.netex.persist-journeys.retention-days:7}") final int retentionDays) {
         this.journeyRepo = journeyRepo;
         this.retentionDays = retentionDays;
     }
@@ -39,7 +39,7 @@ public class NeTExPublishedJourneyCleanupService {
     @Transactional
     public void deleteOldJourneys() {
         final long startTime = System.currentTimeMillis();
-        final ZonedDateTime cutoff = DateProvider.nowInHelsinki().minusDays(retentionDays);
+        final Instant cutoff = Instant.now().minus(retentionDays, ChronoUnit.DAYS);
 
         final int prunedRows = journeyRepo.deleteByGeneratedAtBefore(cutoff);
 

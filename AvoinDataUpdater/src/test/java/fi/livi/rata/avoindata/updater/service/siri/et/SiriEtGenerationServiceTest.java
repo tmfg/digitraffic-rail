@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -111,7 +113,7 @@ class SiriEtGenerationServiceTest {
     private static NeTExPublishedJourney publishedJourney59() {
         final NeTExPublishedJourney journey = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki());
+                "FTR:JourneyPattern:59", DATASET_VERSION, Instant.now());
         journey.addTrack(new NeTExPublishedJourneyTrack("HKI", "7", 0, 0));
         journey.addTrack(new NeTExPublishedJourneyTrack("TPE", "1", 0, 1));
         journey.addTrack(new NeTExPublishedJourneyTrack("OL", "1", 0, 2));
@@ -374,7 +376,7 @@ class SiriEtGenerationServiceTest {
     void givenStalePublishedJourneys_whenGenerate_thenFailsWithoutPublishing() {
         final NeTExPublishedJourney stale = new NeTExPublishedJourney(
                 new TrainId(59L, TODAY), "FTR:ServiceJourney:59-12345", "FTR:Line:IC", "FTR:Operator:vr",
-                "FTR:JourneyPattern:59", DATASET_VERSION, DateProvider.nowInHelsinki().minusHours(30));
+                "FTR:JourneyPattern:59", DATASET_VERSION, Instant.now().minus(30, ChronoUnit.HOURS));
         seedPublished(stale);
         setupStationsPetiAndTrains(train59());
 
