@@ -14,15 +14,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>25</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>4.0.8</spring.boot.version>
-        <spring.cloud.version>5.0.3</spring.cloud.version>
+        <spring.boot.version>4.1.2</spring.boot.version>
+        <spring.cloud.version>5.0.4</spring.cloud.version>
 
-        <com.google.guava.version>33.6.0-jre</com.google.guava.version>
-        <aws.advanced.jdbc.wrapper.version>4.4.0</aws.advanced.jdbc.wrapper.version>
+        <com.google.guava.version>33.8.0-jre</com.google.guava.version>
+        <aws.advanced.jdbc.wrapper.version>4.6.0</aws.advanced.jdbc.wrapper.version>
         <!-- do no upgrade to 26.7.0 before db is updated to 8.4! -->
-        <com.mysql.mysql-connector-j>9.6.0</com.mysql.mysql-connector-j>
-        <org.flywaydb.version>13.3.0</org.flywaydb.version>
-        <org.springdoc.version>3.1.0</org.springdoc.version>
+        <com.mysql.mysql-connector-j>9.7.0</com.mysql.mysql-connector-j>
+        <org.flywaydb.version>13.12.1</org.flywaydb.version>
+        <org.springdoc.version>3.2.0</org.springdoc.version>
 
         <net.logstash.logback.version>9.0</net.logstash.logback.version>
         <project.digitraffic-common-java.directory>lib/digitraffic-common-java</project.digitraffic-common-java.directory>
@@ -97,47 +97,12 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- TODO: Remove Tomcat overrides when Spring Boot includes Tomcat ≥11.0.26
-
-                 This project imports the Spring Boot BOM (not parent), so property overrides don't work —
-                 explicit entries in dependencyManagement are required to override transitive versions. -->
+            <!-- TODO: Remove when springdoc brings swagger-ui ≥5.34.1 (DOMPurify ≥3.4.17, CVE-2026-116804).
+                 Also remove springdoc.swagger-ui.version from AvoinDataServer's application.properties files. -->
             <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>11.0.26</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-el</artifactId>
-                <version>11.0.26</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-websocket</artifactId>
-                <version>11.0.26</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-annotations-api</artifactId>
-                <version>11.0.26</version>
-            </dependency>
-            <!-- TODO: Remove HttpComponents overrides when Spring Boot includes httpclient5 ≥5.6.4.
-                 Fixes CVE-2026-71290 (9.1) in httpclient5, and CVE-2026-54399 and CVE-2026-54428
-                 in httpcore5. -->
-            <dependency>
-                <groupId>org.apache.httpcomponents.client5</groupId>
-                <artifactId>httpclient5</artifactId>
-                <version>5.6.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents.core5</groupId>
-                <artifactId>httpcore5</artifactId>
-                <version>5.4.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents.core5</groupId>
-                <artifactId>httpcore5-h2</artifactId>
-                <version>5.4.3</version>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>5.34.1</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
