@@ -5,6 +5,7 @@ import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateServic
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.FUTURE_TRAINS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.GTFS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.LOCALIZATIONS;
+import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.NETEX;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.OLD_TRAINS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.OPERATORS;
 import static fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService.LastUpdatedType.STATIONS;
@@ -53,6 +54,8 @@ public class IsUpToDateService {
         alarmLimits.put(TRAIN_RUNNING_MESSAGE_RULES, Duration.ofHours(25));
         alarmLimits.put(TRACKSECTIONS, Duration.ofHours(25));
         alarmLimits.put(GTFS, Duration.ofHours(27));
+        // Generated daily
+        alarmLimits.put(NETEX, Duration.ofHours(27));
         alarmLimits.put(FUTURE_TRAINS, Duration.ofHours(48));
         alarmLimits.put(OLD_TRAINS, Duration.ofHours(60));
         alarmLimits.put(STATIONS, Duration.ofHours(25));

@@ -3,6 +3,7 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.time.Duration;
 import java.util.List;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
 import fi.livi.rata.avoindata.common.domain.gtfs.GeneratedExport;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import static fi.livi.digitraffic.common.logging.LogFields.*;
 
 /**
@@ -44,6 +46,7 @@ public class NeTExPackageService {
     private final NeTExService neTExService;
     private final GeneratedExportRepository generatedExportRepository;
     private final NeTExPublishedJourneyWriter publishedJourneyWriter;
+    private final LastUpdateService lastUpdateService;
     private final TransactionTemplate transactionTemplate;
     private final RetryTemplate retryTemplate;
     /** Total attempts, so 1 disables retrying. */
@@ -53,12 +56,14 @@ public class NeTExPackageService {
     public NeTExPackageService(final NeTExService neTExService,
             final GeneratedExportRepository generatedExportRepository,
             final NeTExPublishedJourneyWriter publishedJourneyWriter,
+            final LastUpdateService lastUpdateService,
             final PlatformTransactionManager transactionManager,
             @Value("${updater.netex.ripa-retry.attempts:2}") final int retryAttempts,
             @Value("${updater.netex.ripa-retry.delay:PT5M}") final Duration retryDelay) {
         this.neTExService = neTExService;
         this.generatedExportRepository = generatedExportRepository;
         this.publishedJourneyWriter = publishedJourneyWriter;
+        this.lastUpdateService = lastUpdateService;
         this.retryAttempts = retryAttempts;
         this.retryDelay = retryDelay;
         this.retryTemplate = RetryTemplate.builder()
@@ -84,7 +89,7 @@ public class NeTExPackageService {
      */
     public void generatePackage() {
         try {
-            retryTemplate.execute(context -> {
+            retryTemplate.execute(_ -> {
                 generateOnce();
                 return null;
             });
@@ -126,7 +131,7 @@ public class NeTExPackageService {
      * after logging so the caller still sees the run as failed.
      */
     private void generateOnce() {
-        final long startTime = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
 
         try {
             final NeTExService.NeTExGenerationResult timetable = neTExService.generateNeTEx();
@@ -144,12 +149,12 @@ public class NeTExPackageService {
 
                 publishedJourneyWriter.persistWindow(timetable.dataset());
             });
+            lastUpdateService.update(LastUpdateService.LastUpdatedType.NETEX);
 
-            final long durationMs = System.currentTimeMillis() - startTime;
             log.info("event=generateNeTEx method=generatePackage persisted {} size={} bytes files={} "
                     + "duration={}",
                     PACKAGE_FILENAME, timetable.zip().length, timetable.files().size(),
-                    durationSeconds(durationMs));
+                    durationSeconds(stopWatch.getTime()));
         } catch (final RuntimeException e) {
             // A RIPA outage may still be retried, so the terminal error event is left to
             // the retry loop.
@@ -160,7 +165,7 @@ public class NeTExPackageService {
             log.error("event=generateNeTEx method=generatePackage outcome=error "
                     + "error.type={} error.root.type={} duration={}",
                     e.getClass().getName(), root.getClass().getName(),
-                    durationSeconds(System.currentTimeMillis() - startTime), e);
+                    durationSeconds(stopWatch.getTime()), e);
             throw e;
         }
     }

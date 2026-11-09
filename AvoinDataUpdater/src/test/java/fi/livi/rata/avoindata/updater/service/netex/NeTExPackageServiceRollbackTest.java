@@ -19,6 +19,7 @@ import fi.livi.rata.avoindata.common.dao.netex.NeTExPublishedJourneyRepository;
 import fi.livi.rata.avoindata.common.domain.common.TrainId;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
 import fi.livi.rata.avoindata.updater.BaseTest;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService.NeTExDataset;
 import fi.livi.rata.avoindata.updater.service.netex.NeTExService.NeTExGenerationResult;
 import fi.livi.rata.avoindata.updater.service.netex.PublishedJourneyDraft.PublishedTrack;
@@ -57,7 +58,7 @@ public class NeTExPackageServiceRollbackTest extends BaseTest {
         when(neTExService.generateNeTEx()).thenReturn(new NeTExGenerationResult(new byte[] {1, 2, 3}, Map.of(),
                 List.of(today), 0, 0, 0, 0, 0, 0, 0, 0, 0, dataset));
         final NeTExPackageService service = new NeTExPackageService(neTExService, generatedExportRepository,
-                writer, transactionManager, 1, Duration.ofMillis(1));
+                writer, mock(LastUpdateService.class), transactionManager, 1, Duration.ofMillis(1));
 
         final long exportsBefore = generatedExportRepository.count();
         final long journeysBefore = journeyRepository.count();

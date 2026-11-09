@@ -1,6 +1,6 @@
 # SIRI (Real-Time Data) — Unified Overview
 
-This document is the single entry point for Digitraffic Rail's SIRI real-time feeds: **SIRI-ET** (implemented)
+This document is the single entry point for Digitraffic Rail's SIRI real-time services: **SIRI-ET** (implemented)
 **SIRI-VM** (implemented) and **SIRI-SX** (implemented, DPO-4882). It covers
 the shared background, the common architecture pattern used by every service, and per-service specifics. It
 replaces the need to read scattered planning notes to understand "why is SIRI built this way".
@@ -10,7 +10,7 @@ and [`SIRI-SX.md`](SIRI-SX.md).
 
 ## Canonical source material
 
-Digitraffic Rail's SIRI feeds must conform to the **Norwegian/Nordic SIRI Profile**, published and maintained by
+Digitraffic Rail's SIRI documents must conform to the **Norwegian/Nordic SIRI Profile**, published and maintained by
 Entur on behalf of Jernbanedirektoratet (the Norwegian Railway Directorate). This is the *authoritative,
 living* specification — prefer it over any older/cached notes if the two ever disagree, and use it both
 as the basis for new work and for validating existing behavior:
@@ -59,12 +59,14 @@ real-time consumers, which is also what Håndbok N801 §5.1 requires of any Norw
 
 - **One file per delivery.** A complete `ServiceDelivery` dataset is delivered as a single XML document.
 - **Local time, ISO 8601, ≥ second precision.** All timestamps are local (Helsinki) time, e.g. `2026-07-10T21:22:23`.
-  We always emit whole seconds, so the feed looks the same whether a time came from the database or from a clock.
+  We always emit whole seconds, so the document looks the same whether a time came from the database or from a clock.
 - **National stop IDs.** Every stop reference must be the official ID from the national stop place registry —
-  for rail, this is the PETI `FSR:Quay` ID (a specific platform), the same IDs our NeTEx timetable uses.
-- **Tied to the plan.** Every real-time item references IDs already published in NeTEx (or SIRI-PT). An item
-  that can't be tied back to a published `VehicleJourney` must not be published with a synthetic/fabricated
-  reference — it should be dropped.
+  for rail, these are PETI IDs: platforms are `FSR:Quay` (ET and VM), and SX station messages
+  refer to the PETI stop place (`StopPlaceRef`). SX train messages have only the journey reference and no stops. The same IDs our NeTEx timetable uses.
+- **Tied to the plan.** Every real-time item about a train (ET, VM, SX train messages) references IDs already
+  published in NeTEx (or SIRI-PT). An item that can't be tied back to a published `VehicleJourney` must not be
+  published with a synthetic/fabricated reference — it should be dropped. SX station messages are not about a
+  journey, so they have no journey reference.
 - **Producer codespace.** Both the delivery's producer reference (`ProducerRef`) and each item's data source
   reference (`DataSource`) use Fintraffic Rail's registered codespace, `FTR`. (Note: `FTR` does not appear on
   Entur's own Norwegian-codespace registry page linked above — that page only lists Norwegian data providers;
@@ -231,7 +233,7 @@ each service gets:
 Situation Exchange — free-text disruption and passenger-information messages (`PtSituationElement`), tied to
 the published timetable by reference. SX is real-time in the sense that a message appears, changes and closes
 as soon as it does in the source, but unlike ET and VM the content only changes when a message changes. The
-feed always holds the complete set of valid messages in one XML file.
+document always holds the complete set of valid messages in one XML file.
 
 - **Flags**: `avoindataserver.siri.sx.enabled` (server), `updater.siri.sx.enabled` (updater),
   `updater.siri.sx.fixed-rate-ms` (default 60000). **Endpoint**: `GET /api/v1/siri/sx`. **Generated file**:

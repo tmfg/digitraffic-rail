@@ -25,7 +25,7 @@ The profile (and Håndbok N801 §5.1) expects VM to carry both position and real
 The three data sources are resolved with the same classes as ET (`JourneyRefResolver`, `StationUicLookup`,
 `StationNameLookup`, `SiriStopResolver`), so ET and VM always give the same line, journey and platform ids for a train.
 
-## How the feed is made
+## How the document is made
 
 The updater generates the whole document again every 60 seconds, in the same stages as ET:
 
@@ -54,7 +54,7 @@ reason to fail.
 
 1. **One `VehicleActivity` per train**, from its newest position.
 2. **Tie it to the plan.** The train (number + departure date) must be in the published NeTEx journeys. If not, the
-   position is dropped. No made-up journey reference is published. The run is `partial` only if the whole feed is
+   position is dropped. No made-up journey reference is published. The run is `partial` only if the whole document is
    empty although positions were received.
 3. **Next stop (`MonitoredCall`).** It is the stop the train is approaching or standing at, never the stop it has just
    left. The stop is the first commercial, non-cancelled stop with no actual time whose estimate is still in the
@@ -90,7 +90,7 @@ reason to fail.
 
 ## Field mapping
 
-Status: ✅ in the feed, ❌ not implemented. Cardinality is from the profile (`1:1` required, `0:1` optional).
+Status: ✅ in the document, ❌ not implemented. Cardinality is from the profile (`1:1` required, `0:1` optional).
 Everything marked ❌ was checked against the data available to the updater; none has a ready source today.
 
 ### Delivery
@@ -147,7 +147,7 @@ investigated and left out.
   in our data. `TrackSection` data is only for yard tracks in the track work notices and is not used to convert
   positions. `TrainRunningMessage` tells when a train passes a station but has no distance.
 - A straight-line estimate from the GPS fix and the quay coordinates was rejected. It ignores curves and tunnels, can give
-  values below 0 or above 100 %, and would put a misleading number in a public feed. The previous stop is also not
+  values below 0 or above 100 %, and would put a misleading number in a public document. The previous stop is also not
   resolved anywhere in the VM pipeline.
 
 Revisit if PALA's `ratakmsijainti` is confirmed reliable in production, or a station to track-kilometre reference
@@ -157,7 +157,7 @@ appears.
 
 When the real-time platform of the next stop is unknown, the stop used to be treated as unresolved. For ET the whole
 journey was dropped, for VM the `MonitoredCall` was dropped. That lost data for nothing: an unknown platform means the
-confirmed platform is not known yet, not that it changed. Both feeds now use the planned platform from NeTEx
+confirmed platform is not known yet, not that it changed. Both ET and VM now use the planned platform from NeTEx
 (`NeTExPublishedJourneyTrack`) instead.
 
 ### `visitIndex`
@@ -183,7 +183,7 @@ there is no `visitIndex` available for free. Three options were considered:
 2. **Assume `visitIndex = 0`.** Rejected. Silently wrong for a station visited more than once.
 3. **Fetch the train's rows on demand, only when the platform is unknown** (chosen). This is rare, so the extra cost is
    small. The rows are read through `TimeTableRowsLookup`, paired into commercial stops with `CommercialStopVisits.of`
-   (which follows the ET pairing, so both feeds agree on what a commercial stop is), and
+   (which follows the ET pairing, so ET and VM agree on what a commercial stop is), and
    `CommercialStopVisits.currentVisitIndex` gives the current visit.
 
 The generation service reads the rows of all such trains in one batch query per run (`GTFSTrain.timeTableRows` is

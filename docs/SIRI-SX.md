@@ -68,7 +68,8 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
   in `ValidityPeriod`, so the consumer decides when to show it.
 - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
   requirement), then left out. This also applies when it was deleted before its validity started; in
-  that case the closed period starts at deletion time.
+  that case the closed period starts at deletion time. A message deleted at or after its end time is not published.
+- A RAMI message always has an end time (`rami_message.end_validity` is `NOT NULL`), so open-ended messages do not occur.
 - `Summary` is the screen text, at most 160 characters (profile limit). A longer text is cut after the last whole
   word that fits, with `...` added. A word is never cut. `Description` is the full text and is given only for a
   language whose summary was cut; a text that fits gets only `Summary`.
@@ -93,7 +94,7 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 - If the published NeTEx journeys are missing, there are none for a departure date of today or tomorrow that a message needs (dates are Finnish dates, as in NeTEx), or the
   newest of them is more than 30 hours old (same limit as in ET and VM), no journeys are used: train messages are dropped, station messages are still published. The run is
   logged as `partial` with `rail.siri.sx.journeys_unavailable=MISSING|EMPTY|STALE`. Example: the NeTEx run has not worked
-  (new environment, NeTEx run is broken, or it has not yet produced today's trains). The feed itself stays fresh
+  (new environment, NeTEx run is broken, or it has not yet produced today's trains). The document itself stays fresh
   (`x-is-fresh=true`), so only the log and `SIRI_SX_TRAINS` in `/api/v1/last-updated` show that train messages are
   missing.
 - A train message for an older departure date (outside the NeTEx window) is dropped alone when it has no journey; it does not affect other train messages.
@@ -112,7 +113,7 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 
 ## Field mapping
 
-Status: ✅ in the feed, ❌ not
+Status: ✅ in the document, ❌ not
 implemented (no data or not needed). Cardinality is from the profile (`1:1` required, `0:1` optional, `1:*` one or
 more).
 
@@ -123,7 +124,7 @@ SX part, inside it:
 
 ```
 Siri
-└─ ServiceDelivery                  (shared by all SIRI feeds)
+└─ ServiceDelivery                  (shared by all SIRI documents)
    └─ SituationExchangeDelivery     (SX only)
       └─ Situations
          └─ PtSituationElement      (one per message)

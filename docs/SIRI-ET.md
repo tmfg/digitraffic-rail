@@ -15,12 +15,13 @@ Profile: Entur SIRI-ET, https://entur.atlassian.net/wiki/spaces/PUBLIC/pages/637
   `TripUpdate` uses).
 - Plan: the published NeTEx journeys in the database (`NeTExPublishedJourney` and its tracks). NeTEx generation stores
   the references SIRI needs for every (train number, departure date): service journey id, line, operator, journey
-  pattern and the planned platform of each stop. SIRI-ET reads them back, so the feed always uses exactly the same
-  identifiers as the published NeTEx.
+  pattern and the planned platform of each stop. SIRI-ET reads them back, so the document always uses exactly the same
+  identifiers as the published NeTEx. When some stops of a schedule are cancelled for a day (partial cancellation), the
+  NeTEx package has a separate shortened journey without those stops for that day, and SIRI-ET refers to it.
 - Stops: the PETI stop registry. A station and a platform are converted to a PETI `FSR:Quay` id
   (`SiriStopResolver`).
 
-## How the feed is made
+## How the document is made
 
 The updater generates the whole document again on a fixed schedule (every 60 seconds). A run has these stages:
 
@@ -95,12 +96,12 @@ For each live train the converter decides what is published:
 generation time, and the generation time if no `modified` exists. The frame around the journeys (and the delivery)
 keeps the generation time.
 
-An empty feed is allowed: if no train is left, a delivery without a frame is written, because an empty
+An empty document is allowed: if no train is left, a delivery without a frame is written, because an empty
 `EstimatedJourneyVersionFrame` is not schema-valid.
 
 ## Field mapping
 
-Status: ✅ in the feed, ❌ not implemented (no data or not needed). "Fixed" means the same value every time.
+Status: ✅ in the document, ❌ not implemented (no data or not needed). "Fixed" means the same value every time.
 "Derived" means calculated from the live data. Times are in Helsinki time with whole seconds.
 
 ### Envelope and delivery

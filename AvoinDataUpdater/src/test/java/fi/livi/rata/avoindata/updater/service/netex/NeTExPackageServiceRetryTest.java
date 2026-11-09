@@ -19,6 +19,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
+import fi.livi.rata.avoindata.updater.service.isuptodate.LastUpdateService;
 
 /**
  * Retry behaviour of the package service: only a RIPA fetch failure is retried, and only after the
@@ -38,7 +39,7 @@ class NeTExPackageServiceRetryTest {
 
     private NeTExPackageService serviceWith(final int attempts, final Duration delay) {
         return new NeTExPackageService(neTExService, mock(GeneratedExportRepository.class),
-                publishedJourneyWriter, mock(PlatformTransactionManager.class), attempts, delay);
+                publishedJourneyWriter, mock(LastUpdateService.class), mock(PlatformTransactionManager.class), attempts, delay);
     }
 
     @Test

@@ -33,12 +33,14 @@ public class LastUpdateService {
     private final GeneratedExportRepository generatedExportRepository;
     private final LastUpdateRepository lastUpdateRepository;
 
+    private final boolean netexEnabled;
     private final boolean siriEtEnabled;
     private final boolean siriVmEnabled;
     private final boolean siriSxEnabled;
 
     public LastUpdateService(final WebClient webClient, final SimpleTransactionManager simpleTransactionManager, final GeneratedExportRepository generatedExportRepository,
                              final LastUpdateRepository lastUpdateRepository,
+                             @Value("${updater.netex.enabled:true}") final boolean netexEnabled,
                              @Value("${updater.siri.et.enabled:false}") final boolean siriEtEnabled,
                              @Value("${updater.siri.vm.enabled:false}") final boolean siriVmEnabled,
                              @Value("${updater.siri.sx.enabled:false}") final boolean siriSxEnabled) {
@@ -46,6 +48,7 @@ public class LastUpdateService {
         this.simpleTransactionManager = simpleTransactionManager;
         this.generatedExportRepository = generatedExportRepository;
         this.lastUpdateRepository = lastUpdateRepository;
+        this.netexEnabled = netexEnabled;
         this.siriEtEnabled = siriEtEnabled;
         this.siriVmEnabled = siriVmEnabled;
         this.siriSxEnabled = siriSxEnabled;
@@ -63,6 +66,7 @@ public class LastUpdateService {
         TRAIN_RUNNING_MESSAGE_RULES,
         TRACKSECTIONS,
         GTFS,
+        NETEX,
         FUTURE_TRAINS,
         OLD_TRAINS,
         STATIONS,
@@ -130,6 +134,9 @@ public class LastUpdateService {
         simpleTransactionManager.executeInTransaction(() -> {
             lastUpdateRepository.findAll().forEach(this::initializeFromStored);
             initializeFromExport(LastUpdatedType.GTFS, "gtfs-passenger-stops.zip");
+            if (netexEnabled) {
+                initializeFromExport(LastUpdatedType.NETEX, "FTR-netex.zip");
+            }
             if (siriEtEnabled) {
                 initializeFromExport(LastUpdatedType.SIRI_ET, "siri-et.xml");
             }
@@ -144,6 +151,7 @@ public class LastUpdateService {
 
     private boolean isInUse(final LastUpdatedType type) {
         return switch (type) {
+            case NETEX -> netexEnabled;
             case SIRI_ET -> siriEtEnabled;
             case SIRI_VM -> siriVmEnabled;
             case SIRI_SX_STATIONS, SIRI_SX_TRAINS -> siriSxEnabled;

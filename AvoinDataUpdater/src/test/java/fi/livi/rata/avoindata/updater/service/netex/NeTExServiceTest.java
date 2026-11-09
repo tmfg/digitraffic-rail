@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -324,6 +326,34 @@ class NeTExServiceTest {
         final var counts = dataset.serviceJourneys().stream()
                 .map(journey -> journey.passingTimes().size()).sorted().toList();
         assertEquals(List.of(2, 3), counts);
+    }
+
+    @Test
+    void givenCancelledStopOnSomeDays_whenComputingDataset_thenPublishedJourneysPointToTheShortenedJourneyOnThoseDays() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        final LocalDate today = DateProvider.dateInHelsinki();
+        final LocalDate cancelFrom = today.plusDays(1);
+        final LocalDate cancelTo = today.plusDays(2);
+        schedule.scheduleCancellations.add(partialCancellation(schedule, 1L, cancelFrom, cancelTo, "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        final Map<String, Integer> stopCountByJourneyId = dataset.serviceJourneys().stream()
+                .collect(Collectors.toMap(NeTExEntityService.NeTExServiceJourney::id,
+                        journey -> journey.passingTimes().size()));
+        for (final var draft : dataset.publishedJourneys()) {
+            final LocalDate date = draft.trainId().departureDate;
+            final int expectedStops = !date.isBefore(cancelFrom) && !date.isAfter(cancelTo) ? 2 : 3;
+            assertEquals(expectedStops, stopCountByJourneyId.get(draft.serviceJourneyId()), date.toString());
+        }
+        assertTrue(dataset.publishedJourneys().stream()
+                .anyMatch(draft -> cancelFrom.equals(draft.trainId().departureDate)));
+        assertTrue(dataset.publishedJourneys().stream()
+                .anyMatch(draft -> today.equals(draft.trainId().departureDate)));
     }
 
     @Test

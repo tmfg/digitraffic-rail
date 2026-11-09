@@ -47,7 +47,7 @@ class LastUpdateServiceTest {
 
     private LastUpdateService newService(final boolean siriSxEnabled) {
         return new LastUpdateService(webClient, simpleTransactionManager, generatedExportRepository,
-                lastUpdateRepository, false, false, siriSxEnabled);
+                lastUpdateRepository, true, false, false, siriSxEnabled);
     }
 
     @Test
@@ -98,6 +98,18 @@ class LastUpdateServiceTest {
 
         assertEquals(created, service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.SIRI_SX_STATIONS));
         assertTrue(service.getLastUpdateTimes().containsKey(LastUpdateService.LastUpdatedType.SIRI_SX_TRAINS));
+    }
+
+    @Test
+    void setupInitializesNetexFromLatestExport() {
+        final LastUpdateService service = newService();
+        final Instant created = Instant.now().minusSeconds(100);
+        when(generatedExportRepository.findLatestCreatedByFileName(any())).thenReturn(Optional.empty());
+        when(generatedExportRepository.findLatestCreatedByFileName("FTR-netex.zip")).thenReturn(Optional.of(created));
+
+        service.setup();
+
+        assertEquals(created, service.getLastUpdateTimes().get(LastUpdateService.LastUpdatedType.NETEX));
     }
 
     @Test
@@ -216,7 +228,7 @@ class LastUpdateServiceTest {
 
     private LastUpdateService newServiceWithWebClient(final ExchangeFunction exchange) {
         return new LastUpdateService(WebClient.builder().exchangeFunction(exchange).build(), simpleTransactionManager,
-                generatedExportRepository, lastUpdateRepository, false, false, false);
+                generatedExportRepository, lastUpdateRepository, true, false, false, false);
     }
 
     private static void updateAt(final LastUpdateService service, final LocalDate today) {
