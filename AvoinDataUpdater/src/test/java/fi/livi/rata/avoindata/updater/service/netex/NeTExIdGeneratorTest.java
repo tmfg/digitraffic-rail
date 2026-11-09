@@ -124,13 +124,26 @@ class NeTExIdGeneratorTest {
     void givenRegularSchedule_whenGeneratingServiceJourneyId_thenUsesScheduleId() {
         // given
         final long trainNumber = 59;
-        final long scheduleId = 12345;
+        final String scheduleKey = "12345";
 
         // when
-        final String result = idGenerator.serviceJourneyId(trainNumber, scheduleId);
+        final String result = idGenerator.serviceJourneyId(trainNumber, scheduleKey);
 
         // then
         assertEquals("FTR:ServiceJourney:59-12345", result);
+    }
+
+    @Test
+    void givenShortenedSchedule_whenGeneratingServiceJourneyId_thenUsesScheduleIdAndRemovedStopsKey() {
+        // given
+        final long trainNumber = 59;
+        final String scheduleKey = "12345-a1b2c3d4e5f60718";
+
+        // when
+        final String result = idGenerator.serviceJourneyId(trainNumber, scheduleKey);
+
+        // then
+        assertEquals("FTR:ServiceJourney:59-12345-a1b2c3d4e5f60718", result);
     }
 
     @Test

@@ -17,9 +17,36 @@ public class ScheduleCancellation {
     public Set<ScheduleRowPart> cancelledRows = new HashSet<>();
 
     public enum ScheduleCancellationType {
-        WHOLE_DAY,
-        PARTIALLY,
-        DIFFERENT_ROUTE
+        /**
+         * The whole day is cancelled (kokoperuminen). The whole train is cancelled on the days.
+         * Source code KOPE. {@link #cancelledRows} is not meaningful.
+         */
+        WHOLE_DAY("KOPE"),
+        /**
+         * Some of the stops are cancelled (osaväliperuminen). The train runs, but the stops in
+         * {@link #cancelledRows} are cancelled. Source code OVPE.
+         */
+        PARTIALLY("OVPE"),
+        /**
+         * Not a cancellation (kulkuväliperuminen). A way to tell that on some days the route is slightly
+         * different, so the stops in {@link #cancelledRows} are not served. Source code KVPE.
+         */
+        DIFFERENT_ROUTE("KVPE");
+
+        public final String code;
+
+        ScheduleCancellationType(final String code) {
+            this.code = code;
+        }
+
+        public static ScheduleCancellationType fromCode(final String code) {
+            for (final ScheduleCancellationType type : values()) {
+                if (type.code.equals(code)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown cancellation type:" + code);
+        }
     }
 
     @Override

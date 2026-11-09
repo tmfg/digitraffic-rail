@@ -46,6 +46,63 @@ public class Schedule {
     public String changeType;
     public String capacityId;
 
+    /**
+     * Set only on a copy made for days when some stops are cancelled; tells that copy apart from the
+     * original schedule, which keeps the same {@link #id}.
+     */
+    public String partialCancellationKey;
+
+    /**
+     * Set only on a copy made for cancelled stops: all rows of the original schedule, cancelled ones included.
+     * The times past midnight are counted from its first departure, and SIRI needs the planned tracks of the
+     * cancelled stops too, since it still sees them on the real train.
+     */
+    public List<ScheduleRow> originalRows;
+
+    /**
+     * Set only on a copy made for cancelled stops: the rows the real train has on the days the copy is used.
+     * That is all the original rows except the ones removed by a different-route cancellation, which the real
+     * train does not have at all. Stops removed by a partial cancellation stay, because the real train still
+     * has them, marked cancelled. SIRI counts station visits over these rows.
+     */
+    public List<ScheduleRow> realtimeRows;
+
+    /** Stable id of this schedule or its partial-cancellation copy. */
+    public String journeyKey() {
+        return partialCancellationKey == null ? String.valueOf(id) : id + "-" + partialCancellationKey;
+    }
+
+    public Schedule copyWithRows(final List<ScheduleRow> rows, final String cancellationKey) {
+        final Schedule copy = new Schedule();
+        copy.id = id;
+        copy.scheduleRows = rows;
+        copy.scheduleCancellations = scheduleCancellations;
+        copy.scheduleExceptions = scheduleExceptions;
+        copy.startDate = startDate;
+        copy.endDate = endDate;
+        copy.trainNumber = trainNumber;
+        copy.version = version;
+        copy.operator = operator;
+        copy.trainCategory = trainCategory;
+        copy.trainType = trainType;
+        copy.timetableType = timetableType;
+        copy.acceptanceDate = acceptanceDate;
+        copy.effectiveFrom = effectiveFrom;
+        copy.commuterLineId = commuterLineId;
+        copy.runOnMonday = runOnMonday;
+        copy.runOnTuesday = runOnTuesday;
+        copy.runOnWednesday = runOnWednesday;
+        copy.runOnThursday = runOnThursday;
+        copy.runOnFriday = runOnFriday;
+        copy.runOnSaturday = runOnSaturday;
+        copy.runOnSunday = runOnSunday;
+        copy.typeCode = typeCode;
+        copy.changeType = changeType;
+        copy.capacityId = capacityId;
+        copy.partialCancellationKey = cancellationKey;
+        return copy;
+    }
+
     public boolean isRunOnDay(final LocalDate extractedDate) {
         if (isLimitedByWholeDayCancellations(extractedDate) || isLimitedByExceptions(extractedDate)) {
             return false;

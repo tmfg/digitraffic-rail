@@ -6,12 +6,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
 import org.springframework.retry.backoff.BackOffInterruptedException;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -24,9 +26,9 @@ import static fi.livi.digitraffic.common.logging.LogFields.*;
 /**
  * Persists the NeTEx Nordic dataset: the ZIP package plus the resolved journey
  * refs, stored together so a
- * partial publish can never happen. Only a {@link RipaFetchException} is
- * retried, after a wait — RIPA
- * being briefly unavailable is the one failure a later attempt can fix, while
+ * partial publish can never happen. Only a {@link RipaFetchException} or a database connection failure
+ * (for example a database failover) is retried, after a wait — both are briefly unavailable
+ * resources a later attempt can fix, while
  * the build that follows is
  * deterministic and would fail the same way. Anything else is logged and
  * rethrown, and the next scheduled
@@ -63,6 +65,9 @@ public class NeTExPackageService {
                 .maxAttempts(retryAttempts)
                 .fixedBackoff(retryDelay)
                 .retryOn(RipaFetchException.class)
+                .retryOn(DataAccessResourceFailureException.class)
+                .retryOn(CannotCreateTransactionException.class)
+                .traversingCauses()
                 .withListener(new RetryScheduledLogger())
                 .build();
         // A dedicated transaction for the atomic ZIP + journey-refs persist,
@@ -105,7 +110,7 @@ public class NeTExPackageService {
         @Override
         public <T, E extends Throwable> void onError(final RetryContext context,
                 final RetryCallback<T, E> callback, final Throwable throwable) {
-            if (throwable instanceof RipaFetchException && context.getRetryCount() < retryAttempts) {
+            if (isRetryable(throwable) && context.getRetryCount() < retryAttempts) {
                 log.warn("event=generateNeTEx method=generatePackage outcome=retry_scheduled "
                         + "error.type={} attempt={} attempts={} retry_delay={}",
                         throwable.getClass().getName(), context.getRetryCount(), retryAttempts, retryDelay);
@@ -158,6 +163,17 @@ public class NeTExPackageService {
                     durationSeconds(System.currentTimeMillis() - startTime), e);
             throw e;
         }
+    }
+
+    /** Same rule as the retry template: the exception or any of its causes is a retryable type. */
+    private static boolean isRetryable(final Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause() == cause ? null : cause.getCause()) {
+            if (cause instanceof RipaFetchException || cause instanceof DataAccessResourceFailureException
+                    || cause instanceof CannotCreateTransactionException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

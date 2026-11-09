@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,11 +22,14 @@ import fi.livi.rata.avoindata.common.domain.localization.TrainCategory;
 import fi.livi.rata.avoindata.common.domain.localization.TrainType;
 import fi.livi.rata.avoindata.common.domain.metadata.Station;
 import fi.livi.rata.avoindata.common.domain.train.Train;
+import fi.livi.rata.avoindata.common.utils.DateProvider;
+import fi.livi.rata.avoindata.updater.service.netex.peti.PetiQuay;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStop;
 import fi.livi.rata.avoindata.updater.service.netex.peti.PetiStopSource;
 import fi.livi.rata.avoindata.updater.service.timetable.CommercialTrackResolver;
 import fi.livi.rata.avoindata.updater.service.timetable.TodaysScheduleService;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleCancellation;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart;
 
@@ -299,6 +303,241 @@ class NeTExServiceTest {
         // then: no code change needed for the journey to come back
         assertNotNull(result);
         assertTrue(result.zip().length > 0);
+    }
+
+    // --- Partial cancellations ---
+
+    @Test
+    void givenCancelledStopOnSomeDays_whenComputingDataset_thenThoseDaysHaveOwnJourneyWithoutTheStop() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        final LocalDate cancelFrom = DateProvider.dateInHelsinki().plusDays(10);
+        schedule.scheduleCancellations.add(
+                partialCancellation(schedule, 1L, cancelFrom, cancelFrom.plusDays(2), "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        assertEquals(2, dataset.serviceJourneys().size());
+        final var counts = dataset.serviceJourneys().stream()
+                .map(journey -> journey.passingTimes().size()).sorted().toList();
+        assertEquals(List.of(2, 3), counts);
+    }
+
+    @Test
+    void givenCancelledStopOnAllDays_whenComputingDataset_thenOnlyTheJourneyWithoutTheStopIsPublished() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        schedule.scheduleCancellations.add(partialCancellation(schedule, 1L, schedule.startDate,
+                schedule.endDate, "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        assertEquals(1, dataset.serviceJourneys().size());
+        assertEquals(2, dataset.serviceJourneys().getFirst().passingTimes().size());
+    }
+
+    @Test
+    void givenCancelledStopWithTrack_whenComputingDataset_thenPublishedJourneyKeepsItsPlannedTrack() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        schedule.scheduleRows.get(1).commercialTrack = "7";
+        schedule.scheduleCancellations.add(partialCancellation(schedule, 1L, schedule.startDate,
+                schedule.endDate, "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        final var tracks = dataset.publishedJourneys().getFirst().tracks();
+        assertEquals(1, tracks.size());
+        assertEquals("TPE", tracks.getFirst().stationShortCode());
+        assertEquals("7", tracks.getFirst().plannedTrack());
+    }
+
+    @Test
+    void givenStopCancelledOnEveryDayWithoutTrack_whenComputingDataset_thenPublishedJourneyGetsPetiPlatform() {
+        // given
+        final PetiStopSource petiSource = () -> List.of(
+                new PetiStop("FSR:StopPlace:TPE", 1_000_101, "TPE station", true, null,
+                        List.of(new PetiQuay("FSR:Quay:TPE-3", "3", null, null, null))));
+        final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
+        final NeTExService service = new NeTExService(
+                new NeTExEntityService(idGenerator, new NeTExTimeConverter()),
+                new NeTExCalendarService(idGenerator), new NeTExRouteService(idGenerator),
+                new IdentityTrackSource(), new NeTExStopsService(idGenerator, petiSource),
+                new NeTExWritingService(idGenerator, PETI_URL), petiSource, null,
+                new TodaysScheduleService(), null, new CommercialTrackResolver(), null, null);
+        final Schedule schedule = createCurrentSchedule();
+        schedule.scheduleCancellations.add(partialCancellation(schedule, 1L, schedule.startDate,
+                schedule.endDate, "TPE"));
+
+        // when
+        final var dataset = service.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        final var tracks = dataset.publishedJourneys().getFirst().tracks();
+        assertEquals(1, tracks.size());
+        assertEquals("3", tracks.getFirst().plannedTrack());
+    }
+
+    @Test
+    void givenDifferentRouteRemovesFirstVisit_whenComputingDataset_thenSecondVisitKeepsItsOwnTrack() {
+        // given
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance",
+                List.of("HKI", "TPE", "OL", "TPE", "TKU"));
+        final LocalDate today = DateProvider.dateInHelsinki();
+        schedule.startDate = today.minusDays(1);
+        schedule.endDate = today.plusDays(30);
+        schedule.effectiveFrom = schedule.startDate;
+        schedule.runOnSaturday = true;
+        schedule.runOnSunday = true;
+        schedule.scheduleRows.get(1).commercialTrack = "1";
+        schedule.scheduleRows.get(3).commercialTrack = "2";
+        final ScheduleCancellation cancellation = new ScheduleCancellation();
+        cancellation.id = 1L;
+        cancellation.startDate = schedule.startDate;
+        cancellation.endDate = schedule.endDate;
+        cancellation.scheduleCancellationType = ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE;
+        cancellation.cancelledRows.add(schedule.scheduleRows.get(1).arrival);
+        cancellation.cancelledRows.add(schedule.scheduleRows.get(1).departure);
+        schedule.scheduleCancellations.add(cancellation);
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL", "TKU")));
+
+        // then
+        // The real train has no first TPE visit, so its only TPE visit is index 0 and has track 2
+        final var tpeTracks = dataset.publishedJourneys().getFirst().tracks().stream()
+                .filter(track -> "TPE".equals(track.stationShortCode()))
+                .toList();
+        assertEquals(1, tpeTracks.size());
+        assertEquals(0, tpeTracks.getFirst().visitIndex());
+        assertEquals("2", tpeTracks.getFirst().plannedTrack());
+    }
+
+    @Test
+    void givenFewerThanTwoStopsLeft_whenComputingDataset_thenCancelledDaysHaveNoJourney() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        final LocalDate cancelFrom = DateProvider.dateInHelsinki().plusDays(10);
+        schedule.scheduleCancellations.add(
+                partialCancellation(schedule, 1L, cancelFrom, cancelFrom, "TPE", "OL"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        assertEquals(1, dataset.serviceJourneys().size());
+        assertEquals(3, dataset.serviceJourneys().getFirst().passingTimes().size());
+        assertTrue(dataset.calendar().datesOf(List.of(dataset.serviceJourneys().getFirst().id()))
+                .stream().noneMatch(cancelFrom::equals));
+    }
+
+    @Test
+    void givenCancelledStopOnAdhocSchedule_whenComputingDataset_thenJourneyWithoutTheStopIsPublished() {
+        // given
+        final Schedule adhoc = createCurrentSchedule();
+        adhoc.timetableType = Train.TimetableType.ADHOC;
+        adhoc.startDate = DateProvider.dateInHelsinki().plusDays(10);
+        adhoc.endDate = adhoc.startDate;
+        adhoc.scheduleCancellations.add(
+                partialCancellation(adhoc, 1L, adhoc.startDate, adhoc.startDate, "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(adhoc), List.of(),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        assertEquals(1, dataset.serviceJourneys().size());
+        assertEquals(2, dataset.serviceJourneys().getFirst().passingTimes().size());
+    }
+
+    @Test
+    void givenCancelledStopOnLastDayOfPackage_whenComputingDataset_thenThatDayHasOwnJourney() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        // Same end date as the package has
+        final LocalDate lastDay = DateProvider.dateInHelsinki().minusDays(7).plusYears(1)
+                .withMonth(12).withDayOfMonth(31);
+        schedule.endDate = lastDay;
+        schedule.scheduleCancellations.add(partialCancellation(schedule, 1L, lastDay, lastDay, "TPE"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        final var counts = dataset.serviceJourneys().stream()
+                .map(journey -> journey.passingTimes().size()).sorted().toList();
+        assertEquals(List.of(2, 3), counts);
+    }
+
+    @Test
+    void givenCancelledOriginOfOvernightTrain_whenComputingDataset_thenTimesStillCountPastMidnight() {
+        // given
+        final Schedule schedule = createCurrentSchedule();
+        final ScheduleRow origin = schedule.scheduleRows.get(0);
+        final ScheduleRow middle = schedule.scheduleRows.get(1);
+        final ScheduleRow terminus = schedule.scheduleRows.get(2);
+        origin.departure.timestamp = Duration.ofHours(23).plusMinutes(50);
+        middle.arrival.timestamp = Duration.ofHours(24).plusMinutes(11);
+        middle.departure.timestamp = Duration.ofHours(24).plusMinutes(12);
+        terminus.arrival.timestamp = Duration.ofHours(25);
+        schedule.scheduleCancellations.add(
+                partialCancellation(schedule, 1L, schedule.startDate, schedule.endDate, "HKI"));
+
+        // when
+        final var dataset = netExService.computeDataset(List.of(), List.of(schedule),
+                createStations(List.of("HKI", "TPE", "OL")));
+
+        // then
+        final var passingTimes = dataset.serviceJourneys().getFirst().passingTimes();
+        assertEquals(2, passingTimes.size());
+        assertEquals("24:12:00", passingTimes.get(0).departureTime());
+        assertEquals("25:00:00", passingTimes.get(1).arrivalTime());
+    }
+
+    private Schedule createCurrentSchedule() {
+        final Schedule schedule = createFullSchedule(1L, 59L, "IC", "Long-distance", List.of("HKI", "TPE", "OL"));
+        final LocalDate today = DateProvider.dateInHelsinki();
+        schedule.startDate = today.minusDays(1);
+        schedule.endDate = today.plusDays(30);
+        schedule.effectiveFrom = schedule.startDate;
+        // Runs every day, so the tests do not depend on the weekday they are run on
+        schedule.runOnSaturday = true;
+        schedule.runOnSunday = true;
+        return schedule;
+    }
+
+    private static ScheduleCancellation partialCancellation(final Schedule schedule, final long id,
+            final LocalDate from, final LocalDate to, final String... cancelledStations) {
+        final ScheduleCancellation cancellation = new ScheduleCancellation();
+        cancellation.id = id;
+        cancellation.startDate = from;
+        cancellation.endDate = to;
+        cancellation.scheduleCancellationType = ScheduleCancellation.ScheduleCancellationType.PARTIALLY;
+        final Set<String> stations = Set.of(cancelledStations);
+        for (final ScheduleRow row : schedule.scheduleRows) {
+            if (stations.contains(row.station.stationShortCode)) {
+                if (row.arrival != null) {
+                    cancellation.cancelledRows.add(row.arrival);
+                }
+                if (row.departure != null) {
+                    cancellation.cancelledRows.add(row.departure);
+                }
+            }
+        }
+        return cancellation;
     }
 
     // --- Helpers ---

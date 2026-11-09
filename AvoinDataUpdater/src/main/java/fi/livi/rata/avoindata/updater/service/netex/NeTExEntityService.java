@@ -233,7 +233,7 @@ public class NeTExEntityService {
             final String lineIdentifier = deriveLineId(schedule);
             final String name = schedule.trainType.name + " " + schedule.trainNumber;
             final String privateCode = String.valueOf(schedule.trainNumber);
-            final String journeyPatternRef = routeData.getJourneyPatternIdForSchedule(schedule.id);
+            final String journeyPatternRef = routeData.getJourneyPatternIdForSchedule(schedule);
 
             final String operatorRef = idGenerator.operatorId(schedule.operator.operatorShortCode);
             final String lineRef = idGenerator.lineId(lineIdentifier);
@@ -257,12 +257,12 @@ public class NeTExEntityService {
         if (schedule.timetableType == Train.TimetableType.ADHOC) {
             return idGenerator.serviceJourneyIdAdhoc(schedule.trainNumber, schedule.startDate);
         }
-        return idGenerator.serviceJourneyId(schedule.trainNumber, schedule.id);
+        return idGenerator.serviceJourneyId(schedule.trainNumber, schedule.journeyKey());
     }
 
     private List<NeTExPassingTime> buildPassingTimes(final Schedule schedule, final String journeyPatternRef) {
         final List<NeTExPassingTime> times = new ArrayList<>();
-        final Duration firstDeparture = findFirstDeparture(schedule);
+        final Duration firstDepartureTimeOfDay = findFirstDepartureTimeOfDay(schedule);
         int order = 1;
 
         for (final ScheduleRow row : schedule.scheduleRows) {
@@ -270,10 +270,10 @@ public class NeTExEntityService {
                 continue;
             }
             final String arrivalTime = row.arrival != null
-                    ? timeConverter.toNeTExTime(row.arrival.timestamp, firstDeparture)
+                    ? timeConverter.toNeTExTime(row.arrival.timestamp, firstDepartureTimeOfDay)
                     : null;
             final String departureTime = row.departure != null
-                    ? timeConverter.toNeTExTime(row.departure.timestamp, firstDeparture)
+                    ? timeConverter.toNeTExTime(row.departure.timestamp, firstDepartureTimeOfDay)
                     : null;
             final String stopPointRef = idGenerator.stopPointInJourneyPatternId(journeyPatternRef, order);
             times.add(new NeTExPassingTime(order++, arrivalTime, departureTime,
@@ -284,13 +284,22 @@ public class NeTExEntityService {
     }
 
     /**
-     * The baseline for the past-midnight rollover has to be the first stop we
-     * actually publish, not the first one flagged COMMERCIAL: an origin whose
-     * departure carries another stop type is still published, and measuring
-     * from a later stop pushes everything before it past 24:00.
+     * Returns the departure time of the first published stop as the time elapsed since the start of the day
+     * (for example 23:50 is 23 h 50 min). It is a {@link Duration} like the times in the schedule rows, because
+     * a time after midnight can be more than 24 hours and a clock time could not hold it. It is the baseline for the past-midnight rollover: times after
+     * midnight are written as 24:xx only when the journey starts in the afternoon or later.
+     *
+     * <p>
+     * The baseline has to be the first stop we actually publish, not the first one flagged COMMERCIAL: an origin
+     * whose departure carries another stop type is still published, and measuring from a later stop pushes
+     * everything before it past 24:00. For a shortened schedule the original rows are used, so cancelled
+     * stops do not move the baseline.
+     *
+     * @return the departure time of day, or {@link Duration#ZERO} when no stop has a departure
      */
-    private Duration findFirstDeparture(final Schedule schedule) {
-        for (final ScheduleRow row : schedule.scheduleRows) {
+    private Duration findFirstDepartureTimeOfDay(final Schedule schedule) {
+        final List<ScheduleRow> rows = schedule.originalRows != null ? schedule.originalRows : schedule.scheduleRows;
+        for (final ScheduleRow row : rows) {
             if (isCommercialStop(row) && row.departure != null) {
                 return row.departure.timestamp;
             }
@@ -298,7 +307,7 @@ public class NeTExEntityService {
         return Duration.ZERO;
     }
 
-    private boolean isCommercialStop(final ScheduleRow row) {
+    static boolean isCommercialStop(final ScheduleRow row) {
         // Must select the same stops as the SIRI-ET feed — see CommercialStopRule.
         return CommercialStopRule.isCommercialStop(row);
     }

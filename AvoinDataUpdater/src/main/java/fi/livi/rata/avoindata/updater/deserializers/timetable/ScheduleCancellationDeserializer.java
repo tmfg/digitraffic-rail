@@ -46,22 +46,15 @@ public class ScheduleCancellationDeserializer extends AEntityDeserializer<Schedu
                 cancelledScheduleRow.departure.scheduleRow = cancelledScheduleRow;
             }
         }
-
-
-
+        
         return scheduleCancellation;
     }
 
     private ScheduleCancellation.ScheduleCancellationType parseScheduleCancellationType(final JsonNode node) {
-        final String peruType = node.get("peruType").asText();
-        if (peruType.equals("KOPE")) {
-            return ScheduleCancellation.ScheduleCancellationType.WHOLE_DAY;
-        } else if (peruType.equals("OVPE")) {
-            return ScheduleCancellation.ScheduleCancellationType.PARTIALLY;
-        } else if (peruType.equals("KVPE")) {
-            return ScheduleCancellation.ScheduleCancellationType.DIFFERENT_ROUTE;
-        } else {
-            throw new IllegalArgumentException("Unknown cancellation type:" + peruType);
+        final JsonNode peruType = node.get("peruType");
+        if (peruType == null) {
+            throw new IllegalArgumentException("Missing peruType in schedule cancellation: " + node);
         }
+        return ScheduleCancellation.ScheduleCancellationType.fromCode(peruType.asString());
     }
 }

@@ -89,8 +89,12 @@ public class NeTExIdGenerator {
         return typeEnd < 0 ? id : id.substring(typeEnd + 1);
     }
 
-    public String serviceJourneyId(final long trainNumber, final long scheduleId) {
-        return CODESPACE + ":ServiceJourney:" + trainNumber + "-" + scheduleId;
+    /**
+     * The scheduleKey is {@link fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule#journeyKey()}:
+     * the schedule id, or the schedule id and a hash of the removed stops for a shortened copy.
+     */
+    public String serviceJourneyId(final long trainNumber, final String scheduleKey) {
+        return CODESPACE + ":ServiceJourney:" + trainNumber + "-" + scheduleKey;
     }
 
     public String serviceJourneyIdAdhoc(final long trainNumber, final LocalDate date) {

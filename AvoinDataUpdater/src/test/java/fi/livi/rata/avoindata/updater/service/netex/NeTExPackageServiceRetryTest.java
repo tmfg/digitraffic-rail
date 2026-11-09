@@ -10,10 +10,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.SQLException;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import fi.livi.rata.avoindata.common.dao.gtfs.GeneratedExportRepository;
@@ -77,6 +79,21 @@ class NeTExPackageServiceRetryTest {
         assertThrows(RipaFetchException.class, () -> service.generatePackage());
 
         verify(neTExService, times(1)).generateNeTEx();
+    }
+
+    @Test
+    void givenDatabaseFailsDuringGeneration_whenGenerating_thenRetriesAfterTheConfiguredWait() {
+        final NeTExPackageService service = serviceWith(2, Duration.ofMillis(200));
+        final RuntimeException wrapped = new RuntimeException("NeTEx generation failed",
+                new DataAccessResourceFailureException("failover", new SQLException("failover succeeded")));
+        when(neTExService.generateNeTEx()).thenThrow(wrapped).thenReturn(null);
+
+        final long start = System.nanoTime();
+        service.generatePackage();
+        final long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+
+        verify(neTExService, times(2)).generateNeTEx();
+        assertTrue(elapsedMs >= 200, "expected a wait before retrying, waited " + elapsedMs + " ms");
     }
 
     @Test

@@ -396,19 +396,24 @@ public class NeTExService {
                 publishable);
 
         // Resolve which schedules are "in effect" among passenger trains only
-        final Set<Long> winningScheduleIds = resolveWinningScheduleIds(passengerAdhoc, passengerRegular);
+        final Map<String, Schedule> winningSchedules = resolveWinningSchedulesByKey(passengerAdhoc,
+                passengerRegular);
 
-        log.info("event=generateNeTEx method=computeDataset resolved winningScheduleIds={} from "
+        log.info("event=generateNeTEx method=computeDataset resolved winningSchedules={} from "
                 + "passengerAdhoc={} passengerRegular={}",
-                winningScheduleIds.size(), passengerAdhoc.size(), passengerRegular.size());
+                winningSchedules.size(), passengerAdhoc.size(), passengerRegular.size());
 
+        // Schedules in the order they were given; copies made for cancelled stops come after them
         final List<Schedule> allFiltered = new ArrayList<>();
         allFiltered.addAll(passengerRegular.stream()
-                .filter(s -> winningScheduleIds.contains(s.id))
+                .filter(s -> winningSchedules.containsKey(s.journeyKey()))
                 .toList());
         allFiltered.addAll(passengerAdhoc.stream()
-                .filter(s -> winningScheduleIds.contains(s.id))
+                .filter(s -> winningSchedules.containsKey(s.journeyKey()))
                 .toList());
+        winningSchedules.values().stream()
+                .filter(s -> s.partialCancellationKey != null)
+                .forEach(allFiltered::add);
 
         if (allFiltered.isEmpty()) {
             return null;
@@ -524,7 +529,7 @@ public class NeTExService {
                 return;
             }
             final List<PublishedJourneyDraft.PublishedTrack> tracks = tracksByServiceJourneyId
-                    .computeIfAbsent(serviceJourneyId, _ -> publishedTracks(serviceJourney));
+                    .computeIfAbsent(serviceJourneyId, _ -> publishedTracks(schedule));
             drafts.add(new PublishedJourneyDraft(trainId, serviceJourneyId, serviceJourney.lineRef(),
                     serviceJourney.operatorRef(), serviceJourney.journeyPatternRef(), tracks));
         });
@@ -532,25 +537,31 @@ public class NeTExService {
     }
 
     /**
-     * Counts each station's occurrences over the (commercial) passing times so a station served more than once
+     * Counts each station's occurrences over the (commercial) stops so a station served more than once
      * keeps a planned track per visit; only stops with a known track are stored. sequenceIndex is a separate
      * counter that only ever increases, counting over the *stored* tracks only, so it reflects their true journey
      * order (unlike visitIndex, which resets per station and is meant only to disambiguate repeated stops for
      * lookup, not for ordering — see NeTExPublishedJourney#tracks).
+     *
+     * <p>
+     * Counted over the rows of the real train when some stops are cancelled: SIRI still sees the stops of a
+     * partial cancellation on it, and needs their planned tracks, but not the stops of a different-route
+     * cancellation. See {@link Schedule#realtimeRows}.
      */
-    private static List<PublishedJourneyDraft.PublishedTrack> publishedTracks(
-            final NeTExEntityService.NeTExServiceJourney serviceJourney) {
+    private static List<PublishedJourneyDraft.PublishedTrack> publishedTracks(final Schedule schedule) {
+        final List<ScheduleRow> rows = schedule.realtimeRows != null ? schedule.realtimeRows : schedule.scheduleRows;
         final List<PublishedJourneyDraft.PublishedTrack> tracks = new ArrayList<>();
         final Map<String, Integer> visitCounts = new HashMap<>();
         int sequenceIndex = 0;
-        for (final var pt : serviceJourney.passingTimes()) {
-            if (pt.stationShortCode() == null) {
+        for (final ScheduleRow row : rows) {
+            if (!NeTExEntityService.isCommercialStop(row) || row.station.stationShortCode == null) {
                 continue;
             }
-            final int visitIndex = visitCounts.merge(pt.stationShortCode(), 1, Integer::sum) - 1;
-            if (pt.commercialTrack() != null) {
+            final String stationShortCode = row.station.stationShortCode;
+            final int visitIndex = visitCounts.merge(stationShortCode, 1, Integer::sum) - 1;
+            if (row.commercialTrack != null) {
                 tracks.add(new PublishedJourneyDraft.PublishedTrack(
-                        pt.stationShortCode(), pt.commercialTrack(), visitIndex, sequenceIndex++));
+                        stationShortCode, row.commercialTrack, visitIndex, sequenceIndex++));
             }
         }
         return tracks;
@@ -606,27 +617,30 @@ public class NeTExService {
     }
 
     /**
-     * Resolves which schedule IDs actually "win" for at least one day.
+     * Resolves which schedules actually "win" for at least one day, keyed by {@link Schedule#journeyKey()}.
      * Uses TodaysScheduleService (same as GTFS) to determine the schedule in effect
      * per train per day, filtering out superseded/broken schedule versions.
+     * On days when some stops are cancelled, the schedule without those stops wins instead.
      */
-    private Set<Long> resolveWinningScheduleIds(final List<Schedule> adhocSchedules,
+    private Map<String, Schedule> resolveWinningSchedulesByKey(final List<Schedule> adhocSchedules,
             final List<Schedule> regularSchedules) {
         final LocalDate start = feedStart();
         final LocalDate end = feedEnd();
-        final Set<Long> winningIds = new HashSet<>();
+        final Map<String, Schedule> winning = new LinkedHashMap<>();
+        final NeTExShortenedSchedules shortenedSchedules = new NeTExShortenedSchedules();
 
-        for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, adhocSchedules,
                     regularSchedules);
             for (final Schedule schedule : todaysSchedules) {
                 if (!schedule.changeType.equals("P") && schedule.isRunOnDay(date)) {
-                    winningIds.add(schedule.id);
+                    shortenedSchedules.effectiveOn(schedule, date)
+                            .ifPresent(effective -> winning.putIfAbsent(effective.journeyKey(), effective));
                 }
             }
         }
 
-        return winningIds;
+        return winning;
     }
 
     /**
@@ -663,12 +677,15 @@ public class NeTExService {
                 publishableStations);
 
         final Map<TrainId, Schedule> result = new HashMap<>();
+        final NeTExShortenedSchedules shortenedSchedules = new NeTExShortenedSchedules();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(date, passengerAdhoc,
+            final LocalDate day = date;
+            final List<Schedule> todaysSchedules = todaysScheduleService.getDaysSchedules(day, passengerAdhoc,
                     passengerRegular);
             for (final Schedule schedule : todaysSchedules) {
-                if (!schedule.changeType.equals("P") && schedule.isRunOnDay(date)) {
-                    result.put(new TrainId(schedule.trainNumber, date), schedule);
+                if (!schedule.changeType.equals("P") && schedule.isRunOnDay(day)) {
+                    shortenedSchedules.effectiveOn(schedule, day)
+                            .ifPresent(effective -> result.put(new TrainId(schedule.trainNumber, day), effective));
                 }
             }
         }
@@ -765,7 +782,9 @@ public class NeTExService {
         final Set<String> missingFromPeti = new LinkedHashSet<>();
 
         for (final Schedule schedule : schedules) {
-            for (final ScheduleRow row : schedule.scheduleRows) {
+            // Cancelled stops are not in a shortened schedule, but SIRI still needs their tracks
+            final List<ScheduleRow> rows = schedule.originalRows != null ? schedule.originalRows : schedule.scheduleRows;
+            for (final ScheduleRow row : rows) {
                 if (!CommercialStopRule.isCommercialStop(row)) {
                     continue;
                 }

@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.util.List;
 import java.util.Map;
 
+import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
+
 /**
  * Holds route and journey pattern data produced by NeTExRouteService.
  */
@@ -10,12 +12,12 @@ public class NeTExRouteData {
 
     private final List<NeTExRoute> routes;
     private final List<NeTExJourneyPattern> journeyPatterns;
-    private final Map<Long, String> scheduleToJourneyPatternId;
+    private final Map<String, String> scheduleToJourneyPatternId;
 
     public NeTExRouteData(
             final List<NeTExRoute> routes,
             final List<NeTExJourneyPattern> journeyPatterns,
-            final Map<Long, String> scheduleToJourneyPatternId) {
+            final Map<String, String> scheduleToJourneyPatternId) {
         this.routes = routes;
         this.journeyPatterns = journeyPatterns;
         this.scheduleToJourneyPatternId = scheduleToJourneyPatternId;
@@ -30,7 +32,11 @@ public class NeTExRouteData {
     }
 
     public String getJourneyPatternIdForSchedule(final long scheduleId) {
-        return scheduleToJourneyPatternId.get(scheduleId);
+        return scheduleToJourneyPatternId.get(String.valueOf(scheduleId));
+    }
+
+    public String getJourneyPatternIdForSchedule(final Schedule schedule) {
+        return scheduleToJourneyPatternId.get(schedule.journeyKey());
     }
 
     public record NeTExRoute(String id, String name, String lineRef, List<String> routePointRefs) {

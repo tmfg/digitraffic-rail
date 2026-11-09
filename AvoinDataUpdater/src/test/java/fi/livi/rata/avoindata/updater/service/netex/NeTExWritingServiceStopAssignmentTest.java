@@ -221,7 +221,7 @@ class NeTExWritingServiceStopAssignmentTest {
                                                 List.of(new NeTExRouteData.NeTExStopPointInPattern(1,
                                                                 "FTR:ScheduledStopPoint:HKI",
                                                                 true, false, "FTR:DestinationDisplay:HKI")))),
-                                Map.of(1L, "FTR:JourneyPattern:IC-abc"));
+                                Map.of("1", "FTR:JourneyPattern:IC-abc"));
 
                 final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
                                 "IC", "FTR:Operator:vr", "rail", "longDistance"));

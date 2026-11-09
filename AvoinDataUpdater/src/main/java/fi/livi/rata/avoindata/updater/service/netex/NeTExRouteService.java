@@ -64,7 +64,7 @@ public class NeTExRouteService {
     public NeTExRouteData createRouteDataTrackAware(final List<Schedule> schedules) {
         final Map<String, NeTExRouteData.NeTExRoute> routeMap = new LinkedHashMap<>();
         final Map<String, NeTExRouteData.NeTExJourneyPattern> patternMap = new LinkedHashMap<>();
-        final Map<Long, String> scheduleToPatternId = new HashMap<>();
+        final Map<String, String> scheduleToPatternId = new HashMap<>();
 
         for (final Schedule schedule : schedules) {
             final List<StopWithTrack> commercialStopsWithTrack = extractCommercialStopsWithTrack(schedule);
@@ -75,7 +75,7 @@ public class NeTExRouteService {
             final String lineIdentifier = deriveLineIdentifier(schedule);
             final String patternId = idGenerator.journeyPatternId(lineIdentifier, hash);
 
-            scheduleToPatternId.put(schedule.id, patternId);
+            scheduleToPatternId.put(schedule.journeyKey(), patternId);
 
             if (!patternMap.containsKey(patternId)) {
                 final String routeId = idGenerator.routeId(lineIdentifier,
