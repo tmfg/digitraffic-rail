@@ -98,7 +98,7 @@ public class SiriSxGenerationService {
         String journeysUnavailableReason = null;
         try {
             final ZonedDateTime now = DateProvider.nowInHelsinki();
-            final List<RamiMessage> ramiMessages = ramiMessageRepository.findLatestActive(
+            final List<RamiMessage> ramiMessages = ramiMessageRepository.findLatestPublishable(
                     now.toInstant(), now.toInstant().minus(SxSituationConverter.CLOSED_HOURS, ChronoUnit.HOURS));
             ramiMessageCount = ramiMessages.size();
 

@@ -86,7 +86,7 @@ public class SiriSxGenerationServiceTest {
         messageStation.id = 1L;
         messageStation.stationShortCode = "HKI";
         message.stations.add(messageStation);
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of(message));
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenReturn(List.of(message));
 
         final RamiFirstCreated first = mock(RamiFirstCreated.class);
         when(first.getId()).thenReturn("SHM1");
@@ -133,7 +133,7 @@ public class SiriSxGenerationServiceTest {
 
     @Test
     public void noMessagesStoresValidEmptyFile() {
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of());
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenReturn(List.of());
 
         service.generate();
 
@@ -146,7 +146,7 @@ public class SiriSxGenerationServiceTest {
     @Test
     public void publishedJourneysAreReadForDeparturesOfTrainMessages() {
         final LocalDate departure = DateProvider.dateInHelsinki().plusDays(2);
-        final RamiMessage trainMessage = ramiMessageRepository.findLatestActive(null, null).getFirst();
+        final RamiMessage trainMessage = ramiMessageRepository.findLatestPublishable(null, null).getFirst();
         trainMessage.id = "MVM1";
         trainMessage.messageType = MessageType.MONITORED_JOURNEY_SCHEDULED_MESSAGE;
         trainMessage.trainNumber = 1;
@@ -158,7 +158,7 @@ public class SiriSxGenerationServiceTest {
     }
 
     private RamiMessage addTrainMessage() {
-        final RamiMessage trainMessage = ramiMessageRepository.findLatestActive(null, null).getFirst();
+        final RamiMessage trainMessage = ramiMessageRepository.findLatestPublishable(null, null).getFirst();
         final RamiMessage copy = new RamiMessage();
         copy.id = "MVM1";
         copy.version = 1;
@@ -169,7 +169,7 @@ public class SiriSxGenerationServiceTest {
         copy.trainNumber = 1;
         copy.trainDepartureDate = DateProvider.dateInHelsinki();
         copy.videos.addAll(trainMessage.videos);
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(List.of(trainMessage, copy));
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenReturn(List.of(trainMessage, copy));
         return copy;
     }
 
@@ -237,9 +237,9 @@ public class SiriSxGenerationServiceTest {
         tomorrow.trainNumber = 1;
         tomorrow.trainDepartureDate = DateProvider.dateInHelsinki().plusDays(1);
         tomorrow.videos.addAll(today.videos);
-        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestActive(null, null));
+        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestPublishable(null, null));
         all.add(tomorrow);
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(all);
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenReturn(all);
 
         service.generate();
 
@@ -259,9 +259,9 @@ public class SiriSxGenerationServiceTest {
         old.trainNumber = 2;
         old.trainDepartureDate = DateProvider.dateInHelsinki().minusDays(5);
         old.videos.addAll(current.videos);
-        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestActive(null, null));
+        final List<RamiMessage> all = new java.util.ArrayList<>(ramiMessageRepository.findLatestPublishable(null, null));
         all.add(old);
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenReturn(all);
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenReturn(all);
 
         service.generate();
 
@@ -320,7 +320,7 @@ public class SiriSxGenerationServiceTest {
 
     @Test
     public void failedRunStoresNothing() {
-        when(ramiMessageRepository.findLatestActive(any(), any())).thenThrow(new IllegalStateException("db down"));
+        when(ramiMessageRepository.findLatestPublishable(any(), any())).thenThrow(new IllegalStateException("db down"));
 
         service.generate();
 

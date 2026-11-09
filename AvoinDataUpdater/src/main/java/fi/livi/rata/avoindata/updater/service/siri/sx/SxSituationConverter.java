@@ -118,8 +118,13 @@ public class SxSituationConverter {
                                          final List<SxText> texts, final SxTarget target,
                                          final ZonedDateTime creationTime) {
         final boolean closed = message.deleted != null;
-        final ZonedDateTime endTime = toHelsinki(
-                closed ? message.deleted.plus(CLOSED_HOURS, ChronoUnit.HOURS) : message.endValidity);
+        final Instant startInstant = closed && message.deleted.isBefore(message.startValidity)
+                ? message.deleted
+                : message.startValidity;
+        final Instant endInstant = closed
+                ? message.deleted.plus(CLOSED_HOURS, ChronoUnit.HOURS)
+                : message.endValidity;
+
         // RAMI ids (SHM..., MVM...) already differ from other id formats; add a source prefix if another source is added.
         return new SxSituation(
                 NeTExIdGenerator.CODESPACE + ":SituationNumber:" + message.id,
@@ -127,8 +132,8 @@ public class SxSituationConverter {
                 creationTime,
                 toHelsinki(message.createdSource),
                 closed,
-                toHelsinki(message.startValidity),
-                endTime,
+                toHelsinki(startInstant),
+                toHelsinki(endInstant),
                 reportType(message),
                 summaries(texts),
                 descriptions(texts),

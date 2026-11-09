@@ -64,8 +64,11 @@ All disruption-type data in the project was reviewed. Only RAMI has ready passen
 
 ## Rules
 
+- A message is published as soon as it is created, also when its validity has not started yet. The start is given
+  in `ValidityPeriod`, so the consumer decides when to show it.
 - A message with `deleted` set is published as `closed` for 5 hours after the deletion time (profile
-  requirement), then left out.
+  requirement), then left out. This also applies when it was deleted before its validity started; in
+  that case the closed period starts at deletion time.
 - `Summary` is the screen text, at most 160 characters (profile limit). A longer text is cut after the last whole
   word that fits, with `...` added. A word is never cut. `Description` is the full text and is given only for a
   language whose summary was cut; a text that fits gets only `Summary`.

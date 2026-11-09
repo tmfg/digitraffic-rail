@@ -56,7 +56,7 @@ public class RamiMessageRepositoryTest extends BaseTest {
     }
 
     @Test
-    public void onlyLatestActiveVersionsAreFound() {
+    public void onlyLatestPublishableVersionsAreFound() {
         final String t = "SCHEDULED_MESSAGE";
         insert("A", 1, t, "2026-10-27 08:00:00", "2026-10-27 08:00:00", "2026-10-28 00:00:00", null);
         insert("A", 2, t, "2026-10-27 09:00:00", "2026-10-27 08:00:00", "2026-10-28 00:00:00", null);
@@ -69,9 +69,9 @@ public class RamiMessageRepositoryTest extends BaseTest {
         entityManager.flush();
         entityManager.clear();
 
-        final List<RamiMessage> messages = repository.findLatestActive(NOW, NOW.minus(5, ChronoUnit.HOURS));
+        final List<RamiMessage> messages = repository.findLatestPublishable(NOW, NOW.minus(5, ChronoUnit.HOURS));
 
-        assertEquals(List.of("A", "D"), messages.stream().map(m -> m.id).sorted().toList());
+        assertEquals(List.of("A", "C", "D"), messages.stream().map(m -> m.id).sorted().toList());
         final RamiMessage a = messages.stream().filter(m -> m.id.equals("A")).findFirst().orElseThrow();
         assertEquals(2, a.version);
         assertEquals(1, a.videos.size());

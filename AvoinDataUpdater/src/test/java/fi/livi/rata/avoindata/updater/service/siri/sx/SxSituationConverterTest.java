@@ -212,6 +212,20 @@ public class SxSituationConverterTest {
     }
 
     @Test
+    public void messageDeletedBeforeItStartsIsClosedForFiveHours() {
+        final RamiMessage deleted = message("SHM1", MessageType.SCHEDULED_MESSAGE, "Teksti", null, "HKI");
+        deleted.startValidity = CREATED.plusDays(1).toInstant();
+        deleted.endValidity = CREATED.plusDays(2).toInstant();
+        deleted.deleted = CREATED.plusHours(2).toInstant();
+
+        final SxSituation situation = convert(deleted).situations().getFirst();
+
+        assertTrue(situation.closed());
+        assertEquals(CREATED.plusHours(2).toInstant(), situation.startTime().toInstant());
+        assertEquals(CREATED.plusHours(7).toInstant(), situation.endTime().toInstant());
+    }
+
+    @Test
     public void situationsAreSortedByNumber() {
         final SxResult result = convert(
                 message("SHM3", MessageType.SCHEDULED_MESSAGE, "c", null, "HKI"),
