@@ -15,7 +15,6 @@ import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +30,6 @@ import static fi.livi.rata.avoindata.server.config.CacheConfig.CACHE_MAX_AGE_60S
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
 public class TrainLocationController extends ADataController {
     private Logger log = LoggerFactory.getLogger(this.getClass());
-
-    CaffeineCacheManager cacheManager;
 
     @Autowired
     private TrainLocationRepository trainLocationRepository;
