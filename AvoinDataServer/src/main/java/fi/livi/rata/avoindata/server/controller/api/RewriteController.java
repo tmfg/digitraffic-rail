@@ -167,12 +167,6 @@ public class RewriteController {
         return trainRunningMessageController.getTrainTrackingByStationAndTrackSectionAndLimit(response, station, track_section, limit);
     }
 
-    @RequestMapping(value = TRAIN_TRACKING_PREFIX, method = RequestMethod.GET)
-    public List<TrainRunningMessage> getByVersion(final HttpServletResponse response,
-                                                  @RequestParam(required = false) Long version) {
-        return trainRunningMessageController.getTrainTrackingByVersion(response, version);
-    }
-
     @RequestMapping(path = TRAIN_TRACKING_PREFIX + "/{train_number}", method = RequestMethod.GET)
     public List<TrainRunningMessage> getTrainTrackingByTrainNumberAndDepartureDate(HttpServletResponse response, @PathVariable final String train_number,
                                                                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departure_date,

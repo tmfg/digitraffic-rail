@@ -132,7 +132,7 @@ public class TrainRunningMessageController extends ADataController {
     }
 
     @Operation(summary = "Returns train running messages newer than {version}")
-    @RequestMapping(path = "/", method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET)
     @Transactional(timeout = 30, readOnly = true)
     public List<TrainRunningMessage> getTrainTrackingByVersion(final HttpServletResponse response,
                                                                @RequestParam(required = false) Long version) {

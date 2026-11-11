@@ -51,6 +51,20 @@ public class TrainLocationControllerTest extends MockMvcBaseTest {
     }
 
     @Test
+    public void latestWithTrailingSlashShouldWork() throws Exception {
+        trainLocationFactory.createTrainLocation();
+
+        getJson("/train-locations/latest/").andExpect(jsonPath("$.length()").value(1));
+        getGeoJson("/train-locations.geojson/latest/").andExpect(jsonPath("$.features.length()").value(1));
+    }
+
+    @Test
+    public void trainTrackingWithTrailingSlashShouldWork() throws Exception {
+        getJson("/train-tracking");
+        getJson("/train-tracking/");
+    }
+
+    @Test
     public void trainNumberFilteringShouldWork() throws Exception {
         trainLocationFactory.createTrainLocation();
 
