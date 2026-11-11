@@ -4,6 +4,9 @@ package fi.livi.rata.avoindata.server.config;
 import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 
 public class CacheConfig {
+    public static final int CACHE_MAX_AGE_5S = 5;
+    public static final int CACHE_MAX_AGE_60S = 60;
+
     public static CacheControl LIVE_TRAIN_ALL_TRAINS_CACHECONTROL = new CacheControl(10, 120, 120, 5 * 60);
     public static CacheControl LIVE_TRAIN_STATION_CACHECONTROL = new CacheControl(5, 15, 30, 30);
     public static CacheControl LIVE_TRAIN_SINGLE_TRAIN_CACHECONTROL = new CacheControl(5, 10, 10, 10);

@@ -1,28 +1,26 @@
 package fi.livi.rata.avoindata.server.controller.api;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.function.Function;
-
-import jakarta.servlet.http.HttpServletResponse;
-
-import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.server.config.WebConfig;
+import fi.livi.rata.avoindata.server.controller.api.geojson.FeatureCollection;
+import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import fi.livi.rata.avoindata.server.services.GeoJsonFormatter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.function.Function;
+
+import static fi.livi.rata.avoindata.server.config.CacheConfig.CACHE_MAX_AGE_5S;
+import static fi.livi.rata.avoindata.server.config.CacheConfig.CACHE_MAX_AGE_60S;
 
 @Tag(name = "train-locations", description = "Train locations")
 @RestController
@@ -43,6 +41,9 @@ public class TrainLocationGeoJsonController extends ADataController {
             @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
             HttpServletResponse response) {
         validateBBox(bbox);
+
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_5S);
+
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocations(bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
     }
@@ -54,6 +55,9 @@ public class TrainLocationGeoJsonController extends ADataController {
             @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
             HttpServletResponse response) {
         validateBBox(bbox);
+
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_5S);
+
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocationByTrainNumber(train_number, bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
     }
@@ -66,6 +70,9 @@ public class TrainLocationGeoJsonController extends ADataController {
             @RequestParam(required = false) @Parameter(example = "1,1,70,70", description = "bbox") List<Double> bbox,
             HttpServletResponse response) {
         validateBBox(bbox);
+
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_60S);
+
         List<TrainLocation> trainLocations = trainLocationController.getTrainLocationByTrainNumberAndDepartureDate(train_number, departure_date, bbox, response);
         return geoJsonFormatter.wrapAsGeoJson(trainLocations, converter);
     }

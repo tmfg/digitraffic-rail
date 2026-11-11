@@ -2,7 +2,6 @@ package fi.livi.rata.avoindata.server.controller.api;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import org.locationtech.jts.geom.Point;
 import fi.livi.rata.avoindata.common.dao.trainlocation.TrainLocationRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.common.utils.DateProvider;
@@ -11,26 +10,29 @@ import fi.livi.rata.avoindata.server.controller.utils.CacheControl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import jakarta.servlet.http.HttpServletResponse;
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import static fi.livi.rata.avoindata.server.config.CacheConfig.CACHE_MAX_AGE_5S;
+import static fi.livi.rata.avoindata.server.config.CacheConfig.CACHE_MAX_AGE_60S;
 
 @Tag(name = "train-locations", description = "Train locations")
 @RestController
 @RequestMapping(WebConfig.CONTEXT_PATH + "train-locations")
 public class TrainLocationController extends ADataController {
-    public static final int CACHE_MAX_AGE = 1;
-    public static final int CACHE_MAX_AGE_HISTORY = 15;
-
     private Logger log = LoggerFactory.getLogger(this.getClass());
+
+    CaffeineCacheManager cacheManager;
 
     @Autowired
     private TrainLocationRepository trainLocationRepository;
@@ -39,7 +41,7 @@ public class TrainLocationController extends ADataController {
     @RequestMapping(method = RequestMethod.GET, path = "latest")
     public List<TrainLocation> getTrainLocations(@RequestParam(required = false) @Parameter(example = "1,1,70,70")
                                                  final List<Double> bbox, final HttpServletResponse response) {
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_5S);
 
         final List<Long> ids = trainLocationRepository.findLatest(DateProvider.nowInHelsinki().minusMinutes(15));
         return getAndFilterTrainLocations(bbox, response, ids);
@@ -51,7 +53,7 @@ public class TrainLocationController extends ADataController {
                                                              final Long train_number, @RequestParam(required = false) @Parameter(example =
             "1,1,70,70")
                                                              final List<Double> bbox, final HttpServletResponse response) {
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE);
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_5S);
 
         final List<Long> ids = trainLocationRepository.findLatestForATrain(DateProvider.nowInHelsinki().minusMinutes(15), train_number);
         return getAndFilterTrainLocations(bbox, response, ids);
@@ -68,7 +70,7 @@ public class TrainLocationController extends ADataController {
             final List<Double> bbox,
             final HttpServletResponse response) {
 
-        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_HISTORY);
+        CacheControl.setCacheMaxAgeSeconds(response, CACHE_MAX_AGE_60S);
 
         final List<TrainLocation> trainLocations = trainLocationRepository.findForTrain(train_number, departure_date);
         return filterByBbox(bbox, response, trainLocations);
