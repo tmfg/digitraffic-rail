@@ -3,6 +3,8 @@ package fi.livi.rata.avoindata.updater.service.netex;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import fi.livi.digitraffic.common.logging.MaintenanceLogger;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,15 +40,16 @@ public class NeTExPublishedJourneyCleanupService {
      */
     @Transactional
     public void deleteOldJourneys() {
-        final long startTime = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
         final Instant cutoff = Instant.now().minus(retentionDays, ChronoUnit.DAYS);
 
         final int prunedRows = journeyRepo.deleteByGeneratedAtBefore(cutoff);
+        final double tookSeconds = durationSeconds(stopWatch.getTime());
 
-        log.info(StringUtil.format(
-                "event=rail.netex.prune_journeys outcome=success cutoff={} pruned_rows={} retention_days={} "
+        MaintenanceLogger.logCleanup("netex_published_journey", prunedRows, -1, tookSeconds);
+
+        log.info("event=rail.netex.prune_journeys outcome=success cutoff={} pruned_rows={} retention_days={} "
                         + "duration={}",
-                cutoff, prunedRows, retentionDays,
-                durationSeconds(System.currentTimeMillis() - startTime)));
+                cutoff, prunedRows, retentionDays, tookSeconds);
     }
 }

@@ -7,6 +7,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import fi.livi.digitraffic.common.logging.MaintenanceLogger;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +62,8 @@ public class RealtimeFeedCleanupService {
     }
 
     private void deleteOldSnapshots(final String fileName, final ZonedDateTime cutoff) {
-        final long startTime = System.currentTimeMillis();
+        final StopWatch stopWatch = StopWatch.createStarted();
+
         final Optional<Long> newestId = repository.findLatestIdByFileName(fileName);
         final Optional<Long> newestExpiredId = repository.findLatestIdByFileNameCreatedBefore(fileName, cutoff);
         if (newestId.isEmpty() || newestExpiredId.isEmpty()) {
@@ -72,11 +75,14 @@ public class RealtimeFeedCleanupService {
         final int maxRows = RealtimeFeedFileNames.SIRI_ET.equals(fileName) ? siriEtBatchSize : batchSize;
         final List<Long> ids = repository.findIdsByFileNameUpToId(fileName, maxId, maxRows);
         final int prunedRows = ids.isEmpty() ? 0 : repository.deleteByIds(ids);
+        final double durationSeconds = durationSeconds(stopWatch.getTime());
+
+        MaintenanceLogger.logCleanup("gtfs(rt)", prunedRows, -1, durationSeconds);
 
         log.info(StringUtil.format(
                 "event=rail.realtime_feed.prune outcome=success file_name={} cutoff={} pruned_rows={} batch_size={} "
                         + "duration={}",
                 fileName, cutoff, prunedRows, maxRows,
-                durationSeconds(System.currentTimeMillis() - startTime)));
+                durationSeconds));
     }
 }

@@ -4,14 +4,18 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.livi.rata.avoindata.common.dao.CustomGeneralRepository;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 
 @Repository
 public interface TrainLocationRepository extends CustomGeneralRepository<TrainLocation, Long> {
+
+    int PRUNE_BATCH_SIZE = 500_000;
 
     @Query("select max(tl.id) " +
             "   from TrainLocation tl " +
@@ -41,4 +45,13 @@ public interface TrainLocationRepository extends CustomGeneralRepository<TrainLo
             "tl.trainLocationId.departureDate = ?2 " +
             "order by tl.trainLocationId.timestamp desc")
     List<TrainLocation> findForTrain(final Long train_number, final LocalDate departure_date);
+
+    /**
+     * Deletes at most {@link #PRUNE_BATCH_SIZE} of the oldest train locations that are over two years old.
+     */
+    @Modifying
+    @Query(value = "DELETE FROM train_location " +
+            "WHERE timestamp < UTC_TIMESTAMP - INTERVAL 2 YEAR " +
+            "ORDER BY timestamp ASC LIMIT " + PRUNE_BATCH_SIZE, nativeQuery = true)
+    int deleteOldestOverTwoYearsOld();
 }

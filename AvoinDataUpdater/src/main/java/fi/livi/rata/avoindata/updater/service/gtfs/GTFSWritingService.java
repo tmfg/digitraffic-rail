@@ -1,5 +1,6 @@
 package fi.livi.rata.avoindata.updater.service.gtfs;
 
+import static fi.livi.digitraffic.common.logging.LogFields.durationSeconds;
 import static fi.livi.rata.avoindata.updater.service.gtfs.GTFSConstants.LOCATION_TYPE_STOP;
 
 import java.io.File;
@@ -22,6 +23,8 @@ import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import fi.livi.digitraffic.common.logging.MaintenanceLogger;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,12 +88,16 @@ public class GTFSWritingService {
     @Scheduled(fixedDelay = 1000 * 60 * 60, initialDelay = 1000 * 60)
     @Transactional
     public void deleteOldZips() {
+        final StopWatch stopWatch = StopWatch.createStarted();
         final List<Long> newestPerFileName = gtfsRepository.findLatestIdPerFileName();
         if (newestPerFileName.isEmpty()) {
             return;
         }
         final Integer numberOfDeletedRows = gtfsRepository.deleteOldZips(ZonedDateTime.now().minusDays(14),
                 newestPerFileName);
+
+        MaintenanceLogger.logCleanup("gtfs", numberOfDeletedRows, -1, durationSeconds(stopWatch.getTime()));
+
         log.info(String.format("Deleted %s zips", numberOfDeletedRows));
     }
 
