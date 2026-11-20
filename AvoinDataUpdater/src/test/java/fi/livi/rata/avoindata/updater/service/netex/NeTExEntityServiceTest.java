@@ -38,13 +38,12 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRowPart
 class NeTExEntityServiceTest {
 
     private NeTExEntityService entityService;
-    private NeTExIdGenerator idGenerator;
 
     private NeTExRouteService routeService;
 
     @BeforeEach
     void setUp() {
-        idGenerator = new NeTExIdGenerator();
+        final NeTExIdGenerator idGenerator = new NeTExIdGenerator();
         final NeTExTimeConverter timeConverter = new NeTExTimeConverter();
         entityService = new NeTExEntityService(idGenerator, timeConverter);
         routeService = new NeTExRouteService(idGenerator);
@@ -566,7 +565,7 @@ class NeTExEntityServiceTest {
     }
 
     @Test
-    void givenRingLine_whenCreatingLines_thenMidpointIsUsedRatherThanTurnBacks() {
+    void givenRingLine_whenCreatingLines_thenNameIsOriginTwice() {
         // given — a route returning to its origin
         final Schedule schedule = createLongDistanceSchedule(1L, 1L, "IC");
         final NeTExRouteData routeData = routeDataFor("FTR:Line:IC-1",
@@ -577,7 +576,7 @@ class NeTExEntityServiceTest {
                 routeData, FINNISH_STATION_NAMES);
 
         // then
-        assertEquals("Helsinki-Kivistö-Helsinki", lines.getFirst().name());
+        assertEquals("Helsinki-Helsinki", lines.getFirst().name());
     }
 
     @Test
@@ -650,7 +649,7 @@ class NeTExEntityServiceTest {
     }
 
     private Schedule createAdhocSchedule(final long id, final long trainNumber, final String trainTypeName,
-            final LocalDate date) {
+                                         final LocalDate date) {
         final Schedule schedule = createBaseSchedule(id, trainNumber, trainTypeName, "Long-distance");
         schedule.timetableType = Train.TimetableType.ADHOC;
         schedule.startDate = date;
@@ -659,7 +658,7 @@ class NeTExEntityServiceTest {
     }
 
     private Schedule createBaseSchedule(final long id, final long trainNumber,
-            final String trainTypeName, final String categoryName) {
+                                        final String trainTypeName, final String categoryName) {
         final Schedule schedule = new Schedule();
         schedule.id = id;
         schedule.trainNumber = trainNumber;
@@ -695,7 +694,7 @@ class NeTExEntityServiceTest {
 
     private List<ScheduleRow> createDefaultStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
-        final String[] stations = { "HKI", "TPE", "OL" };
+        final String[] stations = {"HKI", "TPE", "OL"};
 
         for (int i = 0; i < stations.length; i++) {
             final ScheduleRow row = new ScheduleRow();
@@ -736,10 +735,10 @@ class NeTExEntityServiceTest {
      */
     private List<ScheduleRow> createAfternoonStops() {
         final List<ScheduleRow> rows = new ArrayList<>();
-        final String[] stations = { "HKI", "TPE", "OL" };
-        final Duration[] arrivals = { null, Duration.ofHours(14).plusMinutes(7), Duration.ofHours(14).plusMinutes(20) };
-        final Duration[] departures = { Duration.ofHours(14).plusMinutes(6), Duration.ofHours(14).plusMinutes(8),
-                null };
+        final String[] stations = {"HKI", "TPE", "OL"};
+        final Duration[] arrivals = {null, Duration.ofHours(14).plusMinutes(7), Duration.ofHours(14).plusMinutes(20)};
+        final Duration[] departures = {Duration.ofHours(14).plusMinutes(6), Duration.ofHours(14).plusMinutes(8),
+                null};
 
         for (int i = 0; i < stations.length; i++) {
             final ScheduleRow row = new ScheduleRow();

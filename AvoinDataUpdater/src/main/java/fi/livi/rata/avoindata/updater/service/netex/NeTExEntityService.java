@@ -132,8 +132,8 @@ public class NeTExEntityService {
      * Names the Line after its longest route, inserting the destination of every
      * shorter working at the point it turns back, so that a line serving several
      * turn-back points reads as the whole corridor rather than one variant of it.
-     * Ring lines, whose origin and destination are the same station, get their
-     * midpoint inserted so the name is not "Helsinki-Helsinki".
+     * Ring lines, whose origin and destination are the same station, are named
+     * after that station twice, for example "Helsinki-Helsinki".
      */
     private String deriveLineName(final String lineId,
             final NeTExRouteData routeData,
@@ -157,10 +157,7 @@ public class NeTExEntityService {
         final String terminus = corridor.get(corridor.size() - 1);
 
         if (origin.equals(terminus)) {
-            final List<String> parts = corridor.size() < 3
-                    ? List.of(origin, terminus)
-                    : List.of(origin, corridor.get(corridor.size() / 2), terminus);
-            return joinStationNames(parts, stationNamesByShortCode);
+            return joinStationNames(List.of(origin, terminus), stationNamesByShortCode);
         }
 
         final Map<String, Integer> positions = new HashMap<>();
