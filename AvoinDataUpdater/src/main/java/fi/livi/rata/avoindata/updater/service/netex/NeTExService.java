@@ -56,8 +56,10 @@ public class NeTExService {
 
     /**
      * Excluded from the package:
-     * V, HV, MV: "tyhjävaunujunat", trains that run without passengers
-     * MUS: museum trains, excluded by design
+     * V: henkilöliikenteen tyhjävaunujuna (empty passenger stock)
+     * HV: lähiliikenteen tyhjävaunujuna (empty commuter stock)
+     * MV: kaukoliikenteen tyhjävaunujuna (empty long-distance stock)
+     * MUS: museojunat (museum trains), excluded by design
      */
     private static final Set<String> EXCLUDED_TYPES = Set.of("V", "HV", "MV", "MUS");
 
@@ -738,7 +740,7 @@ public class NeTExService {
     }
 
     /**
-     * Follows GTFSService.isPassengerTrain, except that museum trains (MUS) are
+     * Follows GTFSService.isPassengerTrain, except that MUS (museojunat, museum trains) are
      * excluded here but kept in
      * gtfs-passenger.zip, so the two feeds do not publish exactly the same
      * journeys.

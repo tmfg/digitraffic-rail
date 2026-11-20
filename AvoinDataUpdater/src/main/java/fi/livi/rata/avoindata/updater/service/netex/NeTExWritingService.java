@@ -41,7 +41,9 @@ import org.rutebanken.netex.model.DestinationDisplay;
 import org.rutebanken.netex.model.DestinationDisplayRefStructure;
 import org.rutebanken.netex.model.DestinationDisplaysInFrame_RelStructure;
 import org.rutebanken.netex.model.Frames_RelStructure;
+import org.rutebanken.netex.model.GroupOfLines;
 import org.rutebanken.netex.model.GroupOfLinesRefStructure;
+import org.rutebanken.netex.model.GroupsOfLinesInFrame_RelStructure;
 import org.rutebanken.netex.model.JourneyPattern;
 import org.rutebanken.netex.model.JourneyPatternRefStructure;
 import org.rutebanken.netex.model.JourneyPatternsInFrame_RelStructure;
@@ -52,12 +54,14 @@ import org.rutebanken.netex.model.LinesInFrame_RelStructure;
 import org.rutebanken.netex.model.LocaleStructure;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.Network;
+import org.rutebanken.netex.model.NetworksInFrame_RelStructure;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.OperatingPeriod;
 import org.rutebanken.netex.model.OperatingPeriodRefStructure;
 import org.rutebanken.netex.model.OperatingPeriodsInFrame_RelStructure;
 import org.rutebanken.netex.model.Operator;
 import org.rutebanken.netex.model.OperatorRefStructure;
+import org.rutebanken.netex.model.OrganisationTypeEnumeration;
 import org.rutebanken.netex.model.OrganisationsInFrame_RelStructure;
 import org.rutebanken.netex.model.PassengerStopAssignment;
 import org.rutebanken.netex.model.PointOnRoute;
@@ -113,15 +117,6 @@ public class NeTExWritingService {
         private static final Logger log = LoggerFactory.getLogger(NeTExWritingService.class);
         private static final String SHARED_DATA_XML = NeTExFileNaming.SHARED_DATA_XML;
         private static final String VERSION = "1.15:NO-NeTEx-networktimetable:1.5";
-        /**
-         * The state agency that owns the rail network; not derivable from schedules.
-         */
-        private static final String AUTHORITY_ID = "FTR:Authority:ftia";
-        private static final String AUTHORITY_NAME = "Finnish Transport Infrastructure Agency";
-        private static final String AUTHORITY_LEGAL_NAME = "Väylävirasto";
-        private static final String AUTHORITY_URL = "https://vayla.fi/en/";
-        private static final String AUTHORITY_PHONE = "+358 295 34 3000";
-        private static final String AUTHORITY_EMAIL = "ftia@ftia.fi";
         // Latest arrival of a journey belonging to the previous operating day.
         private static final LocalTime SERVICE_DAY_END = LocalTime.of(4, 0);
         private static final ObjectFactory FACTORY = new ObjectFactory();
@@ -366,15 +361,16 @@ public class NeTExWritingService {
          */
         private ResourceFrame buildSharedResourceFrame(final List<NeTExEntityService.NeTExOperator> operators) {
                 final OrganisationsInFrame_RelStructure organisations = new OrganisationsInFrame_RelStructure();
-                organisations.getOrganisation_().add(FACTORY.createAuthority(new Authority()
-                                .withId(AUTHORITY_ID)
-                                .withVersion("1")
-                                .withName(new MultilingualString().withValue(AUTHORITY_NAME))
-                                .withLegalName(new MultilingualString().withValue(AUTHORITY_LEGAL_NAME))
-                                .withContactDetails(new ContactStructure()
-                                                .withUrl(AUTHORITY_URL)
-                                                .withPhone(AUTHORITY_PHONE)
-                                                .withEmail(AUTHORITY_EMAIL))));
+                for (final NeTExAuthority authority : NeTExAuthority.values()) {
+                        organisations.getOrganisation_().add(FACTORY.createAuthority(new Authority()
+                                        .withId(idGenerator.authorityId(authority.code()))
+                                        .withVersion("1")
+                                        .withCompanyNumber(String.valueOf(authority.companyNumber()))
+                                        .withName(new MultilingualString().withValue(authority.displayName()))
+                                        .withLegalName(new MultilingualString().withValue(authority.legalName()))
+                                        .withContactDetails(new ContactStructure().withUrl(authority.url()))
+                                        .withOrganisationType(OrganisationTypeEnumeration.AUTHORITY)));
+                }
                 for (final var op : operators) {
                         organisations.getOrganisation_().add(FACTORY.createOperator(new Operator()
                                         .withId(op.id())
@@ -392,6 +388,23 @@ public class NeTExWritingService {
                 return frame;
         }
 
+        private Network buildNetwork(final NeTExAuthority authority) {
+                return new Network()
+                                .withId(idGenerator.networkId(authority.code()))
+                                .withVersion("1")
+                                .withName(new MultilingualString().withValue(authority.displayName()))
+                                .withTransportOrganisationRef(FACTORY.createAuthorityRef(
+                                                new AuthorityRef()
+                                                                .withRef(idGenerator.authorityId(authority.code()))
+                                                                .withVersion("1")))
+                                .withGroupsOfLines(new GroupsOfLinesInFrame_RelStructure().withGroupOfLines(
+                                                new GroupOfLines()
+                                                                .withId(idGenerator.groupOfLinesId(authority.code()))
+                                                                .withVersion("1")
+                                                                .withName(new MultilingualString()
+                                                                                .withValue(authority.displayName()))));
+        }
+
         /**
          * Cross-line content of the common file. The Nordic profile forbids Line,
          * Route and JourneyPattern here, so those live in the line files.
@@ -401,13 +414,10 @@ public class NeTExWritingService {
                                 .withId("FTR:ServiceFrame:shared")
                                 .withVersion("1");
 
-                frame.withNetwork(new Network()
-                                .withId("FTR:Network:FIN")
-                                .withVersion("1")
-                                .withName(new MultilingualString().withValue("Finnish Railways"))
-                                .withTransportOrganisationRef(FACTORY.createAuthorityRef(
-                                                new AuthorityRef().withRef(AUTHORITY_ID).withVersion("1")))
-                                .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL));
+                // The main authority owns the main Network; the others go to additionalNetworks.
+                frame.withNetwork(buildNetwork(NeTExAuthority.mainAuthority()));
+                frame.withAdditionalNetworks(new NetworksInFrame_RelStructure().withNetwork(
+                                NeTExAuthority.additionalAuthorities().stream().map(this::buildNetwork).toList()));
 
                 final DestinationDisplaysInFrame_RelStructure destDisplays = new DestinationDisplaysInFrame_RelStructure();
                 for (final var dd : stopsData.getDestinationDisplays()) {
@@ -488,7 +498,7 @@ public class NeTExWritingService {
                                                 // entities that live in the common file.
                                                 .withRepresentedByGroupRef(
                                                                 new GroupOfLinesRefStructure()
-                                                                                .withRef("FTR:Network:FIN")))));
+                                                                                .withRef(line.groupOfLinesRef())))));
 
                 final RoutesInFrame_RelStructure routesStructure = new RoutesInFrame_RelStructure();
                 for (final var route : slice.routes()) {

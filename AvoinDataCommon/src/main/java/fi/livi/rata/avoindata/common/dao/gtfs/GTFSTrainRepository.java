@@ -24,7 +24,10 @@ public interface GTFSTrainRepository extends CustomGeneralRepository<GTFSTrain, 
     // return trains that have changed since given version, departing today or yesterday
     @Query("select train from GTFSTrain train" +
             " where train.sourceVersion > :version" +
-            // category must be Commuter or Long-distance and traintype must not be V, HV or MV
+            // category must be Commuter or Long-distance and traintype must not be an empty-stock train:
+            // V (81) = henkilöliikenteen tyhjävaunujuna (empty passenger stock),
+            // HV (52) = lähiliikenteen tyhjävaunujuna (empty commuter stock),
+            // MV (53) = kaukoliikenteen tyhjävaunujuna (empty long-distance stock)
             " and train.trainCategoryId in (1, 2) and train.trainTypeId not in (81, 52, 53)" +
             " and train.id.departureDate in (:today, (:today - 1 day))")
     List<GTFSTrain> findBySourceVersionGreaterThan(final long version, final LocalDate today);

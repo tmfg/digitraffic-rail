@@ -174,6 +174,23 @@ class NeTExServiceTest {
     }
 
     @Test
+    void givenCommuterLinesVAndWWithEmptyTrainType_whenFiltering_thenOnlyNormalCommuterTrainRemains() {
+        // given
+        final Schedule lineV = createSchedule("HV", "Commuter", true);
+        lineV.commuterLineId = "V";
+        final Schedule lineW = createSchedule("HV", "Commuter", true);
+        lineW.commuterLineId = "W";
+        final Schedule lineA = createSchedule("HLK", "Commuter", true);
+        lineA.commuterLineId = "A";
+
+        // when
+        final List<Schedule> result = netExService.filterPassengerTrains(List.of(lineV, lineW, lineA));
+
+        // then
+        assertEquals(List.of("A"), result.stream().map(s -> s.commuterLineId).toList());
+    }
+
+    @Test
     void givenMixOfPassengerAndNonPassenger_whenFiltering_thenOnlyPassengerIncluded() {
         // given
         final Schedule passenger = createSchedule("IC", "Long-distance", true);

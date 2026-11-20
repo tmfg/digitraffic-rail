@@ -7,9 +7,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import fi.livi.rata.avoindata.common.domain.train.Train;
@@ -18,11 +21,25 @@ import fi.livi.rata.avoindata.updater.service.timetable.entities.Schedule;
 import fi.livi.rata.avoindata.updater.service.timetable.entities.ScheduleRow;
 
 /**
- * Builds core NeTEx domain objects: Lines, Operators, Authority,
- * ServiceJourneys, Network.
+ * Builds core NeTEx domain objects: Lines, Operators,
+ * ServiceJourneys. A Line belongs to the VR or HSL authority; see
+ * {@link NeTExAuthority}.
  */
 @Service
 public class NeTExEntityService {
+
+    private static final Logger log = LoggerFactory.getLogger(NeTExEntityService.class);
+
+    /**
+     * Commuter lines that run inside HSL's fare zones A-E. The source data has no
+     * field for this.
+     */
+    private static final Set<String> HSL_COMMUTER_LINES = Set.of("A", "E", "I", "K", "L", "P", "U", "Y");
+
+    /**
+     * State-purchased commuter lines that VR runs under its own name.
+     */
+    private static final Set<String> VR_COMMUTER_LINES = Set.of("R", "Z", "D", "H", "M", "O", "G", "T");
 
     private final NeTExIdGenerator idGenerator;
     private final NeTExTimeConverter timeConverter;
@@ -44,6 +61,25 @@ public class NeTExEntityService {
             return schedule.commuterLineId;
         }
         return schedule.trainType.name + "-" + schedule.trainNumber;
+    }
+
+    /**
+     * HSL lines go to HSL. Everything else goes to VR, and a commuter line that is
+     * in neither list is logged so that the lists can be corrected.
+     */
+    NeTExAuthority authorityOf(final Schedule schedule) {
+        final String commuterLineId = schedule.commuterLineId;
+        if (commuterLineId == null || commuterLineId.isEmpty()) {
+            return NeTExAuthority.VR;
+        }
+        if (HSL_COMMUTER_LINES.contains(commuterLineId)) {
+            return NeTExAuthority.HSL;
+        }
+        if (!VR_COMMUTER_LINES.contains(commuterLineId)) {
+            log.warn("event=generateNeTEx method=authorityOf outcome=default error_type=UnknownCommuterLine "
+                    + "commuterLineId={} authority={}", commuterLineId, NeTExAuthority.VR.code());
+        }
+        return NeTExAuthority.VR;
     }
 
     /** Human-readable line code: commuter line id, or "IC 59" for long-distance. */
@@ -71,9 +107,10 @@ public class NeTExEntityService {
                         deriveLineName(lineId, routeData, stationNamesByShortCode, schedule),
                         deriveLinePublicCode(schedule),
                         lineIdentifier,
-                        idGenerator.operatorId(schedule.operator.operatorShortCode),
+                        idGenerator.operatorId(NeTExAuthority.VR),
                         "rail",
-                        deriveTransportSubmode(schedule)));
+                        deriveTransportSubmode(schedule),
+                        idGenerator.groupOfLinesId(authorityOf(schedule).code())));
             }
         }
         return new ArrayList<>(lineMap.values());
@@ -192,22 +229,25 @@ public class NeTExEntityService {
     }
 
     /**
-     * Creates the list of unique Operators from schedules.
+     * Creates the Operators. VR is the only operator, and it is written when there
+     * are schedules. An operator other than vr or hsl is logged once, and its
+     * journeys still go to VR.
      */
     public List<NeTExOperator> createOperators(final List<Schedule> schedules) {
-        final Map<String, NeTExOperator> operatorMap = new LinkedHashMap<>();
-        for (final Schedule schedule : schedules) {
-            final String shortCode = schedule.operator.operatorShortCode;
-            final String operatorId = idGenerator.operatorId(shortCode);
-            if (!operatorMap.containsKey(operatorId)) {
-                operatorMap.put(operatorId, new NeTExOperator(
-                        operatorId,
-                        shortCode,
-                        shortCode,
-                        schedule.operator.operatorUICCode));
-            }
+        if (schedules.isEmpty()) {
+            return List.of();
         }
-        return new ArrayList<>(operatorMap.values());
+        schedules.stream()
+                .map(schedule -> schedule.operator.operatorShortCode)
+                .distinct()
+                .filter(shortCode -> !NeTExAuthority.VR.code().equalsIgnoreCase(shortCode)
+                        && !NeTExAuthority.HSL.code().equalsIgnoreCase(shortCode))
+                .forEach(shortCode -> log.warn(
+                        "event=generateNeTEx method=createOperators outcome=default "
+                                + "error_type=UnknownOperator operator={} operatorRef={}",
+                        shortCode, idGenerator.operatorId(NeTExAuthority.VR)));
+        return List.of(new NeTExOperator(idGenerator.operatorId(NeTExAuthority.VR), NeTExAuthority.VR.displayName(),
+                NeTExAuthority.VR.code(), NeTExAuthority.VR.companyNumber()));
     }
 
     /**
@@ -235,7 +275,7 @@ public class NeTExEntityService {
             final String privateCode = String.valueOf(schedule.trainNumber);
             final String journeyPatternRef = routeData.getJourneyPatternIdForSchedule(schedule);
 
-            final String operatorRef = idGenerator.operatorId(schedule.operator.operatorShortCode);
+            final String operatorRef = idGenerator.operatorId(NeTExAuthority.VR);
             final String lineRef = idGenerator.lineId(lineIdentifier);
 
             final List<NeTExPassingTime> passingTimes = buildPassingTimes(schedule, journeyPatternRef);
@@ -313,7 +353,7 @@ public class NeTExEntityService {
     }
 
     public record NeTExLine(String id, String name, String publicCode, String privateCode,
-            String operatorRef, String transportMode, String transportSubmode) {
+            String operatorRef, String transportMode, String transportSubmode, String groupOfLinesRef) {
     }
 
     public record NeTExOperator(String id, String name, String privateCode, int companyNumber) {

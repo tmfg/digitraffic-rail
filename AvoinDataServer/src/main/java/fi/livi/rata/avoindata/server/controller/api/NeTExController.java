@@ -31,7 +31,10 @@ public class NeTExController {
         this.generatedExportRepository = generatedExportRepository;
     }
 
-    @Operation(summary = "Returns train timetables and routes in NeTEx Nordic")
+    @Operation(summary = "Returns train timetables and routes in NeTEx Nordic",
+            description = "The operator of all journeys is VR. Passengers are served by two authorities, "
+                    + "each with its own Network: VR (main Network) and HSL (additionalNetworks). "
+                    + "A Line points to its authority through RepresentedByGroupRef.")
     @RequestMapping(method = RequestMethod.GET, path = "FTR-netex.zip", produces = "application/zip")
     @Transactional(readOnly = true)
     public byte[] getNeTEx(final HttpServletResponse response) {

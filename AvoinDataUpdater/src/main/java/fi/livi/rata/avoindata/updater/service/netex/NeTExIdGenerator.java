@@ -23,8 +23,8 @@ public class NeTExIdGenerator {
         return CODESPACE + ":Authority:" + code;
     }
 
-    public String operatorId(final String shortCode) {
-        return CODESPACE + ":Operator:" + shortCode;
+    public String operatorId(final NeTExAuthority operator) {
+        return CODESPACE + ":Operator:" + operator.code();
     }
 
     public String lineId(final String lineIdentifier) {
@@ -119,6 +119,10 @@ public class NeTExIdGenerator {
 
     public String networkId(final String code) {
         return CODESPACE + ":Network:" + code;
+    }
+
+    public String groupOfLinesId(final String code) {
+        return CODESPACE + ":GroupOfLines:" + code;
     }
 
     public String passengerStopAssignmentId(final String stationShortCode) {

@@ -189,7 +189,7 @@ class NeTExWritingServiceTest {
         }
 
         @Test
-        void givenValidData_whenWritingZip_thenNetworkIsOwnedByTheInfrastructureAuthority() throws Exception {
+        void givenValidData_whenWritingZip_thenVrAndHslAreAuthoritiesWithOwnNetworks() throws Exception {
                 // given
                 final var testData = createMinimalTestData();
 
@@ -201,15 +201,26 @@ class NeTExWritingServiceTest {
 
                 // then
                 final String xml = extractSharedXmlFromZip(zip);
-                assertTrue(xml.contains("<Authority version=\"1\" id=\"FTR:Authority:ftia\">"),
-                                "shared data should define the authority");
-                assertTrue(xml.contains("<Name>Finnish Transport Infrastructure Agency</Name>"));
-                assertTrue(xml.contains("<LegalName>Väylävirasto</LegalName>"));
-                assertTrue(xml.contains("<Url>https://vayla.fi/en/</Url>"),
-                                "ContactDetails needs an http(s) Url");
-                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:ftia\" version=\"1\"/>"),
-                                "the Network must name the authority responsible for it, "
-                                                + "with a version or the reference reads as external");
+                assertTrue(xml.contains("<Authority version=\"1\" id=\"FTR:Authority:VR\">"));
+                assertTrue(xml.contains("<Authority version=\"1\" id=\"FTR:Authority:HSL\">"));
+                assertTrue(xml.contains("<CompanyNumber>10</CompanyNumber>"));
+                assertTrue(xml.contains("<CompanyNumber>9995</CompanyNumber>"));
+                assertTrue(xml.contains("<LegalName>VR-Yhtymä Oyj</LegalName>"));
+                assertTrue(xml.contains("<LegalName>Helsingin seudun liikenne -kuntayhtymä</LegalName>"));
+                assertTrue(xml.contains("<Url>https://www.vr.fi/en</Url>"));
+                assertTrue(xml.contains("<Url>https://www.hsl.fi/en</Url>"));
+                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:VR\" version=\"1\"/>"),
+                                "the Network must name its authority, with a version or the reference reads as external");
+                assertTrue(xml.contains("<AuthorityRef ref=\"FTR:Authority:HSL\" version=\"1\"/>"));
+                assertTrue(xml.contains("<additionalNetworks>"), "HSL goes to additionalNetworks");
+                assertTrue(xml.contains("id=\"FTR:Network:VR\""));
+                assertTrue(xml.contains("id=\"FTR:Network:HSL\""));
+                assertTrue(xml.contains("id=\"FTR:GroupOfLines:VR\""));
+                assertTrue(xml.contains("id=\"FTR:GroupOfLines:HSL\""));
+                assertTrue(xml.indexOf("FTR:Network:VR") < xml.indexOf("<additionalNetworks>")
+                                && xml.indexOf("<additionalNetworks>") < xml.indexOf("FTR:Network:HSL"),
+                                "VR is the main Network and HSL the additional one");
+                assertTrue(!xml.contains("FTR:Authority:ftia"));
         }
 
         @Test
@@ -446,7 +457,7 @@ class NeTExWritingServiceTest {
                                 Map.of("1", "FTR:JourneyPattern:IC-abc"));
 
                 final var lines = List.of(new NeTExEntityService.NeTExLine("FTR:Line:IC", "Helsinki-Oulu", "IC",
-                                "IC", "FTR:Operator:vr", "rail", "longDistance"));
+                                "IC", "FTR:Operator:vr", "rail", "longDistance", "FTR:GroupOfLines:VR"));
                 final var operators = List.of(new NeTExEntityService.NeTExOperator("FTR:Operator:vr", "VR", "vr", 10));
                 final var serviceJourneys = List.of(new NeTExEntityService.NeTExServiceJourney(
                                 "FTR:ServiceJourney:59-12345", "IC 59", "59",

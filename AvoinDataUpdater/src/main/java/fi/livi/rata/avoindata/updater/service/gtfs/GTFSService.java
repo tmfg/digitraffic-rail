@@ -184,7 +184,7 @@ public class GTFSService {
         final FeedMetricsSink metrics = GtfsRunScope.feedMetrics();
         metrics.recordFeedAttempt(zipFileName);
         try {
-            // filter out museum trains when desired
+            // filter out MUS (museojunat, museum trains) when desired
             final var adhocSchedules = filterOutNonStopsAndMuseumTrains ? passengerAdhocSchedules.stream()
                     .filter(s -> !s.trainType.name.equals("MUS")).toList() : passengerAdhocSchedules;
 
@@ -325,6 +325,12 @@ public class GTFSService {
         createGtfs(vrTrePassengerAdhocSchedules, vrTreRegularSchedules, "gtfs-vr-tre.zip", true, nodes, routeDate, failedSegments);
     }
 
+    /**
+     * Passenger trains only. Empty-stock trains are excluded:
+     * V (henkilöliikenteen tyhjävaunujuna, empty passenger stock),
+     * HV (lähiliikenteen tyhjävaunujuna, empty commuter stock) and
+     * MV (kaukoliikenteen tyhjävaunujuna, empty long-distance stock).
+     */
     private boolean isPassengerTrain(final Schedule s) {
         return (s.trainCategory.name.equals("Commuter") || (s.trainCategory.name.equals("Long-distance") && s.trainType.commercial)) && !Sets.newHashSet("V", "HV", "MV").contains(s.trainType.name);
     }

@@ -35,15 +35,12 @@ class NeTExIdGeneratorTest {
     }
 
     @Test
-    void givenOperatorShortCode_whenGeneratingId_thenFollowsConvention() {
-        // given
-        final String shortCode = "vr";
-
+    void givenVrOperator_whenGeneratingId_thenFollowsConvention() {
         // when
-        final String result = idGenerator.operatorId(shortCode);
+        final String result = idGenerator.operatorId(NeTExAuthority.VR);
 
         // then
-        assertEquals("FTR:Operator:vr", result);
+        assertEquals("FTR:Operator:VR", result);
     }
 
     @Test
@@ -212,7 +209,7 @@ class NeTExIdGeneratorTest {
     void givenAnyId_whenGenerated_thenStartsWithCodespace() {
         // given/when
         final String authorityId = idGenerator.authorityId("FIN");
-        final String operatorId = idGenerator.operatorId("vr");
+        final String operatorId = idGenerator.operatorId(NeTExAuthority.VR);
         final String lineId = idGenerator.lineId("Z");
 
         // then

@@ -12,9 +12,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import fi.livi.rata.avoindata.common.domain.common.Operator;
 import fi.livi.rata.avoindata.common.domain.common.StationEmbeddable;
@@ -92,7 +99,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, lines.size());
-        assertEquals("rail", lines.get(0).transportMode());
+        assertEquals("rail", lines.getFirst().transportMode());
     }
 
     @Test
@@ -105,7 +112,7 @@ class NeTExEntityServiceTest {
                 emptyRouteData(), Map.of());
 
         // then
-        assertEquals("local", lines.get(0).transportSubmode());
+        assertEquals("local", lines.getFirst().transportSubmode());
     }
 
     @Test
@@ -118,7 +125,7 @@ class NeTExEntityServiceTest {
                 emptyRouteData(), Map.of());
 
         // then
-        assertEquals("longDistance", lines.get(0).transportSubmode());
+        assertEquals("longDistance", lines.getFirst().transportSubmode());
     }
 
     @Test
@@ -146,7 +153,7 @@ class NeTExEntityServiceTest {
                 emptyRouteData(), Map.of());
 
         // then
-        assertEquals("nightRail", lines.get(0).transportSubmode());
+        assertEquals("nightRail", lines.getFirst().transportSubmode());
     }
 
     @Test
@@ -159,7 +166,7 @@ class NeTExEntityServiceTest {
                 emptyRouteData(), Map.of());
 
         // then
-        assertEquals("touristRailway", lines.get(0).transportSubmode());
+        assertEquals("touristRailway", lines.getFirst().transportSubmode());
     }
 
     @Test
@@ -172,8 +179,8 @@ class NeTExEntityServiceTest {
                 emptyRouteData(), Map.of());
 
         // then
-        assertEquals("FTR:Line:Z", lines.get(0).id());
-        assertEquals("Z", lines.get(0).publicCode());
+        assertEquals("FTR:Line:Z", lines.getFirst().id());
+        assertEquals("Z", lines.getFirst().publicCode());
     }
 
     @Test
@@ -202,7 +209,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, operators.size());
-        assertEquals("FTR:Operator:vr", operators.get(0).id());
+        assertEquals("FTR:Operator:VR", operators.getFirst().id());
     }
 
     @Test
@@ -214,7 +221,7 @@ class NeTExEntityServiceTest {
         final List<NeTExEntityService.NeTExOperator> operators = entityService.createOperators(List.of(schedule));
 
         // then
-        assertEquals(10, operators.get(0).companyNumber());
+        assertEquals(10, operators.getFirst().companyNumber());
     }
 
     @Test
@@ -226,7 +233,123 @@ class NeTExEntityServiceTest {
         final List<NeTExEntityService.NeTExOperator> operators = entityService.createOperators(List.of(schedule));
 
         // then
-        assertEquals("vr", operators.get(0).privateCode());
+        assertEquals("VR", operators.getFirst().privateCode());
+    }
+
+    @Test
+    void givenCommuterLines_whenCreatingLines_thenOnlyHslListedLinesBelongToHsl() {
+        // given
+        final List<Schedule> schedules = List.of(
+                createCommuterSchedule(1L, 8001L, "A"),
+                createCommuterSchedule(2L, 8002L, "P"),
+                createCommuterSchedule(3L, 1501L, "R"),
+                createCommuterSchedule(4L, 9801L, "Z"),
+                createCommuterSchedule(5L, 9626L, "D"),
+                createCommuterSchedule(6L, 9901L, "G"),
+                createCommuterSchedule(7L, 1651L, "O"),
+                createCommuterSchedule(8L, 1705L, "M"),
+                createCommuterSchedule(9L, 1502L, "H"),
+                createCommuterSchedule(10L, 9604L, "T"),
+                createLongDistanceSchedule(11L, 59L, "IC"));
+
+        // when
+        final Map<String, String> groupByLine = entityService.createLines(schedules, emptyRouteData(), Map.of())
+                .stream()
+                .collect(Collectors.toMap(NeTExEntityService.NeTExLine::publicCode,
+                        NeTExEntityService.NeTExLine::groupOfLinesRef));
+
+        // then
+        Stream.of("A", "P")
+                .forEach(code -> assertEquals("FTR:GroupOfLines:HSL", groupByLine.get(code), code));
+        Stream.of("R", "Z", "D", "G", "O", "M", "H", "T", "IC 59")
+                .forEach(code -> assertEquals("FTR:GroupOfLines:VR", groupByLine.get(code), code));
+    }
+
+    @Test
+    void givenUnlistedCommuterLine_whenCreatingLines_thenBelongsToVrAndWarningIsLogged() {
+        // given
+        final Schedule unlisted = createCommuterSchedule(1L, 8001L, "X");
+        final Schedule listed = createCommuterSchedule(2L, 8002L, "A");
+        final Logger logbackLogger = (Logger) LoggerFactory.getLogger(NeTExEntityService.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logbackLogger.addAppender(appender);
+
+        try {
+            // when
+            final Map<String, String> groupByLine = entityService
+                    .createLines(List.of(unlisted, listed), emptyRouteData(), Map.of())
+                    .stream()
+                    .collect(Collectors.toMap(NeTExEntityService.NeTExLine::publicCode,
+                            NeTExEntityService.NeTExLine::groupOfLinesRef));
+
+            // then
+            assertEquals("FTR:GroupOfLines:VR", groupByLine.get("X"));
+            assertEquals("FTR:GroupOfLines:HSL", groupByLine.get("A"));
+            final List<String> warnings = appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .filter(msg -> msg.contains("error_type=UnknownCommuterLine"))
+                    .toList();
+            assertEquals(1, warnings.size(), warnings.toString());
+            assertTrue(warnings.getFirst().contains("commuterLineId=X"), warnings.getFirst());
+            assertTrue(warnings.getFirst().contains("authority=VR"), warnings.getFirst());
+        } finally {
+            logbackLogger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void givenHslOperatorSchedule_whenCreatingLinesAndOperators_thenOperatorIsVr() {
+        // given
+        final Schedule vr = createCommuterSchedule(1L, 8001L, "A");
+        final Schedule hsl = createCommuterSchedule(2L, 8002L, "E");
+        hsl.operator.operatorShortCode = "hsl";
+        hsl.operator.operatorUICCode = 9995;
+
+        // when
+        final var lines = entityService.createLines(List.of(vr, hsl), emptyRouteData(), Map.of());
+        final var operators = entityService.createOperators(List.of(vr, hsl));
+
+        // then
+        assertEquals(List.of("FTR:Operator:VR"), lines.stream().map(NeTExEntityService.NeTExLine::operatorRef)
+                .distinct().toList());
+        assertEquals(1, operators.size());
+        assertEquals("FTR:Operator:VR", operators.getFirst().id());
+        assertEquals(10, operators.getFirst().companyNumber());
+    }
+
+    @Test
+    void givenOnlyHslOperatorSchedules_whenCreatingOperators_thenVrOperatorIsStillWritten() {
+        // given
+        final Schedule hsl = createCommuterSchedule(1L, 8001L, "A");
+        hsl.operator.operatorShortCode = "hsl";
+        hsl.operator.operatorUICCode = 9995;
+
+        // when
+        final var lines = entityService.createLines(List.of(hsl), emptyRouteData(), Map.of());
+        final var operators = entityService.createOperators(List.of(hsl));
+
+        // then
+        assertEquals(List.of(lines.getFirst().operatorRef()),
+                operators.stream().map(NeTExEntityService.NeTExOperator::id).toList());
+        assertEquals(10, operators.getFirst().companyNumber());
+    }
+
+    @Test
+    void givenUnknownOperator_whenCreatingLinesJourneysAndOperators_thenEverythingBelongsToVr() {
+        // given
+        final Schedule unknown = createCommuterSchedule(1L, 8001L, "A");
+        unknown.operator.operatorShortCode = "xyz";
+        unknown.operator.operatorUICCode = 1234;
+
+        // when
+        final var lines = entityService.createLines(List.of(unknown), emptyRouteData(), Map.of());
+        final var operators = entityService.createOperators(List.of(unknown));
+
+        // then
+        assertEquals("FTR:Operator:VR", lines.getFirst().operatorRef());
+        assertEquals(List.of("FTR:Operator:VR"), operators.stream().map(NeTExEntityService.NeTExOperator::id).toList());
+        assertEquals(10, operators.getFirst().companyNumber());
     }
 
     // --- ServiceJourney mapping ---
@@ -243,7 +366,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, journeys.size());
-        assertEquals("FTR:ServiceJourney:59-12345", journeys.get(0).id());
+        assertEquals("FTR:ServiceJourney:59-12345", journeys.getFirst().id());
     }
 
     @Test
@@ -258,7 +381,7 @@ class NeTExEntityServiceTest {
 
         // then
         assertEquals(1, journeys.size());
-        assertEquals("FTR:ServiceJourney:59-2026-06-25", journeys.get(0).id());
+        assertEquals("FTR:ServiceJourney:59-2026-06-25", journeys.getFirst().id());
     }
 
     @Test
@@ -272,7 +395,7 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then
-        assertEquals("IC 59", journeys.get(0).name());
+        assertEquals("IC 59", journeys.getFirst().name());
     }
 
     @Test
@@ -286,7 +409,7 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then
-        assertEquals("59", journeys.get(0).privateCode());
+        assertEquals("59", journeys.getFirst().privateCode());
     }
 
     @Test
@@ -300,8 +423,8 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then
-        assertNotNull(journeys.get(0).journeyPatternRef());
-        assertTrue(journeys.get(0).journeyPatternRef().startsWith("FTR:JourneyPattern:"));
+        assertNotNull(journeys.getFirst().journeyPatternRef());
+        assertTrue(journeys.getFirst().journeyPatternRef().startsWith("FTR:JourneyPattern:"));
     }
 
     @Test
@@ -315,7 +438,7 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then
-        assertEquals("FTR:Operator:vr", journeys.get(0).operatorRef());
+        assertEquals("FTR:Operator:VR", journeys.getFirst().operatorRef());
     }
 
     @Test
@@ -329,7 +452,7 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then
-        assertEquals("FTR:Line:IC-59", journeys.get(0).lineRef());
+        assertEquals("FTR:Line:IC-59", journeys.getFirst().lineRef());
     }
 
     @Test
@@ -361,9 +484,9 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then — passing times carry station short code and commercial track
-        final var passingTimes = journeys.get(0).passingTimes();
-        assertEquals("HKI", passingTimes.get(0).stationShortCode());
-        assertEquals("4", passingTimes.get(0).commercialTrack());
+        final var passingTimes = journeys.getFirst().passingTimes();
+        assertEquals("HKI", passingTimes.getFirst().stationShortCode());
+        assertEquals("4", passingTimes.getFirst().commercialTrack());
         assertEquals("TPE", passingTimes.get(1).stationShortCode());
         assertEquals("1", passingTimes.get(1).commercialTrack());
         assertEquals("OL", passingTimes.get(2).stationShortCode());
@@ -382,7 +505,7 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then — TPE's passing time has null commercialTrack
-        final var passingTimes = journeys.get(0).passingTimes();
+        final var passingTimes = journeys.getFirst().passingTimes();
         assertNull(passingTimes.get(1).commercialTrack(), "TPE should have null commercialTrack");
         assertEquals("TPE", passingTimes.get(1).stationShortCode());
     }
@@ -399,8 +522,8 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then — journey pattern ref is still set correctly
-        assertNotNull(journeys.get(0).journeyPatternRef());
-        assertTrue(journeys.get(0).journeyPatternRef().startsWith("FTR:JourneyPattern:"));
+        assertNotNull(journeys.getFirst().journeyPatternRef());
+        assertTrue(journeys.getFirst().journeyPatternRef().startsWith("FTR:JourneyPattern:"));
     }
 
     @Test
@@ -409,7 +532,7 @@ class NeTExEntityServiceTest {
         // COMMERCIAL, which is still published because the row has no arrival
         final Schedule schedule = createLongDistanceSchedule(1L, 59L, "IC");
         schedule.scheduleRows = createAfternoonStops();
-        schedule.scheduleRows.get(0).departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
+        schedule.scheduleRows.getFirst().departure.stopType = ScheduleRow.ScheduleRowStopType.NONCOMMERCIAL;
         final NeTExRouteData routeData = routeService.createRouteDataTrackAware(List.of(schedule));
 
         // when
@@ -417,8 +540,8 @@ class NeTExEntityServiceTest {
                 .createServiceJourneys(List.of(schedule), routeData);
 
         // then — times stay on the operating day, none roll past 24:00
-        final var passingTimes = journeys.get(0).passingTimes();
-        assertEquals("14:06:00", passingTimes.get(0).departureTime());
+        final var passingTimes = journeys.getFirst().passingTimes();
+        assertEquals("14:06:00", passingTimes.getFirst().departureTime());
         assertEquals("14:07:00", passingTimes.get(1).arrivalTime());
         assertEquals("14:08:00", passingTimes.get(1).departureTime());
         assertEquals("14:20:00", passingTimes.get(2).arrivalTime());
@@ -439,7 +562,7 @@ class NeTExEntityServiceTest {
                 routeData, FINNISH_STATION_NAMES);
 
         // then
-        assertEquals("Helsinki-Lappeenranta-Joensuu", lines.get(0).name());
+        assertEquals("Helsinki-Lappeenranta-Joensuu", lines.getFirst().name());
     }
 
     @Test
@@ -454,7 +577,7 @@ class NeTExEntityServiceTest {
                 routeData, FINNISH_STATION_NAMES);
 
         // then
-        assertEquals("Helsinki-Kivistö-Helsinki", lines.get(0).name());
+        assertEquals("Helsinki-Kivistö-Helsinki", lines.getFirst().name());
     }
 
     @Test
@@ -470,7 +593,7 @@ class NeTExEntityServiceTest {
                 routeData, FINNISH_STATION_NAMES);
 
         // then
-        assertEquals("Helsinki-Joensuu", lines.get(0).name());
+        assertEquals("Helsinki-Joensuu", lines.getFirst().name());
     }
 
     @Test
@@ -486,7 +609,7 @@ class NeTExEntityServiceTest {
                 routeData, FINNISH_STATION_NAMES);
 
         // then
-        assertEquals("Helsinki-Oulu", lines.get(0).name());
+        assertEquals("Helsinki-Oulu", lines.getFirst().name());
     }
 
     // --- Helpers ---
@@ -505,7 +628,7 @@ class NeTExEntityServiceTest {
             final List<String> stations = routes[i];
             built.add(new NeTExRouteData.NeTExRoute(
                     "FTR:Route:" + i,
-                    stations.get(0) + " - " + stations.get(stations.size() - 1),
+                    stations.getFirst() + " - " + stations.getLast(),
                     lineId,
                     stations.stream().map(code -> "FTR:RoutePoint:" + code).toList()));
         }
