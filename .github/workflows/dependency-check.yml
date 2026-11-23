@@ -24,7 +24,7 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
       - name: Setup Java
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           java-version: 25
           distribution: corretto
@@ -57,7 +57,7 @@ jobs:
           echo "path=$path" >> "$GITHUB_OUTPUT"
       - name: Publish report on GitHub Pages
         if: ${{ success() || failure() }}
-        uses: tmfg/digitraffic-actions@339b5aa5afc3459cba11653adbc0e7132f356c1d # gh-pages-publish/v1
+        uses: tmfg/digitraffic-actions@e71e843effbf901cbdf0631720f0bb6380d152fe # gh-pages-publish/v1
         with:
           GH_PAGES_BRANCH: gh-pages
           FILE_PATH: ${{ steps.report.outputs.path }}
@@ -65,7 +65,7 @@ jobs:
           LINK_TEXT: Dependency check report
       - name: Notify Slack
         if: failure()
-        uses: tmfg/digitraffic-actions@dd6f974ac0e0fe24e70e70487de009a669c0d704 # slack-notify/v1
+        uses: tmfg/digitraffic-actions@4cdf78c4e7d654eaa1d8a6677bb7ea00d1bf1ca9 # slack-notify/v1
         with:
           status: failure
           text: FAILED Rail Dependency Check

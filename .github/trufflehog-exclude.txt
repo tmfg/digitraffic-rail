@@ -1,1 +1,2 @@
 target/dependency-check-report.html
+AvoinData(Server|Updater)/src/(main|test)/resources/application\.properties
