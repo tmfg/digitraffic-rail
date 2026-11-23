@@ -10,7 +10,7 @@ services:
     command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_swedish_ci']
 
   db-init:
-    image: flyway/flyway:13.9.0-alpine@sha256:ae8e985a8caf73181a39aad823690f27d55c850d4c5cea92a94c0ce4b3943156
+    image: flyway/flyway:13.12.2-alpine@sha256:f5b9740a05ef38fc31356dcf2e7796dafc693ea289546e82c7699d37f83349af
     volumes:
       - "../AvoinDataUpdater/src/main/resources/db/:/flyway/sql"
       - "~/.m2:/root/.m2"
