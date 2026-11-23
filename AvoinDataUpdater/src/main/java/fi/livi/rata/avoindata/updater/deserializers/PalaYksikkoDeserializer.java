@@ -22,7 +22,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocationId;
 import fi.livi.rata.avoindata.updater.service.Wgs84ConversionService;
 
 /**
- * Deserializes PALA {@code /0.2/yksikot.json} response into {@link TrainLocation} entities.
+ * Deserializes PALA {@code /0.2/julkisetyksikot.json} response into {@link TrainLocation} entities.
  *
  * <p>The PALA response is a JSON <b>object</b> keyed by train number string
  * ({@code {"1": {...}, "23": {...}}}), not an array.
@@ -53,7 +53,7 @@ public class PalaYksikkoDeserializer {
     }
 
     /**
-     * Parse the full PALA yksikot.json response body, returning the successfully parsed locations plus the
+     * Parse the full PALA julkisetyksikot.json response body, returning the successfully parsed locations plus the
      * drop/error counts the ingestion wide-event log needs.
      *
      * @param json raw JSON response body from PALA

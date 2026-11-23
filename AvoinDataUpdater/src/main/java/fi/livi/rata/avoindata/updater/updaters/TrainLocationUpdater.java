@@ -68,8 +68,7 @@ public class TrainLocationUpdater {
 
     private static final DecimalFormat IP_LOCATION_FILTER_PRECISION =
             new DecimalFormat("#.000000", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    // propertyName excludes the top-level fields we never read to shrink the payload.
-    private static final String PALA_YKSIKOT_PATH = "0.2/yksikot.json?propertyName=-epavarmuus,-lahdeKulkutiedot,-suunta";
+    private static final String PALA_YKSIKOT_PATH = "0.2/julkisetyksikot.json";
 
     // Adaptive back-off when PALA is unavailable (5xx or network failure): skip cycles for an exponentially growing
     // window so we stop hammering PALA while it recovers. Reset on the first successful fetch.
@@ -324,7 +323,7 @@ public class TrainLocationUpdater {
      */
     private void logIngestionCycle(final IngestionMetrics m) {
         final String message = "operation=ingestTrainLocations outcome={} duration={} "
-                + "rail.source.system=RIPA rail.source.api=pala-api rail.source.endpoint=/0.2/yksikot.json "
+                + "rail.source.system=RIPA rail.source.api=pala-api rail.source.endpoint=/0.2/julkisetyksikot.json "
                 + "rail.entity.type=train_location "
                 + "error.type={} rail.error.train_number={} "
                 + "rail.train_location.records.received={} rail.train_location.records.processed={} "

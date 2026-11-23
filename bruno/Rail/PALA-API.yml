@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{updater.pala-api-url}}/0.2/yksikot.json"
+  url: "{{updater.pala-api-url}}/0.2/julkisetyksikot.json"
   headers:
     - name: API-KEY
       value: "{{updater.reason.api-key}}"

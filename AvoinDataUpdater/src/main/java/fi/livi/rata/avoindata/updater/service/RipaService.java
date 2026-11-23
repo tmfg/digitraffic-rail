@@ -149,13 +149,16 @@ public class RipaService {
     /**
      * Fetch raw response body from the PALA API as a string.
      *
-     * @param path relative path under the PALA base URL (e.g., "0.2/yksikot.json")
+     * @param path relative path under the PALA base URL (e.g., "0.2/julkisetyksikot.json")
      * @return raw JSON response body
      */
     public String getFromPalaAsString(final String path) {
         log.info("method=getFromPalaAsString Fetching from api={}/{} type=String", palaApiUrl, path);
+
         try {
-            return palaWebClient.get().uri(path).retrieve().bodyToMono(String.class).block(blockDuration);
+            return palaWebClient.get().uri(path)
+                    .retrieve().bodyToMono(String.class)
+                .block(blockDuration);
         } catch (final Exception e) {
             log.error("method=getFromPalaAsString Fetching from api={}/{} failed with error {}",
                     palaApiUrl, path, e.getMessage());

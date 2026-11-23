@@ -5,7 +5,7 @@ import java.util.List;
 import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 
 /**
- * Outcome of parsing one PALA {@code /0.2/yksikot.json} response: the successfully parsed locations plus the
+ * Outcome of parsing one PALA {@code /0.2/julkisetyksikot.json} response: the successfully parsed locations plus the
  * per-cycle counts the ingestion wide-event log needs.
  *
  * @param locations             successfully parsed train locations

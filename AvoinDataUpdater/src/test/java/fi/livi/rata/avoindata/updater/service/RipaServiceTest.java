@@ -58,7 +58,7 @@ public class RipaServiceTest {
         final RipaService service = ripaServiceReturning(HttpStatus.INTERNAL_SERVER_ERROR, "boom");
 
         final WebClientResponseException ex = assertThrows(WebClientResponseException.class,
-                () -> service.getFromPalaAsString("0.2/yksikot.json"));
+                () -> service.getFromPalaAsString("0.2/julkisetyksikot.json"));
 
         // fetchFromPala reads exactly this: e.getStatusCode().value()
         assertEquals(500, ex.getStatusCode().value());
@@ -69,7 +69,7 @@ public class RipaServiceTest {
         final RipaService service = ripaServiceReturning(HttpStatus.NOT_FOUND, "nope");
 
         final WebClientResponseException ex = assertThrows(WebClientResponseException.class,
-                () -> service.getFromPalaAsString("0.2/yksikot.json"));
+                () -> service.getFromPalaAsString("0.2/julkisetyksikot.json"));
 
         assertEquals(404, ex.getStatusCode().value());
     }
@@ -78,6 +78,6 @@ public class RipaServiceTest {
     public void successfulResponseShouldReturnBodyUnwrapped() {
         final RipaService service = ripaServiceReturning(HttpStatus.OK, "{\"1\":{}}");
 
-        assertEquals("{\"1\":{}}", service.getFromPalaAsString("0.2/yksikot.json"));
+        assertEquals("{\"1\":{}}", service.getFromPalaAsString("0.2/julkisetyksikot.json"));
     }
 }

@@ -18,7 +18,7 @@ import fi.livi.rata.avoindata.common.domain.trainlocation.TrainLocation;
 import fi.livi.rata.avoindata.updater.BaseTest;
 
 /**
- * Tests for {@link PalaYksikkoDeserializer} — the PALA {@code /0.2/yksikot.json} response parser.
+ * Tests for {@link PalaYksikkoDeserializer} — the PALA {@code /0.2/julkisetyksikot.json} response parser.
  */
 public class PalaYksikkoDeserializerTest extends BaseTest {
 
