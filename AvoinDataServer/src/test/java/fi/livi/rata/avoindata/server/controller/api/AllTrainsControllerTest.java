@@ -81,32 +81,75 @@ public class AllTrainsControllerTest extends MockMvcBaseTest {
             final int maxAnnouncedTrains = (int) ReflectionTestUtils.getField(trainController, "maxAnnouncedTrains");
 
             final ResultActions r1 = getJson("/all-trains?version=0");
-            // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
-            r1.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains - 1));
+            // when there are more rows than the max amount, the last version in order is filtered out to avoid returning partial versions in a single query
+            r1.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains));
 
-            r1.andExpect(jsonPath("$[0].version").value(4));
-            r1.andExpect(jsonPath("$[1].version").value(3));
-            r1.andExpect(jsonPath("$[2].version").value(2));
-            r1.andExpect(jsonPath("$[3].version").value(1));
+            r1.andExpect(jsonPath("$[0].version").value(5));
+            r1.andExpect(jsonPath("$[1].version").value(4));
+            r1.andExpect(jsonPath("$[2].version").value(3));
+            r1.andExpect(jsonPath("$[3].version").value(2));
+            r1.andExpect(jsonPath("$[4].version").value(1));
 
-            r1.andExpect(jsonPath("$[0].trainNumber").value(7));
-            r1.andExpect(jsonPath("$[1].trainNumber").value(8));
-            r1.andExpect(jsonPath("$[2].trainNumber").value(9));
-            r1.andExpect(jsonPath("$[3].trainNumber").value(10));
+            r1.andExpect(jsonPath("$[0].trainNumber").value(6));
+            r1.andExpect(jsonPath("$[1].trainNumber").value(7));
+            r1.andExpect(jsonPath("$[2].trainNumber").value(8));
+            r1.andExpect(jsonPath("$[3].trainNumber").value(9));
+            r1.andExpect(jsonPath("$[4].trainNumber").value(10));
 
             final ResultActions r2 = getJson("/all-trains?version=5");
-            // when train query returns an amount of rows equal to or greater than the given max amount, the last version in order is filtered out to avoid returning partial versions in a single query
-            r2.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains - 1));
+            r2.andExpect(jsonPath("$.length()").value(maxAnnouncedTrains));
 
-            r2.andExpect(jsonPath("$[0].version").value(9));
-            r2.andExpect(jsonPath("$[1].version").value(8));
-            r2.andExpect(jsonPath("$[2].version").value(7));
-            r2.andExpect(jsonPath("$[3].version").value(6));
+            r2.andExpect(jsonPath("$[0].version").value(10));
+            r2.andExpect(jsonPath("$[1].version").value(9));
+            r2.andExpect(jsonPath("$[2].version").value(8));
+            r2.andExpect(jsonPath("$[3].version").value(7));
+            r2.andExpect(jsonPath("$[4].version").value(6));
 
-            r2.andExpect(jsonPath("$[0].trainNumber").value(2));
-            r2.andExpect(jsonPath("$[1].trainNumber").value(3));
-            r2.andExpect(jsonPath("$[2].trainNumber").value(4));
-            r2.andExpect(jsonPath("$[3].trainNumber").value(5));
+            r2.andExpect(jsonPath("$[0].trainNumber").value(1));
+            r2.andExpect(jsonPath("$[1].trainNumber").value(2));
+            r2.andExpect(jsonPath("$[2].trainNumber").value(3));
+            r2.andExpect(jsonPath("$[3].trainNumber").value(4));
+            r2.andExpect(jsonPath("$[4].trainNumber").value(5));
+        } finally {
+            ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", TrainApiConstants.MAX_TRAINS_PER_VERSION);
+        }
+    }
+
+    @Test
+    @Transactional
+    public void versionWithExactlyMaxTrainsShouldBeReturned() throws Exception {
+        ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", 5);
+
+        try {
+            for (long i = 1; i <= 5; i++) {
+                trainFactory.createBaseTrain(new TrainId(i, LocalDate.now().plusDays(100))).version = 1L;
+            }
+            trainFactory.createBaseTrain(new TrainId(6L, LocalDate.now().plusDays(100))).version = 2L;
+
+            final ResultActions r1 = getJson("/all-trains?version=0");
+            r1.andExpect(jsonPath("$.length()").value(5));
+            r1.andExpect(jsonPath("$[0].version").value(1));
+            r1.andExpect(jsonPath("$[4].version").value(1));
+        } finally {
+            ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", TrainApiConstants.MAX_TRAINS_PER_VERSION);
+        }
+    }
+
+    @Test
+    @Transactional
+    public void versionWithMoreThanMaxTrainsShouldBeSkipped() throws Exception {
+        ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", 5);
+
+        try {
+            for (long i = 1; i <= 6; i++) {
+                trainFactory.createBaseTrain(new TrainId(i, LocalDate.now().plusDays(100))).version = 1L;
+            }
+            trainFactory.createBaseTrain(new TrainId(7L, LocalDate.now().plusDays(100))).version = 2L;
+
+            final ResultActions r1 = getJson("/all-trains?version=0");
+            r1.andExpect(jsonPath("$.length()").value(1));
+            r1.andExpect(jsonPath("$[0].version").value(2));
+            r1.andExpect(jsonPath("$[0].trainNumber").value(7));
         } finally {
             ReflectionTestUtils.setField(trainController, "maxAnnouncedTrains", TrainApiConstants.MAX_TRAINS_PER_VERSION);
         }

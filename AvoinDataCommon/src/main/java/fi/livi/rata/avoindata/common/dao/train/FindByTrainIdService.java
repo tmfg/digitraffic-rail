@@ -61,10 +61,11 @@ public class FindByTrainIdService {
     }
 
     public List<AllTrainsRepository.FindByVersionQueryResult> getTrainsGreaterThanVersionRecursive(final Long version, final int maxRows) {
+        // one extra row tells a version of exactly maxRows apart from one with more
         final List<AllTrainsRepository.FindByVersionQueryResult> results =
-                allTrainsRepository.findByVersionGreaterThanRawSql(version, maxRows);
+                allTrainsRepository.findByVersionGreaterThanRawSql(version, maxRows + 1);
 
-        if (results.size() == maxRows) {
+        if (results.size() > maxRows) {
             // already sorted by version
             // do not return results containing rows over maxRows that consist of only a single version, fetch again for next version in these cases
             // partial versions should not be returned
