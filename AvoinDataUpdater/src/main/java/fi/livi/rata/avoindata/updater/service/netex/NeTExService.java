@@ -781,7 +781,7 @@ public class NeTExService {
         // station-track to one schedule that put a train on it; the same track is usually on
         // dozens of trains and one is enough to find the fault
         final Map<String, String> invalidTracks = new LinkedHashMap<>();
-        final Set<String> missingFromPeti = new LinkedHashSet<>();
+        final Map<String, String> missingFromPeti = new LinkedHashMap<>();
 
         for (final Schedule schedule : schedules) {
             // Cancelled stops are not in a shortened schedule, but SIRI still needs their tracks
@@ -810,24 +810,19 @@ public class NeTExService {
                     replacedUnknownTrack++;
                     final boolean platformShaped = VALID_PLATFORM_NUMBER.matcher(track).matches();
                     final String key = row.station.stationShortCode + "-" + track;
-                    final boolean firstSighting;
-                    if (platformShaped) {
-                        firstSighting = missingFromPeti.add(key);
-                    } else {
-                        firstSighting = invalidTracks.putIfAbsent(key,
-                                key + "(exampleTrain:" + schedule.trainNumber
-                                        + "/" + firstRunDayInFeed(schedule) + ")") == null;
-                    }
-                    if (firstSighting) {
+                    final Map<String, String> gaps = platformShaped ? missingFromPeti : invalidTracks;
+                    if (!gaps.containsKey(key)) {
+                        final String exampleTrain = schedule.trainNumber + "/" + firstRunDayInFeed(schedule);
+                        gaps.put(key, key + "(exampleTrain:" + exampleTrain + ")");
                         log.error("event=generateNeTEx method=fillFromFirstPlatform PETI publishes no platform "
                                 + "for track station={} uic={} track={} likelyCause={} stopPlace={} "
-                                + "petiTracks={} replacedWith={}",
+                                + "petiTracks={} replacedWith={} exampleTrain={}",
                                 row.station.stationShortCode, peti.uicCode(), track,
                                 platformShaped ? "missing_from_peti" : "invalid_schedule_track",
                                 peti.stopPlaceId(),
                                 peti.quays().stream().map(PetiQuay::publicCode)
                                         .collect(Collectors.joining(",")),
-                                firstPlatform);
+                                firstPlatform, exampleTrain);
                     }
                 }
                 row.commercialTrack = firstPlatform;
@@ -844,7 +839,7 @@ public class NeTExService {
         if (!missingFromPeti.isEmpty()) {
             log.error("event=generateNeTEx method=fillFromFirstPlatform gap=tracksMissingFromPeti "
                     + "likelyCause=missing_from_peti tracksMissingFromPeti={} gapItems={}",
-                    missingFromPeti.size(), String.join(",", missingFromPeti));
+                    missingFromPeti.size(), String.join(",", missingFromPeti.values()));
         }
         if (!invalidTracks.isEmpty()) {
             log.error("event=generateNeTEx method=fillFromFirstPlatform gap=invalidScheduleTracks "

@@ -85,6 +85,7 @@ class NeTExServiceUnknownTrackTest {
             assertTrue(message.contains("track=415"), message);
             assertTrue(message.contains("petiTracks=1,2"), message);
             assertTrue(message.contains("replacedWith=1"), message);
+            assertTrue(message.contains("exampleTrain=66/"), message);
         } finally {
             logbackLogger.detachAppender(appender);
         }
@@ -123,7 +124,7 @@ class NeTExServiceUnknownTrackTest {
             assertTrue(errors.stream().anyMatch(m -> m.contains("track=" + track)
                     && m.contains("likelyCause=" + expectedCause)), errors.toString());
             assertTrue(errors.stream().anyMatch(m -> m.contains(expectedGap)
-                    && m.contains("HKI-" + track)), errors.toString());
+                    && m.contains("HKI-" + track + "(exampleTrain:66/")), errors.toString());
         } finally {
             logbackLogger.detachAppender(appender);
         }
